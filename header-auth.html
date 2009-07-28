@@ -1,0 +1,38 @@
+<html>
+<head>
+<title>Logjammin'</title>
+<base href="${_html(request:original_request_script())}/" />
+<style>
+* { -moz-box-sizing:border-box; -webkit-box-sizing:border-box; -ms-box-sizing:border-box; box-sizing:border-box; }
+body { font-family:'Helvetica', sans-serif; font-size:12px; margin:0; padding:0; }
+
+#app-header { background-color:black; color:white; overflow:hidden; padding:10px 10px 0 10px; width:100%; }
+#app-header a { color:white; }
+#app-login { float:right; }
+#app-title { float:left; margin:0; }
+#app-menu { float:left; list-style-type:none; margin:15px 0 0 20px; padding:0; }
+#app-menu li { float:left; }
+#app-menu li a { display:block; padding:3px 10px; }
+#app-menu li.selected { background-color:white; color:black; }
+#app-menu li.selected a { color:black; text-decoration:none; }
+#app-content { margin:20px; }
+input[type="text"] { width:20em; }
+</style>
+</head>
+<body>
+<div id="app-header">
+    <div id="app-login">
+        <a href="login?logout=true">Logout ${_html(_user:name())}</a>
+    </div>
+    <h1 id="app-title">Logjammin'</h1>
+    <ul id="app-menu">
+        <li><a href=".">Home</a></li>
+        <li class="selected"><a href="project-list">Project List</a></li>
+        <li><a href="user-profile">My Profile</a></li>
+        <li><a href="admin">Administration</a></li>
+    </ul>
+</div>
+<div id="app-content">
+<?lc if request:has_attribute("_msg") then ?><div class="${_html(request:attribute("_msg_class"))}">
+    ${_html(request:attribute("_msg"))}
+</div><?lc end ?>

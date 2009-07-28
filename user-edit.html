@@ -1,0 +1,33 @@
+<?lc if request:has_attribute("_error") then ?><div class="error">${request:attribute("_error")}</div><?lc end ?>
+<h3>Editing ${user:name() == "" and "New User" or user:name()}</h3>
+<form method="POST" action="${request:original_request_file()}">
+    <fieldset>
+        <legend>Identity</legend>
+        <div>
+            <label>Name
+                <input type="text" name="name" value="${user:name()}" />
+            </label>
+        </div>
+        <div>
+            <label>Logins
+                <?lc for h, login in ipairs(user:logins()) do ?><input name="login" value="${login}" type="text" />
+                <?lc end ?>
+                <input name="login" type="text" />
+            </label>
+        </div>
+    </fieldset>
+    <fieldset>
+        <legend>Access</legend>
+        <div>
+            <label>Role
+                <select name="role">
+                    <?lc for h, role in ipairs(roles) do ?><option value="${role:pkey()}">${role:name()}</option>
+                    <?lc end ?>
+                </select>
+            </label>
+        </div>
+        <div>
+            <input value="Save" type="submit" />
+        </div>
+    </fieldset>
+</form>

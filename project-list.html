@@ -1,0 +1,39 @@
+<?lc if request:has_attribute("_error") then ?><div class="error">
+    ${_html(request:attribute("_error"))}
+</div><?lc end ?>
+<div>
+    <form action="project-search">
+        <label for="q">Search</label>
+        <input type="text" name="q" value="${_html(request:param("q"))}" />
+        <input type="submit" value="Search" />
+    </form>
+</div>
+<?lc if request:has_param("q") then ?><div>
+    Search results for &quot;${_html(request:param("q"))}&quot;.
+</div><?lc else ?><div>
+    <a href="project-edit">Create a new project...</a>
+</div><?lc end ?>
+<table>
+  <thead>
+  <tr>
+    <th>
+      Project
+    </th>
+    <th>
+      Versions
+    </th>
+  </tr>
+  </thead>
+  <tbody>
+  <?lc if projects and table.getn(projects) > 0 then ?>
+    <?lc for h, project in ipairs(projects) do ?>
+    <tr>
+      <td><a href="${project:pkey()}/project-edit">${_html(project:name())}</a></td>
+      <td><?lc for i, version in ipairs(project:versions()) do ?>${i == 1 and "" or ", "}<a href="${project:pkey()}/${_html(version)}/backlog-list">${_html(version)}</a><?lc end ?></td>
+    </tr>
+    <?lc end ?>
+  <?lc else ?>
+    <tr><td colspan="2">No projects found.</td></tr>
+  <?lc end ?>
+  </tbody>
+</table>

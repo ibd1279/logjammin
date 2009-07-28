@@ -1,0 +1,43 @@
+<?lc if request:has_attribute("_error") then ?><div class="error">
+    ${_html(request:attribute("_error"))}
+</div><?lc end ?>
+<div>
+    <form action="user-search">
+        <label for="q">Search</label>
+        <input type="text" name="q" value="${_html(request:param("q"))}" />
+        <input type="submit" value="Search" />
+    </form>
+</div>
+<?lc if request:has_param("q") then ?><div>
+    Search results for &quot;${_html(request:param("q"))}&quot;.
+</div><?lc else ?><div>
+    <a href="user-edit">Create a new user...</a>
+</div><?lc end ?>
+<table>
+  <thead>
+  <tr>
+    <th>
+      User
+    </th>
+    <th>
+      Login
+    </th>
+    <th>
+      Role
+    </th>
+  </tr>
+  </thead>
+  <tbody>
+  <?lc if users and table.getn(users) > 0 then ?>
+    <?lc for h, user in ipairs(users) do ?>
+    <tr>
+      <td><a href="${user:pkey()}/user-edit">${_html(user:name())}</a></td>
+      <td><?lc for i, login in ipairs(user:logins()) do ?>${i == 1 and "" or ", "}${_html(login)}<?lc end ?></td>
+      <td>${user:role():name()}</td>
+    </tr>
+    <?lc end ?>
+  <?lc else ?>
+    <tr><td colspan="3">No users found.</td></tr>
+  <?lc end ?>
+  </tbody>
+</table>

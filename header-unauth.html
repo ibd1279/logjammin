@@ -1,0 +1,57 @@
+<html>
+<head>
+<title>Logjammin'</title>
+<base href="${request:original_request_script()}/" />
+<style>
+body {
+  font-family: helvetica, arial, sans-serif;
+  font-size: 12pt;
+}
+table {
+  margin: 0em 0 1em 0;
+}
+ul#main-menu, ol#breadcrumb {
+  list-style-type: none;
+  margin: 0;
+  clear: both;
+}
+ul#main-menu li, ol#breadcrumb li {
+  float: left;
+  margin: 0 0.5em 0 0;
+}
+ul#main-menu {
+  padding: 0;
+  height: 1.8em;
+}
+ol#breadcrumb {
+  padding: 0 0 0 2em;
+  height: 1.5em;
+}
+form label {
+  display: block;
+}
+div#main-content {
+  clear: both;
+}
+div.login {
+  float:right;
+}
+</style>
+</head>
+<body>
+<div class="header">
+    <div class="login">
+        <form method="GET">
+            <label>OpenID
+                <input type="text" name="openid_url" id="openid_url" />
+            </label>
+        </form>
+    </div>
+    <h1 id="app-title">Logjammin'</h1>
+    <ul id="main-menu">
+        <li><a href="login">Login</a></li>
+        <li><a href="login-create">Create Login</a></li>
+    </ul>
+</div>
+<div id="main-content">
+<?lc if request:has_attribute("_msg") then ?><div class="${request:attribute("_msg_class")}">${request:attribute("_msg")}</div><?lc end ?>

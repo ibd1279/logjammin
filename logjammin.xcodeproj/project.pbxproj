@@ -1,0 +1,414 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 45;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		2202B2530FFE831500B6FCEC /* libtokyodystopia.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2202B2520FFE831500B6FCEC /* libtokyodystopia.a */; };
+		2202B35E0FFFA4D100B6FCEC /* Project.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2202B35D0FFFA4D100B6FCEC /* Project.cpp */; };
+		2202B3740FFFAAA200B6FCEC /* Backlog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2202B3730FFFAAA200B6FCEC /* Backlog.cpp */; };
+		220AD6C30FA1FFD400C604BE /* libtokyocabinet.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 220AD6C20FA1FFD400C604BE /* libtokyocabinet.a */; };
+		220AD6F90FA215F800C604BE /* openprop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 220AD6F50FA215F800C604BE /* openprop.cpp */; };
+		220AD6FA0FA215F800C604BE /* parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 220AD6F80FA215F800C604BE /* parser.cpp */; };
+		221577CC100F38270020B133 /* ProjectController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 221577CB100F38270020B133 /* ProjectController.cpp */; };
+		221B34460FA8995D009AB597 /* liblua.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 221B34450FA8995D009AB597 /* liblua.a */; };
+		221B344D0FA89B99009AB597 /* ModuleCompilier.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 221B344A0FA89B99009AB597 /* ModuleCompilier.cpp */; };
+		2222BE36101E89D000CE52E6 /* UserController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2222BE35101E89D000CE52E6 /* UserController.cpp */; };
+		222B665D101E46F300F45B04 /* libcrypto.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222B665C101E46F300F45B04 /* libcrypto.dylib */; };
+		223D698410078F5800F79019 /* Controller.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 223D698310078F5800F79019 /* Controller.cpp */; };
+		224046C1100521010005461A /* sha1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 224046C0100521010005461A /* sha1.cpp */; };
+		224046D7100595160005461A /* User.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 224046D6100595160005461A /* User.cpp */; };
+		224046DC100597D90005461A /* Role.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 224046DB100597D90005461A /* Role.cpp */; };
+		2271D91A101288A000749D9A /* BacklogController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2271D919101288A000749D9A /* BacklogController.cpp */; };
+		227A47061018186B0013EACE /* libcurl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 227A47051018186B0013EACE /* libcurl.dylib */; };
+		229F360B0FAA34E3003A1626 /* Response.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 229F360A0FAA34E3003A1626 /* Response.cpp */; };
+		22D30BE30FA78F53005DE0D9 /* Request.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 22D30BE20FA78F53005DE0D9 /* Request.cpp */; };
+		22DB7C5F101A5CC800BEEB52 /* OpenID.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */; };
+		8DD76F650486A84900D96B5E /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 08FB7796FE84155DC02AAC07 /* main.cpp */; settings = {ATTRIBUTES = (); }; };
+		8DD76F6A0486A84900D96B5E /* logjammin.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = C6859E8B029090EE04C91782 /* logjammin.1 */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		8DD76F690486A84900D96B5E /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 8;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+				8DD76F6A0486A84900D96B5E /* logjammin.1 in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		08FB7796FE84155DC02AAC07 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		2202B2430FFE56C000B6FCEC /* Tokyo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Tokyo.h; sourceTree = "<group>"; };
+		2202B2520FFE831500B6FCEC /* libtokyodystopia.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libtokyodystopia.a; sourceTree = "<group>"; };
+		2202B35C0FFFA4D100B6FCEC /* Project.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Project.h; sourceTree = "<group>"; };
+		2202B35D0FFFA4D100B6FCEC /* Project.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Project.cpp; sourceTree = "<group>"; };
+		2202B3720FFFAAA200B6FCEC /* Backlog.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Backlog.h; sourceTree = "<group>"; };
+		2202B3730FFFAAA200B6FCEC /* Backlog.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Backlog.cpp; sourceTree = "<group>"; };
+		220AD6C20FA1FFD400C604BE /* libtokyocabinet.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libtokyocabinet.a; path = /opt/local/lib/libtokyocabinet.a; sourceTree = "<absolute>"; };
+		220AD6F40FA215F800C604BE /* openprop.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = openprop.h; sourceTree = "<group>"; };
+		220AD6F50FA215F800C604BE /* openprop.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = openprop.cpp; sourceTree = "<group>"; };
+		220AD6F60FA215F800C604BE /* openprop_int.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = openprop_int.h; sourceTree = "<group>"; };
+		220AD6F70FA215F800C604BE /* parser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parser.h; sourceTree = "<group>"; };
+		220AD6F80FA215F800C604BE /* parser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parser.cpp; sourceTree = "<group>"; };
+		220AD7070FA233E600C604BE /* Model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Model.h; sourceTree = "<group>"; };
+		22157781100EBAD60020B133 /* header-auth.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "header-auth.html"; sourceTree = "<group>"; };
+		2215778F100EBF150020B133 /* header-unauth.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "header-unauth.html"; sourceTree = "<group>"; };
+		221577CA100F38270020B133 /* ProjectController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ProjectController.h; sourceTree = "<group>"; };
+		221577CB100F38270020B133 /* ProjectController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ProjectController.cpp; sourceTree = "<group>"; };
+		221B34450FA8995D009AB597 /* liblua.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblua.a; path = /opt/local/lib/liblua.a; sourceTree = "<absolute>"; };
+		221B344A0FA89B99009AB597 /* ModuleCompilier.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModuleCompilier.cpp; sourceTree = "<group>"; };
+		221B344B0FA89B99009AB597 /* ModuleCompilier.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ModuleCompilier.hpp; sourceTree = "<group>"; };
+		221B34820FA8C302009AB597 /* lunar.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lunar.h; sourceTree = "<group>"; };
+		2222BE34101E89D000CE52E6 /* UserController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UserController.h; sourceTree = "<group>"; };
+		2222BE35101E89D000CE52E6 /* UserController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = UserController.cpp; sourceTree = "<group>"; };
+		2222BE42101E8BEB00CE52E6 /* user-list.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "user-list.html"; sourceTree = "<group>"; };
+		2222BE49101F24D300CE52E6 /* user-edit.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "user-edit.html"; sourceTree = "<group>"; };
+		222B665C101E46F300F45B04 /* libcrypto.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcrypto.dylib; path = usr/lib/libcrypto.dylib; sourceTree = SDKROOT; };
+		2238DF210FBDD47700842744 /* template.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = template.html; sourceTree = "<group>"; };
+		2238DF8C0FBE000100842744 /* backlog-edit.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "backlog-edit.html"; sourceTree = "<group>"; };
+		223D698310078F5800F79019 /* Controller.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Controller.cpp; sourceTree = "<group>"; };
+		224046BF100521010005461A /* sha1.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sha1.h; sourceTree = "<group>"; };
+		224046C0100521010005461A /* sha1.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = sha1.cpp; sourceTree = "<group>"; };
+		224046D5100595160005461A /* User.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = User.h; sourceTree = "<group>"; };
+		224046D6100595160005461A /* User.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = User.cpp; sourceTree = "<group>"; };
+		224046DA100597D90005461A /* Role.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Role.h; sourceTree = "<group>"; };
+		224046DB100597D90005461A /* Role.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Role.cpp; sourceTree = "<group>"; };
+		2271D918101288A000749D9A /* BacklogController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BacklogController.h; sourceTree = "<group>"; };
+		2271D919101288A000749D9A /* BacklogController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BacklogController.cpp; sourceTree = "<group>"; };
+		2271D98C1012C06D00749D9A /* error-404.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "error-404.html"; sourceTree = "<group>"; };
+		2271D98D1012C06D00749D9A /* footer-auth.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "footer-auth.html"; sourceTree = "<group>"; };
+		2271D98E1012C06D00749D9A /* footer-unauth.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "footer-unauth.html"; sourceTree = "<group>"; };
+		2271D98F1012C06D00749D9A /* login.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = login.html; sourceTree = "<group>"; };
+		2271D9901012C06D00749D9A /* project-purge.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "project-purge.html"; sourceTree = "<group>"; };
+		227A47051018186B0013EACE /* libcurl.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcurl.dylib; path = /usr/lib/libcurl.dylib; sourceTree = "<absolute>"; };
+		229F36090FAA34E3003A1626 /* Response.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Response.h; sourceTree = "<group>"; };
+		229F360A0FAA34E3003A1626 /* Response.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Response.cpp; sourceTree = "<group>"; };
+		22D30BE10FA78F09005DE0D9 /* Request.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Request.h; sourceTree = "<group>"; };
+		22D30BE20FA78F53005DE0D9 /* Request.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Request.cpp; sourceTree = "<group>"; };
+		22DB7C5D101A5CC800BEEB52 /* OpenID.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenID.h; sourceTree = "<group>"; };
+		22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = OpenID.cpp; sourceTree = "<group>"; };
+		22ED3BBF0FB8704A004E2511 /* Controller.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Controller.h; sourceTree = "<group>"; };
+		22ED3C110FB8F99C004E2511 /* Seed.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Seed.h; sourceTree = "<group>"; };
+		22ED3CB90FB9210C004E2511 /* project-list.html */ = {isa = PBXFileReference; explicitFileType = text.html; fileEncoding = 4; path = "project-list.html"; sourceTree = "<group>"; };
+		22ED3CFA0FBA00C9004E2511 /* backlog-list.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "backlog-list.html"; sourceTree = "<group>"; };
+		22ED3CFB0FBA00C9004E2511 /* project-edit.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "project-edit.html"; sourceTree = "<group>"; };
+		8DD76F6C0486A84900D96B5E /* logjammin */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = logjammin; sourceTree = BUILT_PRODUCTS_DIR; };
+		C6859E8B029090EE04C91782 /* logjammin.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = logjammin.1; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		8DD76F660486A84900D96B5E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				220AD6C30FA1FFD400C604BE /* libtokyocabinet.a in Frameworks */,
+				221B34460FA8995D009AB597 /* liblua.a in Frameworks */,
+				2202B2530FFE831500B6FCEC /* libtokyodystopia.a in Frameworks */,
+				227A47061018186B0013EACE /* libcurl.dylib in Frameworks */,
+				222B665D101E46F300F45B04 /* libcrypto.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		08FB7794FE84155DC02AAC07 /* logjammin */ = {
+			isa = PBXGroup;
+			children = (
+				227A47051018186B0013EACE /* libcurl.dylib */,
+				2202B2520FFE831500B6FCEC /* libtokyodystopia.a */,
+				221B34450FA8995D009AB597 /* liblua.a */,
+				220AD6C20FA1FFD400C604BE /* libtokyocabinet.a */,
+				08FB7795FE84155DC02AAC07 /* Source */,
+				C6859E8C029090F304C91782 /* Documentation */,
+				1AB674ADFE9D54B511CA2CBB /* Products */,
+				222B665C101E46F300F45B04 /* libcrypto.dylib */,
+			);
+			name = logjammin;
+			sourceTree = "<group>";
+		};
+		08FB7795FE84155DC02AAC07 /* Source */ = {
+			isa = PBXGroup;
+			children = (
+				22ED3CB80FB920F7004E2511 /* Templates */,
+				22ED3BBE0FB8701A004E2511 /* Controller */,
+				22D30BE00FA78EF8005DE0D9 /* CGI */,
+				220AD7060FA233CB00C604BE /* Model */,
+				220AD6F30FA215F800C604BE /* Config Parser */,
+				08FB7796FE84155DC02AAC07 /* main.cpp */,
+			);
+			name = Source;
+			sourceTree = "<group>";
+		};
+		1AB674ADFE9D54B511CA2CBB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				8DD76F6C0486A84900D96B5E /* logjammin */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		220AD6F30FA215F800C604BE /* Config Parser */ = {
+			isa = PBXGroup;
+			children = (
+				220AD6F40FA215F800C604BE /* openprop.h */,
+				220AD6F50FA215F800C604BE /* openprop.cpp */,
+				220AD6F60FA215F800C604BE /* openprop_int.h */,
+				220AD6F70FA215F800C604BE /* parser.h */,
+				220AD6F80FA215F800C604BE /* parser.cpp */,
+			);
+			name = "Config Parser";
+			sourceTree = "<group>";
+		};
+		220AD7060FA233CB00C604BE /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				221B34820FA8C302009AB597 /* lunar.h */,
+				224046BF100521010005461A /* sha1.h */,
+				224046C0100521010005461A /* sha1.cpp */,
+				2202B2430FFE56C000B6FCEC /* Tokyo.h */,
+				220AD7070FA233E600C604BE /* Model.h */,
+				224046DA100597D90005461A /* Role.h */,
+				224046DB100597D90005461A /* Role.cpp */,
+				224046D5100595160005461A /* User.h */,
+				224046D6100595160005461A /* User.cpp */,
+				2202B35C0FFFA4D100B6FCEC /* Project.h */,
+				2202B35D0FFFA4D100B6FCEC /* Project.cpp */,
+				2202B3720FFFAAA200B6FCEC /* Backlog.h */,
+				2202B3730FFFAAA200B6FCEC /* Backlog.cpp */,
+			);
+			name = Model;
+			sourceTree = "<group>";
+		};
+		22D30BE00FA78EF8005DE0D9 /* CGI */ = {
+			isa = PBXGroup;
+			children = (
+				221B344A0FA89B99009AB597 /* ModuleCompilier.cpp */,
+				221B344B0FA89B99009AB597 /* ModuleCompilier.hpp */,
+				22D30BE10FA78F09005DE0D9 /* Request.h */,
+				22D30BE20FA78F53005DE0D9 /* Request.cpp */,
+				229F36090FAA34E3003A1626 /* Response.h */,
+				229F360A0FAA34E3003A1626 /* Response.cpp */,
+				22DB7C5D101A5CC800BEEB52 /* OpenID.h */,
+				22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */,
+			);
+			name = CGI;
+			sourceTree = "<group>";
+		};
+		22ED3BBE0FB8701A004E2511 /* Controller */ = {
+			isa = PBXGroup;
+			children = (
+				22ED3BBF0FB8704A004E2511 /* Controller.h */,
+				223D698310078F5800F79019 /* Controller.cpp */,
+				22ED3C110FB8F99C004E2511 /* Seed.h */,
+				221577CA100F38270020B133 /* ProjectController.h */,
+				221577CB100F38270020B133 /* ProjectController.cpp */,
+				2271D918101288A000749D9A /* BacklogController.h */,
+				2271D919101288A000749D9A /* BacklogController.cpp */,
+				2222BE34101E89D000CE52E6 /* UserController.h */,
+				2222BE35101E89D000CE52E6 /* UserController.cpp */,
+			);
+			name = Controller;
+			sourceTree = "<group>";
+		};
+		22ED3CB80FB920F7004E2511 /* Templates */ = {
+			isa = PBXGroup;
+			children = (
+				2271D98C1012C06D00749D9A /* error-404.html */,
+				2271D98D1012C06D00749D9A /* footer-auth.html */,
+				2271D98E1012C06D00749D9A /* footer-unauth.html */,
+				2271D98F1012C06D00749D9A /* login.html */,
+				22157781100EBAD60020B133 /* header-auth.html */,
+				2215778F100EBF150020B133 /* header-unauth.html */,
+				2238DF210FBDD47700842744 /* template.html */,
+				2238DF8C0FBE000100842744 /* backlog-edit.html */,
+				22ED3CFA0FBA00C9004E2511 /* backlog-list.html */,
+				22ED3CFB0FBA00C9004E2511 /* project-edit.html */,
+				22ED3CB90FB9210C004E2511 /* project-list.html */,
+				2271D9901012C06D00749D9A /* project-purge.html */,
+				2222BE49101F24D300CE52E6 /* user-edit.html */,
+				2222BE42101E8BEB00CE52E6 /* user-list.html */,
+			);
+			name = Templates;
+			sourceTree = "<group>";
+		};
+		C6859E8C029090F304C91782 /* Documentation */ = {
+			isa = PBXGroup;
+			children = (
+				C6859E8B029090EE04C91782 /* logjammin.1 */,
+			);
+			name = Documentation;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		8DD76F620486A84900D96B5E /* logjammin */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1DEB923108733DC60010E9CD /* Build configuration list for PBXNativeTarget "logjammin" */;
+			buildPhases = (
+				8DD76F640486A84900D96B5E /* Sources */,
+				8DD76F660486A84900D96B5E /* Frameworks */,
+				8DD76F690486A84900D96B5E /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = logjammin;
+			productInstallPath = "$(HOME)/bin";
+			productName = logjammin;
+			productReference = 8DD76F6C0486A84900D96B5E /* logjammin */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		08FB7793FE84155DC02AAC07 /* Project object */ = {
+			isa = PBXProject;
+			buildConfigurationList = 1DEB923508733DC60010E9CD /* Build configuration list for PBXProject "logjammin" */;
+			compatibilityVersion = "Xcode 3.1";
+			hasScannedForEncodings = 1;
+			mainGroup = 08FB7794FE84155DC02AAC07 /* logjammin */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				8DD76F620486A84900D96B5E /* logjammin */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		8DD76F640486A84900D96B5E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8DD76F650486A84900D96B5E /* main.cpp in Sources */,
+				220AD6F90FA215F800C604BE /* openprop.cpp in Sources */,
+				220AD6FA0FA215F800C604BE /* parser.cpp in Sources */,
+				22D30BE30FA78F53005DE0D9 /* Request.cpp in Sources */,
+				221B344D0FA89B99009AB597 /* ModuleCompilier.cpp in Sources */,
+				229F360B0FAA34E3003A1626 /* Response.cpp in Sources */,
+				2202B35E0FFFA4D100B6FCEC /* Project.cpp in Sources */,
+				2202B3740FFFAAA200B6FCEC /* Backlog.cpp in Sources */,
+				224046C1100521010005461A /* sha1.cpp in Sources */,
+				224046D7100595160005461A /* User.cpp in Sources */,
+				224046DC100597D90005461A /* Role.cpp in Sources */,
+				223D698410078F5800F79019 /* Controller.cpp in Sources */,
+				221577CC100F38270020B133 /* ProjectController.cpp in Sources */,
+				2271D91A101288A000749D9A /* BacklogController.cpp in Sources */,
+				22DB7C5F101A5CC800BEEB52 /* OpenID.cpp in Sources */,
+				2222BE36101E89D000CE52E6 /* UserController.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		1DEB923208733DC60010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_LINK_WITH_DYNAMIC_LIBRARIES = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"_GLIBCXX_DEBUG=1",
+					"_GLIBCXX_DEBUG_PEDANTIC=1",
+				);
+				HEADER_SEARCH_PATHS = (
+					/usr/local/include/,
+					/opt/local/include/,
+					/usr/include/,
+				);
+				INSTALL_PATH = /usr/local/bin;
+				LIBRARY_SEARCH_PATHS = (
+					/usr/local/lib/,
+					/opt/local/lib/,
+					/usr/lib/,
+				);
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = logjammin;
+				STANDARD_C_PLUS_PLUS_LIBRARY_TYPE = dynamic;
+			};
+			name = Debug;
+		};
+		1DEB923308733DC60010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_MODEL_TUNING = G5;
+				INSTALL_PATH = /usr/local/bin;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/opt/local/lib,
+					"\"$(SRCROOT)\"",
+				);
+				PRODUCT_NAME = logjammin;
+			};
+			name = Release;
+		};
+		1DEB923608733DC60010E9CD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PREBINDING = NO;
+				SDKROOT = macosx10.5;
+			};
+			name = Debug;
+		};
+		1DEB923708733DC60010E9CD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				GCC_C_LANGUAGE_STANDARD = c99;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = macosx10.5;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1DEB923108733DC60010E9CD /* Build configuration list for PBXNativeTarget "logjammin" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB923208733DC60010E9CD /* Debug */,
+				1DEB923308733DC60010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1DEB923508733DC60010E9CD /* Build configuration list for PBXProject "logjammin" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1DEB923608733DC60010E9CD /* Debug */,
+				1DEB923708733DC60010E9CD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 08FB7793FE84155DC02AAC07 /* Project object */;
+}

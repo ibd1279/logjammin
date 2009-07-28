@@ -1,0 +1,26 @@
+<?lc if request:has_attribute("_error") then ?><div class="error">${request:attribute("_error")}</div><?lc end ?>
+<form method="POST" action="${request:original_request_file()}">
+    <div>
+        <label for="name">Name</label>
+        <input name="name" value="${project:name()}" type="text" />
+    </div>
+    <div>
+        <label for="version">Versions</label>
+        <?lc for h, version in ipairs(project:versions()) do ?><input name="version" value="${version}" type="text" />
+        <?lc end ?>
+        <input name="version" value="" type="text" />
+    </div>
+    <div>
+        <label for="category">Categories</label>
+        <?lc for h, category in ipairs(project:categories()) do ?><input name="category" value="${category}" type="text" />
+        <?lc end ?>
+        <input name="category" value="" type="text" />
+    </div>
+    <div>
+        <input value="Save" type="submit" />
+    </div>
+</form>
+<?lc if project:pkey() > 0 then ?><div>
+    <a href="${project:pkey()}/project-purge">Delete</a>
+</div><?lc end ?>
+

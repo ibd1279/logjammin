@@ -1,0 +1,64 @@
+<?lc if request:has_attribute("_error") then ?><div class="error">${request:attribute("_error")}</div><?lc end ?>
+<h3>Editing task for ${backlog:project():name()} version ${backlog:version()}</h3>
+<form method="POST" action="${request:original_request_file()}">
+    <input type="hidden" name="project" value="${backlog:project():pkey()}" />
+    <input type="hidden" name="version" value="${backlog:version()}" />
+    <fieldset>
+        <legend>Summary</legend>
+        <div>
+            <label>Category
+                <select name="category">
+                    <?lc for h, c in ipairs(backlog:project():categories()) do ?><option${backlog:category() == c and " selected" or ""}>${c}</option>
+                    <?lc end ?>
+                </select>
+            </label>
+        </div>
+        <div>
+            <label>Disposition
+                <select name="disposition">
+                    <option value="100-UNDEFINED"${"100-UNDEFINED" == backlog:disposition() and " selected" or ""}>Undefined</option>
+                    <option value="200-DEFINED"${"200-DEFINED" == backlog:disposition() and " selected" or ""}>Defined</option>
+                    <option value="300-ASSIGNED"${"300-ASSIGNED" == backlog:disposition() and " selected" or ""}>Assigned</option>
+                    <option value="400-COMPLETED"${"400-COMPLETED" == backlog:disposition() and " selected" or ""}>Completed</option>
+                    <option value="500-CLOSED"${"500-CLOSED" == backlog:disposition() and " selected" or ""}>Closed</option>
+                </select>
+            </label>
+        </div>
+        <div>
+            <label>Estimate (hours)
+                <input type="text" name="estimate" value="${backlog:estimate()}" />
+            </label>
+        </div>
+        <div>
+            <label>Tags
+                <?lc for h, tag in ipairs(backlog:tags()) do ?><input name="tags" value="${tag}" type="text" />
+                <?lc end ?>
+                <input name="tags" type="text" />
+            </label>
+        </div>
+        <div>
+            <input value="Save" type="submit" />
+        </div>
+    </fieldset>
+    <fieldset>
+        <legend>Details</legend>
+        <div>
+            <label><div>Story</div>
+                <textarea name="story" cols="60" rows="8">${backlog:story()}</textarea>
+            </label>
+        </div>
+        <div>
+            <input value="Save" type="submit" />
+        </div>
+        <div>
+            <label><div>Comments</div>
+                <?lc for h, c in ipairs(backlog:comments()) do ?><p>${c}</p>
+                <?lc end ?>
+                <textarea name="comments" cols="60" rows="8"></textarea>
+            </label>
+        </div>
+        <div>
+            <input value="Save" type="submit" />
+        </div>
+    </fieldset>
+</form>
