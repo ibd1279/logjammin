@@ -306,6 +306,7 @@
 			2222BFFC1020BE6400CE52E6 /* PBXTextBookmark */ = 2222BFFC1020BE6400CE52E6 /* PBXTextBookmark */;
 			2222BFFD1020BE6400CE52E6 /* PBXTextBookmark */ = 2222BFFD1020BE6400CE52E6 /* PBXTextBookmark */;
 			2222BFFE1020BEBB00CE52E6 /* PBXTextBookmark */ = 2222BFFE1020BEBB00CE52E6 /* PBXTextBookmark */;
+			2222C0071020C67800CE52E6 /* PBXTextBookmark */ = 2222C0071020C67800CE52E6 /* PBXTextBookmark */;
 			222B65C1101C0A2F00F45B04 = 222B65C1101C0A2F00F45B04 /* PBXTextBookmark */;
 			222B65CB101C116E00F45B04 = 222B65CB101C116E00F45B04 /* PBXTextBookmark */;
 			222B65CC101C116E00F45B04 = 222B65CC101C116E00F45B04 /* PBXTextBookmark */;
@@ -568,7 +569,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 470";
 		rLen = 0;
-		rLoc = 26697;
+		rLoc = 19490;
 		rType = 0;
 		vrLen = 2070;
 		vrLoc = 20463;
@@ -578,7 +579,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 498";
 		rLen = 0;
-		rLoc = 27707;
+		rLoc = 25550;
 		rType = 0;
 		vrLen = 1912;
 		vrLoc = 21066;
@@ -588,7 +589,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 494";
 		rLen = 0;
-		rLoc = 27577;
+		rLoc = 25420;
 		rType = 0;
 		vrLen = 1932;
 		vrLoc = 20929;
@@ -598,7 +599,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 505";
 		rLen = 0;
-		rLoc = 28970;
+		rLoc = 26737;
 		rType = 0;
 		vrLen = 1806;
 		vrLoc = 21426;
@@ -608,7 +609,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 38";
 		rLen = 0;
-		rLoc = 1630;
+		rLoc = 1650;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -618,7 +619,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 498";
 		rLen = 0;
-		rLoc = 27747;
+		rLoc = 25590;
 		rType = 0;
 		vrLen = 1932;
 		vrLoc = 20929;
@@ -628,7 +629,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 38";
 		rLen = 0;
-		rLoc = 1630;
+		rLoc = 1650;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -638,7 +639,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 505";
 		rLen = 0;
-		rLoc = 28970;
+		rLoc = 26737;
 		rType = 0;
 		vrLen = 1806;
 		vrLoc = 21426;
@@ -648,7 +649,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 38";
 		rLen = 0;
-		rLoc = 1630;
+		rLoc = 1650;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -658,7 +659,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 41";
 		rLen = 0;
-		rLoc = 1859;
+		rLoc = 1879;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -668,7 +669,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 530";
 		rLen = 0;
-		rLoc = 29334;
+		rLoc = 27101;
 		rType = 0;
 		vrLen = 1896;
 		vrLoc = 22211;
@@ -678,7 +679,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 38";
 		rLen = 0;
-		rLoc = 1630;
+		rLoc = 1650;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -688,7 +689,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 505";
 		rLen = 0;
-		rLoc = 28970;
+		rLoc = 26737;
 		rType = 0;
 		vrLen = 1801;
 		vrLoc = 21518;
@@ -698,7 +699,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 38";
 		rLen = 0;
-		rLoc = 1630;
+		rLoc = 1650;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -708,7 +709,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 507";
 		rLen = 0;
-		rLoc = 28970;
+		rLoc = 26737;
 		rType = 0;
 		vrLen = 1868;
 		vrLoc = 21518;
@@ -718,7 +719,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 38";
 		rLen = 0;
-		rLoc = 1630;
+		rLoc = 1650;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -728,7 +729,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 507";
 		rLen = 0;
-		rLoc = 28970;
+		rLoc = 26737;
 		rType = 0;
 		vrLen = 1868;
 		vrLoc = 21518;
@@ -738,7 +739,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 38";
 		rLen = 0;
-		rLoc = 1630;
+		rLoc = 1650;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -748,7 +749,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 509";
 		rLen = 0;
-		rLoc = 28970;
+		rLoc = 26737;
 		rType = 0;
 		vrLen = 1970;
 		vrLoc = 21501;
@@ -758,7 +759,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 38";
 		rLen = 0;
-		rLoc = 1630;
+		rLoc = 1650;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -768,7 +769,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 511";
 		rLen = 0;
-		rLoc = 28970;
+		rLoc = 26737;
 		rType = 0;
 		vrLen = 1951;
 		vrLoc = 21607;
@@ -778,7 +779,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 38";
 		rLen = 0;
-		rLoc = 1630;
+		rLoc = 1650;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -788,7 +789,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 513";
 		rLen = 0;
-		rLoc = 28970;
+		rLoc = 26737;
 		rType = 0;
 		vrLen = 1996;
 		vrLoc = 21607;
@@ -798,7 +799,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 38";
 		rLen = 0;
-		rLoc = 1630;
+		rLoc = 1650;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -808,7 +809,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 515";
 		rLen = 0;
-		rLoc = 28970;
+		rLoc = 26737;
 		rType = 0;
 		vrLen = 2035;
 		vrLoc = 21607;
@@ -818,7 +819,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 38";
 		rLen = 0;
-		rLoc = 1630;
+		rLoc = 1650;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -828,7 +829,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 517";
 		rLen = 0;
-		rLoc = 28970;
+		rLoc = 26737;
 		rType = 0;
 		vrLen = 2098;
 		vrLoc = 21607;
@@ -838,7 +839,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 38";
 		rLen = 0;
-		rLoc = 1630;
+		rLoc = 1650;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -848,7 +849,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 530";
 		rLen = 0;
-		rLoc = 29334;
+		rLoc = 27101;
 		rType = 0;
 		vrLen = 1889;
 		vrLoc = 22211;
@@ -858,7 +859,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 38";
 		rLen = 0;
-		rLoc = 1630;
+		rLoc = 1650;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -868,7 +869,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 530";
 		rLen = 0;
-		rLoc = 29334;
+		rLoc = 27101;
 		rType = 0;
 		vrLen = 1889;
 		vrLoc = 22211;
@@ -878,7 +879,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 38";
 		rLen = 0;
-		rLoc = 1630;
+		rLoc = 1650;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -888,7 +889,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 529";
 		rLen = 0;
-		rLoc = 29219;
+		rLoc = 26986;
 		rType = 0;
 		vrLen = 1889;
 		vrLoc = 22211;
@@ -898,7 +899,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 41";
 		rLen = 0;
-		rLoc = 1859;
+		rLoc = 1879;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -908,7 +909,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 530";
 		rLen = 0;
-		rLoc = 29334;
+		rLoc = 27101;
 		rType = 0;
 		vrLen = 1896;
 		vrLoc = 22211;
@@ -918,7 +919,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 41";
 		rLen = 0;
-		rLoc = 1859;
+		rLoc = 1879;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -928,7 +929,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 530";
 		rLen = 0;
-		rLoc = 29334;
+		rLoc = 27101;
 		rType = 0;
 		vrLen = 1896;
 		vrLoc = 22211;
@@ -938,7 +939,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 41";
 		rLen = 0;
-		rLoc = 1859;
+		rLoc = 1879;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -948,7 +949,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 534";
 		rLen = 0;
-		rLoc = 29299;
+		rLoc = 27066;
 		rType = 0;
 		vrLen = 1873;
 		vrLoc = 22395;
@@ -958,7 +959,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 30";
 		rLen = 0;
-		rLoc = 1170;
+		rLoc = 1190;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -968,7 +969,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 514";
 		rLen = 0;
-		rLoc = 28429;
+		rLoc = 26272;
 		rType = 0;
 		vrLen = 1873;
 		vrLoc = 22395;
@@ -978,7 +979,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 534";
 		rLen = 0;
-		rLoc = 29299;
+		rLoc = 27066;
 		rType = 0;
 		vrLen = 1873;
 		vrLoc = 22395;
@@ -988,7 +989,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 30";
 		rLen = 0;
-		rLoc = 1170;
+		rLoc = 1190;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -998,7 +999,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 514";
 		rLen = 0;
-		rLoc = 28429;
+		rLoc = 26272;
 		rType = 0;
 		vrLen = 1873;
 		vrLoc = 22395;
@@ -1008,7 +1009,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 30";
 		rLen = 0;
-		rLoc = 1170;
+		rLoc = 1190;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -1018,7 +1019,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 365";
 		rLen = 0;
-		rLoc = 20552;
+		rLoc = 5520;
 		rType = 0;
 		vrLen = 2152;
 		vrLoc = 16209;
@@ -1121,18 +1122,18 @@
 	};
 	2222BE7D101FA32100CE52E6 /* OpenIDConsumer.h */ = {
 		uiCtxt = {
-			sepNavIntBoundsRect = "{{0, 0}, {811, 168}}";
-			sepNavSelRange = "{113, 54}";
-			sepNavVisRange = "{34, 430}";
+			sepNavIntBoundsRect = "{{0, 0}, {609, 712}}";
+			sepNavSelRange = "{79, 23}";
+			sepNavVisRange = "{0, 467}";
 			sepNavWindowFrame = "{{38, 12}, {668, 840}}";
 		};
 	};
 	2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */ = {
 		uiCtxt = {
 			sepNavIntBoundsRect = "{{0, 0}, {654, 3290}}";
-			sepNavSelRange = "{7523, 0}";
-			sepNavVisRange = "{6573, 1800}";
-			sepNavWindowFrame = "{{705, -8}, {668, 840}}";
+			sepNavSelRange = "{9203, 0}";
+			sepNavVisRange = "{6573, 1729}";
+			sepNavWindowFrame = "{{38, 12}, {668, 840}}";
 		};
 	};
 	2222BEA5101FB14700CE52E6 /* PBXTextBookmark */ = {
@@ -1157,8 +1158,8 @@
 		isa = PBXTextBookmark;
 		comments = "error: call of overloaded 'AssociationWithPkey(const openid_1_1::AssociatedRelayProvider::Association*&)' is ambiguous";
 		fRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */;
-		rLen = 1;
-		rLoc = 221;
+		rLen = 0;
+		rLoc = 8;
 		rType = 1;
 	};
 	2222BEAD101FB2E900CE52E6 /* PBXTextBookmark */ = {
@@ -1286,7 +1287,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 460";
 		rLen = 0;
-		rLoc = 25048;
+		rLoc = 19490;
 		rType = 0;
 		vrLen = 1989;
 		vrLoc = 16581;
@@ -1346,7 +1347,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 563";
 		rLen = 0;
-		rLoc = 29381;
+		rLoc = 27148;
 		rType = 0;
 		vrLen = 1853;
 		vrLoc = 23695;
@@ -1406,7 +1407,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 451";
 		rLen = 0;
-		rLoc = 24501;
+		rLoc = 19490;
 		rType = 0;
 		vrLen = 2301;
 		vrLoc = 19916;
@@ -1456,7 +1457,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 451";
 		rLen = 0;
-		rLoc = 24301;
+		rLoc = 19490;
 		rType = 0;
 		vrLen = 2277;
 		vrLoc = 19916;
@@ -1506,7 +1507,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 451";
 		rLen = 0;
-		rLoc = 24301;
+		rLoc = 19490;
 		rType = 0;
 		vrLen = 2277;
 		vrLoc = 19916;
@@ -1516,7 +1517,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 555";
 		rLen = 0;
-		rLoc = 28843;
+		rLoc = 26686;
 		rType = 0;
 		vrLen = 1986;
 		vrLoc = 23875;
@@ -1536,7 +1537,7 @@
 		fRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */;
 		name = "OpenIDConsumer.cpp: 173";
 		rLen = 0;
-		rLoc = 7523;
+		rLoc = 345;
 		rType = 0;
 		vrLen = 1800;
 		vrLoc = 6573;
@@ -1576,7 +1577,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 557";
 		rLen = 0;
-		rLoc = 28970;
+		rLoc = 26737;
 		rType = 0;
 		vrLen = 2010;
 		vrLoc = 23875;
@@ -1586,7 +1587,7 @@
 		fRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */;
 		name = "OpenIDConsumer.cpp: 173";
 		rLen = 0;
-		rLoc = 7523;
+		rLoc = 345;
 		rType = 0;
 		vrLen = 1800;
 		vrLoc = 6573;
@@ -1626,7 +1627,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 555";
 		rLen = 0;
-		rLoc = 28843;
+		rLoc = 26686;
 		rType = 0;
 		vrLen = 2006;
 		vrLoc = 23875;
@@ -1636,7 +1637,7 @@
 		fRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */;
 		name = "OpenIDConsumer.cpp: 173";
 		rLen = 0;
-		rLoc = 7523;
+		rLoc = 345;
 		rType = 0;
 		vrLen = 1800;
 		vrLoc = 6573;
@@ -1676,7 +1677,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 557";
 		rLen = 0;
-		rLoc = 28970;
+		rLoc = 26737;
 		rType = 0;
 		vrLen = 2006;
 		vrLoc = 23875;
@@ -1686,7 +1687,7 @@
 		fRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */;
 		name = "OpenIDConsumer.cpp: 173";
 		rLen = 0;
-		rLoc = 7523;
+		rLoc = 345;
 		rType = 0;
 		vrLen = 1800;
 		vrLoc = 6573;
@@ -1726,7 +1727,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 557";
 		rLen = 0;
-		rLoc = 28970;
+		rLoc = 26737;
 		rType = 0;
 		vrLen = 2003;
 		vrLoc = 23875;
@@ -1736,7 +1737,7 @@
 		fRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */;
 		name = "OpenIDConsumer.cpp: 173";
 		rLen = 0;
-		rLoc = 7523;
+		rLoc = 345;
 		rType = 0;
 		vrLen = 1800;
 		vrLoc = 6573;
@@ -1786,7 +1787,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 557";
 		rLen = 0;
-		rLoc = 28970;
+		rLoc = 26737;
 		rType = 0;
 		vrLen = 2003;
 		vrLoc = 23875;
@@ -1796,7 +1797,7 @@
 		fRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */;
 		name = "OpenIDConsumer.cpp: 173";
 		rLen = 0;
-		rLoc = 7523;
+		rLoc = 345;
 		rType = 0;
 		vrLen = 1800;
 		vrLoc = 6573;
@@ -1836,7 +1837,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 557";
 		rLen = 0;
-		rLoc = 28970;
+		rLoc = 26737;
 		rType = 0;
 		vrLen = 2003;
 		vrLoc = 23875;
@@ -1846,7 +1847,7 @@
 		fRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */;
 		name = "OpenIDConsumer.cpp: 173";
 		rLen = 0;
-		rLoc = 7523;
+		rLoc = 345;
 		rType = 0;
 		vrLen = 1800;
 		vrLoc = 6573;
@@ -1900,7 +1901,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 557";
 		rLen = 0;
-		rLoc = 28970;
+		rLoc = 26737;
 		rType = 0;
 		vrLen = 2003;
 		vrLoc = 23875;
@@ -1910,7 +1911,7 @@
 		fRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */;
 		name = "OpenIDConsumer.cpp: 173";
 		rLen = 0;
-		rLoc = 7523;
+		rLoc = 345;
 		rType = 0;
 		vrLen = 1800;
 		vrLoc = 6573;
@@ -1960,7 +1961,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 557";
 		rLen = 0;
-		rLoc = 28970;
+		rLoc = 26737;
 		rType = 0;
 		vrLen = 2003;
 		vrLoc = 23875;
@@ -1970,7 +1971,7 @@
 		fRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */;
 		name = "OpenIDConsumer.cpp: 173";
 		rLen = 0;
-		rLoc = 7523;
+		rLoc = 345;
 		rType = 0;
 		vrLen = 1800;
 		vrLoc = 6573;
@@ -2020,7 +2021,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 557";
 		rLen = 0;
-		rLoc = 28970;
+		rLoc = 26737;
 		rType = 0;
 		vrLen = 2003;
 		vrLoc = 23875;
@@ -2030,7 +2031,7 @@
 		fRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */;
 		name = "OpenIDConsumer.cpp: 173";
 		rLen = 0;
-		rLoc = 7523;
+		rLoc = 345;
 		rType = 0;
 		vrLen = 1800;
 		vrLoc = 6573;
@@ -2080,7 +2081,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 557";
 		rLen = 0;
-		rLoc = 28970;
+		rLoc = 26737;
 		rType = 0;
 		vrLen = 2003;
 		vrLoc = 23875;
@@ -2090,7 +2091,7 @@
 		fRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */;
 		name = "OpenIDConsumer.cpp: 173";
 		rLen = 0;
-		rLoc = 7523;
+		rLoc = 345;
 		rType = 0;
 		vrLen = 1800;
 		vrLoc = 6573;
@@ -2140,7 +2141,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 557";
 		rLen = 0;
-		rLoc = 28970;
+		rLoc = 26737;
 		rType = 0;
 		vrLen = 2003;
 		vrLoc = 23875;
@@ -2150,7 +2151,7 @@
 		fRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */;
 		name = "OpenIDConsumer.cpp: 173";
 		rLen = 0;
-		rLoc = 7523;
+		rLoc = 345;
 		rType = 0;
 		vrLen = 1800;
 		vrLoc = 6573;
@@ -2180,7 +2181,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 557";
 		rLen = 0;
-		rLoc = 28970;
+		rLoc = 26737;
 		rType = 0;
 		vrLen = 2003;
 		vrLoc = 23875;
@@ -2190,7 +2191,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 50";
 		rLen = 0;
-		rLoc = 3904;
+		rLoc = 3349;
 		rType = 0;
 		vrLen = 2039;
 		vrLoc = 436;
@@ -2220,7 +2221,7 @@
 		fRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */;
 		name = "OpenIDConsumer.cpp: 173";
 		rLen = 0;
-		rLoc = 7523;
+		rLoc = 345;
 		rType = 0;
 		vrLen = 1800;
 		vrLoc = 6573;
@@ -2250,7 +2251,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 51";
 		rLen = 0;
-		rLoc = 1859;
+		rLoc = 1304;
 		rType = 0;
 		vrLen = 2073;
 		vrLoc = 436;
@@ -2280,7 +2281,7 @@
 		fRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */;
 		name = "OpenIDConsumer.cpp: 173";
 		rLen = 0;
-		rLoc = 7523;
+		rLoc = 345;
 		rType = 0;
 		vrLen = 1800;
 		vrLoc = 6573;
@@ -2310,7 +2311,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 52";
 		rLen = 0;
-		rLoc = 3894;
+		rLoc = 3339;
 		rType = 0;
 		vrLen = 2129;
 		vrLoc = 436;
@@ -2340,7 +2341,7 @@
 		fRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */;
 		name = "OpenIDConsumer.cpp: 173";
 		rLen = 0;
-		rLoc = 7523;
+		rLoc = 345;
 		rType = 0;
 		vrLen = 1800;
 		vrLoc = 6573;
@@ -2370,7 +2371,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 72";
 		rLen = 0;
-		rLoc = 2937;
+		rLoc = 2382;
 		rType = 0;
 		vrLen = 2046;
 		vrLoc = 1727;
@@ -2400,7 +2401,7 @@
 		fRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */;
 		name = "OpenIDConsumer.cpp: 173";
 		rLen = 0;
-		rLoc = 7523;
+		rLoc = 345;
 		rType = 0;
 		vrLen = 1800;
 		vrLoc = 6573;
@@ -2430,7 +2431,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 66";
 		rLen = 0;
-		rLoc = 2522;
+		rLoc = 1967;
 		rType = 0;
 		vrLen = 2105;
 		vrLoc = 2576;
@@ -2460,7 +2461,7 @@
 		fRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */;
 		name = "OpenIDConsumer.cpp: 173";
 		rLen = 0;
-		rLoc = 7523;
+		rLoc = 345;
 		rType = 0;
 		vrLen = 1800;
 		vrLoc = 6573;
@@ -2490,7 +2491,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 114";
 		rLen = 0;
-		rLoc = 4543;
+		rLoc = 3654;
 		rType = 0;
 		vrLen = 1794;
 		vrLoc = 3134;
@@ -2520,7 +2521,7 @@
 		fRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */;
 		name = "OpenIDConsumer.cpp: 173";
 		rLen = 0;
-		rLoc = 7523;
+		rLoc = 345;
 		rType = 0;
 		vrLen = 1800;
 		vrLoc = 6573;
@@ -2550,7 +2551,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 119";
 		rLen = 0;
-		rLoc = 4808;
+		rLoc = 3919;
 		rType = 0;
 		vrLen = 1928;
 		vrLoc = 3990;
@@ -2580,7 +2581,7 @@
 		fRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */;
 		name = "OpenIDConsumer.cpp: 173";
 		rLen = 0;
-		rLoc = 7523;
+		rLoc = 345;
 		rType = 0;
 		vrLen = 1800;
 		vrLoc = 6573;
@@ -2610,7 +2611,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 131";
 		rLen = 0;
-		rLoc = 5311;
+		rLoc = 4422;
 		rType = 0;
 		vrLen = 2036;
 		vrLoc = 3990;
@@ -2640,7 +2641,7 @@
 		fRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */;
 		name = "OpenIDConsumer.cpp: 173";
 		rLen = 0;
-		rLoc = 7523;
+		rLoc = 345;
 		rType = 0;
 		vrLen = 1800;
 		vrLoc = 6573;
@@ -2670,7 +2671,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 135";
 		rLen = 0;
-		rLoc = 5396;
+		rLoc = 4507;
 		rType = 0;
 		vrLen = 1978;
 		vrLoc = 3990;
@@ -2700,7 +2701,7 @@
 		fRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */;
 		name = "OpenIDConsumer.cpp: 173";
 		rLen = 0;
-		rLoc = 7523;
+		rLoc = 345;
 		rType = 0;
 		vrLen = 1800;
 		vrLoc = 6573;
@@ -2740,7 +2741,7 @@
 		fRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */;
 		name = "OpenIDConsumer.cpp: 173";
 		rLen = 0;
-		rLoc = 7523;
+		rLoc = 345;
 		rType = 0;
 		vrLen = 1800;
 		vrLoc = 6573;
@@ -2780,7 +2781,7 @@
 		fRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */;
 		name = "OpenIDConsumer.cpp: 173";
 		rLen = 0;
-		rLoc = 7523;
+		rLoc = 345;
 		rType = 0;
 		vrLen = 1800;
 		vrLoc = 6573;
@@ -2814,7 +2815,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 135";
 		rLen = 0;
-		rLoc = 5396;
+		rLoc = 4507;
 		rType = 0;
 		vrLen = 2189;
 		vrLoc = 1681;
@@ -2854,7 +2855,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 52";
 		rLen = 0;
-		rLoc = 1859;
+		rLoc = 1304;
 		rType = 0;
 		vrLen = 2203;
 		vrLoc = 1658;
@@ -2864,7 +2865,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 66";
 		rLen = 0;
-		rLoc = 2439;
+		rLoc = 1884;
 		rType = 0;
 		vrLen = 2358;
 		vrLoc = 1928;
@@ -2904,7 +2905,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 54";
 		rLen = 0;
-		rLoc = 1882;
+		rLoc = 1327;
 		rType = 0;
 		vrLen = 2377;
 		vrLoc = 1437;
@@ -2944,7 +2945,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 59";
 		rLen = 0;
-		rLoc = 2140;
+		rLoc = 1585;
 		rType = 0;
 		vrLen = 2437;
 		vrLoc = 1437;
@@ -2984,7 +2985,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 54";
 		rLen = 0;
-		rLoc = 1960;
+		rLoc = 1405;
 		rType = 0;
 		vrLen = 2440;
 		vrLoc = 1437;
@@ -3024,7 +3025,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 138";
 		rLen = 0;
-		rLoc = 5311;
+		rLoc = 4422;
 		rType = 0;
 		vrLen = 2021;
 		vrLoc = 4276;
@@ -3064,7 +3065,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 53";
 		rLen = 0;
-		rLoc = 1859;
+		rLoc = 1304;
 		rType = 0;
 		vrLen = 2304;
 		vrLoc = 1774;
@@ -3104,7 +3105,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 53";
 		rLen = 0;
-		rLoc = 1859;
+		rLoc = 1304;
 		rType = 0;
 		vrLen = 2304;
 		vrLoc = 1774;
@@ -3385,12 +3386,22 @@
 		vrLen = 1326;
 		vrLoc = 328;
 	};
+	2222C0071020C67800CE52E6 /* PBXTextBookmark */ = {
+		isa = PBXTextBookmark;
+		fRef = 08FB7796FE84155DC02AAC07 /* main.cpp */;
+		name = "main.cpp: 36";
+		rLen = 0;
+		rLoc = 1143;
+		rType = 0;
+		vrLen = 1326;
+		vrLoc = 328;
+	};
 	222B65C1101C0A2F00F45B04 /* PBXTextBookmark */ = {
 		isa = PBXTextBookmark;
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 237";
 		rLen = 0;
-		rLoc = 17669;
+		rLoc = 5520;
 		rType = 0;
 		vrLen = 2018;
 		vrLoc = 11409;
@@ -3400,7 +3411,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 18";
 		rLen = 0;
-		rLoc = 734;
+		rLoc = 754;
 		rType = 0;
 		vrLen = 1538;
 		vrLoc = 0;
@@ -3410,7 +3421,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 237";
 		rLen = 0;
-		rLoc = 17669;
+		rLoc = 5520;
 		rType = 0;
 		vrLen = 1895;
 		vrLoc = 1721;
@@ -3420,7 +3431,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 18";
 		rLen = 0;
-		rLoc = 734;
+		rLoc = 754;
 		rType = 0;
 		vrLen = 1538;
 		vrLoc = 0;
@@ -3430,7 +3441,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 34";
 		rLen = 0;
-		rLoc = 6525;
+		rLoc = 5520;
 		rType = 0;
 		vrLen = 2168;
 		vrLoc = 130;
@@ -3440,7 +3451,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 15";
 		rLen = 0;
-		rLoc = 597;
+		rLoc = 617;
 		rType = 0;
 		vrLen = 1815;
 		vrLoc = 0;
@@ -3450,7 +3461,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 34";
 		rLen = 0;
-		rLoc = 6525;
+		rLoc = 5520;
 		rType = 0;
 		vrLen = 2125;
 		vrLoc = 130;
@@ -3460,7 +3471,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 15";
 		rLen = 0;
-		rLoc = 597;
+		rLoc = 617;
 		rType = 0;
 		vrLen = 1816;
 		vrLoc = 0;
@@ -3470,7 +3481,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 264";
 		rLen = 0;
-		rLoc = 18622;
+		rLoc = 5520;
 		rType = 0;
 		vrLen = 1961;
 		vrLoc = 12444;
@@ -3480,7 +3491,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 25";
 		rLen = 23;
-		rLoc = 919;
+		rLoc = 939;
 		rType = 0;
 		vrLen = 1732;
 		vrLoc = 0;
@@ -3490,7 +3501,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 312";
 		rLen = 0;
-		rLoc = 20579;
+		rLoc = 5520;
 		rType = 0;
 		vrLen = 1815;
 		vrLoc = 13382;
@@ -3500,7 +3511,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 27";
 		rLen = 23;
-		rLoc = 1191;
+		rLoc = 1211;
 		rType = 0;
 		vrLen = 1732;
 		vrLoc = 0;
@@ -3510,7 +3521,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 314";
 		rLen = 0;
-		rLoc = 29388;
+		rLoc = 27155;
 		rType = 0;
 		vrLen = 1943;
 		vrLoc = 13331;
@@ -3520,7 +3531,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 27";
 		rLen = 23;
-		rLoc = 1191;
+		rLoc = 1211;
 		rType = 0;
 		vrLen = 1732;
 		vrLoc = 0;
@@ -3530,7 +3541,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 316";
 		rLen = 0;
-		rLoc = 29388;
+		rLoc = 27155;
 		rType = 0;
 		vrLen = 1857;
 		vrLoc = 13524;
@@ -3540,7 +3551,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 30";
 		rLen = 81;
-		rLoc = 1409;
+		rLoc = 1429;
 		rType = 0;
 		vrLen = 1732;
 		vrLoc = 0;
@@ -3550,7 +3561,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 318";
 		rLen = 0;
-		rLoc = 29389;
+		rLoc = 27156;
 		rType = 0;
 		vrLen = 1939;
 		vrLoc = 13560;
@@ -3560,7 +3571,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 32";
 		rLen = 25;
-		rLoc = 1605;
+		rLoc = 1625;
 		rType = 0;
 		vrLen = 1732;
 		vrLoc = 0;
@@ -3570,7 +3581,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 322";
 		rLen = 0;
-		rLoc = 29389;
+		rLoc = 27156;
 		rType = 0;
 		vrLen = 1802;
 		vrLoc = 13763;
@@ -3580,7 +3591,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 33";
 		rLen = 0;
-		rLoc = 1651;
+		rLoc = 1671;
 		rType = 0;
 		vrLen = 1732;
 		vrLoc = 0;
@@ -3590,7 +3601,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 349";
 		rLen = 0;
-		rLoc = 21945;
+		rLoc = 5520;
 		rType = 0;
 		vrLen = 1882;
 		vrLoc = 14804;
@@ -3600,7 +3611,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 33";
 		rLen = 0;
-		rLoc = 1660;
+		rLoc = 1680;
 		rType = 0;
 		vrLen = 1726;
 		vrLoc = 0;
@@ -3610,7 +3621,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 316";
 		rLen = 0;
-		rLoc = 21102;
+		rLoc = 5520;
 		rType = 0;
 		vrLen = 1924;
 		vrLoc = 14804;
@@ -3620,7 +3631,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 33";
 		rLen = 0;
-		rLoc = 1660;
+		rLoc = 1680;
 		rType = 0;
 		vrLen = 1726;
 		vrLoc = 0;
@@ -3630,7 +3641,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 316";
 		rLen = 0;
-		rLoc = 21102;
+		rLoc = 5520;
 		rType = 0;
 		vrLen = 1908;
 		vrLoc = 14676;
@@ -3640,7 +3651,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 33";
 		rLen = 0;
-		rLoc = 1660;
+		rLoc = 1680;
 		rType = 0;
 		vrLen = 1726;
 		vrLoc = 0;
@@ -3650,7 +3661,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 318";
 		rLen = 0;
-		rLoc = 21102;
+		rLoc = 5520;
 		rType = 0;
 		vrLen = 1893;
 		vrLoc = 14676;
@@ -3660,7 +3671,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 33";
 		rLen = 0;
-		rLoc = 1660;
+		rLoc = 1680;
 		rType = 0;
 		vrLen = 1726;
 		vrLoc = 0;
@@ -3670,7 +3681,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 318";
 		rLen = 0;
-		rLoc = 21102;
+		rLoc = 5520;
 		rType = 0;
 		vrLen = 1905;
 		vrLoc = 14676;
@@ -3680,7 +3691,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 32";
 		rLen = 0;
-		rLoc = 1628;
+		rLoc = 1648;
 		rType = 0;
 		vrLen = 1726;
 		vrLoc = 0;
@@ -3690,7 +3701,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 318";
 		rLen = 0;
-		rLoc = 21102;
+		rLoc = 5520;
 		rType = 0;
 		vrLen = 1905;
 		vrLoc = 14676;
@@ -3700,7 +3711,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 32";
 		rLen = 0;
-		rLoc = 1618;
+		rLoc = 1638;
 		rType = 0;
 		vrLen = 1734;
 		vrLoc = 0;
@@ -3710,7 +3721,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 367";
 		rLen = 0;
-		rLoc = 29389;
+		rLoc = 27156;
 		rType = 0;
 		vrLen = 1656;
 		vrLoc = 15779;
@@ -3720,7 +3731,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 32";
 		rLen = 0;
-		rLoc = 1618;
+		rLoc = 1638;
 		rType = 0;
 		vrLen = 1734;
 		vrLoc = 0;
@@ -3730,7 +3741,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 341";
 		rLen = 0;
-		rLoc = 29389;
+		rLoc = 27156;
 		rType = 0;
 		vrLen = 1873;
 		vrLoc = 15560;
@@ -3740,7 +3751,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 32";
 		rLen = 0;
-		rLoc = 1574;
+		rLoc = 1594;
 		rType = 0;
 		vrLen = 1734;
 		vrLoc = 0;
@@ -3750,7 +3761,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 341";
 		rLen = 0;
-		rLoc = 29389;
+		rLoc = 27156;
 		rType = 0;
 		vrLen = 2103;
 		vrLoc = 14591;
@@ -3760,7 +3771,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 28";
 		rLen = 0;
-		rLoc = 1171;
+		rLoc = 1191;
 		rType = 0;
 		vrLen = 1787;
 		vrLoc = 0;
@@ -3770,7 +3781,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 341";
 		rLen = 0;
-		rLoc = 29389;
+		rLoc = 27156;
 		rType = 0;
 		vrLen = 2018;
 		vrLoc = 14676;
@@ -3780,7 +3791,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 43";
 		rLen = 0;
-		rLoc = 1840;
+		rLoc = 1860;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -3790,7 +3801,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 329";
 		rLen = 0;
-		rLoc = 21592;
+		rLoc = 5520;
 		rType = 0;
 		vrLen = 1876;
 		vrLoc = 14326;
@@ -3800,7 +3811,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 43";
 		rLen = 0;
-		rLoc = 1840;
+		rLoc = 1860;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -3810,7 +3821,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 329";
 		rLen = 0;
-		rLoc = 21592;
+		rLoc = 5520;
 		rType = 0;
 		vrLen = 1898;
 		vrLoc = 14304;
@@ -3820,7 +3831,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 43";
 		rLen = 0;
-		rLoc = 1840;
+		rLoc = 1860;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -3830,7 +3841,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 329";
 		rLen = 0;
-		rLoc = 21592;
+		rLoc = 5520;
 		rType = 0;
 		vrLen = 1876;
 		vrLoc = 14326;
@@ -3840,7 +3851,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 43";
 		rLen = 0;
-		rLoc = 1840;
+		rLoc = 1860;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -3850,7 +3861,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 329";
 		rLen = 0;
-		rLoc = 21592;
+		rLoc = 5520;
 		rType = 0;
 		vrLen = 1876;
 		vrLoc = 14326;
@@ -3860,7 +3871,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 39";
 		rLen = 0;
-		rLoc = 1663;
+		rLoc = 1683;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -3870,7 +3881,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 327";
 		rLen = 0;
-		rLoc = 21519;
+		rLoc = 5520;
 		rType = 0;
 		vrLen = 1809;
 		vrLoc = 14739;
@@ -3880,7 +3891,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 39";
 		rLen = 0;
-		rLoc = 1663;
+		rLoc = 1683;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -3890,7 +3901,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 384";
 		rLen = 0;
-		rLoc = 27260;
+		rLoc = 19490;
 		rType = 0;
 		vrLen = 1958;
 		vrLoc = 16316;
@@ -3900,7 +3911,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 36";
 		rLen = 23;
-		rLoc = 1512;
+		rLoc = 1532;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -3910,7 +3921,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 358";
 		rLen = 0;
-		rLoc = 25728;
+		rLoc = 19490;
 		rType = 0;
 		vrLen = 2100;
 		vrLoc = 16392;
@@ -3920,7 +3931,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 36";
 		rLen = 23;
-		rLoc = 1512;
+		rLoc = 1532;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -3930,7 +3941,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 358";
 		rLen = 0;
-		rLoc = 25728;
+		rLoc = 19490;
 		rType = 0;
 		vrLen = 2087;
 		vrLoc = 16392;
@@ -3940,7 +3951,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 40";
 		rLen = 18;
-		rLoc = 1743;
+		rLoc = 1763;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -3950,7 +3961,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 358";
 		rLen = 0;
-		rLoc = 23092;
+		rLoc = 19490;
 		rType = 0;
 		vrLen = 2045;
 		vrLoc = 16063;
@@ -3960,7 +3971,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 25";
 		rLen = 0;
-		rLoc = 942;
+		rLoc = 962;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -3970,7 +3981,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 439";
 		rLen = 0;
-		rLoc = 25430;
+		rLoc = 19490;
 		rType = 0;
 		vrLen = 2128;
 		vrLoc = 18263;
@@ -3980,7 +3991,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 25";
 		rLen = 0;
-		rLoc = 942;
+		rLoc = 962;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -3990,7 +4001,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 439";
 		rLen = 0;
-		rLoc = 25427;
+		rLoc = 19490;
 		rType = 0;
 		vrLen = 2082;
 		vrLoc = 18310;
@@ -4000,7 +4011,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 29";
 		rLen = 0;
-		rLoc = 1136;
+		rLoc = 1156;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -4010,7 +4021,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 38";
 		rLen = 24;
-		rLoc = 1605;
+		rLoc = 1625;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -4020,7 +4031,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 460";
 		rLen = 0;
-		rLoc = 26310;
+		rLoc = 19490;
 		rType = 0;
 		vrLen = 2108;
 		vrLoc = 20318;
@@ -4030,7 +4041,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 403";
 		rLen = 0;
-		rLoc = 22578;
+		rLoc = 19490;
 		rType = 0;
 		vrLen = 2108;
 		vrLoc = 20318;
@@ -4040,7 +4051,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 29";
 		rLen = 0;
-		rLoc = 1136;
+		rLoc = 1156;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -4050,7 +4061,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 460";
 		rLen = 0;
-		rLoc = 26310;
+		rLoc = 19490;
 		rType = 0;
 		vrLen = 2108;
 		vrLoc = 20318;
@@ -4060,7 +4071,7 @@
 		fRef = 22DB7C5D101A5CC800BEEB52 /* OpenID.h */;
 		name = "OpenID.h: 38";
 		rLen = 24;
-		rLoc = 1605;
+		rLoc = 1625;
 		rType = 0;
 		vrLen = 1900;
 		vrLoc = 0;
@@ -4070,7 +4081,7 @@
 		fRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */;
 		name = "OpenID.cpp: 470";
 		rLen = 0;
-		rLoc = 26697;
+		rLoc = 19490;
 		rType = 0;
 		vrLen = 2070;
 		vrLoc = 20463;
@@ -4125,9 +4136,9 @@
 	};
 	224046D6100595160005461A /* User.cpp */ = {
 		uiCtxt = {
-			sepNavIntBoundsRect = "{{0, 0}, {576, 5292}}";
-			sepNavSelRange = "{4514, 0}";
-			sepNavVisRange = "{3587, 1785}";
+			sepNavIntBoundsRect = "{{0, 0}, {811, 5670}}";
+			sepNavSelRange = "{8843, 2}";
+			sepNavVisRange = "{8573, 239}";
 			sepNavWindowFrame = "{{139, 89}, {600, 744}}";
 		};
 	};
@@ -4206,16 +4217,16 @@
 	22DB7C5D101A5CC800BEEB52 /* OpenID.h */ = {
 		uiCtxt = {
 			sepNavIntBoundsRect = "{{0, 0}, {609, 712}}";
-			sepNavSelRange = "{452, 0}";
-			sepNavVisRange = "{0, 1900}";
+			sepNavSelRange = "{1438, 0}";
+			sepNavVisRange = "{0, 1920}";
 			sepNavWindowFrame = "{{641, 35}, {668, 840}}";
 		};
 	};
 	22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */ = {
 		uiCtxt = {
-			sepNavIntBoundsRect = "{{0, 0}, {1044, 9184}}";
-			sepNavSelRange = "{1859, 0}";
-			sepNavVisRange = "{27500, 1892}";
+			sepNavIntBoundsRect = "{{0, 0}, {1044, 8414}}";
+			sepNavSelRange = "{1124, 0}";
+			sepNavVisRange = "{102, 2199}";
 			sepNavWindowFrame = "{{641, 35}, {668, 840}}";
 		};
 	};

@@ -3,11 +3,11 @@
 #include <cstdlib>
 #include <list>
 #include <map>
-#include "curl/curl.h"
-#include "OpenID.h"
 extern "C" {
+#include <curl/curl.h>
 #include <openssl/hmac.h>
 }
+#include "OpenID.h"
 
 namespace openid_1_1 {
     
@@ -29,23 +29,8 @@ namespace openid_1_1 {
             curl_easy_setopt(curl, CURLOPT_ENCODING, "gzip");
             curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
             curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 15L);
-            curl_easy_setopt(curl, CURLOPT_USERAGENT, "LogJammin 1.0 (OpenID Auth 1.1 Consumer)");
+            curl_easy_setopt(curl, CURLOPT_USERAGENT, "OpenID Auth 1.1 Consumer (using cURL)");
             return curl;
-        }
-        
-        unsigned char * base16_decode(const std::string &input, unsigned int *size) {
-            int i = 0;
-            unsigned char *result = new unsigned char[(input.size() / 2)], c;
-            
-            std::string::const_iterator iter = input.begin();
-            while(iter != input.end()) {
-                const char hex[3] = {*++iter, *++iter, '\0'};
-                c = (unsigned char)strtol(hex, NULL, 16);
-                result[i++] = c;
-            }
-            
-            *size = i;
-            return result;
         }
         
         // Simple uninteligent implementation.
@@ -96,16 +81,6 @@ namespace openid_1_1 {
             }
             
             return result;
-        }
-        
-        std::string base16_encode(const unsigned char *input, unsigned int size) {
-            std::ostringstream data;
-            for(int h = 0; h < size; ++h) {
-                char hex[3];
-                sprintf(hex, "%02x", input[h]);
-                data << hex;
-            }
-            return data.str();
         }
         
         std::string base64_encode(const unsigned char *input, unsigned int size) {
@@ -163,12 +138,12 @@ namespace openid_1_1 {
         }
     }
     
-    DumbRelayProvider::DumbRelayProvider(const std::string &identifier) {
+    DumbRelayConsumer::DumbRelayConsumer(const std::string &identifier) {
         this->identifier(identifier);
         discovery();
     }
     
-    void DumbRelayProvider::identifier(const std::string &identifier) {
+    void DumbRelayConsumer::identifier(const std::string &identifier) {
         bool needs_prefix = true;
         
         // check for the existance of a prefix
@@ -195,11 +170,11 @@ namespace openid_1_1 {
         _identifier.append(identifier);
     }
     
-    void DumbRelayProvider::openid_provider(const std::string &openid_provider) {
+    void DumbRelayConsumer::openid_provider(const std::string &openid_provider) {
         _openid_provider = openid_provider;
     }
     
-    void DumbRelayProvider::discovery() {
+    void DumbRelayConsumer::discovery() {
         // vars for cURL.
         char error_buffer[CURL_ERROR_SIZE];
         std::string content;
@@ -342,7 +317,7 @@ namespace openid_1_1 {
         }
     }
     
-    std::string DumbRelayProvider::contact_openid_provider(const std::string &post_data) {
+    std::string DumbRelayConsumer::contact_openid_provider(const std::string &post_data) {
         CURL *curl = new_curl_handle();
         // Prepare the curl handle.
         char error_buffer[CURL_ERROR_SIZE];
@@ -376,7 +351,7 @@ namespace openid_1_1 {
         return content;
     }
     
-    std::string DumbRelayProvider::checkid_setup(const std::string &return_to,
+    std::string DumbRelayConsumer::checkid_setup(const std::string &return_to,
                                                  const std::string &trust_root) {
         // construct check_id url.
         char *tmp;
@@ -413,7 +388,7 @@ namespace openid_1_1 {
         return redirect_url;
     }
     
-    bool DumbRelayProvider::check_authentication(const std::multimap<std::string, std::string> &params) {
+    bool DumbRelayConsumer::check_authentication(const std::multimap<std::string, std::string> &params) {
         // Construct the data for the post.
         std::ostringstream data;
         CURL *curl = new_curl_handle();
@@ -442,14 +417,11 @@ namespace openid_1_1 {
         return content.find("\nis_valid:true\n") != content.npos;
     }
     
-    AssociatedRelayProvider::AssociatedRelayProvider(const std::string &identifier) : DumbRelayProvider(identifier) {
-        std::cerr << "Creating a new Associated Relay Provider " << this->identifier() << std::endl;
+    AssociatedRelayConsumer::AssociatedRelayConsumer(const std::string &identifier) : DumbRelayConsumer(identifier) {
     }
     
-    std::string AssociatedRelayProvider::checkid_setup(const std::string &return_to,
+    std::string AssociatedRelayConsumer::checkid_setup(const std::string &return_to,
                                                        const std::string &trust_root) {
-        
-        std::cerr << "Check ID Setup return to " << return_to << " trust root " << trust_root << std::endl;
 
         std::string *assoc_handle = lookup_assoc_handle(openid_provider());
         if(!assoc_handle)
@@ -457,12 +429,8 @@ namespace openid_1_1 {
         if(assoc_handle->compare("DUMB") == 0)
             assoc_handle = NULL;
 
-        std::cerr << "Assoc Handle " << (assoc_handle ? *assoc_handle : "NULL") << "." << std::endl;
-
         // construct check_id url.
-        std::string redirect_url(DumbRelayProvider::checkid_setup(return_to, trust_root));
-
-        std::cerr << "Redirect URL from Dumb " << redirect_url << std::endl;
+        std::string redirect_url(DumbRelayConsumer::checkid_setup(return_to, trust_root));
 
         // cURL handle used for escaping.
         CURL *curl = new_curl_handle();
@@ -474,34 +442,25 @@ namespace openid_1_1 {
         }
         
         // Clean up after curl.
-        curl_easy_cleanup(curl);        
-        
-        std::cerr << "final Redirect " << redirect_url << std::endl;
+        curl_easy_cleanup(curl);
         
         return redirect_url;
     }
     
-    bool AssociatedRelayProvider::check_authentication(const std::multimap<std::string, std::string> &params) {
+    bool AssociatedRelayConsumer::check_authentication(const std::multimap<std::string, std::string> &params) {
         std::string *assoc_handle = lookup_assoc_handle(openid_provider());
         if(!assoc_handle)
             assoc_handle = associate();
         if(assoc_handle->compare("DUMB") == 0)
             assoc_handle = NULL;
 
-        std::cerr << "Assoc Handle " << (assoc_handle ? *assoc_handle : "NULL") << "." << std::endl;
-        
-        if(!assoc_handle) {
-            std::cerr << "Invoking Dumb Check " << std::endl;
-            return DumbRelayProvider::check_authentication(params);
-        }
+        if(!assoc_handle)
+            return DumbRelayConsumer::check_authentication(params);
         
         // Not possible to be missing the assoc_handle
         std::multimap<std::string, std::string>::const_iterator assoc_iter = params.find(std::string("openid.assoc_handle"));
         if(assoc_iter == params.end())
             return false;
-        
-        std::cerr << "Assoc iter " << assoc_iter->second << std::endl;
-        std::cerr << "assoc_handle compare to Assoc iter " << assoc_handle->compare(assoc_iter->second) << std::endl;
         
         if(assoc_handle->compare(assoc_iter->second) == 0) {
             // make sure this request was signed.
@@ -510,15 +469,11 @@ namespace openid_1_1 {
                 return false;
             std::string their_signature(sig_iter->second);
             
-            std::cerr << "Their Signature " << their_signature << std::endl;
-            
             // Look for the signed fields.
             sig_iter = params.find(std::string("openid.signed"));
             if(sig_iter == params.end())
                 return false;
             std::string signed_params(sig_iter->second), key;
-
-            std::cerr << "Signed Params " << signed_params << std::endl;            
             
             // construct the message that was signed.
             std::ostringstream message;
@@ -548,7 +503,6 @@ namespace openid_1_1 {
                     key.push_back(c);
                 }
             }
-            std::cerr << "Params to be signed " << message.str() << std::endl;
             
             // attempt to recreate the signature.
             Association *assoc = lookup_association(*assoc_handle);
@@ -556,8 +510,6 @@ namespace openid_1_1 {
                 return false;
             std::string our_signature(create_signature(message.str(), assoc->secret));
 
-            std::cerr << "Our Signature " << our_signature << " bool " << (their_signature.compare(our_signature) == 0) << std::endl;
-            
             // Test that the signature created matches the one given.
             return (their_signature.compare(our_signature) == 0);
             
@@ -602,7 +554,7 @@ namespace openid_1_1 {
         return false;
     }
     
-    std::string *AssociatedRelayProvider::associate() {
+    std::string *AssociatedRelayConsumer::associate() {
         // Construct the data for the post.
         std::ostringstream data;
         data << "openid.mode=associate";
@@ -634,7 +586,6 @@ namespace openid_1_1 {
                     assoc->secret = line;
                 else if(key_str.compare("enc_mac_key") == 0)
                     assoc->secret = line;
-                std::cerr << "    " << key_str << ":" << line << std::endl;
                 line.clear();
                 key = true;
             } else if(key && *iter == ':') {

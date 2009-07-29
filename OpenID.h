@@ -3,9 +3,10 @@
 #include <map>
 
 namespace openid_1_1 {
-    class DumbRelayProvider {
+    //! Dumb Relay 
+    class DumbRelayConsumer {
     public:
-        DumbRelayProvider(const std::string &identifier);
+        DumbRelayConsumer(const std::string &identifier);
         void identifier(const std::string &identifier);
         const std::string &identifier() const { return _identifier; };
         void openid_provider(const std::string &openid_provider);
@@ -22,14 +23,14 @@ namespace openid_1_1 {
         std::string _openid_provider;
     };
     
-    class AssociatedRelayProvider : public DumbRelayProvider {
+    class AssociatedRelayConsumer : public DumbRelayConsumer {
     public:
         struct Association {
             std::string assoc_type, assoc_handle, provider, session_type; 
             std::string dh_server_public, secret;
             long long expires_at;
         };
-        AssociatedRelayProvider(const std::string &identifier);
+        AssociatedRelayConsumer(const std::string &identifier);
         virtual std::string checkid_setup(const std::string &return_to,
                                           const std::string &trust_root);
         virtual bool check_authentication(const std::multimap<std::string, std::string> &params);
