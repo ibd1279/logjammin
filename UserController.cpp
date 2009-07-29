@@ -135,3 +135,34 @@ void UserPurgeController::execute(CGI::Request *request, CGI::Response *response
     request->attribute("handled", "true");
 }
 
+bool UserSearchController::is_requested(CGI::Request *request, CGI::Response *response) {
+    std::list<std::string> args(request->split_path_info());
+    
+    if(!request->has_attribute("authenticated"))
+        return false;
+    if(request->has_attribute("handled"))
+        return false;
+    
+    if(args.size() != 1)
+        return false;
+    return (args.back().compare("user-search") == 0);
+}
+
+void UserSearchController::execute(CGI::Request *request, CGI::Response *response) {
+    if(request->has_param("q")) {
+        try {
+            request->context_object_list("users",
+                                         User::like(request->param("q")),
+                                         true);
+        } catch(const std::string &ex) {
+            request->attribute("_error", ex);
+        } catch(tokyo::Exception &ex) {
+            request->attribute("_error", ex.msg);
+        }
+    }
+    
+    response->execute("user-list.html", request);
+    request->attribute("handled", "true");
+}
+
+

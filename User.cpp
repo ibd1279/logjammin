@@ -9,6 +9,8 @@ namespace {
     
     const char USER_DB[] = "/var/db/logjammin/user.tcb";
     const char USER_INDX_LOGIN[] = "/var/db/logjammin/user_login.tcb";
+    const char USER_SRCH_NAME[] = "/var/db/logjammin/user_name";
+    const char USER_SRCH_EMAIL[] = "/var/db/logjammin/user_email";
 
     class UserDB : public ModelDB<User> {
         static void open_db_file(TCBDB *db, int mode) {
@@ -21,12 +23,23 @@ namespace {
             tcbdbtune(db, -1, -1, -1, -1, -1, BDBTLARGE | BDBTBZIP);
             tcbdbopen(db, USER_INDX_LOGIN, mode);
         }
+        static void open_search_file_name(TCIDB *db, int mode) {
+            tcidbtune(db, -1, -1, -1, IDBTLARGE | IDBTBZIP);
+            tcidbopen(db, USER_SRCH_NAME, mode);
+        }
+        static void open_search_file_email(TCIDB *db, int mode) {
+            tcidbtune(db, -1, -1, -1, IDBTLARGE | IDBTBZIP);
+            tcidbopen(db, USER_SRCH_EMAIL, mode);
+        }
     public:
         tokyo::Index<unsigned long long, std::string> index_login;
+        tokyo::Search<unsigned long long> search_name, search_email;
         
         UserDB() :
         ModelDB<User>(&open_db_file, BDBOREADER | BDBOWRITER | BDBOCREAT),
-        index_login(&open_indx_file_login, BDBOREADER | BDBOWRITER | BDBOCREAT)
+        index_login(&open_indx_file_login, BDBOREADER | BDBOWRITER | BDBOCREAT),
+        search_name(&open_search_file_name, IDBOREADER | IDBOWRITER | IDBOCREAT),
+        search_email(&open_search_file_email, IDBOREADER | IDBOWRITER | IDBOCREAT)
         {
         }
         
@@ -75,6 +88,8 @@ namespace {
                     ++iter) {
                     index_login.put(*iter, key);
                 }
+                search_name.index(model->name(), key);
+                search_email.index(model->email(), key);
                 
                 index_login.commit_transaction();
                 commit_transaction();
@@ -104,6 +119,11 @@ namespace {
                         ++iter) {
                         index_login.remove(*iter, model->pkey());
                     }
+                    search_name.remove(model->pkey());
+                    search_email.remove(model->pkey());
+                    
+                    search_name.optimize();
+                    search_email.optimize();
                     
                     index_login.commit_transaction();
                     commit_transaction();
@@ -202,6 +222,22 @@ std::list<User *> User::all() {
     UserDB dao;
     std::list<User *> results;
     dao.all(results);
+    return results;
+}
+
+std::list<User *> User::like(const std::string &term) {
+    UserDB dao;
+    std::set<unsigned long long> keys;
+    dao.search_name.like(term, keys);
+    dao.search_email.like(term, keys);
+    
+    std::list<User *> results;
+    for(std::set<unsigned long long>::const_iterator iter = keys.begin();
+        iter != keys.end();
+        ++iter) {
+        results.push_back(new User(*iter));
+    }
+    
     return results;
 }
 

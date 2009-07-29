@@ -1,6 +1,8 @@
 #include <iostream>
 #include <sstream>
 #include <cstdlib>
+#include <list>
+#include <map>
 #include "curl/curl.h"
 #include "OpenID.h"
 extern "C" {
@@ -31,7 +33,7 @@ namespace openid_1_1 {
             return curl;
         }
         
-        unsigned char * base64_decode(const std::string &input, unsigned int *size) {
+        unsigned char * base16_decode(const std::string &input, unsigned int *size) {
             int i = 0;
             unsigned char *result = new unsigned char[(input.size() / 2)], c;
             
@@ -46,13 +48,92 @@ namespace openid_1_1 {
             return result;
         }
         
-        std::string base64_encode(const unsigned char *input, unsigned int size) {
+        // Simple uninteligent implementation.
+        unsigned char *base64_decode(const std::string &input, unsigned int *size) {
+            const char values[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/\0";
+            std::map<char, unsigned char> base64_table;
+            char *current_value = const_cast<char *>(values);
+            int i = 0;
+            while(*current_value) {
+                base64_table[*(current_value++)] = i++;
+            }
+            
+            std::list<unsigned char> buffer;
+            std::string::const_iterator iter = input.begin();
+            while(iter != input.end() && *iter != '=') {
+                char tmp[4];
+                i = 0;
+                for(; iter != input.end() && *iter != '=' && i < 4; ++i, ++iter) {
+                    tmp[i] = base64_table.find(*iter)->second;
+                }
+                
+                switch(i) {
+                    case 4:
+                        buffer.push_back((unsigned char)((tmp[0] << 2) | (tmp[1] >> 4)));
+                        buffer.push_back((unsigned char)((tmp[1] << 4) | (tmp[2] >> 2)));
+                        buffer.push_back((unsigned char)((tmp[2] << 6) | tmp[3]));
+                        break;
+                    case 3:
+                        buffer.push_back((unsigned char)((tmp[0] << 2) | (tmp[1] >> 4)));
+                        buffer.push_back((unsigned char)((tmp[1] << 4) | (tmp[2] >> 2)));
+                        break;
+                    case 2:
+                        buffer.push_back((unsigned char)((tmp[0] << 2) | (tmp[1] >> 4)));
+                        break;
+                    case 1:
+                        throw std::string("Invalid base64 string. Incomplete final character.");
+                }
+            }
+            
+            *size = buffer.size();
+            unsigned char *result = new unsigned char[*size];
+            
+            i = 0;
+            for(std::list<unsigned char>::const_iterator iter = buffer.begin();
+                iter != buffer.end();
+                ++iter, ++i) {
+                result[i] = *iter;
+            }
+            
+            return result;
+        }
+        
+        std::string base16_encode(const unsigned char *input, unsigned int size) {
             std::ostringstream data;
             for(int h = 0; h < size; ++h) {
                 char hex[3];
                 sprintf(hex, "%02x", input[h]);
                 data << hex;
             }
+            return data.str();
+        }
+        
+        std::string base64_encode(const unsigned char *input, unsigned int size) {
+            std::ostringstream data;
+            const char values[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+            int h = 0;
+            while(h < size - 2) {
+                data << values[input[h] >> 2];
+                data << values[((input[h] & 3) << 4)  | (input[h + 1] >> 4)];
+                data << values[((input[h + 1] & 15) << 2) | (input[h + 2] >> 6)];
+                data << values[input[h + 2] & 63];
+                h += 3;
+            }
+            
+            switch(size - h) {
+                case 1:
+                    data << values[input[h] >> 2];
+                    data << values[(input[h] & 3) << 4];
+                    data << "==";
+                    break;
+                case 2:
+                    data << values[input[h] >> 2];
+                    data << values[((input[h] & 3) << 4)  | (input[h + 1] >> 4)];
+                    data << values[(input[h + 1] & 15) << 2];
+                    data << "=";
+                    break;
+            }
+            
             return data.str();
         }
         
@@ -445,9 +526,16 @@ namespace openid_1_1 {
             while(iter != signed_params.end()) {
                 char c = *iter;
                 ++iter;
+                
+                // We hit a non-key character, 
                 if(c == '\n' || c == ',' || iter == signed_params.end()) {
+                    // store the last char in the string.
+                    if(iter == signed_params.end()) key.push_back(c);
                     // look for the param
-                    sig_iter = params.find(std::string("openid.").append(key));
+                    std::string key_to_find("openid.");
+                    key_to_find.append(key);
+                    std::cerr << "Looking for key " << key_to_find << std::endl;
+                    sig_iter = params.find(key_to_find);
                     if(sig_iter == params.end())
                         return false;
                     
@@ -464,6 +552,8 @@ namespace openid_1_1 {
             
             // attempt to recreate the signature.
             Association *assoc = lookup_association(*assoc_handle);
+            if(!assoc)
+                return false;
             std::string our_signature(create_signature(message.str(), assoc->secret));
 
             std::cerr << "Our Signature " << our_signature << " bool " << (their_signature.compare(our_signature) == 0) << std::endl;
@@ -544,6 +634,8 @@ namespace openid_1_1 {
                     assoc->secret = line;
                 else if(key_str.compare("enc_mac_key") == 0)
                     assoc->secret = line;
+                std::cerr << "    " << key_str << ":" << line << std::endl;
+                line.clear();
                 key = true;
             } else if(key && *iter == ':') {
                 key_str = line;
@@ -558,6 +650,6 @@ namespace openid_1_1 {
         // Store the assoc
         store_assoc_handle(assoc);
         
-        return new std::string("DUMB");
+        return &(assoc->assoc_handle);
     }
 };

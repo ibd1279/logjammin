@@ -12,6 +12,7 @@ public:
     static Lunar<User>::RegType LUNAR_METHODS[];
     
     static std::list<User *> all();
+    static std::list<User *> like(const std::string &term);
     static void at(unsigned long long key, User *model);
     static void at_login(const std::string &login, User *model);
     

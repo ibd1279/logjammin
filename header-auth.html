@@ -27,9 +27,8 @@ input[type="text"] { width:20em; }
     <h1 id="app-title">Logjammin'</h1>
     <ul id="app-menu">
         <li><a href=".">Home</a></li>
-        <li class="selected"><a href="project-list">Project List</a></li>
-        <li><a href="user-profile">My Profile</a></li>
-        <li><a href="admin">Administration</a></li>
+        <li${request:original_request_file():find("project") and " class=\"selected\"" or ""}${request:original_request_file():find("backlog") and " class=\"selected\"" or ""}><a href="project-list">Project List</a></li>
+        <li${request:original_request_file():find("user") and " class=\"selected\"" or ""}><a href="user-list">Users</a></li>
     </ul>
 </div>
 <div id="app-content">

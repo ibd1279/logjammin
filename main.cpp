@@ -33,6 +33,7 @@ int main (int argc, char * const argv[]) {
         new ProjectPurgeController(),
         new ProjectListController(),
         new UserEditController(),
+        new UserSearchController(),
         new UserPurgeController(),
         new UserListController(),
         new NotFoundController(),

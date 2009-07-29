@@ -59,6 +59,7 @@ void ProjectEditController::execute(CGI::Request *request, CGI::Response *respon
     
     if(request->is_post()) {
         p.name(request->param("name"));
+        p.commit_feed(request->param("commit_feed"));
         
         std::pair<CGI::Request::param_map::const_iterator, CGI::Request::param_map::const_iterator> range;
         range = request->params().equal_range("version");

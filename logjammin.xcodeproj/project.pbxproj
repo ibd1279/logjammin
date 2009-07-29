@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		2202B2530FFE831500B6FCEC /* libtokyodystopia.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2202B2520FFE831500B6FCEC /* libtokyodystopia.a */; };
 		2202B35E0FFFA4D100B6FCEC /* Project.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2202B35D0FFFA4D100B6FCEC /* Project.cpp */; };
 		2202B3740FFFAAA200B6FCEC /* Backlog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2202B3730FFFAAA200B6FCEC /* Backlog.cpp */; };
 		220AD6C30FA1FFD400C604BE /* libtokyocabinet.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 220AD6C20FA1FFD400C604BE /* libtokyocabinet.a */; };
@@ -17,6 +16,8 @@
 		221B34460FA8995D009AB597 /* liblua.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 221B34450FA8995D009AB597 /* liblua.a */; };
 		221B344D0FA89B99009AB597 /* ModuleCompilier.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 221B344A0FA89B99009AB597 /* ModuleCompilier.cpp */; };
 		2222BE36101E89D000CE52E6 /* UserController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2222BE35101E89D000CE52E6 /* UserController.cpp */; };
+		2222BE6F101F83B400CE52E6 /* libtokyodystopia.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2222BE6E101F83B400CE52E6 /* libtokyodystopia.dylib */; };
+		2222BE7F101FA32100CE52E6 /* OpenIDConsumer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */; };
 		222B665D101E46F300F45B04 /* libcrypto.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222B665C101E46F300F45B04 /* libcrypto.dylib */; };
 		223D698410078F5800F79019 /* Controller.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 223D698310078F5800F79019 /* Controller.cpp */; };
 		224046C1100521010005461A /* sha1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 224046C0100521010005461A /* sha1.cpp */; };
@@ -47,7 +48,6 @@
 /* Begin PBXFileReference section */
 		08FB7796FE84155DC02AAC07 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		2202B2430FFE56C000B6FCEC /* Tokyo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Tokyo.h; sourceTree = "<group>"; };
-		2202B2520FFE831500B6FCEC /* libtokyodystopia.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libtokyodystopia.a; sourceTree = "<group>"; };
 		2202B35C0FFFA4D100B6FCEC /* Project.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Project.h; sourceTree = "<group>"; };
 		2202B35D0FFFA4D100B6FCEC /* Project.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Project.cpp; sourceTree = "<group>"; };
 		2202B3720FFFAAA200B6FCEC /* Backlog.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Backlog.h; sourceTree = "<group>"; };
@@ -71,6 +71,9 @@
 		2222BE35101E89D000CE52E6 /* UserController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = UserController.cpp; sourceTree = "<group>"; };
 		2222BE42101E8BEB00CE52E6 /* user-list.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "user-list.html"; sourceTree = "<group>"; };
 		2222BE49101F24D300CE52E6 /* user-edit.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "user-edit.html"; sourceTree = "<group>"; };
+		2222BE6E101F83B400CE52E6 /* libtokyodystopia.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libtokyodystopia.dylib; path = /usr/local/lib/libtokyodystopia.dylib; sourceTree = "<absolute>"; };
+		2222BE7D101FA32100CE52E6 /* OpenIDConsumer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenIDConsumer.h; sourceTree = "<group>"; };
+		2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = OpenIDConsumer.cpp; sourceTree = "<group>"; };
 		222B665C101E46F300F45B04 /* libcrypto.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcrypto.dylib; path = usr/lib/libcrypto.dylib; sourceTree = SDKROOT; };
 		2238DF210FBDD47700842744 /* template.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = template.html; sourceTree = "<group>"; };
 		2238DF8C0FBE000100842744 /* backlog-edit.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "backlog-edit.html"; sourceTree = "<group>"; };
@@ -111,9 +114,9 @@
 			files = (
 				220AD6C30FA1FFD400C604BE /* libtokyocabinet.a in Frameworks */,
 				221B34460FA8995D009AB597 /* liblua.a in Frameworks */,
-				2202B2530FFE831500B6FCEC /* libtokyodystopia.a in Frameworks */,
 				227A47061018186B0013EACE /* libcurl.dylib in Frameworks */,
 				222B665D101E46F300F45B04 /* libcrypto.dylib in Frameworks */,
+				2222BE6F101F83B400CE52E6 /* libtokyodystopia.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -123,8 +126,8 @@
 		08FB7794FE84155DC02AAC07 /* logjammin */ = {
 			isa = PBXGroup;
 			children = (
+				2222BE6E101F83B400CE52E6 /* libtokyodystopia.dylib */,
 				227A47051018186B0013EACE /* libcurl.dylib */,
-				2202B2520FFE831500B6FCEC /* libtokyodystopia.a */,
 				221B34450FA8995D009AB597 /* liblua.a */,
 				220AD6C20FA1FFD400C604BE /* libtokyocabinet.a */,
 				08FB7795FE84155DC02AAC07 /* Source */,
@@ -199,6 +202,8 @@
 				229F360A0FAA34E3003A1626 /* Response.cpp */,
 				22DB7C5D101A5CC800BEEB52 /* OpenID.h */,
 				22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */,
+				2222BE7D101FA32100CE52E6 /* OpenIDConsumer.h */,
+				2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */,
 			);
 			name = CGI;
 			sourceTree = "<group>";
@@ -307,6 +312,7 @@
 				2271D91A101288A000749D9A /* BacklogController.cpp in Sources */,
 				22DB7C5F101A5CC800BEEB52 /* OpenID.cpp in Sources */,
 				2222BE36101E89D000CE52E6 /* UserController.cpp in Sources */,
+				2222BE7F101FA32100CE52E6 /* OpenIDConsumer.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

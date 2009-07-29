@@ -168,6 +168,7 @@ namespace {
 const char Project::LUNAR_CLASS_NAME[] = "Project";
 Lunar<Project>::RegType Project::LUNAR_METHODS[] = {
     LUNAR_STRING_GETTER(Project, name),
+    LUNAR_STRING_GETTER(Project, commit_feed),
     LUNAR_STATIC_METHOD(Project, categories),
     LUNAR_STATIC_METHOD(Project, versions),
     LUNAR_INTEGER_GETTER(Project, pkey, unsigned long long),
@@ -238,8 +239,11 @@ Project::~Project() {
 }
 
 void Project::populate(OpenProp::File *props) {
-    name(std::string(props->getValue("name")));
-    commit_feed(std::string(props->getValue("feed")));
+    if(props->getValue("name").exists())
+        name(std::string(props->getValue("name")));
+    
+    if(props->getValue("feed").exists())
+        commit_feed(std::string(props->getValue("feed")));
     
     OpenProp::ElementIterator *iter = props->getElement("versions")->getElements();
     _versions.clear();

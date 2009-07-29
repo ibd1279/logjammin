@@ -3,6 +3,7 @@
 #include "Controller.h"
 #include "User.h"
 #include "OpenID.h"
+#include "OpenIDConsumer.h"
 #include <iostream>
 
 bool AuthenticateFilter::is_requested(CGI::Request *request, CGI::Response *response) {
@@ -42,7 +43,8 @@ void AuthenticateFilter::execute(CGI::Request *request, CGI::Response *response)
         // Now see if the user is logging in
         if(request->has_param("openid_url")) {
             std::string identity = request->param("openid_url");
-            openid_1_1::DumbRelayProvider relay_provider(identity);
+            LogJamminConsumer relay_provider(identity);
+            //openid_1_1::DumbRelayProvider relay_provider(identity);
             try {
                 User user(relay_provider.identifier());
                 
@@ -66,7 +68,8 @@ void AuthenticateFilter::execute(CGI::Request *request, CGI::Response *response)
             try {
                 // Get the OpenId provider.
                 std::string identity = request->param("openid.identity");
-                openid_1_1::DumbRelayProvider relay_provider(identity);
+                LogJamminConsumer relay_provider(identity);
+                //openid_1_1::DumbRelayProvider relay_provider(identity);
                 
                 // Get the user to check the login count.
                 User *user = new User(relay_provider.identifier());
@@ -104,13 +107,13 @@ void AuthenticateFilter::execute(CGI::Request *request, CGI::Response *response)
                                      36000,
                                      true);
                 } else {
-                    std::cerr << "Exception loging in " << std::endl;
+                    std::cerr << "Exception loging in. Check auth returned false." << std::endl;
                     delete user;
                     response->cookie("lj_user_login", "", 0, true);
                     response->cookie("lj_user_cookie", "", 0, true);
                 }
             } catch(const std::string &ex) {
-                std::cerr << "Validation failed." << std::endl;
+                std::cerr << "Validation failed " << ex << "." << std::endl;
                 response->cookie("lj_user_login", "", 0, true);
                 response->cookie("lj_user_cookie", "", 0, true);
             } catch(tokyo::Exception &ex) {
