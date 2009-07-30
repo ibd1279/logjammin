@@ -7,6 +7,7 @@
 #include "User.h"
 #include "Project.h"
 #include "Backlog.h"
+#include "RssItem.h"
 
 using std::multimap;
 using std::string;
@@ -299,6 +300,7 @@ CGI::Request::Request() {
     Lunar<User>::Register(_lua_state);
     Lunar<Project>::Register(_lua_state);
     Lunar<Backlog>::Register(_lua_state);
+    Lunar<RssItem>::Register(_lua_state);
     
     lua_pushcfunction(_lua_state, html_escape);
     lua_setglobal(_lua_state, "_html");

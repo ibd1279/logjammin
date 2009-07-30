@@ -18,6 +18,9 @@
 		2222BE36101E89D000CE52E6 /* UserController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2222BE35101E89D000CE52E6 /* UserController.cpp */; };
 		2222BE6F101F83B400CE52E6 /* libtokyodystopia.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2222BE6E101F83B400CE52E6 /* libtokyodystopia.dylib */; };
 		2222BE7F101FA32100CE52E6 /* OpenIDConsumer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */; };
+		2222C04E1020D5BC00CE52E6 /* RssItem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2222C04D1020D5BC00CE52E6 /* RssItem.cpp */; };
+		2222C09810214AB600CE52E6 /* RssController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2222C09710214AB600CE52E6 /* RssController.cpp */; };
+		2222C09C1021D11200CE52E6 /* libexpat.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2222C09B1021D11200CE52E6 /* libexpat.dylib */; };
 		222B665D101E46F300F45B04 /* libcrypto.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222B665C101E46F300F45B04 /* libcrypto.dylib */; };
 		223D698410078F5800F79019 /* Controller.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 223D698310078F5800F79019 /* Controller.cpp */; };
 		224046C1100521010005461A /* sha1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 224046C0100521010005461A /* sha1.cpp */; };
@@ -74,6 +77,12 @@
 		2222BE6E101F83B400CE52E6 /* libtokyodystopia.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libtokyodystopia.dylib; path = /usr/local/lib/libtokyodystopia.dylib; sourceTree = "<absolute>"; };
 		2222BE7D101FA32100CE52E6 /* OpenIDConsumer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenIDConsumer.h; sourceTree = "<group>"; };
 		2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = OpenIDConsumer.cpp; sourceTree = "<group>"; };
+		2222C04C1020D5BC00CE52E6 /* RssItem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RssItem.h; sourceTree = "<group>"; };
+		2222C04D1020D5BC00CE52E6 /* RssItem.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RssItem.cpp; sourceTree = "<group>"; };
+		2222C09610214AB600CE52E6 /* RssController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RssController.h; sourceTree = "<group>"; };
+		2222C09710214AB600CE52E6 /* RssController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RssController.cpp; sourceTree = "<group>"; };
+		2222C09B1021D11200CE52E6 /* libexpat.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libexpat.dylib; path = usr/lib/libexpat.dylib; sourceTree = SDKROOT; };
+		2222C10C1021F5D500CE52E6 /* commit-feed.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "commit-feed.html"; sourceTree = "<group>"; };
 		222B665C101E46F300F45B04 /* libcrypto.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcrypto.dylib; path = usr/lib/libcrypto.dylib; sourceTree = SDKROOT; };
 		2238DF210FBDD47700842744 /* template.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = template.html; sourceTree = "<group>"; };
 		2238DF8C0FBE000100842744 /* backlog-edit.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "backlog-edit.html"; sourceTree = "<group>"; };
@@ -117,6 +126,7 @@
 				227A47061018186B0013EACE /* libcurl.dylib in Frameworks */,
 				222B665D101E46F300F45B04 /* libcrypto.dylib in Frameworks */,
 				2222BE6F101F83B400CE52E6 /* libtokyodystopia.dylib in Frameworks */,
+				2222C09C1021D11200CE52E6 /* libexpat.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -126,14 +136,15 @@
 		08FB7794FE84155DC02AAC07 /* logjammin */ = {
 			isa = PBXGroup;
 			children = (
-				2222BE6E101F83B400CE52E6 /* libtokyodystopia.dylib */,
+				222B665C101E46F300F45B04 /* libcrypto.dylib */,
 				227A47051018186B0013EACE /* libcurl.dylib */,
 				221B34450FA8995D009AB597 /* liblua.a */,
 				220AD6C20FA1FFD400C604BE /* libtokyocabinet.a */,
+				2222BE6E101F83B400CE52E6 /* libtokyodystopia.dylib */,
 				08FB7795FE84155DC02AAC07 /* Source */,
 				C6859E8C029090F304C91782 /* Documentation */,
 				1AB674ADFE9D54B511CA2CBB /* Products */,
-				222B665C101E46F300F45B04 /* libcrypto.dylib */,
+				2222C09B1021D11200CE52E6 /* libexpat.dylib */,
 			);
 			name = logjammin;
 			sourceTree = "<group>";
@@ -187,6 +198,8 @@
 				2202B35D0FFFA4D100B6FCEC /* Project.cpp */,
 				2202B3720FFFAAA200B6FCEC /* Backlog.h */,
 				2202B3730FFFAAA200B6FCEC /* Backlog.cpp */,
+				2222C04C1020D5BC00CE52E6 /* RssItem.h */,
+				2222C04D1020D5BC00CE52E6 /* RssItem.cpp */,
 			);
 			name = Model;
 			sourceTree = "<group>";
@@ -220,6 +233,8 @@
 				2271D919101288A000749D9A /* BacklogController.cpp */,
 				2222BE34101E89D000CE52E6 /* UserController.h */,
 				2222BE35101E89D000CE52E6 /* UserController.cpp */,
+				2222C09610214AB600CE52E6 /* RssController.h */,
+				2222C09710214AB600CE52E6 /* RssController.cpp */,
 			);
 			name = Controller;
 			sourceTree = "<group>";
@@ -241,6 +256,7 @@
 				2271D9901012C06D00749D9A /* project-purge.html */,
 				2222BE49101F24D300CE52E6 /* user-edit.html */,
 				2222BE42101E8BEB00CE52E6 /* user-list.html */,
+				2222C10C1021F5D500CE52E6 /* commit-feed.html */,
 			);
 			name = Templates;
 			sourceTree = "<group>";
@@ -313,6 +329,8 @@
 				22DB7C5F101A5CC800BEEB52 /* OpenID.cpp in Sources */,
 				2222BE36101E89D000CE52E6 /* UserController.cpp in Sources */,
 				2222BE7F101FA32100CE52E6 /* OpenIDConsumer.cpp in Sources */,
+				2222C04E1020D5BC00CE52E6 /* RssItem.cpp in Sources */,
+				2222C09810214AB600CE52E6 /* RssController.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

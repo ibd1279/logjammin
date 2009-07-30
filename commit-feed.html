@@ -1,0 +1,12 @@
+<table>
+<?lc for h, item in ipairs(rss_items) do ?>
+<tr>
+    <td><a href="${_html(item:link())}">${_html(item:title())}</a></td>
+    <td>${item:description()}</td>
+    <td><select><?lc for i, version in ipairs(project:versions()) do ?>
+        <option>${version}</option><?lc end ?>
+    </select></td>
+    <td>Backlogs</td>
+</tr>
+<?lc end ?>
+</table>

@@ -8,6 +8,7 @@
 #include "BacklogController.h"
 #include "UserController.h"
 #include "Seed.h"
+#include "RssController.h"
 
 int main (int argc, char * const argv[]) {
         
@@ -36,6 +37,7 @@ int main (int argc, char * const argv[]) {
         new UserSearchController(),
         new UserPurgeController(),
         new UserListController(),
+        new CommitFeedController(),
         new NotFoundController(),
         new TemplateBottomFilter(),
         0
