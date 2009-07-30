@@ -1,12 +1,22 @@
 <table>
 <?lc for h, item in ipairs(rss_items) do ?>
 <tr>
-    <td><a href="${_html(item:link())}">${_html(item:title())}</a></td>
-    <td>${item:description()}</td>
-    <td><select><?lc for i, version in ipairs(project:versions()) do ?>
+    <td>
+        <div<a href="${_html(item:link())}">${_html(item:title())}</a></div>
+        <div>${item:description()}</div>${item:date()}
+    </td>
+    <td><select>
+        <option>-- Select A Version--</option><?lc for i, version in ipairs(project:versions()) do ?>
         <option>${version}</option><?lc end ?>
     </select></td>
-    <td>Backlogs</td>
+    <td><ul>
+        <li><select>
+        <option>Associated Task 1.</option>
+        </select></li>
+        <li><select>
+        <option>Associated Task 2.</option>
+        </select></li>
+    </ul></td>
 </tr>
 <?lc end ?>
 </table>

@@ -202,24 +202,24 @@
 			<key>Content</key>
 			<dict>
 				<key>PBXProjectModuleGUID</key>
-				<string>2222C1331021F92100CE52E6</string>
+				<string>2222C1561022233D00CE52E6</string>
 				<key>PBXProjectModuleLabel</key>
-				<string>RssController.cpp</string>
+				<string>RssItem.h</string>
 				<key>PBXSplitModuleInNavigatorKey</key>
 				<dict>
 					<key>Split0</key>
 					<dict>
 						<key>PBXProjectModuleGUID</key>
-						<string>2222C1341021F92100CE52E6</string>
+						<string>2222C1571022233D00CE52E6</string>
 						<key>PBXProjectModuleLabel</key>
-						<string>RssController.cpp</string>
+						<string>RssItem.h</string>
 						<key>_historyCapacity</key>
 						<integer>0</integer>
 						<key>bookmark</key>
-						<string>2222C1401021FB5B00CE52E6</string>
+						<string>2222C16C102237B500CE52E6</string>
 						<key>history</key>
 						<array>
-							<string>2222C1321021F91400CE52E6</string>
+							<string>2222C1551022232E00CE52E6</string>
 						</array>
 					</dict>
 					<key>SplitCount</key>
@@ -235,7 +235,47 @@
 				<key>PBXModuleWindowStatusBarHidden2</key>
 				<false/>
 				<key>RubberWindowFrame</key>
-				<string>38 68 668 784 0 0 1440 878 </string>
+				<string>673 79 668 784 0 0 1440 878 </string>
+			</dict>
+		</dict>
+		<dict>
+			<key>Content</key>
+			<dict>
+				<key>PBXProjectModuleGUID</key>
+				<string>2222C1501022227400CE52E6</string>
+				<key>PBXProjectModuleLabel</key>
+				<string>Project.h</string>
+				<key>PBXSplitModuleInNavigatorKey</key>
+				<dict>
+					<key>Split0</key>
+					<dict>
+						<key>PBXProjectModuleGUID</key>
+						<string>2222C1511022227400CE52E6</string>
+						<key>PBXProjectModuleLabel</key>
+						<string>Project.h</string>
+						<key>_historyCapacity</key>
+						<integer>0</integer>
+						<key>bookmark</key>
+						<string>2222C16D102237B500CE52E6</string>
+						<key>history</key>
+						<array>
+							<string>2222C14C1022226E00CE52E6</string>
+						</array>
+					</dict>
+					<key>SplitCount</key>
+					<string>1</string>
+				</dict>
+				<key>StatusBarVisibility</key>
+				<true/>
+			</dict>
+			<key>Geometry</key>
+			<dict>
+				<key>Frame</key>
+				<string>{{0, 20}, {625, 677}}</string>
+				<key>PBXModuleWindowStatusBarHidden2</key>
+				<false/>
+				<key>RubberWindowFrame</key>
+				<string>94 160 625 718 0 0 1440 878 </string>
 			</dict>
 		</dict>
 	</array>
@@ -522,7 +562,8 @@
 	<array>
 		<string>1C530D52069F1CE1000CFCEE</string>
 		<string>/Users/jasonwat/wd/personal/logjammin/logjammin.xcodeproj</string>
-		<string>2222C1331021F92100CE52E6</string>
+		<string>2222C1501022227400CE52E6</string>
+		<string>2222C1561022233D00CE52E6</string>
 	</array>
 	<key>WindowString</key>
 	<string>1074 267 359 611 0 0 1440 878 </string>

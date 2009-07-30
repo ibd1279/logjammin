@@ -22,6 +22,7 @@ public:
     
     //! Get all backlogs based on a natural key.
     /*!
+     \par Backlogs in the list must be deallocated with "delete".
      \param project The Project to search under.
      \param version The version to get the backlogs for.
      \param category The category to get the backlogs for.
@@ -33,6 +34,7 @@ public:
     
     //! Get a list of backlogs matching the provided search term.
     /*!
+     \par Backlogs in the list must be deallocated with "delete".
      \param term The term to search for.
      \param project The Project to search under.
      \param version The version to search under.

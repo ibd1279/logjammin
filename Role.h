@@ -20,6 +20,7 @@ public:
     
     //! Get a list of all roles in the database.
     /*!
+     \par Roles in the list must be deallocated with "delete".
      \return A list of roles.
      */
     static std::list<Role *> all();
