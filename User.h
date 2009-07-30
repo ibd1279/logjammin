@@ -49,7 +49,7 @@ public:
     
     //! Get a user by login.
     /*!
-     \param key The login to search for.
+     \param login The login to search for.
      \param model Pointer to the object to populate.
      */
     static void at_login(const std::string &login, User *model);
@@ -142,7 +142,7 @@ public:
     
     //! Set the role for this user.
     /*!
-     \param The user role.
+     \param role The user role.
      */
     void role(const Role &role);
     

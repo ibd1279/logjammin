@@ -1,7 +1,7 @@
 #include <string>
 #include "lunar.h"
 
-//! Rss Item class. Used to store an RSS item.
+//! Rss Item class.
 /*!
  \author Jason Watson
  \version 1.0

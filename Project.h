@@ -94,7 +94,7 @@ public:
     
     //! Set the commit feed URL.
     /*!
-     \param The commit feed URL.
+     \param feed The commit feed URL.
      */
     void commit_feed(const std::string &feed) { _commit_feed = feed; };
     
