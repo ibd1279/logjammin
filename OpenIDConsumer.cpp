@@ -6,11 +6,11 @@ namespace {
     const char ASSOC_INDX_HANDLE[] = "/var/db/logjammin/assoc_handle.tcb";
     const char ASSOC_INDX_PROVIDER[] = "/var/db/logjammin/assoc_provider.tcb";
     
-    struct AssociationWithPkey : public openid_1_1::AssociatedRelayConsumer::Association, Model<AssociationWithPkey> {
+    struct AssociationWithPkey : public openid_1_1::Association, Model<AssociationWithPkey> {
         static void at(unsigned long long key, AssociationWithPkey *model);
         
         AssociationWithPkey() { }
-        AssociationWithPkey(openid_1_1::AssociatedRelayConsumer::Association *);
+        AssociationWithPkey(openid_1_1::Association *);
         AssociationWithPkey(unsigned long long key) { AssociationWithPkey::at(key, this); };
         
         const std::string serialize() const {
@@ -164,7 +164,7 @@ namespace {
         return new AssocDB();
     }
     
-    AssociationWithPkey::AssociationWithPkey(openid_1_1::AssociatedRelayConsumer::Association *src) {
+    AssociationWithPkey::AssociationWithPkey(openid_1_1::Association *src) {
         assoc_type.assign(src->assoc_type);
         assoc_handle.assign(src->assoc_handle);
         provider.assign(src->provider);
@@ -191,7 +191,7 @@ void LogJamminConsumer::invalidate_assoc_handle(const std::string &assoc_handle)
     }
 }
 
-std::string *LogJamminConsumer::lookup_assoc_handle(const std::string &provider) {
+const std::string *LogJamminConsumer::lookup_assoc_handle(const std::string &provider) {
     std::cerr << "looking up handle by provider " << provider << std::endl;
 
     AssocDB dao;
@@ -204,7 +204,7 @@ std::string *LogJamminConsumer::lookup_assoc_handle(const std::string &provider)
     return new std::string(assoc.assoc_handle);
 }
 
-LogJamminConsumer::Association *LogJamminConsumer::lookup_association(const std::string &assoc_handle) {
+openid_1_1::Association *LogJamminConsumer::lookup_association(const std::string &assoc_handle) {
     std::cerr << "looking up association by handle " << assoc_handle << std::endl;
 
     AssocDB dao;
@@ -217,9 +217,9 @@ LogJamminConsumer::Association *LogJamminConsumer::lookup_association(const std:
     return ptr;
 }
 
-void LogJamminConsumer::store_assoc_handle(const Association *association) {
+void LogJamminConsumer::store_assoc_handle(const openid_1_1::Association *association) {
     AssocDB dao;
-    AssociationWithPkey assoc((openid_1_1::AssociatedRelayConsumer::Association *)association);
+    AssociationWithPkey assoc((openid_1_1::Association *)association);
     std::cerr << "Storing Assocation " << assoc.serialize() << std::endl;
     dao.put(&assoc);
 }

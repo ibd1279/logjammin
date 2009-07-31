@@ -422,24 +422,30 @@ namespace openid_1_1 {
     
     std::string AssociatedRelayConsumer::checkid_setup(const std::string &return_to,
                                                        const std::string &trust_root) {
-
-        std::string *assoc_handle = lookup_assoc_handle(openid_provider());
-        if(!assoc_handle)
-            assoc_handle = associate();
-        if(assoc_handle->compare("DUMB") == 0)
-            assoc_handle = NULL;
-
+        // Try to find our assoc handle.
+        const std::string *assoc_handle_ptr = lookup_assoc_handle(openid_provider());
+        if(!assoc_handle_ptr)
+            assoc_handle_ptr = associate();
+        
+        // If the handle is "DUMB", we have to fall back to the dumb consumer.
+        if(assoc_handle_ptr->compare("DUMB") == 0) {
+            delete assoc_handle_ptr;
+            return DumbRelayConsumer::checkid_setup(return_to, trust_root);
+        }
+        
+        // Move the string to the stack, so that return can free it.
+        std::string assoc_handle(*assoc_handle_ptr);
+        delete assoc_handle_ptr;
+        
         // construct check_id url.
         std::string redirect_url(DumbRelayConsumer::checkid_setup(return_to, trust_root));
 
         // cURL handle used for escaping.
         CURL *curl = new_curl_handle();
-        if(assoc_handle) {
-            redirect_url.append("&openid.assoc_handle=");
-            char *tmp = curl_easy_escape(curl, assoc_handle->c_str(), assoc_handle->size());
-            redirect_url.append(tmp);
-            curl_free(tmp);
-        }
+        redirect_url.append("&openid.assoc_handle=");
+        char *tmp = curl_easy_escape(curl, assoc_handle.c_str(), assoc_handle.size());
+        redirect_url.append(tmp);
+        curl_free(tmp);
         
         // Clean up after curl.
         curl_easy_cleanup(curl);
@@ -448,21 +454,27 @@ namespace openid_1_1 {
     }
     
     bool AssociatedRelayConsumer::check_authentication(const std::multimap<std::string, std::string> &params) {
-        std::string *assoc_handle = lookup_assoc_handle(openid_provider());
-        if(!assoc_handle)
-            assoc_handle = associate();
-        if(assoc_handle->compare("DUMB") == 0)
-            assoc_handle = NULL;
-
-        if(!assoc_handle)
+        // Try to find our assoc handle.
+        const std::string *assoc_handle_ptr = lookup_assoc_handle(openid_provider());
+        if(!assoc_handle_ptr)
+            assoc_handle_ptr = associate();
+        
+        // If the handle is "DUMB", we have to fall back to the dumb consumer.
+        if(assoc_handle_ptr->compare("DUMB") == 0) {
+            delete assoc_handle_ptr;
             return DumbRelayConsumer::check_authentication(params);
+        }
+        
+        // Move the string to the stack, so that return can free it.
+        std::string assoc_handle(*assoc_handle_ptr);
+        delete assoc_handle_ptr;
         
         // Not possible to be missing the assoc_handle
         std::multimap<std::string, std::string>::const_iterator assoc_iter = params.find(std::string("openid.assoc_handle"));
         if(assoc_iter == params.end())
             return false;
         
-        if(assoc_handle->compare(assoc_iter->second) == 0) {
+        if(assoc_handle.compare(assoc_iter->second) == 0) {
             // make sure this request was signed.
             std::multimap<std::string, std::string>::const_iterator sig_iter = params.find(std::string("openid.sig"));
             if(sig_iter == params.end())
@@ -505,15 +517,16 @@ namespace openid_1_1 {
             }
             
             // attempt to recreate the signature.
-            Association *assoc = lookup_association(*assoc_handle);
+            Association *assoc = lookup_association(assoc_handle);
             if(!assoc)
                 return false;
             std::string our_signature(create_signature(message.str(), assoc->secret));
+            delete assoc;
 
             // Test that the signature created matches the one given.
             return (their_signature.compare(our_signature) == 0);
             
-        } else if(assoc_handle->compare(assoc_iter->second) != 0 &&
+        } else if(assoc_handle.compare(assoc_iter->second) != 0 &&
            (assoc_iter = params.find("openid.invalidate_handle")) != params.end()) {
             
             // Prepare the verification post data.
@@ -567,25 +580,25 @@ namespace openid_1_1 {
         // Parse the results.
         std::string key_str, line;
         bool key = true;
-        Association *assoc = new Association();
+        Association assoc;
         for(std::string::const_iterator iter = content.begin();
             iter != content.end();
             ++iter) {
             if(!key && *iter == '\n') {
                 if(key_str.compare("assoc_type") == 0)
-                    assoc->assoc_type = line;
+                    assoc.assoc_type = line;
                 else if(key_str.compare("assoc_handle") == 0)
-                    assoc->assoc_handle = line;
+                    assoc.assoc_handle = line;
                 else if(key_str.compare("expies_in") == 0)
-                    assoc->expires_at = 0;
+                    assoc.expires_at = 0;
                 else if(key_str.compare("session_type") == 0)
-                    assoc->session_type = line;
+                    assoc.session_type = line;
                 else if(key_str.compare("dh_server_public") == 0)
-                    assoc->dh_server_public = line;
+                    assoc.dh_server_public = line;
                 else if(key_str.compare("mac_key") == 0)
-                    assoc->secret = line;
+                    assoc.secret = line;
                 else if(key_str.compare("enc_mac_key") == 0)
-                    assoc->secret = line;
+                    assoc.secret = line;
                 line.clear();
                 key = true;
             } else if(key && *iter == ':') {
@@ -596,11 +609,11 @@ namespace openid_1_1 {
                 line.push_back(*iter);
             }
         }
-        assoc->provider = openid_provider();
+        assoc.provider = openid_provider();
         
         // Store the assoc
-        store_assoc_handle(assoc);
+        store_assoc_handle(&assoc);
         
-        return &(assoc->assoc_handle);
+        return new std::string(assoc.assoc_handle);
     }
 };
