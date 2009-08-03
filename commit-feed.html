@@ -1,28 +1,31 @@
 <script>
 $(document).ready(function(){
     $(".versionSelector").change(function() {
-        var str = this.options[this.selectedIndex].text;
-        var id = this.id.replace(/versionSelector-/, "taskAssignments-");
+        var dropDown = $(this);
+        var str = dropDown.val();
+        var id = $("#" + dropDown.attr("id").replace(/versionSelector-/, "taskAssignments-"));
         if(str[0] != '-') {
             $.getJSON("${project:pkey()}/" + str + "/backlog-list", function(data) {
-                $("#" + id + " li select").html("");
+                id.find("li select option").remove();
+                var firstLi = id.find("li:first").clone();
+                id.find("li").remove();
+                firstLi.appendTo(id);
                 $.each(data, function(i, item) {
-                    $("#" + id + " li select").append("<option value=\"" + item.pkey + "\">" + item.brief + "</option>");
+                    id.find("li select").append("<option value=\"" + item.pkey + "\">" + item.brief + "</option>");
                 });
-                $("#" + id).parent().show();
+                id.parent().show();
             });
         } else {
-            $("#" + id).parent().hide();
+            id.parent().hide();
         }
     });
     $(".taskAddition").click(function(event) {
         event.preventDefault();
-        var str = this.id.replace(/taskAddition-/, "taskAssignments-");
-        $("#" + str).append("<li><select name=\""+str+"\"></select></li>");
-        str = str.replace(/taskAssignments-/, "versionSelector-");
-        $("#" + str).change();
+        var ul = $("#" + $(this).attr("id").replace(/taskAddition-/, "taskAssignments-"));
+        ul.find("li:first").clone().appendTo(ul);
     });
     $(".taskAssignments").parent().hide();
+    $(".versionSelector").change();
 });
 </script>
 <form action="POST">
@@ -35,7 +38,7 @@ $(document).ready(function(){
     </td>
     <td><select class="versionSelector" id="versionSelector-${h}">
         <option>-- Select A Version--</option><?lc for i, version in ipairs(project:versions()) do ?>
-        <option>${version}</option><?lc end ?>
+        <option>${_html(version)}</option><?lc end ?>
     </select></td>
     <td>
         <ul class="taskAssignments" id="taskAssignments-${h}">
