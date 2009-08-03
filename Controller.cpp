@@ -106,6 +106,9 @@ void AuthenticateFilter::execute(CGI::Request *request, CGI::Response *response)
                                      ingredients,
                                      36000,
                                      true);
+                    
+                    // Redirect to where they were trying to go.
+                    response->redirect(request->original_request_file());
                 } else {
                     std::cerr << "Exception loging in. Check auth returned false." << std::endl;
                     delete user;
