@@ -30,8 +30,8 @@ $(document).ready(function(){
 <?lc for h, item in ipairs(rss_items) do ?>
 <tr>
     <td>
-        <div<a href="${_html(item:link())}">${_html(item:title())}</a></div>
-        <div>${item:description()}</div>${item:date()}
+        <div<a href="${_html(item:link())}">${_html(item:date())}</a></div>
+        <div>${item:description()}</div>
     </td>
     <td><select class="versionSelector" id="versionSelector-${h}">
         <option>-- Select A Version--</option><?lc for i, version in ipairs(project:versions()) do ?>
@@ -44,6 +44,7 @@ $(document).ready(function(){
         </ul>
         <a href="#" class="taskAddition" id="taskAddition-${h}">More Tasks</a>
         <input type="hidden" name="taskComment-${h}" value="${_html(item:description())}" />
+        <input type="hidden" name="taskDate-${h}" value="${_html(item:date_ts())}" />
     </td>
 </tr>
 <?lc end ?>

@@ -26,15 +26,18 @@ public:
     
     //! Get a list of all users.
     /*!
-     \par Users in the list must be deallocated with "delete".
+     \par
+     Users in the list must be deallocated with "delete".
      \return A list of all users.
      */
     static std::list<User *> all();
     
     //! Get a list of users matching a specific term.
     /*!
-     \par The email address and name are searched.
-     \par Users in the list must be deallocated with "delete".
+     \par
+     The email address and name are searched.
+     \par
+     Users in the list must be deallocated with "delete".
      \param term The search term.
      \return A list of matching users.
      */
@@ -77,7 +80,8 @@ public:
     
     //! Create a user object in a lua context.
     /*!
-     \par This constructor creates an empty user object for placement in a
+     \par
+     This constructor creates an empty user object for placement in a
      Lua context.
      \param L The lua context.
      */
@@ -116,7 +120,8 @@ public:
     
     //! Get the login count for the user.
     /*!
-     \par This is used to prevent replay attacks on the user login.
+     \par
+     This is used to prevent replay attacks on the user login.
      \return The number of times the user has logged in.
      */
     unsigned long long login_count() const { return _login_count; };
@@ -127,6 +132,21 @@ public:
      updated with the new count, and a new cookie hash.
      */
     void incr_login_count() { _login_count++; };
+    
+    //! Get the last processed commit timestamp.
+    /*!
+     \par
+     The last processed commit is stored in order to skip un-needed entries in
+     the commit log page.
+     \return The last processed commit timestamp.
+     */
+    unsigned long long last_commit() const { return _last_commit; };
+    
+    //! Set the last commit timestampe.
+    /*!
+     \param ts The last commit timestamp
+     */
+    void last_commit(unsigned long long ts) { _last_commit = ts; };
     
     //! Get the role for this user.
     /*!
@@ -221,7 +241,7 @@ protected:
     virtual ModelDB<User> *dao() const;
 private:
     std::string _name, _cookie, _email;
-    unsigned long long _login_count;
+    unsigned long long _login_count, _last_commit;
     Role _role;
     std::list<std::string> _allowed, _denied, _logins;
     std::set<std::string> *_cached_allowed;

@@ -358,6 +358,7 @@ const std::string User::serialize() const {
     data << "email=\"" << escape(_email) << "\";\n";
     data << "count=\"" << _login_count << "\";\n";
     data << "role=\"" << _role.pkey() << "\";\n";
+    data << "last_commit=\"" << _last_commit << "\";\n";
     data << "login{\n";
     for(std::list<std::string>::const_iterator iter = _logins.begin();
         iter != _logins.end();
@@ -384,11 +385,18 @@ const std::string User::serialize() const {
 }
 
 void User::populate(OpenProp::File *props) {
-    name(std::string(props->getValue("name")));
-    _cookie = std::string(props->getValue("cookie"));
-    email(std::string(props->getValue("email")));
-    _login_count = (long)props->getValue("count");
-    role(Role((long)props->getValue("role")));
+    if(props->getValue("name").exists())
+        name(std::string(props->getValue("name")));
+    if(props->getValue("cookie").exists())
+        _cookie = std::string(props->getValue("cookie"));
+    if(props->getValue("email").exists())
+        email(std::string(props->getValue("email")));
+    if(props->getValue("count").exists())
+        _login_count = (long)props->getValue("count");
+    if(props->getValue("role").exists())
+        role(Role((long)props->getValue("role")));
+    if(props->getValue("last_commit").exists())
+        _last_commit = (long)props->getValue("last_commit");
     
     OpenProp::ElementIterator *iter = props->getElement("login")->getElements();
     while(iter->more())

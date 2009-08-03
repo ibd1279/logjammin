@@ -90,4 +90,10 @@ public:
      \param s The item date.
      */
     void date(const std::string &s) { _date = s; };
+    
+    //! Get the date as a unix timestamp.
+    /*!
+     \return A unix timestamp.
+     */
+    long long date_ts() const;
 };
