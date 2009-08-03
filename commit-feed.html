@@ -1,3 +1,31 @@
+<script>
+$(document).ready(function(){
+    $(".versionSelector").change(function() {
+        var str = this.options[this.selectedIndex].text;
+        var id = this.id.replace(/versionSelector-/, "taskAssignments-");
+        if(str[0] != '-') {
+            $.getJSON("${project:pkey()}/" + str + "/backlog-list", function(data) {
+                $("#" + id + " li select").html("");
+                $.each(data, function(i, item) {
+                    $("#" + id + " li select").append("<option value=\"" + item.pkey + "\">" + item.brief + "</option>");
+                });
+                $("#" + id).parent().show();
+            });
+        } else {
+            $("#" + id).parent().hide();
+        }
+    });
+    $(".taskAddition").click(function(event) {
+        event.preventDefault();
+        var str = this.id.replace(/taskAddition-/, "taskAssignments-");
+        $("#" + str).append("<li><select name=\""+str+"\"></select></li>");
+        str = str.replace(/taskAssignments-/, "versionSelector-");
+        $("#" + str).change();
+    });
+    $(".taskAssignments").parent().hide();
+});
+</script>
+<form action="POST">
 <table>
 <?lc for h, item in ipairs(rss_items) do ?>
 <tr>
@@ -5,18 +33,20 @@
         <div<a href="${_html(item:link())}">${_html(item:title())}</a></div>
         <div>${item:description()}</div>${item:date()}
     </td>
-    <td><select>
+    <td><select class="versionSelector" id="versionSelector-${h}">
         <option>-- Select A Version--</option><?lc for i, version in ipairs(project:versions()) do ?>
         <option>${version}</option><?lc end ?>
     </select></td>
-    <td><ul>
-        <li><select>
-        <option>Associated Task 1.</option>
-        </select></li>
-        <li><select>
-        <option>Associated Task 2.</option>
-        </select></li>
-    </ul></td>
+    <td>
+        <ul class="taskAssignments" id="taskAssignments-${h}">
+            <li><select name="taskAssignments-${h}">
+            </select></li>
+        </ul>
+        <a href="#" class="taskAddition" id="taskAddition-${h}">More Tasks</a>
+        <input type="hidden" name="taskComment-${h}" value="${_html(item:description())}" />
+    </td>
 </tr>
 <?lc end ?>
 </table>
+<input type="submit" value="Update tasks" />
+</form>

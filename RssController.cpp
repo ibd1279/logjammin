@@ -34,7 +34,7 @@ namespace {
             
             std::string name(tag_name);
             if(name.compare("item") == 0) {
-                state->items.push_back(new RssItem());
+                state->items.push_front(new RssItem());
                 state->in_item = true;
             } else if(state->in_item) {
                 if(name.compare("title") == 0)
@@ -61,17 +61,17 @@ namespace {
                 state->in_item = false;
             } else if(state->in_item) {
                 if(name.compare("title") == 0) {
-                    state->items.back()->title(state->line);
+                    state->items.front()->title(state->line);
                 } else if(name.compare("link") == 0) {
-                    state->items.back()->link(state->line);
+                    state->items.front()->link(state->line);
                 } else if(name.compare("description") == 0) {
-                    state->items.back()->description(state->line);
+                    state->items.front()->description(state->line);
                 } else if(name.compare("author") == 0) {
-                    state->items.back()->author(state->line);
+                    state->items.front()->author(state->line);
                 } else if(name.compare("guid") == 0) {
-                    state->items.back()->guid(state->line);
+                    state->items.front()->guid(state->line);
                 } else if(name.compare("pubDate") == 0) {
-                    state->items.back()->date(state->line);
+                    state->items.front()->date(state->line);
                 }
             }
         }
@@ -83,7 +83,7 @@ namespace {
         }
     };
     
-    size_t stringbuilder_fetch(void *ptr, size_t size, size_t nmemb, void *stream) {
+    size_t itembuilder_fetch(void *ptr, size_t size, size_t nmemb, void *stream) {
         XML_Parser p = static_cast<XML_Parser>(stream);
         if(!p) return 0;
         
@@ -124,7 +124,7 @@ void CommitFeedController::execute(CGI::Request *request, CGI::Response *respons
     
     CURL *curl = curl_easy_init();
     curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 1L);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &stringbuilder_fetch);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &itembuilder_fetch);
     curl_easy_setopt(curl, CURLOPT_AUTOREFERER, 1L);
     curl_easy_setopt(curl, CURLOPT_ENCODING, "gzip");
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
