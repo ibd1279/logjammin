@@ -152,7 +152,8 @@ void MessageExpanderFilter::execute(CGI::Request *request, CGI::Response *respon
 }
 
 bool TemplateTopFilter::is_requested(CGI::Request *request, CGI::Response *response) {
-    // Add logic here for skiping AJAX Calls, etc.
+    if(request->header("HTTP_X_REQUESTED_WITH").compare("XMLHttpRequest") == 0)
+        return false;
     return true;
 }
 
@@ -165,7 +166,8 @@ void TemplateTopFilter::execute(CGI::Request *request, CGI::Response *response) 
 }
 
 bool TemplateBottomFilter::is_requested(CGI::Request *request, CGI::Response *response) {
-    // Add logic here for skiping AJAX Calls, etc.
+    if(request->header("HTTP_X_REQUESTED_WITH").compare("XMLHttpRequest") == 0)
+        return false;
     return true;
 }
 

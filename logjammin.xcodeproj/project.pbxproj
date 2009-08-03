@@ -93,6 +93,7 @@
 		224046D6100595160005461A /* User.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = User.cpp; sourceTree = "<group>"; };
 		224046DA100597D90005461A /* Role.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Role.h; sourceTree = "<group>"; };
 		224046DB100597D90005461A /* Role.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Role.cpp; sourceTree = "<group>"; };
+		2265F69B1023E39500B3621F /* backlog-list.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "backlog-list.json"; sourceTree = "<group>"; };
 		2271D918101288A000749D9A /* BacklogController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BacklogController.h; sourceTree = "<group>"; };
 		2271D919101288A000749D9A /* BacklogController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BacklogController.cpp; sourceTree = "<group>"; };
 		2271D98C1012C06D00749D9A /* error-404.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "error-404.html"; sourceTree = "<group>"; };
@@ -251,6 +252,7 @@
 				2238DF210FBDD47700842744 /* template.html */,
 				2238DF8C0FBE000100842744 /* backlog-edit.html */,
 				22ED3CFA0FBA00C9004E2511 /* backlog-list.html */,
+				2265F69B1023E39500B3621F /* backlog-list.json */,
 				22ED3CFB0FBA00C9004E2511 /* project-edit.html */,
 				22ED3CB90FB9210C004E2511 /* project-list.html */,
 				2271D9901012C06D00749D9A /* project-purge.html */,

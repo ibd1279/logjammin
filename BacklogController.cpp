@@ -53,7 +53,10 @@ void BacklogListController::execute(CGI::Request *request, CGI::Response *respon
         request->attribute("_error", ex.msg);
     }
     
-    response->execute("backlog-list.html", request);
+    if(request->header("HTTP_X_REQUESTED_WITH").compare("XMLHttpRequest") == 0)
+        response->execute("backlog-list.json", request);
+    else
+        response->execute("backlog-list.html", request);
     request->attribute("handled", "true");
 }
 

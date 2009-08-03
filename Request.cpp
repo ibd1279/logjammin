@@ -254,6 +254,46 @@ namespace  {
     void html_escape_string(const char *str, std::string &result) {
     };
     
+    int json_escape(lua_State *L) {
+        std::string result;
+        
+        size_t sz;
+        const char *str = lua_tolstring(L, 1, &sz);
+        for(int h = 0; h < sz; ++h) {
+            switch(str[h]) {
+                case '\"':
+                    result.append("\\\"");
+                    break;
+                case '\\':
+                    result.append("\\\\");
+                    break;
+                case '/':
+                    result.append("\\/");
+                    break;
+                case '\b':
+                    result.append("\\b");
+                    break;
+                case '\f':
+                    result.append("\\f");
+                    break;
+                case '\n':
+                    result.append("\\n");
+                    break;
+                case '\r':
+                    result.append("\\r");
+                    break;
+                case '\t':
+                    result.append("\\t");
+                    break;
+                default:
+                    result.push_back(str[h]);
+            }
+        }
+        
+        lua_pushstring(L, result.c_str());
+        return 1;
+    }
+    
     int html_escape(lua_State *L) {
         std::string result;
 
@@ -304,6 +344,8 @@ CGI::Request::Request() {
     
     lua_pushcfunction(_lua_state, html_escape);
     lua_setglobal(_lua_state, "_html");
+    lua_pushcfunction(_lua_state, json_escape);
+    lua_setglobal(_lua_state, "_json");
 }
 
 CGI::Request::Request(lua_State *L) {
@@ -319,6 +361,8 @@ std::string CGI::Request::header(const std::string &h) const {
     const char *v = getenv(h.c_str());
     return v == NULL ? std::string("") : std::string(v);
 }
+
+//extern char **environ;
 
 void CGI::Request::populate_cgi_parameters() {
     _is_post = false;
@@ -362,6 +406,13 @@ void CGI::Request::populate_cgi_parameters() {
     
     parse_path_info(_path_info, _split_path_info);
     parse_params(_query_string, _params);
+    
+    /*
+    char **tmp = environ;
+    while(*tmp) {
+        std::cerr << "env var " << *tmp << std::endl;
+        tmp++;
+    }*/
 }
 
 std::string CGI::Request::original_request_host() const {
