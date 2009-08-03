@@ -33,7 +33,7 @@ $(document).ready(function(){
 <?lc for h, item in ipairs(rss_items) do ?>
 <tr>
     <td>
-        <div<a href="${_html(item:link())}">${_html(item:date())}</a></div>
+        <div><a href="${_html(item:link())}">${_html(item:date())}</a></div>
         <div>${item:description()}</div>
     </td>
     <td><select class="versionSelector" id="versionSelector-${h}">
