@@ -139,13 +139,13 @@
 			children = (
 				222B665C101E46F300F45B04 /* libcrypto.dylib */,
 				227A47051018186B0013EACE /* libcurl.dylib */,
+				2222C09B1021D11200CE52E6 /* libexpat.dylib */,
 				221B34450FA8995D009AB597 /* liblua.a */,
 				220AD6C20FA1FFD400C604BE /* libtokyocabinet.a */,
 				2222BE6E101F83B400CE52E6 /* libtokyodystopia.dylib */,
 				08FB7795FE84155DC02AAC07 /* Source */,
 				C6859E8C029090F304C91782 /* Documentation */,
 				1AB674ADFE9D54B511CA2CBB /* Products */,
-				2222C09B1021D11200CE52E6 /* libexpat.dylib */,
 			);
 			name = logjammin;
 			sourceTree = "<group>";

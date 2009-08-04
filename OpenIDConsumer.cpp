@@ -45,6 +45,7 @@ namespace {
         AssociationWithPkey() { }
         AssociationWithPkey(openid_1_1::Association *);
         AssociationWithPkey(unsigned long long key) { AssociationWithPkey::at(key, this); };
+        virtual ~AssociationWithPkey() { };
         
         const std::string serialize() const {
             std::ostringstream data;
@@ -211,6 +212,8 @@ namespace {
 
 LogJamminConsumer::LogJamminConsumer(const std::string &identifier) : AssociatedRelayConsumer(identifier) {
 }
+
+LogJamminConsumer::~LogJamminConsumer() { };
 
 void LogJamminConsumer::invalidate_assoc_handle(const std::string &assoc_handle) {
     AssocDB dao;

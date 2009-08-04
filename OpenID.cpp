@@ -454,6 +454,8 @@ namespace openid_1_1 {
     AssociatedRelayConsumer::AssociatedRelayConsumer(const std::string &identifier) : DumbRelayConsumer(identifier) {
     }
     
+    AssociatedRelayConsumer::~AssociatedRelayConsumer() { };
+    
     std::string AssociatedRelayConsumer::checkid_setup(const std::string &return_to,
                                                        const std::string &trust_root) {
         // Try to find our assoc handle.
@@ -507,7 +509,7 @@ namespace openid_1_1 {
         std::multimap<std::string, std::string>::const_iterator assoc_iter = params.find(std::string("openid.assoc_handle"));
         if(assoc_iter == params.end())
             return false;
-        
+
         if(assoc_handle.compare(assoc_iter->second) == 0) {
             // make sure this request was signed.
             std::multimap<std::string, std::string>::const_iterator sig_iter = params.find(std::string("openid.sig"));

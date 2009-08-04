@@ -182,6 +182,9 @@ namespace openid_1_1 {
         //! Create a new association object.
         Association() : expires_at(0) { };
         
+        //! Delete an association.
+        virtual ~Association() { };
+        
         /*!
          \var std::string assoc_type
          \brief The type of association.
@@ -263,6 +266,7 @@ namespace openid_1_1 {
          \sa discovery()
          */
         AssociatedRelayConsumer(const std::string &identifier);
+        virtual ~AssociatedRelayConsumer();
         virtual std::string checkid_setup(const std::string &return_to,
                                           const std::string &trust_root);
         virtual bool check_authentication(const std::multimap<std::string, std::string> &params);
