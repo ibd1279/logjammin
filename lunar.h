@@ -1,7 +1,7 @@
 #pragma once;
 
 /*
- http://lua-users.org/wiki/SimplerCppBinding
+ Taken from http://lua-users.org/wiki/SimplerCppBinding with slight modifications.
  */
 
 extern "C" {
