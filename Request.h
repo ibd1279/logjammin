@@ -79,6 +79,11 @@ namespace CGI {
             lua_setfield(_lua_state, LUA_GLOBALSINDEX, key.c_str());
         }
         template <class T>
+        T *context_object(const std::string &key) {
+            lua_getfield(_lua_state, LUA_GLOBALSINDEX, key.c_str());
+            return Lunar<T>::check(_lua_state, -1);
+        }
+        template <class T>
         void context_object_list(const std::string &key, const std::list<T *> &l, bool gc) {
             lua_newtable(_lua_state);
             int i = 0;

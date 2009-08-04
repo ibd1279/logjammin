@@ -258,21 +258,21 @@ void User::at_login(const std::string &login, User *model) {
     dao.at(*(pkeys.begin()), model);
 }
 
-User::User() : _login_count(0) {
+User::User() : _login_count(0), _last_commit(0) {
     _cached_allowed = NULL;
 }
 
-User::User(unsigned long long key) : _login_count(0) {
+User::User(unsigned long long key) : _login_count(0), _last_commit(0) {
     _cached_allowed = NULL;
     User::at(key, this);
 }
 
-User::User(const std::string &login) : _login_count(0) {
+User::User(const std::string &login) : _login_count(0), _last_commit(0) {
     _cached_allowed = NULL;
     User::at_login(login, this);
 }
 
-User::User(lua_State *L) : _login_count(0) {
+User::User(lua_State *L) : _login_count(0), _last_commit(0) {
     _cached_allowed = NULL;
 }
 

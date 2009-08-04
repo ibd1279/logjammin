@@ -1,5 +1,34 @@
+<style>
+.tasks tr td { padding:2px 5px; }
+.tasks .date { }
+.tasks .text.hasMore .moreIcon { background-color:#fdb; }
+.tasks .text.hasMore .moreText { position:absolute; left:0; top:0; min-width:20em; background-color:#fff; border:solid 1px #ddd; padding:10px; }
+</style>
 <script>
 $(document).ready(function(){
+    $('.tasks .text').each(function() {
+        var textCell = $(this);
+        var text = textCell.html();
+        var sentences = text.split(/\.|<br\s*\/?>/i);
+        if(sentences.length > 1) {
+            var moreText = $('<div class="moreText"/>').append(text).css({
+                'display': 'none',
+                'position': 'absolute',
+                'left': 0,
+                'top': '20px'
+            });
+            var moreIcon = $('<span class="moreIcon">...</span>').css({
+                'position': 'relative',
+                'left': 0,
+                'top': 0
+            }).hover(function() {
+                moreText.show();
+            }, function() {
+                moreText.hide();
+            })
+            textCell.addClass('hasMore').empty().append(sentences[0]).append(moreIcon.append(moreText));
+        }
+    });
     $(".versionSelector").change(function() {
         var dropDown = $(this);
         var str = dropDown.val();
@@ -13,10 +42,12 @@ $(document).ready(function(){
                 $.each(data, function(i, item) {
                     id.find("li select").append("<option value=\"" + item.pkey + "\">" + item.brief + "</option>");
                 });
+                id.removeAttr("disabled");
                 id.parent().show();
             });
         } else {
             id.parent().hide();
+            id.attr("disabled", true);
         }
     });
     $(".taskAddition").click(function(event) {
@@ -24,30 +55,35 @@ $(document).ready(function(){
         var ul = $("#" + $(this).attr("id").replace(/taskAddition-/, "taskAssignments-"));
         ul.find("li:first").clone().appendTo(ul);
     });
-    $(".taskAssignments").parent().hide();
+    var assignments = $(".taskAssignments");
+    assignments.parent().hide();
+    assignments.attr("disabled", true);
     $(".versionSelector").change();
 });
 </script>
-<form action="POST">
-<table>
+<form method="POST">
+<table class="tasks">
 <?lc for h, item in ipairs(rss_items) do ?>
 <tr>
-    <td>
-        <div><a href="${_html(item:link())}">${_html(item:date())}</a></div>
-        <div>${item:description()}</div>
+    <td class="date">
+        <a href="${_html(item:link())}">${_html(item:date())}</a>
+    </td>
+    <td class="text">
+        ${item:description()}
     </td>
     <td><select class="versionSelector" id="versionSelector-${h}">
         <option>-- Select A Version--</option><?lc for i, version in ipairs(project:versions()) do ?>
         <option>${_html(version)}</option><?lc end ?>
-    </select></td>
-    <td>
+    </select>
+    <div>
         <ul class="taskAssignments" id="taskAssignments-${h}">
             <li><select name="taskAssignments-${h}">
             </select></li>
         </ul>
         <a href="#" class="taskAddition" id="taskAddition-${h}">More Tasks</a>
-        <input type="hidden" name="taskComment-${h}" value="${_html(item:description())}" />
+        <input type="hidden" name="taskComment-${h}" value="${_html("Associated with commit <a href=\"" .. _html(item:link()) .. "\">" .. _html(item:link()) .. "</a>&nbsp;")}" />
         <input type="hidden" name="taskDate-${h}" value="${_html(item:date_ts())}" />
+    </div>
     </td>
 </tr>
 <?lc end ?>

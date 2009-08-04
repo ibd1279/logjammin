@@ -4,6 +4,8 @@ extern "C" {
 }
 #include <list>
 #include "Project.h"
+#include "Backlog.h"
+#include "User.h"
 #include "RssItem.h"
 #include "RssController.h"
 
@@ -24,9 +26,10 @@ namespace {
     class RssParser {
         std::string line;
         bool in_item;
+        long long min_date;
     public:
         std::list<RssItem *> items;
-        RssParser() : in_item(false) { };
+        RssParser(long long ts) : in_item(false), min_date(ts) { };
         static void start_element(void *user_data,
                                   const XML_Char *tag_name,
                                   const XML_Char **atts) {
@@ -59,6 +62,9 @@ namespace {
             if(name.compare("item") == 0) {
                 state->line.clear();
                 state->in_item = false;
+                if(state->min_date >= 0 && state->items.front()->date_ts() < state->min_date) {
+                    state->items.pop_front();
+                }
             } else if(state->in_item) {
                 if(name.compare("title") == 0) {
                     state->items.front()->title(state->line);
@@ -112,10 +118,54 @@ void CommitFeedController::execute(CGI::Request *request, CGI::Response *respons
     // Remove the command name.
     args.pop_back();
     
+    User *user = request->context_object<User>("_user");
+    
+    if(request->is_post()) {
+        long long last_commit = 0;
+        // Loop over the submitted fields.
+        CGI::Request::param_map::const_iterator end(request->params().upper_bound("taskAssignments-zzzz"));
+        for(CGI::Request::param_map::const_iterator iter = request->params().lower_bound("taskAssignments-");
+            iter != end;
+            ++iter) {
+            // Prepare the other keys we will need.
+            std::string commit_time_key(iter->first);
+            commit_time_key.replace(0, 15, "taskDate");
+            std::string commit_comment_key(iter->first);
+            commit_comment_key.replace(0, 15, "taskComment");
+            
+            // Take care of the commit time.
+            long long commit_time = atol(request->param(commit_time_key).c_str());
+            if(commit_time > last_commit) last_commit = commit_time;
+            
+            Backlog b;
+            Backlog::at(atol(iter->second.c_str()), &b);
+            
+            std::ostringstream comment;
+            comment << user->name() << ": " << request->param(commit_comment_key);
+            b.comments().push_back(comment.str());
+            
+            std::ostringstream assigned_name;
+            assigned_name << "assigned:" << user->name();
+            b.tags().insert(assigned_name.str());
+            
+            std::ostringstream assigned_pkey;
+            assigned_pkey << "assigned:" << user->pkey();
+            b.tags().insert(assigned_pkey.str());
+            
+            if(atol(b.disposition().substr(0,3).c_str()) < 300)
+                b.disposition("300-ASSIGNED");
+            
+            b.save();
+        }
+        user->last_commit(last_commit);
+        user->save();
+    }
+    
+    
     Project p(atol(args.front().c_str()));
     char error_buffer[CURL_ERROR_SIZE];
     XML_Parser parser;
-    RssParser parser_state;
+    RssParser parser_state(user->last_commit());
     
     parser = XML_ParserCreate("UTF-8");
     XML_SetUserData(parser, &parser_state);

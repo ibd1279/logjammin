@@ -79,6 +79,7 @@ void BacklogEditController::execute(CGI::Request *request, CGI::Response *respon
     // Remove the command name.
     args.pop_back();
     
+    User *user = request->context_object<User>("_user");
     Backlog b;
     if(args.size() > 0)
         Backlog::at(atol(args.front().c_str()), &b);
@@ -103,8 +104,8 @@ void BacklogEditController::execute(CGI::Request *request, CGI::Response *respon
         
         // Store the comment.
         if(request->param("comments").size() > 0) {
-            std::string comment(request->param("comments"));
-            comment.append("\n").append(request->cookie("lj_user_login"));
+            std::string comment(user->name()).append(": ");
+            comment.append(request->param("comments"));
             b.comments().push_back(comment);
         }
         
