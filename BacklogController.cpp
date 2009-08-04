@@ -137,8 +137,8 @@ void BacklogEditController::execute(CGI::Request *request, CGI::Response *respon
         
         // Store the comment.
         if(request->param("comments").size() > 0) {
-            std::string comment(user->name()).append(": ");
-            comment.append(request->param("comments"));
+            std::string comment(user->name());
+            comment.append(": ").append(request->param("comments"));
             b.comments().push_back(comment);
         }
         
