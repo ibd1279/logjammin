@@ -34,6 +34,7 @@
 #include <iostream>
 #include <sstream>
 #include <cstdlib>
+#include <ctime>
 #include <list>
 #include <map>
 extern "C" {
@@ -534,7 +535,6 @@ namespace openid_1_1 {
                     // look for the param
                     std::string key_to_find("openid.");
                     key_to_find.append(key);
-                    std::cerr << "Looking for key " << key_to_find << std::endl;
                     sig_iter = params.find(key_to_find);
                     if(sig_iter == params.end())
                         return false;
@@ -622,8 +622,8 @@ namespace openid_1_1 {
                     assoc.assoc_type = line;
                 else if(key_str.compare("assoc_handle") == 0)
                     assoc.assoc_handle = line;
-                else if(key_str.compare("expies_in") == 0)
-                    assoc.expires_at = 0;
+                else if(key_str.compare("expires_in") == 0)
+                    assoc.expires_at = atol(line.c_str()) + time(NULL);
                 else if(key_str.compare("session_type") == 0)
                     assoc.session_type = line;
                 else if(key_str.compare("dh_server_public") == 0)
