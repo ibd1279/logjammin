@@ -151,7 +151,24 @@ void BacklogEditController::execute(CGI::Request *request, CGI::Response *respon
             ++iter) {
             if(iter->second.size()) b.tags().insert(iter->second);
         }
-
+        
+        // Store the assignments
+        range = request->params().equal_range("assigned");
+        for(CGI::Request::param_map::const_iterator iter = range.first;
+            iter != range.second;
+            ++iter) {
+            if(iter->second.size()) {
+                User assigned_user(atol(iter->second.c_str()));
+                std::ostringstream user_pkey;
+                user_pkey << "assigned:" << assigned_user.pkey();
+                b.tags().insert(user_pkey.str());
+                
+                std::ostringstream user_name;
+                user_name << "assigned:" << assigned_user.name();
+                b.tags().insert(user_name.str());
+            }
+        }
+        
         // Attempt to save.
         try {
             b.save();
@@ -159,7 +176,7 @@ void BacklogEditController::execute(CGI::Request *request, CGI::Response *respon
             // On success, redirect.
             std::ostringstream url;
             url << request->original_request_script();
-            url << "/" << b.pkey() << "/backlog-edit?_msg=SAVE_SUCCESS";
+            url << "/" << b.project().pkey() << "/" << b.version() << "/backlog-list?_msg=SAVE_SUCCESS";
             response->redirect(url.str());
         } catch(const std::string &ex) {
             request->attribute("_error", ex);
@@ -170,6 +187,7 @@ void BacklogEditController::execute(CGI::Request *request, CGI::Response *respon
     
     request->context_object("backlog", &b, false);
     request->context_object_list("projects", Project::all(), true);
+    request->context_object_list("users", User::all(), true);
     response->execute("backlog-edit.html", request);
     request->attribute("handled", "true");
 }
