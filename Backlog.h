@@ -60,6 +60,8 @@ public:
      \param project The Project to search under.
      \param version The version to get the backlogs for.
      \param category The category to get the backlogs for.
+     \param lower_disposition The lower disposition to include in results (inclusive).
+     \param upper_disposition The upper disposition to include in results (exclusive).
      \return A list of backlogs
      */
     static std::list<Backlog *> all(const Project &project,
@@ -76,6 +78,8 @@ public:
      \param project The Project to search under.
      \param version The version to search under.
      \param category The category to search under.
+     \param lower_disposition The lower disposition to include in results (inclusive).
+     \param upper_disposition The upper disposition to include in results (exclusive).
      \return A list of backlogs
      */
     static std::list<Backlog *> like(const std::string &term,
@@ -157,20 +161,100 @@ public:
      \param c The category.
      */
     void category(const std::string &c) { _category = c; };
+    
+    //! Get a copy of the story text associated with this task.
+    /*!
+     \return A copy of the story text associated with this task.
+     */
     std::string story() const { return _story; };
+    
+    //! Set the story text associated with this task.
+    /*!
+     \param s The story text.
+     */
     void story(const std::string &s);
+    
+    //! Get a copy of the disposition of this task.
+    /*!
+     \return A copy of the disposition of this task.
+     */
     std::string disposition() const { return _disposition; };
+    
+    //! Set the disposition of this task
+    /*!
+     \param s The disposition.
+     */
     void disposition(const std::string &s) { _disposition = s; };
+    
+    //! Get the estimated effort for this task.
+    /*!
+     \par
+     The estimate is in hours.
+     \return The estimate.
+     */
     double estimate() const { return _estimate; };
+    
+    //! Set the estimate for this task.
+    /*!
+     \par
+     The estimate is in hours.
+     \param e The estimate.
+     */
     void estimate(const double e) { _estimate = e; };
+    
+    //! Get the actual effort for this task.
+    /*!
+     \par
+     The actual effort is in hours.
+     \return The actual effort.
+     */
     double actual() const { return _actual; };
+    
+    //! Set the actual effort for this task.
+    /*!
+     \par
+     The actual effort is in hours.
+     \param e The actual effort.
+     */
     void actual(const double e) { _actual = e; };
+    
+    //! Get the natural key for this backlog.
+    /*!
+     \par
+     The natural key consists of the project, the version, the category, and the
+     first sentence of the story.
+     \return A copy of the natural key.
+     */
     std::string natural_key() const;
     
+    //! Get a reference to the comments list.
+    /*!
+     \par
+     New comments should be put at the end of the list.
+     \return A reference to the comments list.
+     */
     std::list<std::string> &comments() { return _comments; };
-    std::list<std::string> comments() const { return _comments; };
+    
+    //! Get a constant reference to the comments list.
+    /*!
+     \return A constant reference to the comments list.
+     */
+    const std::list<std::string> &comments() const { return _comments; };
+    
+    //! Get a reference to the tags set.
+    /*!
+     \par
+     Internal tags start with an underscore.
+     \return A reference to the tags set.
+     */
     std::set<std::string> &tags() { return _tags; };
-    std::set<std::string> tags() const { return _tags; };
+    
+    //! Get a constant reference to the tags set.
+    /*!
+     \par Internal tags start with an underscore.
+     \return A constant reference to the tags set.
+     */
+    const std::set<std::string> &tags() const { return _tags; };
     
     virtual const std::string serialize() const;
     virtual void populate(OpenProp::File *props);
