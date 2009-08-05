@@ -36,7 +36,7 @@
 #include <iostream>
 #include <list>
 #include "Tokyo.h"
-#include "ModuleCompilier.hpp"
+#include "ModuleCompilier.h"
 #include "Response.h"
 #include "Request.h"
 
@@ -189,7 +189,7 @@ void CGI::Response::execute(const std::string &t, Request *request) {
     
     std::string script;
     try {
-        llamativo::ModuleCompilier compilier(file);
+        ModuleCompilier compilier(file);
         script = compilier.script();
         const char* error = 0;
         

@@ -31,11 +31,9 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ModuleCompilier.hpp"
+#include "ModuleCompilier.h"
 #include <string>
 #include <iostream>
-
-namespace llamativo {
 
 ModuleCompilier::ModuleCompilier(std::istream &is) : _script("response:write([[\n") {
     char prev[2] = {0, 0}, c;
@@ -118,5 +116,3 @@ ModuleCompilier::~ModuleCompilier() {
 std::string& ModuleCompilier::script() {
     return _script;
 }
-
-}; // namespace llamativo

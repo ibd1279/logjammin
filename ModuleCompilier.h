@@ -1,6 +1,6 @@
 #pragma once
 /*
- \file ModuleCompilier.hpp
+ \file ModuleCompilier.h
  \author Jason Watson
  Copyright (c) 2009, Jason Watson
  All rights reserved.
@@ -32,15 +32,15 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <istream>
 #include <string>
 
-namespace llamativo {
-    class ModuleCompilier {
-    public:
-        ModuleCompilier(std::istream &is);
-        virtual ~ModuleCompilier();
-        std::string& script();
-    private:
-        std::string _script;
-    };
-}; // namespace llamativo
+class ModuleCompilier {
+public:
+    ModuleCompilier(std::istream &is);
+    virtual ~ModuleCompilier();
+    std::string& script();
+private:
+    std::string _script;
+};
+

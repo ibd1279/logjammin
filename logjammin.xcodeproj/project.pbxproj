@@ -68,7 +68,7 @@
 		221577CB100F38270020B133 /* ProjectController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ProjectController.cpp; sourceTree = "<group>"; };
 		221B34450FA8995D009AB597 /* liblua.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblua.a; path = /opt/local/lib/liblua.a; sourceTree = "<absolute>"; };
 		221B344A0FA89B99009AB597 /* ModuleCompilier.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModuleCompilier.cpp; sourceTree = "<group>"; };
-		221B344B0FA89B99009AB597 /* ModuleCompilier.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = ModuleCompilier.hpp; sourceTree = "<group>"; };
+		221B344B0FA89B99009AB597 /* ModuleCompilier.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ModuleCompilier.h; sourceTree = "<group>"; };
 		221B34820FA8C302009AB597 /* lunar.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lunar.h; sourceTree = "<group>"; };
 		2222BE34101E89D000CE52E6 /* UserController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UserController.h; sourceTree = "<group>"; };
 		2222BE35101E89D000CE52E6 /* UserController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = UserController.cpp; sourceTree = "<group>"; };
@@ -209,7 +209,7 @@
 			isa = PBXGroup;
 			children = (
 				221B344A0FA89B99009AB597 /* ModuleCompilier.cpp */,
-				221B344B0FA89B99009AB597 /* ModuleCompilier.hpp */,
+				221B344B0FA89B99009AB597 /* ModuleCompilier.h */,
 				22D30BE10FA78F09005DE0D9 /* Request.h */,
 				22D30BE20FA78F53005DE0D9 /* Request.cpp */,
 				229F36090FAA34E3003A1626 /* Response.h */,
