@@ -60,31 +60,44 @@ namespace {
         std::string line;
         bool in_item;
         long long min_date;
+        signed short depth;
     public:
         std::list<RssItem *> items;
-        RssParser(long long ts) : in_item(false), min_date(ts) { };
+        RssParser(long long ts) : in_item(false), min_date(ts), depth(0) { };
         static void start_element(void *user_data,
                                   const XML_Char *tag_name,
                                   const XML_Char **atts) {
             RssParser *state = static_cast<RssParser *>(user_data);
             
             std::string name(tag_name);
-            if(name.compare("item") == 0) {
+            if(!state->in_item && name.compare("item") == 0) {
                 state->items.push_front(new RssItem());
                 state->in_item = true;
+                state->depth = 0;
             } else if(state->in_item) {
-                if(name.compare("title") == 0)
+                if(state->depth == 0 && name.compare("title") == 0)
                     state->line.clear();
-                else if(name.compare("link") == 0)
+                else if(state->depth == 0 && name.compare("link") == 0)
                     state->line.clear();
-                else if(name.compare("description") == 0)
+                else if(state->depth == 0 && name.compare("description") == 0)
                     state->line.clear();
-                else if(name.compare("author") == 0)
+                else if(state->depth == 0 && name.compare("author") == 0)
                     state->line.clear();
-                else if(name.compare("guid") == 0)
+                else if(state->depth == 0 && name.compare("guid") == 0)
                     state->line.clear();
-                else if(name.compare("pubDate") == 0)
+                else if(state->depth == 0 && name.compare("pubDate") == 0)
                     state->line.clear();
+                else {
+                    std::ostringstream tmp;
+                    tmp << "<" << name;
+                    while(*atts) {
+                        tmp << " " << *(atts++);
+                        tmp << "=\"" << *(atts++) << "\"";
+                    }
+                    tmp << ">";
+                    state->line.append(tmp.str());
+                }
+                state->depth++;
             }
         }
         static void end_element(void *user_data,
@@ -99,18 +112,23 @@ namespace {
                     state->items.pop_front();
                 }
             } else if(state->in_item) {
-                if(name.compare("title") == 0) {
+                state->depth--;
+                if(state->depth == 0 && name.compare("title") == 0)
                     state->items.front()->title(state->line);
-                } else if(name.compare("link") == 0) {
+                else if(state->depth == 0 && name.compare("link") == 0)
                     state->items.front()->link(state->line);
-                } else if(name.compare("description") == 0) {
+                else if(state->depth == 0 && name.compare("description") == 0)
                     state->items.front()->description(state->line);
-                } else if(name.compare("author") == 0) {
+                else if(state->depth == 0 && name.compare("author") == 0)
                     state->items.front()->author(state->line);
-                } else if(name.compare("guid") == 0) {
+                else if(state->depth == 0 && name.compare("guid") == 0)
                     state->items.front()->guid(state->line);
-                } else if(name.compare("pubDate") == 0) {
+                else if(state->depth == 0 && name.compare("pubDate") == 0)
                     state->items.front()->date(state->line);
+                else {
+                    std::ostringstream tmp;
+                    tmp << "</" << name << ">";
+                    state->line.append(tmp.str());
                 }
             }
         }
