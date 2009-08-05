@@ -23,7 +23,6 @@
 		2222C09C1021D11200CE52E6 /* libexpat.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2222C09B1021D11200CE52E6 /* libexpat.dylib */; };
 		222B665D101E46F300F45B04 /* libcrypto.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222B665C101E46F300F45B04 /* libcrypto.dylib */; };
 		223D698410078F5800F79019 /* Controller.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 223D698310078F5800F79019 /* Controller.cpp */; };
-		224046C1100521010005461A /* sha1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 224046C0100521010005461A /* sha1.cpp */; };
 		224046D7100595160005461A /* User.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 224046D6100595160005461A /* User.cpp */; };
 		224046DC100597D90005461A /* Role.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 224046DB100597D90005461A /* Role.cpp */; };
 		2271D91A101288A000749D9A /* BacklogController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2271D919101288A000749D9A /* BacklogController.cpp */; };
@@ -87,8 +86,6 @@
 		2238DF210FBDD47700842744 /* template.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = template.html; sourceTree = "<group>"; };
 		2238DF8C0FBE000100842744 /* backlog-edit.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "backlog-edit.html"; sourceTree = "<group>"; };
 		223D698310078F5800F79019 /* Controller.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Controller.cpp; sourceTree = "<group>"; };
-		224046BF100521010005461A /* sha1.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sha1.h; sourceTree = "<group>"; };
-		224046C0100521010005461A /* sha1.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = sha1.cpp; sourceTree = "<group>"; };
 		224046D5100595160005461A /* User.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = User.h; sourceTree = "<group>"; };
 		224046D6100595160005461A /* User.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = User.cpp; sourceTree = "<group>"; };
 		224046DA100597D90005461A /* Role.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Role.h; sourceTree = "<group>"; };
@@ -187,8 +184,6 @@
 			isa = PBXGroup;
 			children = (
 				221B34820FA8C302009AB597 /* lunar.h */,
-				224046BF100521010005461A /* sha1.h */,
-				224046C0100521010005461A /* sha1.cpp */,
 				2202B2430FFE56C000B6FCEC /* Tokyo.h */,
 				220AD7070FA233E600C604BE /* Model.h */,
 				224046DA100597D90005461A /* Role.h */,
@@ -322,7 +317,6 @@
 				229F360B0FAA34E3003A1626 /* Response.cpp in Sources */,
 				2202B35E0FFFA4D100B6FCEC /* Project.cpp in Sources */,
 				2202B3740FFFAAA200B6FCEC /* Backlog.cpp in Sources */,
-				224046C1100521010005461A /* sha1.cpp in Sources */,
 				224046D7100595160005461A /* User.cpp in Sources */,
 				224046DC100597D90005461A /* Role.cpp in Sources */,
 				223D698410078F5800F79019 /* Controller.cpp in Sources */,

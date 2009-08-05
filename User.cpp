@@ -31,9 +31,10 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+extern "C" {
+#include <openssl/evp.h>
+}
 #include "User.h"
-#include "sha1.h"
-#include <iostream>
 
 namespace {
     /**************************************************************************
@@ -323,34 +324,28 @@ void User::role(const Role &role) {
 }
 
 namespace {
-    std::string digest_string(const std::string &passwd) {
-        char *buffer = (char *)calloc(passwd.size() * 8 + 1,
-                                      sizeof(char));
-        for(int h = 0; h < 8; ++h) {
-            memcpy(buffer + (passwd.size() * h),
-                   passwd.c_str(),
-                   passwd.size());
+    std::string digest_string(const std::string &msg) {
+        EVP_MD_CTX mdctx;
+        EVP_MD_CTX_init(&mdctx);
+        
+        const EVP_MD *md = EVP_sha1();
+        EVP_DigestInit_ex(&mdctx, md, NULL);
+        EVP_DigestUpdate(&mdctx, msg.c_str(), msg.size());
+
+        unsigned char *md_value = new unsigned char[EVP_MAX_MD_SIZE];
+        unsigned int md_len;
+        EVP_DigestFinal(&mdctx, md_value, &md_len);
+        EVP_MD_CTX_cleanup(&mdctx);
+
+        std::ostringstream result;
+        for(int h = 0; h < md_len; ++h) {
+            char buffer[3];
+            sprintf(buffer, "%02x", md_value[h]);
+            result << buffer;
         }
         
-        crypto::SHA1 sha1;
-        sha1.input(buffer,
-                   passwd.size() * 8);
-        free(buffer);
-        
-        unsigned digest[5];
-        sha1.result(digest);
-        buffer = (char *)calloc(41, sizeof(char));
-        sprintf(buffer, "%x%X%x%X%x",
-                digest[0],
-                digest[1],
-                digest[2],
-                digest[3],
-                digest[4]);
-        
-        std::string result(buffer);
-        free(buffer);
-        
-        return result;
+        free(md_value);
+        return result.str();
     }
 };
 
