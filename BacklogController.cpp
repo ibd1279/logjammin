@@ -78,7 +78,11 @@ void BacklogListController::execute(CGI::Request *request, CGI::Response *respon
     
     try {
         request->context_object_list("backlogs",
-                                     Backlog::all(project, version, category),
+                                     Backlog::all(project,
+                                                  version,
+                                                  category,
+                                                  request->param("disposition-above"),
+                                                  request->param("disposition-below")),
                                      true);
     } catch(const std::string &ex) {
         request->attribute("_error", ex);
@@ -129,12 +133,8 @@ void BacklogEditController::execute(CGI::Request *request, CGI::Response *respon
         b.story(request->param("story"));
         b.disposition(request->param("disposition"));
         b.estimate(atof(request->param("estimate").c_str()));
+        b.actual(atof(request->param("actual").c_str()));
 
-        // Only set the user once.
-        if(b.user().pkey() == 0) {
-            User::at_login(request->cookie("lj_user_login"), &(b.user()));
-        }
-        
         // Store the comment.
         if(request->param("comments").size() > 0) {
             std::string comment(user->name());
@@ -235,7 +235,12 @@ void BacklogSearchController::execute(CGI::Request *request, CGI::Response *resp
     
     try {
         request->context_object_list("backlogs",
-                                     Backlog::like(request->param("q"), project, version, category),
+                                     Backlog::like(request->param("q"), 
+                                                   project,
+                                                   version,
+                                                   category,
+                                                   request->param("disposition-above"),
+                                                   request->param("disposition-below")),
                                      true);
     } catch(const std::string &ex) {
         request->attribute("_error", ex);

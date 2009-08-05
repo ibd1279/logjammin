@@ -30,6 +30,11 @@
             </label>
         </div>
         <div>
+            <label>Actual (hours)
+                <input type="text" name="actual" value="${backlog:actual()}" />
+            </label>
+        </div>
+        <div>
             <label>Tags
                 <?lc for h, tag in ipairs(backlog:tags()) do if tag:sub(0,9) ~= "assigned:" then ?><input name="tags" value="${tag}" type="text" />
                 <?lc end end ?>

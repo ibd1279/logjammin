@@ -41,6 +41,9 @@ namespace {
     
     const char BACKLOG_DB[] = "/var/db/logjammin/backlog.tcb";
     const char BACKLOG_INDX_NATURAL[] = "/var/db/logjammin/backlog_natural.tcb";
+    const char BACKLOG_INDX_DISPOSITION[] = "/var/db/logjammin/backlog_disposition.tcb";
+    const char BACKLOG_INDX_ESTIMATE[] = "/var/db/logjammin/backlog_estimate.tcb";
+    const char BACKLOG_INDX_ACTUAL[] = "/var/db/logjammin/backlog_actual.tcb";
     const char BACKLOG_SRCH_NAME[] = "/var/db/logjammin/backlog_name";
     const char BACKLOG_SRCH_STORY[] = "/var/db/logjammin/backlog_story";
     const char BACKLOG_SRCH_COMMENTS[] = "/var/db/logjammin/backlog_comments";
@@ -64,6 +67,21 @@ namespace {
             tcbdbtune(db, -1, -1, -1, -1, -1, BDBTLARGE | BDBTBZIP);
             tcbdbopen(db, BACKLOG_INDX_NATURAL, mode);
         }
+        static void open_index_file_disposition(TCBDB *db, int mode) {
+            tcbdbsetcmpfunc(db, tccmplexical, NULL);
+            tcbdbtune(db, -1, -1, -1, -1, -1, BDBTLARGE | BDBTBZIP);
+            tcbdbopen(db, BACKLOG_INDX_DISPOSITION, mode);
+        }
+        static void open_index_file_estimate(TCBDB *db, int mode) {
+            tcbdbsetcmpfunc(db, tccmpdecimal, NULL);
+            tcbdbtune(db, -1, -1, -1, -1, -1, BDBTLARGE | BDBTBZIP);
+            tcbdbopen(db, BACKLOG_INDX_ESTIMATE, mode);
+        }
+        static void open_index_file_actual(TCBDB *db, int mode) {
+            tcbdbsetcmpfunc(db, tccmpdecimal, NULL);
+            tcbdbtune(db, -1, -1, -1, -1, -1, BDBTLARGE | BDBTBZIP);
+            tcbdbopen(db, BACKLOG_INDX_ACTUAL, mode);
+        }
         static void open_search_file_name(TCIDB *db, int mode) {
             tcidbtune(db, -1, -1, -1, IDBTLARGE | IDBTBZIP);
             tcidbopen(db, BACKLOG_SRCH_NAME, mode);
@@ -81,7 +99,8 @@ namespace {
             tcjdbopen(db, BACKLOG_SRCH_TAGS, mode);
         }
     public:
-        tokyo::Index<unsigned long long, std::string> index_natural;
+        tokyo::Index<unsigned long long, std::string> index_natural, index_disposition;
+        tokyo::Index<unsigned long long, double> index_estimate, index_actual;
         tokyo::Search<unsigned long long> search_name, search_story, search_comments;
         tokyo::Tags<unsigned long long> search_tags;
         
@@ -89,6 +108,9 @@ namespace {
         BacklogDB() : 
         ModelDB<Backlog>(open_db_file, BDBOREADER | BDBOWRITER | BDBOCREAT),
         index_natural(open_index_file_natural, BDBOREADER | BDBOWRITER | BDBOCREAT),
+        index_disposition(open_index_file_disposition, BDBOREADER | BDBOWRITER | BDBOCREAT),
+        index_estimate(open_index_file_estimate, BDBOREADER | BDBOWRITER | BDBOCREAT),
+        index_actual(open_index_file_actual, BDBOREADER | BDBOWRITER | BDBOCREAT),
         search_name(open_search_file_name, IDBOREADER | IDBOWRITER | IDBOCREAT),
         search_story(open_search_file_story, IDBOREADER | IDBOWRITER | IDBOCREAT),
         search_comments(open_search_file_comments, IDBOREADER | IDBOWRITER | IDBOCREAT),
@@ -100,11 +122,17 @@ namespace {
             try {
                 begin_transaction();
                 index_natural.begin_transaction();
+                index_disposition.begin_transaction();
+                index_estimate.begin_transaction();
+                index_actual.begin_transaction();
                 
                 // Clean up the index.
                 if(model->pkey() != 0) {
                     Backlog b(model->pkey());
                     index_natural.remove(b.natural_key(), model->pkey());
+                    index_disposition.remove(b.disposition(), model->pkey());
+                    index_estimate.remove(b.estimate(), model->pkey());
+                    index_actual.remove(b.actual(), model->pkey());
                 }
                 
                 // Make sure the name isn't used elsewhere.
@@ -126,10 +154,15 @@ namespace {
                 // Store the records.
                 this->_put(key, model->serialize());
                 index_natural.put(model->natural_key(), key);
+                index_disposition.put(model->disposition(), key);
+                index_estimate.put(model->estimate(), key);
+                index_actual.put(model->actual(), key);
+                
+                // Field Search indicies.
                 search_name.index(model->brief(), key);
                 search_story.index(model->story(), key);
                 
-                // Put together the search terms for the comments.
+                // Comments
                 std::string comments;
                 for(std::list<std::string>::const_iterator iter = model->comments().begin();
                     iter != model->comments().end();
@@ -144,15 +177,24 @@ namespace {
                 full_tags.insert(model->version());
                 search_tags.index(full_tags, key);
                 
+                index_actual.commit_transaction();
+                index_estimate.commit_transaction();
+                index_disposition.commit_transaction();
                 index_natural.commit_transaction();
                 commit_transaction();
                 
                 set_pkey(model, key);
             } catch (tokyo::Exception &ex) {
+                index_actual.abort_transaction();
+                index_estimate.abort_transaction();
+                index_disposition.abort_transaction();
                 index_natural.abort_transaction();
                 abort_transaction();
                 throw ex;
             } catch (std::string &ex) {
+                index_actual.abort_transaction();
+                index_estimate.abort_transaction();
+                index_disposition.abort_transaction();
                 index_natural.abort_transaction();
                 abort_transaction();
                 throw ex;
@@ -164,24 +206,39 @@ namespace {
                 try {
                     begin_transaction();
                     index_natural.begin_transaction();
+                    index_disposition.begin_transaction();
+                    index_estimate.begin_transaction();
+                    index_actual.begin_transaction();
                     
                     Backlog b(model->pkey());
                     this->_remove(model->pkey());
                     index_natural.remove(b.natural_key(), model->pkey());
+                    index_disposition.remove(b.disposition(), model->pkey());
+                    index_estimate.remove(b.estimate(), model->pkey());
+                    index_actual.remove(b.actual(), model->pkey());
                     search_name.remove(model->pkey());
                     search_story.remove(model->pkey());
                     search_comments.remove(model->pkey());
                     search_tags.remove(model->pkey());
                     
+                    index_actual.commit_transaction();
+                    index_estimate.commit_transaction();
+                    index_disposition.commit_transaction();
                     index_natural.commit_transaction();
                     commit_transaction();
                     
                     set_pkey(model, 0);
                 } catch (tokyo::Exception &ex) {
+                    index_actual.abort_transaction();
+                    index_estimate.abort_transaction();
+                    index_disposition.abort_transaction();
                     index_natural.abort_transaction();
                     abort_transaction();
                     throw ex;
                 } catch (std::string &ex) {
+                    index_actual.abort_transaction();
+                    index_estimate.abort_transaction();
+                    index_disposition.abort_transaction();
                     index_natural.abort_transaction();
                     abort_transaction();
                     throw ex;
@@ -197,11 +254,6 @@ namespace {
     
     int Backlog_project(Backlog *obj, lua_State *L) {
         Lunar<Project>::push(L, &(obj->project()), false);
-        return 1;
-    }
-    
-    int Backlog_user(Backlog *obj, lua_State *L) {
-        Lunar<User>::push(L, &(obj->user()), false);
         return 1;
     }
     
@@ -239,9 +291,9 @@ LUNAR_STATIC_METHOD(Backlog, project),
 LUNAR_STRING_GETTER(Backlog, category),
 LUNAR_STRING_GETTER(Backlog, version),
 LUNAR_STRING_GETTER(Backlog, story),
-LUNAR_STATIC_METHOD(Backlog, user),
 LUNAR_STRING_GETTER(Backlog, disposition),
 LUNAR_NUMBER_GETTER(Backlog, estimate, double),
+LUNAR_NUMBER_GETTER(Backlog, actual, double),
 LUNAR_STRING_GETTER(Backlog, natural_key),
 LUNAR_INTEGER_GETTER(Backlog, pkey, unsigned long long),
 LUNAR_STATIC_METHOD(Backlog, comments),
@@ -256,7 +308,9 @@ LUNAR_STATIC_METHOD(Backlog, tags),
 
 std::list<Backlog *> Backlog::all(const Project &project,
                                   const std::string &version,
-                                  const std::string &category) {
+                                  const std::string &category,
+                                  const std::string &lower_disposition,
+                                  const std::string &upper_disposition) {
     std::ostringstream nkey;
     nkey << project.pkey();
     if(version.size() > 0) {
@@ -268,6 +322,18 @@ std::list<Backlog *> Backlog::all(const Project &project,
     
     BacklogDB dao;
     std::set<unsigned long long> keys(dao.index_natural.starts(nkey.str()));
+    
+    if(lower_disposition.size() > 0 || upper_disposition.size() > 0) {
+        std::set<unsigned long long> filter(dao.index_disposition.between(lower_disposition.size() > 0 ? lower_disposition : "000", 
+                                                                          upper_disposition.size() > 0 ? upper_disposition : "999"));
+        for(std::set<unsigned long long>::iterator iter = keys.begin();
+            iter != keys.end();
+            ) {
+            if(!filter.count(*iter)) keys.erase(iter++);
+            else ++iter;
+        }
+    }
+    
     std::list<Backlog *> results;
     for(std::set<unsigned long long>::const_iterator iter = keys.begin();
         iter != keys.end();
@@ -280,7 +346,9 @@ std::list<Backlog *> Backlog::all(const Project &project,
 std::list<Backlog *> Backlog::like(const std::string &term,
                                    const Project &project,
                                    const std::string &version,
-                                   const std::string &category) {
+                                   const std::string &category,
+                                   const std::string &lower_disposition,
+                                   const std::string &upper_disposition) {
     std::ostringstream nkey;
     nkey << project.pkey();
     if(version.size() > 0) {
@@ -301,6 +369,17 @@ std::list<Backlog *> Backlog::like(const std::string &term,
     dao.search_comments.like(term, search_set);
     dao.search_tags.tagged(term, search_set);
     
+    if(lower_disposition.size() > 0 || upper_disposition.size() > 0) {
+        std::set<unsigned long long> filter(dao.index_disposition.between(lower_disposition.size() > 0 ? lower_disposition : "000", 
+                                                                          upper_disposition.size() > 0 ? upper_disposition : "999"));
+        for(std::set<unsigned long long>::iterator iter = search_set.begin();
+            iter != search_set.end();
+            ) {
+            if(!filter.count(*iter)) search_set.erase(iter++);
+            else ++iter;
+        }
+    }
+    
     std::list<Backlog *> results;
     for(std::set<unsigned long long>::const_iterator iter = search_set.begin();
         iter != search_set.end();
@@ -318,14 +397,14 @@ void Backlog::at(const unsigned long long key, Backlog *model) {
     dao.at(key, model);
 }
 
-Backlog::Backlog() {
+Backlog::Backlog() : _estimate(4.0), _actual(0.0) {
 }
 
-Backlog::Backlog(const unsigned long long key) {
+Backlog::Backlog(const unsigned long long key) : _estimate(4.0), _actual(0.0) {
     Backlog::at(key, this);
 }
 
-Backlog::Backlog(lua_State *L) {
+Backlog::Backlog(lua_State *L) : _estimate(4.0), _actual(0.0) {
 }
 
 Backlog::~Backlog() { 
@@ -357,9 +436,9 @@ const std::string Backlog::serialize() const {
     data << "version=\"" << escape(_version) << "\";\n";
     data << "project=\"" << _project.pkey() << "\";\n";
     data << "story=\"" << escape(_story) << "\";\n";
-    data << "user=\"" << _user.pkey() << "\";\n";
     data << "disposition=\"" << escape(_disposition) << "\";\n";
     data << "estimate=\"" << _estimate << "\";\n";
+    data << "actual=\"" << _actual << "\";\n";
     data << "comments{\n";
     for(std::list<std::string>::const_iterator iter = _comments.begin();
         iter != _comments.end();
@@ -383,9 +462,11 @@ void Backlog::populate(OpenProp::File *props) {
     version(std::string(props->getValue("version")));
     project(Project((long)props->getValue("project")));
     story(std::string(props->getValue("story")));
-    user(User((long)props->getValue("user")));
     disposition(std::string(props->getValue("disposition")));
-    estimate(props->getValue("estimate"));
+    if(props->getValue("estimate").exists())
+        estimate(props->getValue("estimate"));
+    if(props->getValue("actual").exists())
+        actual(props->getValue("actual"));
     
     OpenProp::ElementIterator *iter = props->getElement("comments")->getElements();
     _comments.clear();

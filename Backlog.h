@@ -55,7 +55,8 @@ public:
     
     //! Get all backlogs based on a natural key.
     /*!
-     \par Backlogs in the list must be deallocated with "delete".
+     \par
+     Backlogs in the list must be deallocated with "delete".
      \param project The Project to search under.
      \param version The version to get the backlogs for.
      \param category The category to get the backlogs for.
@@ -63,11 +64,14 @@ public:
      */
     static std::list<Backlog *> all(const Project &project,
                                     const std::string &version,
-                                    const std::string &category);
+                                    const std::string &category,
+                                    const std::string &lower_disposition,
+                                    const std::string &upper_disposition);
     
     //! Get a list of backlogs matching the provided search term.
     /*!
-     \par Backlogs in the list must be deallocated with "delete".
+     \par
+     Backlogs in the list must be deallocated with "delete".
      \param term The term to search for.
      \param project The Project to search under.
      \param version The version to search under.
@@ -77,7 +81,9 @@ public:
     static std::list<Backlog *> like(const std::string &term,
                                      const Project &project,
                                      const std::string &version,
-                                     const std::string &category);
+                                     const std::string &category,
+                                     const std::string &lower_disposition,
+                                     const std::string &upper_disposition);
     
     //! load a backlog object by primary key.
     /*!
@@ -128,19 +134,37 @@ public:
      */
     void project(const Project &project) { _project = project; };
     
+    //! Get a copy of the version associated with this task.
+    /*!
+     \return A copy of the version associated with this task.
+     */
     std::string version() const { return _version; };
+    
+    //! Set the version associated with this task.
+    /*!
+     \param v The version.
+     */
     void version(const std::string &v) { _version = v; };
+    
+    //! Get a copy of the category associated with this task.
+    /*!
+     \return A copy of the category associated with this task.
+     */
     std::string category() const { return _category; };
+    
+    //! Set the category associated with this task.
+    /*!
+     \param c The category.
+     */
     void category(const std::string &c) { _category = c; };
     std::string story() const { return _story; };
     void story(const std::string &s);
-    const User &user() const { return _user; };
-    User &user() { return _user; };
-    void user(const User &user) { _user = user; };
     std::string disposition() const { return _disposition; };
     void disposition(const std::string &s) { _disposition = s; };
     double estimate() const { return _estimate; };
     void estimate(const double e) { _estimate = e; };
+    double actual() const { return _actual; };
+    void actual(const double e) { _actual = e; };
     std::string natural_key() const;
     
     std::list<std::string> &comments() { return _comments; };
@@ -155,8 +179,7 @@ protected:
 private:
     std::string _brief, _version, _category, _story, _disposition;
     Project _project;
-    User _user;
     std::list<std::string> _comments;
     std::set<std::string> _tags;
-    double _estimate;
+    double _estimate, _actual;
 };

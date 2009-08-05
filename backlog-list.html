@@ -43,7 +43,7 @@
         <td><a href="${_html(backlog:pkey())}/backlog-edit">${_html(backlog:brief())}</a></td>
         <td>${_html(backlog:version())}</td>
         <td>${_html(backlog:category())}</td>
-        <td>${_html(backlog:disposition())}</td>
+        <td>${_html(backlog:disposition():sub(5))}</td>
         <td>${_html(backlog:estimate())}</td>
       </tr><?lc end ?>
     <?lc else ?>

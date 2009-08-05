@@ -34,7 +34,7 @@ $(document).ready(function(){
         var str = dropDown.val();
         var id = $("#" + dropDown.attr("id").replace(/versionSelector-/, "taskAssignments-"));
         if(str[0] != '-') {
-            $.getJSON("${project:pkey()}/" + str + "/backlog-list", function(data) {
+            $.getJSON("${project:pkey()}/" + str + "/backlog-list?disposition-below=400", function(data) {
                 id.find("li select option").remove();
                 var firstLi = id.find("li:first").clone();
                 id.find("li").remove();
