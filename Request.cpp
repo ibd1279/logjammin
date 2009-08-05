@@ -199,29 +199,12 @@ LUNAR_STATIC_METHOD(Request, has_attribute),
 
 // Hiding internal CGI methods.
 namespace  {
-    string url_decode(const string &tmp) {
-        string result;
-        string::const_iterator iter = tmp.begin();
-        for(; iter != tmp.end(); ++iter) {
-            char c = *iter;
-            if(c == '+')
-                c = ' ';
-            else if(c == '%') {
-                const char hex[3] = {*++iter, *++iter, '\0'};
-                c = (char)strtol(hex, NULL, 16);
-                if(!c) c = '?';
-            }
-            if(c == '\r') continue;
-            result.push_back(c);
-        }
-        return result;
-    }
     void parse_params(const string &tmp, multimap<string, string> &params) {
         string key, value;
         bool both = false;
         for(string::const_iterator iter = tmp.begin(); iter != tmp.end(); ++iter) {
             if(*iter == '&') {
-                params.insert(pair<string, string>(url_decode(key), url_decode(value)));
+                params.insert(pair<string, string>(CGI::Request::percent_decode(key), CGI::Request::percent_decode(value)));
                 key.erase();
                 value.erase();
                 both = false;
@@ -235,7 +218,7 @@ namespace  {
                     key.push_back(*iter);
             }
         }
-        params.insert(pair<string, string>(url_decode(key), url_decode(value)));
+        params.insert(pair<string, string>(CGI::Request::percent_decode(key), CGI::Request::percent_decode(value)));
     }
     void parse_cookies(const string &tmp, multimap<string, string> &params) {
         string key, value;
@@ -283,9 +266,6 @@ namespace  {
         if(val.size() > 0)
             result.push_back(val);
     }
-    
-    void html_escape_string(const char *str, std::string &result) {
-    };
     
     int json_escape(lua_State *L) {
         std::string result;
@@ -361,6 +341,23 @@ namespace  {
         return 1;
     }    
 };
+
+string CGI::Request::percent_decode(const string &input) {
+    string result;
+    for(string::const_iterator iter(input.begin()); iter != input.end(); ++iter) {
+        char c = *iter;
+        if(c == '+')
+            c = ' ';
+        else if(c == '%') {
+            const char hex[3] = {*++iter, *++iter, '\0'};
+            c = (char)strtol(hex, NULL, 16);
+            if(!c) c = '?';
+        }
+        if(c == '\r') continue;
+        result.push_back(c);
+    }
+    return result;
+}
 
 CGI::Request::Request() {
     populate_cgi_parameters();

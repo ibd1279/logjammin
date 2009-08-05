@@ -44,6 +44,9 @@ namespace CGI {
     public:
         static const char LUNAR_CLASS_NAME[];
         static Lunar<CGI::Request>::RegType LUNAR_METHODS[];
+        
+        static std::string percent_decode(const std::string &input);
+        
         typedef std::multimap<std::string, std::string> param_map;
         typedef std::map<std::string, std::string> attribute_map;
         

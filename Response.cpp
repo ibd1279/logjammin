@@ -52,6 +52,48 @@ LUNAR_MEMBER_METHOD(Response, execute),
 {0, 0, 0}
 };
 
+std::string CGI::Response::percent_encode(const std::string &input, bool spaces_as_plus) {
+    std::ostringstream result;
+    
+    for(string::const_iterator iter(input.begin()); iter != input.end(); ++iter) {
+        switch(*iter) {
+            case ' ':
+                if(spaces_as_plus) {
+                    result << "+";
+                    break;
+                }
+            case '\r':
+            case '\n':
+            case '*':
+            case '\"':
+            case '\'':
+            case '(':
+            case ')':
+            case ';':
+            case ':':
+            case '@':
+            case '&':
+            case '=':
+            case '+':
+            case '$':
+            case ',':
+            case '/':
+            case '?':
+            case '%':
+            case '[':
+            case ']':
+                char buffer[3];
+                sprintf(buffer, "%02x", *iter);
+                result << "%" << buffer;
+                break;
+            default:
+                result << *iter;
+        }
+    }
+    
+    return result.str();
+}
+
 CGI::Response::Response() {
     content_type("text/html");
     _is_closed = false;
@@ -104,18 +146,23 @@ void CGI::Response::header(const std::string &h, const std::string &val, const b
 }
 
 void CGI::Response::cookie(const std::string &name, const std::string &value,
+                           const std::string &path,
                            long long max_age, bool discard) {
     std::ostringstream cookie1, cookie2;
     cookie2 << name << "=" << value;
     if(discard)
         cookie2 << "; Discard";
     if(max_age > 0)
-        cookie2 << "; Max-Age=" << max_age;    
+        cookie2 << "; Max-Age=" << max_age;
     cookie2 << "; Version=1";
+    if(path.size() > 0)
+        cookie2 << "; Path=" << path;
     
     cookie1 << name << "=" << value;
     if(max_age == 0) 
         cookie1 << "; expires=Fri, 13-Feb-2009 23:31:30 GMT";
+    if(path.size() > 0)
+        cookie1 << "; path=" << path;
     
     header("Set-Cookie", cookie1.str(), false);
     header("Set-Cookie2", cookie2.str(), false);

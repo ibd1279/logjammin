@@ -25,6 +25,8 @@ input[type="text"] { width:20em; }
          <form method="GET">
             <label>OpenID
                 <input type="text" name="openid_url" id="openid_url" />
+                <input type="hidden" name="_qs" value="${_html(request:query_string())}" />
+                <input type="hidden" name="_pi" value="${_html(request:path_info())}" />
             </label>
         </form>
     </div>

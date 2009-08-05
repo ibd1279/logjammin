@@ -45,6 +45,8 @@ namespace CGI {
         static const char LUNAR_CLASS_NAME[];
         static Lunar<Response>::RegType LUNAR_METHODS[];
         
+        static std::string percent_encode(const std::string &input, bool spaces_as_plus=true);
+        
         typedef std::multimap<std::string, std::string> header_map;
         
         Response();
@@ -57,7 +59,7 @@ namespace CGI {
         void header(const std::string &, const std::string &, const bool replace = true);
         void content_type(const std::string &v) { header("Content-Type", v); };
         void status(int);
-        void cookie(const std::string &name, const std::string &value, long long max_age = -1, bool discard = false);
+        void cookie(const std::string &name, const std::string &value, const std::string &path = "/", long long max_age = -1, bool discard = false);
                 
         void write(const std::string &);
         int write(lua_State *);

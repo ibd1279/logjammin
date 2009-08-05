@@ -60,16 +60,16 @@ void AuthenticateFilter::execute(CGI::Request *request, CGI::Response *response)
                     request->context_object("_user", user, true);
                     request->attribute("authenticated", "true");
                 } else {
-                    response->cookie("lj_user_login", "", 0, true);
-                    response->cookie("lj_user_cookie", "", 0, true);
+                    response->cookie("lj_user_login", "", request->script_name(), 0, true);
+                    response->cookie("lj_user_cookie", "", request->script_name(), 0, true);
                     delete user;
                 }
             } catch(const std::string &ex) {
-                response->cookie("lj_user_login", "", 0, true);
-                response->cookie("lj_user_cookie", "", 0, true);
+                response->cookie("lj_user_login", "", request->script_name(), 0, true);
+                response->cookie("lj_user_cookie", "", request->script_name(), 0, true);
             } catch(tokyo::Exception &ex) {
-                response->cookie("lj_user_login", "", 0, true);
-                response->cookie("lj_user_cookie", "", 0, true);
+                response->cookie("lj_user_login", "", request->script_name(), 0, true);
+                response->cookie("lj_user_cookie", "", request->script_name(), 0, true);
             }
         }
         
@@ -84,17 +84,21 @@ void AuthenticateFilter::execute(CGI::Request *request, CGI::Response *response)
                 // Add the login count to the return URL, won't allow a login
                 // with out it.
                 std::ostringstream target;
-                target << request->original_request_file() << "?login_count=" << user.login_count();
+                target << request->original_request_script() << "/?login_count=" << user.login_count();
+                target << "&_qs=" << CGI::Response::percent_encode(request->param("_qs"));
+                target << "&_pi=" << CGI::Response::percent_encode(request->param("_pi"));
+                
+                std::cerr  << target.str() << std::endl;
                 response->redirect(relay_provider.checkid_setup(target.str(),
                                                                 request->original_request_script()));
             } catch(const std::string &ex) {
                 std::cerr << "Exception loging in " << ex << std::endl;
-                response->cookie("lj_user_login", "", 0, true);
-                response->cookie("lj_user_cookie", "", 0, true);
+                response->cookie("lj_user_login", "", request->script_name(), 0, true);
+                response->cookie("lj_user_cookie", "", request->script_name(), 0, true);
             } catch(tokyo::Exception &ex) {
                 std::cerr << "Exception loging in " << ex.msg << std::endl;
-                response->cookie("lj_user_login", "", 0, true);
-                response->cookie("lj_user_cookie", "", 0, true);
+                response->cookie("lj_user_login", "", request->script_name(), 0, true);
+                response->cookie("lj_user_cookie", "", request->script_name(), 0, true);
             }
         } else if(request->param("openid.mode").compare("id_res") == 0 &&
                   request->has_param("login_count")) {
@@ -111,7 +115,7 @@ void AuthenticateFilter::execute(CGI::Request *request, CGI::Response *response)
                 
                 // Verify the user authentication.
                 if(request->param("login_count").compare(data.str()) == 0 &&
-                   relay_provider.check_authentication(request->params())) {
+                    relay_provider.check_authentication(request->params())) {
                     
                     // User is authenticated, setup the context.
                     request->context_object("_user", user, true);
@@ -133,33 +137,40 @@ void AuthenticateFilter::execute(CGI::Request *request, CGI::Response *response)
                     // Send the cookies in the response.
                     response->cookie("lj_user_login",
                                      request->param("openid.identity"), 
+                                     request->script_name(),
                                      36000,
                                      true);
                     response->cookie("lj_user_cookie",
                                      ingredients,
+                                     request->script_name(),
                                      36000,
                                      true);
                     
                     // Redirect to where they were trying to go.
-                    response->redirect(request->original_request_file());
+                    std::ostringstream target;
+                    target << request->original_request_script();
+                    target << request->param("_pi");
+                    target << "?" << request->param("_qs");
+                    response->redirect(target.str());
                 } else {
                     std::cerr << "Exception loging in. Check auth returned false." << std::endl;
                     delete user;
-                    response->cookie("lj_user_login", "", 0, true);
-                    response->cookie("lj_user_cookie", "", 0, true);
+                    response->cookie("lj_user_login", "", request->script_name(), 0, true);
+                    response->cookie("lj_user_cookie", "", request->script_name(), 0, true);
                 }
             } catch(const std::string &ex) {
                 std::cerr << "Validation failed " << ex << "." << std::endl;
-                response->cookie("lj_user_login", "", 0, true);
-                response->cookie("lj_user_cookie", "", 0, true);
+                response->cookie("lj_user_login", "", request->script_name(), 0, true);
+                response->cookie("lj_user_cookie", "", request->script_name(), 0, true);
             } catch(tokyo::Exception &ex) {
                 std::cerr << "Exception loging in " << ex.msg << std::endl;
-                response->cookie("lj_user_login", "", 0, true);
-                response->cookie("lj_user_cookie", "", 0, true);
+                response->cookie("lj_user_login", "", request->script_name(), 0, true);
+                response->cookie("lj_user_cookie", "", request->script_name(), 0, true);
             }
         }
     } else {
-        response->cookie("lj_user_login", "", 0, true);
+        response->cookie("lj_user_login", "", request->script_name(), 0, true);
+        response->cookie("lj_user_cookie", "", request->script_name(), 0, true);
     }
 }
 
