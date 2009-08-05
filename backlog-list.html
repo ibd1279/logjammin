@@ -34,6 +34,9 @@
     <th>
       Estimate
     </th>
+    <th>
+      Actual
+    </th>
   </tr>
   </thead>
   <tbody>
@@ -45,9 +48,10 @@
         <td>${_html(backlog:category())}</td>
         <td>${_html(backlog:disposition():sub(5))}</td>
         <td>${_html(backlog:estimate())}</td>
+        <td>${_html(backlog:actual())}</td>
       </tr><?lc end ?>
     <?lc else ?>
-      <tr><td colspan="2">No backlogs found.</td></tr>
+      <tr><td colspan="7">No backlogs found.</td></tr>
     <?lc end ?>
   </tbody>
 </table>
