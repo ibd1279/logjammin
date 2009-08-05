@@ -206,6 +206,9 @@ void CommitFeedController::execute(CGI::Request *request, CGI::Response *respons
             if(atol(b.disposition().substr(0,3).c_str()) < 300)
                 b.disposition("300-ASSIGNED");
             
+            if(b.actual() < 0.1)
+                b.actual(b.estimate());
+            
             b.save();
         }
         user->last_commit(last_commit);
