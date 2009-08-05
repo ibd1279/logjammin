@@ -717,7 +717,7 @@ namespace tokyo {
          \param db_open_func Method to use when opening the database.
          \param mode Mode flags to pass to the db open method.
          */
-        Index(void (*db_open_func)(TCBDB *, int), int mode) : DB<Key, Value>(db_open_func, mode) {
+        Index(void (*db_open_func)(TCBDB *, int), int mode) : DB<Value, Key>(db_open_func, mode) {
         }
         
         //! Destructor
@@ -751,9 +751,9 @@ namespace tokyo {
 
             do {
                 int sz;
-                const Value *value = static_cast<const Value *>(tcbdbcurkey3(this->_db, &sz));
+                const Value *value = static_cast<const Value *>(tcbdbcurkey3(cur, &sz));
                 if(!(*value == a)) break;
-                const Key *key = static_cast<const Key *>(tcbdbcurval3(this->_db, &sz));
+                const Key *key = static_cast<const Key *>(tcbdbcurval3(cur, &sz));
                 if(!(*key == k))
                     tcbdbcurout(cur);
             } while(tcbdbcurnext(cur));
@@ -788,7 +788,7 @@ namespace tokyo {
             do {
                 // Get the key, to ensure we are still between.
                 const Value *ptr = static_cast<const Value *>(tcbdbcurkey3(cur, &sz));
-                if(!ptr || *ptr > b || *ptr == b) break;
+                if(!ptr || b < *ptr || *ptr == b) break;
                 
                 // get the value (a list of type Key).
                 Key *keys = static_cast<Key *>(tcbdbcurval3(cur, &sz));
@@ -919,7 +919,7 @@ namespace tokyo {
             do {
                 // Get the key, to ensure we are still between.
                 const char *ptr = static_cast<const char *>(tcbdbcurkey3(cur, &sz));
-                if(!ptr || b.compare(ptr) >= 0) break;
+                if(!ptr || b.compare(ptr) <= 0) break;
                 
                 // get the value (a list of type Key).
                 unsigned long long *keys = const_cast<unsigned long long *>(static_cast<const unsigned long long *>(tcbdbcurval3(cur, &sz)));
