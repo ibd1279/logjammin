@@ -434,6 +434,10 @@ void CGI::Request::populate_cgi_parameters() {
         parse_cookies(std::string(getenv("HTTP_COOKIE")), _cookies);
     }
     
+    if(getenv("GDB_MODE") != NULL) {
+        attribute("gdb_mode", "true");
+    }
+    
     parse_path_info(_path_info, _split_path_info);
     parse_params(_query_string, _params);
     

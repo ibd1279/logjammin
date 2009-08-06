@@ -23,10 +23,12 @@ export REMOTE_PORT=61703
 export GATEWAY_INTERFACE=CGI/1.1
 export SERVER_PROTOCOL=HTTP/1.1
 export REQUEST_METHOD=GET
-export QUERY_STRING='openid.mode=id_res&openid.identity=http%3A%2F%2Fopenid.aol.com%2Fjasonwatson06&openid.assoc_handle=diAyLjAgayAwIHZrR3dmb3hFMy80VEZRMERlRFpkZ0RRUW03ST0%253D-j5HRXRB1VbPyg48jGKE1Q9dV%252Bsl5xZlMb7I9GJL9ohbwmRH%252BaEF%252BZhAJOAIsXk5%252BTdfzZoedphY%253D&openid.return_to=http%3A%2F%2Flocalhost%2Fcgi-bin%2Flogjammin%2F&openid.signed=identity%2Creturn_to&openid.sig=EUMb%2B5au8lII1pOIMAxhKo421hg%3D'
-export REQUEST_URI='/cgi-bin/logjammin/?openid.mode=id_res&openid.identity=http%3A%2F%2Fopenid.aol.com%2Fjasonwatson06&openid.assoc_handle=diAyLjAgayAwIHZrR3dmb3hFMy80VEZRMERlRFpkZ0RRUW03ST0%253D-j5HRXRB1VbPyg48jGKE1Q9dV%252Bsl5xZlMb7I9GJL9ohbwmRH%252BaEF%252BZhAJOAIsXk5%252BTdfzZoedphY%253D&openid.return_to=http%3A%2F%2Flocalhost%2Fcgi-bin%2Flogjammin%2F&openid.signed=identity%2Creturn_to&openid.sig=EUMb%2B5au8lII1pOIMAxhKo421hg%3D'
+export QUERY_STRING=''
+export REQUEST_URI='/cgi-bin/logjammin/role-list'
 export SCRIPT_NAME=/cgi-bin/logjammin
-export PATH_INFO=/
+export PATH_INFO=/role-list
+export HTTP_COOKIE='lj_user_login=http://openid.aol.com/ibd1279; lj_user_cookie=must_set_env_var_GDB_MODE'
+export GDB_MODE=true
 export PATH_TRANSLATED='/Library/WebServer/Documents/'
 export MallocStackLoggingNoCompact=true
 

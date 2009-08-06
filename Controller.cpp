@@ -54,7 +54,7 @@ void AuthenticateFilter::execute(CGI::Request *request, CGI::Response *response)
                 User *user = new User(request->cookie("lj_user_login"));
                 
                 // Verify the user is who they claim to be.
-                if(user->check_cookie(request->cookie("lj_user_cookie"))) {
+                if(user->check_cookie(request->cookie("lj_user_cookie")) || request->has_attribute("gdb_mode")) {
                     
                     // User is authenticated, setup the context.
                     request->context_object("_user", user, true);
