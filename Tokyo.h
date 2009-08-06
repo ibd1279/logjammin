@@ -1239,4 +1239,4 @@ namespace tokyo {
             free(matches);
         }
     };
-};
+}; //namespace tokyo
