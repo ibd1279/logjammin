@@ -55,9 +55,13 @@ public:
         logjammin.categories().push_back("Bug");
         logjammin.save();
         
-        Role role;
-        role.name("Administrator");
-        role.save();
+        Role admin_role;
+        admin_role.name("Administrator");
+        admin_role.allowed().push_back("admin:user:read");
+        admin_role.allowed().push_back("admin:user:write");
+        admin_role.allowed().push_back("admin:role:read");
+        admin_role.allowed().push_back("admin:role:write");
+        admin_role.save();
         
         Role role2;
         role2.name("User");
@@ -66,22 +70,23 @@ public:
         User user;
         user.name("Jason Watson");
         user.logins().push_back("http://openid.aol.com/jasonwatson06");
+        user.logins().push_back("http://openid.aol.com/ibd1279");
         user.email("jwatson@slashopt.net");
-        user.role(role);
+        user.role(admin_role);
         user.save();
         
         User user2;
         user2.name("Hyoo Lim");
         user2.logins().push_back("http://openid.aol.com/hyoolim08");
         user2.email("hyoolim@gmail.com");
-        user2.role(role);
+        user2.role(admin_role);
         user2.save();
         
         User user3;
         user3.name("Jeremy Collins");
         user3.logins().push_back("http://openid.aol.com/jeremycollins11");
         user3.email("Jeremy.Collins@corp.aol.com");
-        user3.role(role);
+        user3.role(admin_role);
         user3.save();
 
         response->redirect(request->original_request_script());
