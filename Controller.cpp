@@ -76,8 +76,7 @@ void AuthenticateFilter::execute(CGI::Request *request, CGI::Response *response)
         // Now see if the user is logging in
         if(request->has_param("openid_url")) {
             std::string identity = request->param("openid_url");
-            LogJamminConsumer relay_provider(identity);
-            //openid_1_1::DumbRelayProvider relay_provider(identity);
+            logjammin::OpenIDConsumer relay_provider(identity);
             try {
                 User user(relay_provider.identifier());
                 
@@ -105,8 +104,7 @@ void AuthenticateFilter::execute(CGI::Request *request, CGI::Response *response)
             try {
                 // Get the OpenId provider.
                 std::string identity = request->param("openid.identity");
-                LogJamminConsumer relay_provider(identity);
-                //openid_1_1::DumbRelayProvider relay_provider(identity);
+                logjammin::OpenIDConsumer relay_provider(identity);
                 
                 // Get the user to check the login count.
                 User *user = new User(relay_provider.identifier());

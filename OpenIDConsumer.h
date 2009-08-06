@@ -34,12 +34,31 @@
 
 #include "OpenID.h"
 
-class LogJamminConsumer : public openid_1_1::AssociatedRelayConsumer {
-public:
-    LogJamminConsumer(const std::string &identifier);
-    virtual ~LogJamminConsumer();
-    virtual void invalidate_assoc_handle(const std::string &assoc_handle);
-    virtual const std::string *lookup_assoc_handle(const std::string &provider);
-    virtual openid_1_1::Association *lookup_association(const std::string &assoc_handle);
-    virtual void store_assoc_handle(const openid_1_1::Association *association);
+namespace logjammin {
+    
+    //! Logjammin OpenID Consumer.
+    /*!
+     \par
+     Specific implementation for Logjammin that uses the Tokyo libraries for
+     storing state information associated with providers.
+     \author Jason Watson
+     \version 1.0
+     \date July 29, 2009
+     */
+    class OpenIDConsumer : public openid_1_1::AssociatedRelayConsumer {
+    public:
+        //! Create a new Logjammin' consumer.
+        /*!
+         \param identifier The user provided identifier.
+         */
+        OpenIDConsumer(const std::string &identifier);
+        
+        //! Logjammin' destructor.
+        virtual ~OpenIDConsumer();
+        virtual void invalidate_assoc_handle(const std::string &assoc_handle);
+        virtual const std::string *lookup_assoc_handle(const std::string &provider);
+        virtual openid_1_1::Association *lookup_association(const std::string &assoc_handle);
+        virtual void store_assoc_handle(const openid_1_1::Association *association);
+    };
+    
 };
