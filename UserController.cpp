@@ -154,7 +154,7 @@ void UserPurgeController::execute(CGI::Request *request, CGI::Response *response
             u.purge();
             std::ostringstream url;
             url << request->original_request_script();
-            url << "/project-list?_msg=PURGE_SUCCESS";
+            url << "/user-list?_msg=PURGE_SUCCESS";
             response->redirect(url.str());
         } catch(const std::string &ex) {
             request->attribute("_error", ex);
