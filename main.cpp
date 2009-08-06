@@ -43,6 +43,7 @@
 #include "UserController.h"
 #include "Seed.h"
 #include "RssController.h"
+#include "RoleController.h"
 
 int main (int argc, char * const argv[]) {
         
@@ -71,6 +72,9 @@ int main (int argc, char * const argv[]) {
         new UserSearchController(),
         new UserPurgeController(),
         new UserListController(),
+        new RoleEditController(),
+        new RolePurgeController(),
+        new RoleListController(),
         new CommitFeedController(),
         new NotFoundController(),
         new TemplateBottomFilter(),
