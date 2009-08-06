@@ -42,6 +42,8 @@ extern "C" {
 #include "RssItem.h"
 #include "RssController.h"
 
+using logjammin::RssItem;
+
 bool CommitFeedController::is_requested(CGI::Request *request, CGI::Response *response) {
     std::list<std::string> args(request->split_path_info());
     
