@@ -232,7 +232,7 @@ namespace {
     }
 };
 
-const char User::LUNAR_CLASS_NAME[] = "Role";
+const char User::LUNAR_CLASS_NAME[] = "User";
 
 Lunar<User>::RegType User::LUNAR_METHODS[] = {
 LUNAR_STRING_GETTER(User, name),
