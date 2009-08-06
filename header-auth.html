@@ -29,7 +29,8 @@ input[type="text"] { width:20em; }
     <ul id="app-menu">
         <li><a href=".">Home</a></li>
         <li${request:original_request_file():find("project") and " class=\"selected\"" or ""}${request:original_request_file():find("backlog") and " class=\"selected\"" or ""}><a href="project-list">Project List</a></li>
-        <li${request:original_request_file():find("user") and " class=\"selected\"" or ""}><a href="user-list">Users</a></li>
+        <?lc if _user:check_allowed("admin:user:read") then ?><li${request:original_request_file():find("user") and " class=\"selected\"" or ""}><a href="user-list">Users</a></li><?lc end ?>
+        <?lc if _user:check_allowed("admin:role:read") then ?><li${request:original_request_file():find("role") and " class=\"selected\"" or ""}><a href="role-list">Roles</a></li><?lc end ?>
     </ul>
 </div>
 <div id="app-content">
