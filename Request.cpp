@@ -366,10 +366,10 @@ CGI::Request::Request() {
     luaL_openlibs(_lua_state);    
     Lunar<Request>::Register(_lua_state);
     Lunar<Response>::Register(_lua_state);
-    Lunar<Role>::Register(_lua_state);
-    Lunar<User>::Register(_lua_state);
-    Lunar<Project>::Register(_lua_state);
-    Lunar<Backlog>::Register(_lua_state);
+    Lunar<logjammin::Role>::Register(_lua_state);
+    Lunar<logjammin::User>::Register(_lua_state);
+    Lunar<logjammin::Project>::Register(_lua_state);
+    Lunar<logjammin::Backlog>::Register(_lua_state);
     Lunar<logjammin::RssItem>::Register(_lua_state);
     
     lua_pushcfunction(_lua_state, html_escape);

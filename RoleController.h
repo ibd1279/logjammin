@@ -34,21 +34,24 @@
 
 #include "Controller.h"
 
-class RoleListController : public Controller {
-public:
-    virtual bool is_requested(CGI::Request *request, CGI::Response *response);
-    virtual void execute(CGI::Request *request, CGI::Response *response);
+namespace logjammin {
+    namespace controller {
+        class RoleListController : public Controller {
+        public:
+            virtual bool is_requested(CGI::Request *request, CGI::Response *response);
+            virtual void execute(CGI::Request *request, CGI::Response *response);
+        };
+        
+        class RoleEditController : public Controller {
+        public:
+            virtual bool is_requested(CGI::Request *request, CGI::Response *response);
+            virtual void execute(CGI::Request *request, CGI::Response *response);
+        };
+        
+        class RolePurgeController : public Controller {
+        public:
+            virtual bool is_requested(CGI::Request *request, CGI::Response *response);
+            virtual void execute(CGI::Request *request, CGI::Response *response);
+        };
+    };
 };
-
-class RoleEditController : public Controller {
-public:
-    virtual bool is_requested(CGI::Request *request, CGI::Response *response);
-    virtual void execute(CGI::Request *request, CGI::Response *response);
-};
-
-class RolePurgeController : public Controller {
-public:
-    virtual bool is_requested(CGI::Request *request, CGI::Response *response);
-    virtual void execute(CGI::Request *request, CGI::Response *response);
-};
-

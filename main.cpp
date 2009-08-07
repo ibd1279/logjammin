@@ -55,34 +55,34 @@ int main (int argc, char * const argv[]) {
     request->context_object("response", response, false);
     
     // Create an array of the controllers in the order to evaluate.
-    Controller *controllers[] = {
-        new AuthenticateFilter(),
-        new HttpHeadersFilter(),
-        new MessageExpanderFilter(),
-        new TemplateTopFilter(),
-        new Seed(),
-        new BacklogEditController(),
-        new BacklogSearchController(),
-        new BacklogListController(),
-        new ProjectEditController(),
-        new ProjectSearchController(),
-        new ProjectPurgeController(),
-        new ProjectListController(),
-        new UserEditController(),
-        new UserSearchController(),
-        new UserPurgeController(),
-        new UserListController(),
-        new RoleEditController(),
-        new RolePurgeController(),
-        new RoleListController(),
-        new CommitFeedController(),
-        new NotFoundController(),
-        new TemplateBottomFilter(),
+    logjammin::controller::Controller *controllers[] = {
+        new logjammin::controller::AuthenticateFilter(),
+        new logjammin::controller::HttpHeadersFilter(),
+        new logjammin::controller::MessageExpanderFilter(),
+        new logjammin::controller::TemplateTopFilter(),
+        new logjammin::controller::Seed(),
+        new logjammin::controller::BacklogEditController(),
+        new logjammin::controller::BacklogSearchController(),
+        new logjammin::controller::BacklogListController(),
+        new logjammin::controller::ProjectEditController(),
+        new logjammin::controller::ProjectSearchController(),
+        new logjammin::controller::ProjectPurgeController(),
+        new logjammin::controller::ProjectListController(),
+        new logjammin::controller::UserEditController(),
+        new logjammin::controller::UserSearchController(),
+        new logjammin::controller::UserPurgeController(),
+        new logjammin::controller::UserListController(),
+        new logjammin::controller::RoleEditController(),
+        new logjammin::controller::RolePurgeController(),
+        new logjammin::controller::RoleListController(),
+        new logjammin::controller::CommitFeedController(),
+        new logjammin::controller::NotFoundController(),
+        new logjammin::controller::TemplateBottomFilter(),
         0
     };
 
     try {
-        for(Controller **iter = controllers; *iter; ++iter) {
+        for(logjammin::controller::Controller **iter = controllers; *iter; ++iter) {
             if((*iter)->is_requested(request, response))
                 (*iter)->execute(request, response);
             if(response->is_closed())
