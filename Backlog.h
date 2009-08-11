@@ -35,11 +35,68 @@
 #include <set>
 #include <list>
 #include "Model.h"
-#include "Project.h"
-#include "User.h"
 #include "lunar.h"
+#include "User.h"
+#include "Project.h"
 
 namespace logjammin {
+    
+    //! BacklogComment class.
+    /*!
+     \author Jason Watson
+     \version 1.0
+     \date August 7, 2009
+     */
+    class BacklogComment {
+    public:
+        //! Create a new Backlog comment from a property record.
+        BacklogComment(OpenProp::Element *props);
+        
+        //! Copy constructor.
+        BacklogComment(const BacklogComment &orig);
+        
+        //! Create a new BacklogComment.
+        BacklogComment(const std::string &comment, const User &user, bool historical);
+        
+        //! Destructor.
+        ~BacklogComment();
+        
+        //! Get the comment body.
+        std::string comment() const { return _comment; };
+        
+        //! Set the comment body.
+        void comment(const std::string &comment) { _comment = comment; };
+        
+        //! Get a constant reference to the user.
+        const User &user() const { return _user; };
+        
+        //! Get a reference to the user.
+        User &user() { return _user; };
+        
+        //! Set the user for this comment.
+        void user(const User &user) { _user = user; };
+        
+        //! Get the time of the comment.
+        long long time() const { return _time; };
+        
+        //! Get the time of the comment in human readable format.
+        std::string time_string() const;
+        
+        //! Set the time of the comment.
+        void time(const long long time) { _time = time; };
+        
+        //! Get if this is a historical comment.
+        bool historical() const { return _historical; };
+        
+        //! Set if this is a historical comment.
+        void historical(const bool historical) { _historical = historical; };
+    private:
+        std::string _comment;
+        User _user;
+        long long _time;
+        bool _historical;
+    };
+    
     //! Backlog Class.
     /*!
      \author Jason Watson
