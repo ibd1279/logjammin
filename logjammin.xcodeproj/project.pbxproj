@@ -158,12 +158,12 @@
 		08FB7795FE84155DC02AAC07 /* Source */ = {
 			isa = PBXGroup;
 			children = (
+				08FB7796FE84155DC02AAC07 /* main.cpp */,
+				220AD7060FA233CB00C604BE /* Model */,
 				22ED3CB80FB920F7004E2511 /* Templates */,
 				22ED3BBE0FB8701A004E2511 /* Controller */,
 				22D30BE00FA78EF8005DE0D9 /* CGI */,
-				220AD7060FA233CB00C604BE /* Model */,
 				220AD6F30FA215F800C604BE /* Config Parser */,
-				08FB7796FE84155DC02AAC07 /* main.cpp */,
 			);
 			name = Source;
 			sourceTree = "<group>";

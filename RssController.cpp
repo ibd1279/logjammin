@@ -193,9 +193,7 @@ namespace logjammin {
                     Backlog b;
                     Backlog::at(atol(iter->second.c_str()), &b);
                     
-                    std::ostringstream comment;
-                    comment << user->name() << ": " << request->param(commit_comment_key);
-                    b.comments().push_back(comment.str());
+                    b.comments().push_back(BacklogComment(request->param(commit_comment_key), *user, false));
                     
                     std::ostringstream assigned_name;
                     assigned_name << "assigned:" << user->name();

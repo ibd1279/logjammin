@@ -49,6 +49,12 @@ namespace logjammin {
      */
     class BacklogComment {
     public:
+        //! Lua bindings classname.
+        static const char LUNAR_CLASS_NAME[];
+        
+        //! Lua bindings method array.
+        static Lunar<BacklogComment>::RegType LUNAR_METHODS[];
+        
         //! Create a new Backlog comment from a property record.
         BacklogComment(OpenProp::Element *props);
         
@@ -90,6 +96,8 @@ namespace logjammin {
         
         //! Set if this is a historical comment.
         void historical(const bool historical) { _historical = historical; };
+        
+        std::string serialize() const;
     private:
         std::string _comment;
         User _user;
@@ -303,13 +311,13 @@ namespace logjammin {
          New comments should be put at the end of the list.
          \return A reference to the comments list.
          */
-        std::list<std::string> &comments() { return _comments; };
+        std::list<BacklogComment> &comments() { return _comments; };
         
         //! Get a constant reference to the comments list.
         /*!
          \return A constant reference to the comments list.
          */
-        const std::list<std::string> &comments() const { return _comments; };
+        const std::list<BacklogComment> &comments() const { return _comments; };
         
         //! Get a reference to the tags set.
         /*!
@@ -333,7 +341,7 @@ namespace logjammin {
     private:
         std::string _brief, _version, _category, _story, _disposition;
         Project _project;
-        std::list<std::string> _comments;
+        std::list<BacklogComment> _comments;
         std::set<std::string> _tags;
         double _estimate, _actual;
     };

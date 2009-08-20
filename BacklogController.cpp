@@ -129,6 +129,7 @@ namespace logjammin {
             }
             
             if(request->is_post()) {
+                std::ostringstream history;
                 Project::at(atol(request->param("project").c_str()), &(b.project()));
                 b.version(request->param("version"));
                 b.category(request->param("category"));
@@ -139,9 +140,7 @@ namespace logjammin {
                 
                 // Store the comment.
                 if(request->param("comments").size() > 0) {
-                    std::string comment(user->name());
-                    comment.append(": ").append(request->param("comments"));
-                    b.comments().push_back(comment);
+                    b.comments().push_back(BacklogComment(request->param("comments"), *user, false));
                 }
                 
                 // Store the tags.

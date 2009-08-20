@@ -192,27 +192,7 @@ namespace logjammin {
          \sa load().
          */
         virtual void populate(OpenProp::File *props) = 0;
-        
-    protected:
-        //! Set the primary key for the current object.
-        /*!
-         This method should only be called when populating, purging, or saving.
-         \param key The primary key.
-         */
-        virtual void pkey(const unsigned long long key) { _pkey = key; }
-        
-        //! Get the DAO
-        virtual ModelDB<V> *dao() const = 0;
-        
-        //! Create and open the DB object.
-        Model() {
-            _pkey = 0;
-        }
-        
-        //! Close the database object.
-        virtual ~Model() {
-        }
-        
+
         //! Helper method to escape strings for OpenProp format.
         /*!
          \param val The value to escape.
@@ -231,6 +211,26 @@ namespace logjammin {
                 r.push_back(*iter);
             }
             return r;
+        }
+                
+    protected:
+        //! Set the primary key for the current object.
+        /*!
+         This method should only be called when populating, purging, or saving.
+         \param key The primary key.
+         */
+        virtual void pkey(const unsigned long long key) { _pkey = key; }
+        
+        //! Get the DAO
+        virtual ModelDB<V> *dao() const = 0;
+        
+        //! Create and open the DB object.
+        Model() {
+            _pkey = 0;
+        }
+        
+        //! Close the database object.
+        virtual ~Model() {
         }
         
         //! Current primary key.

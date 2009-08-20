@@ -165,10 +165,11 @@ namespace logjammin {
                     
                     // Comments
                     std::string comments;
-                    for(std::list<std::string>::const_iterator iter = model->comments().begin();
+                    for(std::list<BacklogComment>::const_iterator iter = model->comments().begin();
                         iter != model->comments().end();
                         ++iter) {
-                        comments.append(*iter);
+                        if(iter->historical()) continue;
+                        comments.append(iter->comment());
                     }
                     search_comments.index(comments, key);
                     
@@ -253,11 +254,21 @@ namespace logjammin {
          * Backlog Lua integration
          *************************************************************************/
         
+        int BacklogComment_user(BacklogComment *obj, lua_State *L) {
+            Lunar<User>::push(L, &(obj->user()), false);
+            return 1;
+        }
+        
+        int BacklogComment_historical(BacklogComment *obj, lua_State *L) {
+            lua_pushboolean(L, obj->historical());
+            return 1;
+        }
+        
         int Backlog_project(Backlog *obj, lua_State *L) {
             Lunar<Project>::push(L, &(obj->project()), false);
             return 1;
         }
-        
+                
         int Backlog_tags(Backlog *obj, lua_State *L) {
             lua_newtable(L);
             int i = 0;
@@ -274,16 +285,25 @@ namespace logjammin {
         int Backlog_comments(Backlog *obj, lua_State *L) {
             lua_newtable(L);
             int i = 0;
-            std::list<std::string> comments = obj->comments();
-            for(std::list<std::string>::reverse_iterator iter = comments.rbegin();
+            std::list<BacklogComment> comments = obj->comments();
+            for(std::list<BacklogComment>::reverse_iterator iter = comments.rbegin();
                 iter != comments.rend();
                 ++iter) {
-                lua_pushstring(L, iter->c_str());
+                Lunar<BacklogComment>::push(L, &(*iter), true);
                 lua_rawseti(L, -2, ++i);
             }
             return 1;
         }
     }; // namespace
+    
+    const char BacklogComment::LUNAR_CLASS_NAME[] = "BacklogComment";
+    Lunar<BacklogComment>::RegType BacklogComment::LUNAR_METHODS[] = {
+    LUNAR_STRING_GETTER(BacklogComment, comment),
+    LUNAR_STATIC_METHOD(BacklogComment, user),
+    LUNAR_INTEGER_GETTER(BacklogComment, time, long long),
+    LUNAR_STATIC_METHOD(BacklogComment, historical),
+    {0,0,0,0}
+    };
     
     const char Backlog::LUNAR_CLASS_NAME[] = "Backlog";
     Lunar<Backlog>::RegType Backlog::LUNAR_METHODS[] = {
@@ -305,7 +325,48 @@ namespace logjammin {
     
     /******************************************************************************
      * Backlog Database
-     *****************************************************************************/    
+     *****************************************************************************/
+    
+    BacklogComment::BacklogComment(OpenProp::Element *props) {
+        if(props->getValue("ccomment").exists())
+            this->comment(std::string(props->getValue("comment")));
+        if(props->getValue("user").exists())
+            this->user(User((long)props->getValue("user")));
+        if(props->getValue("time").exists())
+            this->time((long)props->getValue("time"));
+        if(props->getValue("historical").exists())
+            this->historical((int)props->getValue("historical"));
+    }
+    
+    BacklogComment::BacklogComment(const BacklogComment &orig) :
+    _comment(orig._comment),
+    _user(orig._user),
+    _time(orig._time),
+    _historical(orig._historical)
+    {
+    }
+    
+    BacklogComment::BacklogComment(const std::string &comment,
+                                   const User &user,
+                                   bool historical) :
+    _comment(comment),
+    _user(user),
+    _historical(historical)
+    {
+        _time = ::time(NULL);
+    }
+    
+    BacklogComment::~BacklogComment() {
+    }
+    
+    std::string BacklogComment::serialize() const {
+        std::ostringstream data;
+        data << "        comment=\"" << Model<Backlog>::escape(_comment) << "\";\n";
+        data << "        user=\"" << _user.pkey() << "\";\n";
+        data << "        time=\"" << _time << "\";\n";
+        data << "        historical=\"" << _historical << "\";\n";
+        return data.str();
+    }
     
     std::list<Backlog *> Backlog::all(const Project &project,
                                       const std::string &version,
@@ -441,10 +502,12 @@ namespace logjammin {
         data << "estimate=\"" << _estimate << "\";\n";
         data << "actual=\"" << _actual << "\";\n";
         data << "comments{\n";
-        for(std::list<std::string>::const_iterator iter = _comments.begin();
+        for(std::list<BacklogComment>::const_iterator iter = _comments.begin();
             iter != _comments.end();
             ++iter, ++i) {
-            data << "    c" << i << "=\"" << escape(*iter) << "\";\n";
+            data << "    c" << i << "{\n";
+            data << iter->serialize();
+            data << "    };\n";
         }
         data << "};\n";
         data << "tags{\n";
@@ -472,7 +535,7 @@ namespace logjammin {
         OpenProp::ElementIterator *iter = props->getElement("comments")->getElements();
         _comments.clear();
         while(iter->more())
-            _comments.push_back(std::string(iter->next()->getValue()));
+            _comments.push_back(BacklogComment(iter->next()));
         
         iter = props->getElement("tags")->getElements();
         _tags.clear();
