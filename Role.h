@@ -88,6 +88,12 @@ namespace logjammin {
         //! Create a new role object.
         Role();
         
+        //! Create a copy of a role object.
+        /*!
+         \param orig The original role object.
+         */
+        Role(const Role &orig);
+        
         //! Create a new role object from a primary key.
         /*!
          \param key The primary key.

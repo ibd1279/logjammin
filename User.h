@@ -99,6 +99,12 @@ namespace logjammin {
         //! Create a user object.
         User();
         
+        //! Create a copy of a user object.
+        /*!
+         \param orig The original user object.
+         */
+        User(const User &orig);
+        
         //! Load a user object by primary key.
         /*!
          \param key The primary key.

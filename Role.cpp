@@ -196,6 +196,12 @@ namespace logjammin {
     Role::Role() {
     }
     
+    Role::Role(const Role &orig) : Model<Role>(orig),
+    _name(orig._name),
+    _allowed(orig._allowed)
+    {
+    }
+    
     Role::Role(unsigned long long key) {
         Role::at(key, this);
     }

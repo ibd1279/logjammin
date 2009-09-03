@@ -298,6 +298,22 @@ namespace logjammin {
         _cached_allowed = NULL;
     }
     
+    User::User(const User &orig) :
+    Model<User>(orig),
+    _login_count(orig._login_count),
+    _last_commit(orig._last_commit),
+    _name(orig._name),
+    _cookie(orig._cookie),
+    _email(orig._email),
+    _aim(orig._aim),
+    _role(orig._role),
+    _allowed(orig._allowed),
+    _denied(orig._denied),
+    _logins(orig._logins)
+    {
+        _cached_allowed = NULL;
+    }
+    
     User::User(unsigned long long key) : _login_count(0), _last_commit(0) {
         _cached_allowed = NULL;
         User::at(key, this);
