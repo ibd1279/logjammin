@@ -229,6 +229,9 @@ namespace logjammin {
             _pkey = 0;
         }
         
+        Model(const Model &orig) : _pkey(orig._pkey) {
+        }
+        
         //! Close the database object.
         virtual ~Model() {
         }
