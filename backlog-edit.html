@@ -67,8 +67,11 @@
         </div>
         <div>
             <label><div>Comments</div>
-                <?lc for h, c in ipairs(backlog:comments()) do ?><div><strong>${os.date("%A, %B %d, %Y %I:%M %p", c:time())}</strong> by <strong>${c:user():name()}</strong><blockquote>${c:comment()}</blockquote></div>
-                <?lc end ?>
+                <?lc for h, c in ipairs(backlog:comments()) do ?><div>
+                    <strong>${_html(os.date("%A, %B %d, %Y %I:%M %p", c:time()))}</strong> by
+                    <?lc if c:user():aim():len() > 0 then ?><a href="aim:GoIM?screenname=${_html(c:user():aim())}"><img src="http://api.oscar.aol.com/presence/icon?k=ja166APqRZvmttqX&t=${_html(c:user():aim())}" border="0"/><?lc end ?><strong>${_html(c:user():name())}</strong><?lc if c:user():aim():len() > 0 then ?></a><?lc end ?>
+                    <blockquote>${_html(c:comment())}</blockquote>
+                </div><?lc end ?>
                 <textarea name="comments" cols="60" rows="8"></textarea>
             </label>
         </div>
