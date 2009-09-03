@@ -370,6 +370,7 @@ CGI::Request::Request() {
     Lunar<logjammin::User>::Register(_lua_state);
     Lunar<logjammin::Project>::Register(_lua_state);
     Lunar<logjammin::Backlog>::Register(_lua_state);
+    Lunar<logjammin::BacklogComment>::Register(_lua_state);
     Lunar<logjammin::RssItem>::Register(_lua_state);
     
     lua_pushcfunction(_lua_state, html_escape);
