@@ -64,6 +64,12 @@ namespace logjammin {
         //! Create a new BacklogComment.
         BacklogComment(const std::string &comment, const User &user, bool historical);
         
+        //! Lua constructor.
+        /*!
+         \param L Pointer to a lua state.
+         */
+        BacklogComment(lua_State *L);
+        
         //! Destructor.
         ~BacklogComment();
         

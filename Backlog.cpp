@@ -255,7 +255,7 @@ namespace logjammin {
          *************************************************************************/
         
         int BacklogComment_user(BacklogComment *obj, lua_State *L) {
-            Lunar<User>::push(L, &(obj->user()), false);
+            Lunar<User>::push(L, new User(obj->user()), true);
             return 1;
         }
         
@@ -289,7 +289,7 @@ namespace logjammin {
             for(std::list<BacklogComment>::reverse_iterator iter = comments.rbegin();
                 iter != comments.rend();
                 ++iter) {
-                Lunar<BacklogComment>::push(L, &(*iter), true);
+                Lunar<BacklogComment>::push(L, new BacklogComment(*iter), true);
                 lua_rawseti(L, -2, ++i);
             }
             return 1;
@@ -328,7 +328,7 @@ namespace logjammin {
      *****************************************************************************/
     
     BacklogComment::BacklogComment(OpenProp::Element *props) {
-        if(props->getValue("ccomment").exists())
+        if(props->getValue("comment").exists())
             this->comment(std::string(props->getValue("comment")));
         if(props->getValue("user").exists())
             this->user(User((long)props->getValue("user")));
@@ -354,6 +354,10 @@ namespace logjammin {
     _historical(historical)
     {
         _time = ::time(NULL);
+    }
+    
+    BacklogComment::BacklogComment(lua_State *L) 
+    {
     }
     
     BacklogComment::~BacklogComment() {
