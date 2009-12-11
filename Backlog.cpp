@@ -100,6 +100,11 @@ namespace logjammin {
                 tcjdbopen(db, BACKLOG_SRCH_TAGS, mode);
             }
         public:
+            static BacklogDB* instance() {
+                static BacklogDB *dbo = new BacklogDB();
+                return dbo;
+            }
+            
             tokyo::Index<unsigned long long, std::string> index_natural, index_disposition;
             tokyo::Index<unsigned long long, double> index_estimate, index_actual;
             tokyo::Search<unsigned long long> search_name, search_story, search_comments;
@@ -386,12 +391,11 @@ namespace logjammin {
             }
         }
         
-        BacklogDB dao;
-        std::set<unsigned long long> keys(dao.index_natural.starts(nkey.str()));
+        std::set<unsigned long long> keys(BacklogDB::instance()->index_natural.starts(nkey.str()));
         
         if(lower_disposition.size() > 0 || upper_disposition.size() > 0) {
-            std::set<unsigned long long> filter(dao.index_disposition.between(lower_disposition.size() > 0 ? lower_disposition : "000", 
-                                                                              upper_disposition.size() > 0 ? upper_disposition : "999"));
+            std::set<unsigned long long> filter(BacklogDB::instance()->index_disposition.between(lower_disposition.size() > 0 ? lower_disposition : "000", 
+                                                                                                 upper_disposition.size() > 0 ? upper_disposition : "999"));
             for(std::set<unsigned long long>::iterator iter = keys.begin();
                 iter != keys.end();
                 ) {
@@ -424,20 +428,19 @@ namespace logjammin {
             }
         }
         
-        BacklogDB dao;
         // Figure out what exists in the current scope.
-        std::set<unsigned long long> scope_set(dao.index_natural.starts(nkey.str()));
+        std::set<unsigned long long> scope_set(BacklogDB::instance()->index_natural.starts(nkey.str()));
         
         // Search for all matches.
         std::set<unsigned long long> search_set;
-        dao.search_name.like(term, search_set);
-        dao.search_story.like(term, search_set);
-        dao.search_comments.like(term, search_set);
-        dao.search_tags.tagged(term, search_set);
+        BacklogDB::instance()->search_name.like(term, search_set);
+        BacklogDB::instance()->search_story.like(term, search_set);
+        BacklogDB::instance()->search_comments.like(term, search_set);
+        BacklogDB::instance()->search_tags.tagged(term, search_set);
         
         if(lower_disposition.size() > 0 || upper_disposition.size() > 0) {
-            std::set<unsigned long long> filter(dao.index_disposition.between(lower_disposition.size() > 0 ? lower_disposition : "000", 
-                                                                              upper_disposition.size() > 0 ? upper_disposition : "999"));
+            std::set<unsigned long long> filter(BacklogDB::instance()->index_disposition.between(lower_disposition.size() > 0 ? lower_disposition : "000", 
+                                                                                                 upper_disposition.size() > 0 ? upper_disposition : "999"));
             for(std::set<unsigned long long>::iterator iter = search_set.begin();
                 iter != search_set.end();
                 ) {
@@ -459,8 +462,7 @@ namespace logjammin {
     }
     
     void Backlog::at(const unsigned long long key, Backlog *model) {
-        BacklogDB dao;
-        dao.at(key, model);
+        BacklogDB::instance()->at(key, model);
     }
     
     Backlog::Backlog() : _estimate(4.0), _actual(0.0) {
@@ -548,6 +550,6 @@ namespace logjammin {
     }
     
     ModelDB<Backlog> *Backlog::dao() const {
-        return new BacklogDB();
+        return BacklogDB::instance();
     }
 }; // namespace logjammin

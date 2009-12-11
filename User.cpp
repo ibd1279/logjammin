@@ -50,12 +50,12 @@ namespace logjammin {
         class UserDB : public ModelDB<User> {
             static void open_db_file(TCBDB *db, int mode) {
                 tcbdbsetcmpfunc(db, tccmpint64, NULL);
-                tcbdbtune(db, -1, -1, -1, -1, -1, BDBTLARGE | BDBTBZIP);
+                tcbdbtune(db, -1, -1, -1, -1, -1, BDBTLARGE | BDBTBZIP | BDBONOLCK);
                 tcbdbopen(db, USER_DB, mode);
             }
             static void open_indx_file_login(TCBDB *db, int mode) {
                 tcbdbsetcmpfunc(db, tccmplexical, NULL);
-                tcbdbtune(db, -1, -1, -1, -1, -1, BDBTLARGE | BDBTBZIP);
+                tcbdbtune(db, -1, -1, -1, -1, -1, BDBTLARGE | BDBTBZIP | BDBONOLCK);
                 tcbdbopen(db, USER_INDX_LOGIN, mode);
             }
             static void open_search_file_name(TCIDB *db, int mode) {
@@ -67,6 +67,11 @@ namespace logjammin {
                 tcidbopen(db, USER_SRCH_EMAIL, mode);
             }
         public:
+            static UserDB* instance() {
+                static UserDB *dbo = new UserDB();
+                return dbo;
+            }
+            
             tokyo::Index<unsigned long long, std::string> index_login;
             tokyo::Search<unsigned long long> search_name, search_email;
             
@@ -182,6 +187,10 @@ namespace logjammin {
          * User Lua Integration.
          *************************************************************************/
         
+        int User_projects(User *obj, lua_State *L) {
+            return 0;
+        }
+        
         int User_allowed(User *obj, lua_State *L) {
             lua_newtable(L);
             int i = 0;
@@ -255,17 +264,15 @@ namespace logjammin {
      *****************************************************************************/
     
     std::list<User *> User::all() {
-        UserDB dao;
         std::list<User *> results;
-        dao.all(results);
+        UserDB::instance()->all(results);
         return results;
     }
     
     std::list<User *> User::like(const std::string &term) {
-        UserDB dao;
         std::set<unsigned long long> keys;
-        dao.search_name.like(term, keys);
-        dao.search_email.like(term, keys);
+        UserDB::instance()->search_name.like(term, keys);
+        UserDB::instance()->search_email.like(term, keys);
         
         std::list<User *> results;
         for(std::set<unsigned long long>::const_iterator iter = keys.begin();
@@ -278,20 +285,19 @@ namespace logjammin {
     }
     
     void User::at(unsigned long long key, User *model) {
-        UserDB dao;
-        dao.at(key, model);
+        UserDB::instance()->at(key, model);
     }
     
     void User::at_login(const std::string &login, User *model) {
         UserDB dao;
         
-        std::set<unsigned long long> pkeys(dao.index_login.is(login));
+        std::set<unsigned long long> pkeys(UserDB::instance()->index_login.is(login));
         if(pkeys.size() == 0)
             throw std::string("Unknown User Login ").append(login).append(".");
         else if(pkeys.size() > 1)
             throw std::string("Ambiguous User Login ").append(login).append(".");
         
-        dao.at(*(pkeys.begin()), model);
+        User::at(*(pkeys.begin()), model);
     }
     
     User::User() : _login_count(0), _last_commit(0) {
@@ -459,6 +465,6 @@ namespace logjammin {
     }
     
     ModelDB<User> *User::dao() const {
-        return new UserDB();
+        return UserDB::instance();
     }
 }; // namespace logjammin    

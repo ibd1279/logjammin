@@ -76,6 +76,11 @@ namespace logjammin {
                 tcidbopen(db, PROJECT_SRCH_NAME, mode);
             }
         public:
+            static ProjectDB* instance() {
+                static ProjectDB *dbo = new ProjectDB();
+                return dbo;
+            }
+            
             tokyo::Index<unsigned long long, std::string> index_name;
             tokyo::Search<unsigned long long> search_name;
             tokyo::Tags<unsigned long long> search_category, search_version;
@@ -215,18 +220,16 @@ namespace logjammin {
      *****************************************************************************/
     
     std::list<Project *> Project::all() {
-        ProjectDB dao;
         std::list<Project *> results;
-        dao.all(results);
+        ProjectDB::instance()->all(results);
         return results;
     }
     
     std::list<Project *> Project::like(const std::string &term) {
-        ProjectDB dao;
         std::set<unsigned long long> keys;
-        dao.search_name.like(term, keys);
-        dao.search_version.tagged(term, keys);
-        dao.search_category.tagged(term, keys);
+        ProjectDB::instance()->search_name.like(term, keys);
+        ProjectDB::instance()->search_version.tagged(term, keys);
+        ProjectDB::instance()->search_category.tagged(term, keys);
         
         std::list<Project *> results;
         for(std::set<unsigned long long>::const_iterator iter = keys.begin();
@@ -239,20 +242,17 @@ namespace logjammin {
     }
     
     void Project::at_name(const std::string &name, Project *model) {
-        ProjectDB dao;
-        
-        std::set<unsigned long long> pkeys(dao.index_name.is(name));
+        std::set<unsigned long long> pkeys(ProjectDB::instance()->index_name.is(name));
         if(pkeys.size() == 0)
             throw std::string("Unknown Project Name ").append(name).append(".");
         else if(pkeys.size() > 1)
             throw std::string("Ambiguous Project Name ").append(name).append(".");
         
-        dao.at(*(pkeys.begin()), model);
+        ProjectDB::instance()->at(*(pkeys.begin()), model);
     }
     
     void Project::at(const unsigned long long key, Project *model) {
-        ProjectDB dao;
-        dao.at(key, model);
+        ProjectDB::instance()->at(key, model);
     }
     
     Project::Project() {
@@ -311,6 +311,6 @@ namespace logjammin {
     }
     
     ModelDB<Project> *Project::dao() const {
-        return new ProjectDB();
+        return ProjectDB::instance();
     }
 }; // namespace logjammin

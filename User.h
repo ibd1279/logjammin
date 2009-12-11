@@ -259,7 +259,6 @@ namespace logjammin {
          */
         const std::list<std::string> &logins() const { return _logins; };
         
-        
         //! Set the cookie value.
         /*!
          \par Sets the cookie value.  The value of the cookie is not actually stored.
@@ -293,7 +292,7 @@ namespace logjammin {
     protected:
         virtual ModelDB<User> *dao() const;
     private:
-        std::string _name, _cookie, _email, _aim;
+        std::string _name, _cookie, _email, _aim, _service_key;
         unsigned long long _login_count, _last_commit;
         Role _role;
         std::list<std::string> _allowed, _denied, _logins;

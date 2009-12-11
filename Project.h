@@ -35,6 +35,7 @@
 #include <list>
 #include "Model.h"
 #include "lunar.h"
+#include "User.h"
 
 namespace logjammin {
     
@@ -169,6 +170,18 @@ namespace logjammin {
          */
         std::list<std::string> categories() const { return _categories; };
         
+        //! List of project Members.
+        /*!
+         \return A reference to the members list.
+         */
+        std::list<User> &members() { return _members; };
+        
+        //! List of project members.
+        /*!
+         \return A constant reference to the members list.
+         */
+        const std::list<User> &members() const { return _members; };
+        
         virtual const std::string serialize() const;
         virtual void populate(OpenProp::File *props);
     protected:
@@ -178,5 +191,6 @@ namespace logjammin {
         std::string _commit_feed;
         std::list<std::string> _versions;
         std::list<std::string> _categories;
+        std::list<User> _members;
     };
 }; // namespace logjammin

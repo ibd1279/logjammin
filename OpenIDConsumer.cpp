@@ -88,6 +88,11 @@ namespace logjammin {
                 tcbdbopen(db, ASSOC_INDX_PROVIDER, mode);
             }
         public:
+            static AssocDB *instance() {
+                static AssocDB *dbo = new AssocDB();
+                return dbo;
+            }
+            
             tokyo::Index<unsigned long long, std::string> index_handle, index_provider;
             
             AssocDB() :
@@ -191,12 +196,11 @@ namespace logjammin {
         };
         
         void AssociationWithPkey::at(unsigned long long key, AssociationWithPkey *model) {
-            AssocDB dao;
-            dao.at(key, model);
+            AssocDB::instance()->at(key, model);
         }
         
         ModelDB<AssociationWithPkey> *AssociationWithPkey::dao() const {
-            return new AssocDB();
+            return AssocDB::instance();
         }
         
         AssociationWithPkey::AssociationWithPkey(openid_1_1::Association *src) {
@@ -217,21 +221,20 @@ namespace logjammin {
     OpenIDConsumer::~OpenIDConsumer() { };
     
     void OpenIDConsumer::invalidate_assoc_handle(const std::string &assoc_handle) {
-        AssocDB dao;
-        std::set<unsigned long long> tmp(dao.index_handle.is(assoc_handle));
+        std::set<unsigned long long> tmp(AssocDB::instance()->index_handle.is(assoc_handle));
         for(std::set<unsigned long long>::const_iterator iter = tmp.begin();
             iter != tmp.end();
             ++iter) {
             AssociationWithPkey assoc(*iter);
-            dao.remove(&assoc);
+            AssocDB::instance()->remove(&assoc);
         }
     }
     
     const std::string *OpenIDConsumer::lookup_assoc_handle(const std::string &provider) {
-        AssocDB dao;
-        std::set<unsigned long long> tmp(dao.index_provider.is(provider));
+        std::set<unsigned long long> tmp(AssocDB::instance()->index_provider.is(provider));
         if(!tmp.size())
             return NULL;
+        
         AssociationWithPkey assoc(*(tmp.begin()));
         
         if(assoc.expires_at < time(NULL)) {
@@ -243,8 +246,7 @@ namespace logjammin {
     }
     
     openid_1_1::Association *OpenIDConsumer::lookup_association(const std::string &assoc_handle) {
-        AssocDB dao;
-        std::set<unsigned long long> tmp(dao.index_handle.is(assoc_handle));
+        std::set<unsigned long long> tmp(AssocDB::instance()->index_handle.is(assoc_handle));
         if(!tmp.size())
             return NULL;
         
@@ -253,8 +255,7 @@ namespace logjammin {
     }
     
     void OpenIDConsumer::store_assoc_handle(const openid_1_1::Association *association) {
-        AssocDB dao;
         AssociationWithPkey assoc((openid_1_1::Association *)association);
-        dao.put(&assoc);
+        AssocDB::instance()->put(&assoc);
     }
 }; // namespace logjammin    

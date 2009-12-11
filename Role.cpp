@@ -35,69 +35,98 @@
 
 
 namespace logjammin {
-    namespace {
-        /**************************************************************************
-         * Role Database
-         *************************************************************************/
+    /**************************************************************************
+     * Role Database
+     *************************************************************************/
+    
+    const char ROLE_DB[] = "/var/db/logjammin/role.tcb";
+    const char ROLE_INDX_NAME[] = "/var/db/logjammin/role_name.tcb";
+    
+    class RoleDB : public ModelDB<Role> {
+        static void open_db_file(TCBDB *db, int mode) {
+            tcbdbsetcmpfunc(db, tccmpint64, NULL);
+            tcbdbtune(db, -1, -1, -1, -1, -1, BDBTLARGE | BDBTBZIP);
+            tcbdbopen(db, ROLE_DB, mode);
+        }
+        static void open_indx_file_name(TCBDB *db, int mode) {
+            tcbdbsetcmpfunc(db, tccmplexical, NULL);
+            tcbdbtune(db, -1, -1, -1, -1, -1, BDBTLARGE | BDBTBZIP);
+            tcbdbopen(db, ROLE_INDX_NAME, mode);
+        }
+    public:
+        static RoleDB* instance() {
+            static RoleDB *dbo = new RoleDB();
+            return dbo;
+        }
         
-        const char ROLE_DB[] = "/var/db/logjammin/role.tcb";
-        const char ROLE_INDX_NAME[] = "/var/db/logjammin/role_name.tcb";
+        tokyo::Index<unsigned long long, std::string> index_name;
         
-        class RoleDB : public ModelDB<Role> {
-            static void open_db_file(TCBDB *db, int mode) {
-                tcbdbsetcmpfunc(db, tccmpint64, NULL);
-                tcbdbtune(db, -1, -1, -1, -1, -1, BDBTLARGE | BDBTBZIP);
-                tcbdbopen(db, ROLE_DB, mode);
+        RoleDB() :
+        ModelDB<Role>(&open_db_file, BDBOREADER | BDBOWRITER | BDBOCREAT),
+        index_name(&open_indx_file_name, BDBOREADER | BDBOWRITER | BDBOCREAT)
+        {
+        }
+        
+        virtual void put(Role *model) {
+            try {
+                begin_transaction();
+                index_name.begin_transaction();
+                
+                // Clean up the index.
+                if(model->pkey() != 0) {
+                    Role r(model->pkey());
+                    index_name.remove(r.name(), model->pkey());
+                }
+                
+                // Make sure the name isn't used elsewhere.
+                std::set<unsigned long long> tmp = index_name.is(model->name());
+                if(tmp.size() != 0)
+                    throw tokyo::Exception("Constraint error",
+                                           "Name already exists in role database.");
+                
+                // Get the primary key for new objects.
+                unsigned long long key = model->pkey();
+                if(key == 0) {
+                    try {
+                        key = max() + 1;
+                    } catch(tokyo::Exception &ex) {
+                        key = 1;
+                    }
+                }
+                
+                // Store the records.
+                this->_put(key, model->serialize());
+                index_name.put(model->name(), key);
+                
+                index_name.commit_transaction();
+                commit_transaction();
+                
+                set_pkey(model, key);
+            } catch (tokyo::Exception &ex) {
+                index_name.abort_transaction();
+                abort_transaction();
+                throw ex;
+            } catch (std::string &ex) {
+                index_name.abort_transaction();
+                abort_transaction();
+                throw ex;
             }
-            static void open_indx_file_name(TCBDB *db, int mode) {
-                tcbdbsetcmpfunc(db, tccmplexical, NULL);
-                tcbdbtune(db, -1, -1, -1, -1, -1, BDBTLARGE | BDBTBZIP);
-                tcbdbopen(db, ROLE_INDX_NAME, mode);
-            }
-        public:
-            tokyo::Index<unsigned long long, std::string> index_name;
-            
-            RoleDB() :
-            ModelDB<Role>(&open_db_file, BDBOREADER | BDBOWRITER | BDBOCREAT),
-            index_name(&open_indx_file_name, BDBOREADER | BDBOWRITER | BDBOCREAT)
-            {
-            }
-            
-            virtual void put(Role *model) {
+        }
+        
+        virtual void remove(Role *model) {
+            if(model->pkey() != 0) {
                 try {
                     begin_transaction();
                     index_name.begin_transaction();
                     
-                    // Clean up the index.
-                    if(model->pkey() != 0) {
-                        Role r(model->pkey());
-                        index_name.remove(r.name(), model->pkey());
-                    }
-                    
-                    // Make sure the name isn't used elsewhere.
-                    std::set<unsigned long long> tmp = index_name.is(model->name());
-                    if(tmp.size() != 0)
-                        throw tokyo::Exception("Constraint error",
-                                               "Name already exists in role database.");
-                    
-                    // Get the primary key for new objects.
-                    unsigned long long key = model->pkey();
-                    if(key == 0) {
-                        try {
-                            key = max() + 1;
-                        } catch(tokyo::Exception &ex) {
-                            key = 1;
-                        }
-                    }
-                    
-                    // Store the records.
-                    this->_put(key, model->serialize());
-                    index_name.put(model->name(), key);
+                    Role r(model->pkey());
+                    this->_remove(model->pkey());
+                    index_name.remove(r.name(), model->pkey());
                     
                     index_name.commit_transaction();
                     commit_transaction();
                     
-                    set_pkey(model, key);
+                    set_pkey(model, 0);
                 } catch (tokyo::Exception &ex) {
                     index_name.abort_transaction();
                     abort_transaction();
@@ -108,35 +137,11 @@ namespace logjammin {
                     throw ex;
                 }
             }
-            
-            virtual void remove(Role *model) {
-                if(model->pkey() != 0) {
-                    try {
-                        begin_transaction();
-                        index_name.begin_transaction();
-                        
-                        Role r(model->pkey());
-                        this->_remove(model->pkey());
-                        index_name.remove(r.name(), model->pkey());
-                        
-                        index_name.commit_transaction();
-                        commit_transaction();
-                        
-                        set_pkey(model, 0);
-                    } catch (tokyo::Exception &ex) {
-                        index_name.abort_transaction();
-                        abort_transaction();
-                        throw ex;
-                    } catch (std::string &ex) {
-                        index_name.abort_transaction();
-                        abort_transaction();
-                        throw ex;
-                    }
-                }
-            }
-        };
+        }
+    };
         
-        
+
+    namespace {
         /**************************************************************************
          * Role Lua Integration.
          *************************************************************************/
@@ -170,27 +175,24 @@ namespace logjammin {
      *****************************************************************************/
     
     std::list<Role *> Role::all() {
-        RoleDB dao;
         std::list<Role *> results;
-        dao.all(results);
+        RoleDB::instance()->all(results);
         return results;
     }
     
-    void Role::at(unsigned long long key, Role *model) {
-        RoleDB dao;
-        dao.at(key, model);
+    void Role::at(unsigned long long key,
+                  Role *model) {
+        RoleDB::instance()->at(key, model);
     }
     
     void Role::at_name(const std::string &name, Role *model) {
-        RoleDB dao;
-        
-        std::set<unsigned long long> pkeys(dao.index_name.is(name));
+        std::set<unsigned long long> pkeys(RoleDB::instance()->index_name.is(name));
         if(pkeys.size() == 0)
             throw std::string("Unknown Role Name ").append(name).append(".");
         else if(pkeys.size() > 1)
             throw std::string("Ambiguous Role Name ").append(name).append(".");
         
-        dao.at(*(pkeys.begin()), model);
+        RoleDB::instance()->at(*(pkeys.begin()), model);
     }
     
     Role::Role() {
@@ -240,6 +242,6 @@ namespace logjammin {
     }
     
     ModelDB<Role> *Role::dao() const {
-        return new RoleDB();
+        return RoleDB::instance();
     }
 }; // namespace logjammin

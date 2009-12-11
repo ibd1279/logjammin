@@ -39,6 +39,8 @@
 
 namespace logjammin {
     
+    class RoleDB;
+    
     //! Role Class.
     /*!
      \author Jason Watson
@@ -59,18 +61,25 @@ namespace logjammin {
         
         //! Get a list of all roles in the database.
         /*!
+         \par If the \cdao_ptr object is provided, it will be used instead
+         of attempting to create a new dao.
          \par Roles in the list must be deallocated with "delete".
+         \param dao_ptr Pointer to a data access object. 
          \return A list of roles.
          */
         static std::list<Role *> all();
         
         //! Get a role by primary key.
         /*!
+         \par If the \cdao_ptr object is provided, it will be used instead
+         of attempting to create a new dao.
          \param key the primary key.
          \param model Pointer to the object to populate.
+         \param dao_ptr Pointer to a data access object.
          \exception tokyo::Exception When the record cannot be found.
          */
-        static void at(unsigned long long key, Role *model);
+        static void at(unsigned long long key,
+                       Role *model);
         
         //! Get a role by name.
         /*!

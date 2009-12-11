@@ -90,7 +90,6 @@ namespace logjammin {
                         target << "&_qs=" << CGI::Response::percent_encode(request->param("_qs"));
                         target << "&_pi=" << CGI::Response::percent_encode(request->param("_pi"));
                         
-                        std::cerr  << target.str() << std::endl;
                         response->redirect(relay_provider.checkid_setup(target.str(),
                                                                         request->original_request_script()));
                     } catch(const std::string &ex) {
@@ -133,7 +132,9 @@ namespace logjammin {
                             // Store the updated cookie in the DB.
                             user->cookie(ingredients);
                             user->incr_login_count();
+                            std::cerr << "post login 5" << std::endl;
                             user->save();
+                            std::cerr << "post login 6" << std::endl;
                             
                             // Send the cookies in the response.
                             response->cookie("lj_user_login",
