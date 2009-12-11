@@ -55,8 +55,8 @@ namespace logjammin {
         }
     public:
         static RoleDB* instance() {
-            static RoleDB *dbo = new RoleDB();
-            return dbo;
+            static RoleDB dbo;
+            return &dbo;
         }
         
         tokyo::Index<unsigned long long, std::string> index_name;

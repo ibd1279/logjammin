@@ -89,8 +89,8 @@ namespace logjammin {
             }
         public:
             static AssocDB *instance() {
-                static AssocDB *dbo = new AssocDB();
-                return dbo;
+                static AssocDB dbo;
+                return &dbo;
             }
             
             tokyo::Index<unsigned long long, std::string> index_handle, index_provider;

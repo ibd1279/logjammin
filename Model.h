@@ -56,9 +56,7 @@ namespace logjammin {
             if(model == NULL)
                 throw std::string("Invalid combination of Model and ModelDB.");
             
-            ModelDB<V> *model_db = dao();
-            model_db->put(model);
-            delete model_db;
+            dao()->put(model);
         }
         
         //! Remove the current object from the database.
@@ -67,9 +65,7 @@ namespace logjammin {
             if(model == NULL)
                 throw std::string("Invalid combination of Model and ModelDB.");
             
-            ModelDB<V> *model_db = dao();
-            model_db->remove(model);
-            delete model_db;
+            dao()->remove(model);
         }
         
         //! Get the primary key for the current object.

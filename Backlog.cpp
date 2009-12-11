@@ -101,8 +101,8 @@ namespace logjammin {
             }
         public:
             static BacklogDB* instance() {
-                static BacklogDB *dbo = new BacklogDB();
-                return dbo;
+                static BacklogDB dbo;
+                return &dbo;
             }
             
             tokyo::Index<unsigned long long, std::string> index_natural, index_disposition;

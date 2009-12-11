@@ -77,8 +77,8 @@ namespace logjammin {
             }
         public:
             static ProjectDB* instance() {
-                static ProjectDB *dbo = new ProjectDB();
-                return dbo;
+                static ProjectDB dbo;
+                return &dbo;
             }
             
             tokyo::Index<unsigned long long, std::string> index_name;

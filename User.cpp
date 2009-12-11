@@ -50,12 +50,12 @@ namespace logjammin {
         class UserDB : public ModelDB<User> {
             static void open_db_file(TCBDB *db, int mode) {
                 tcbdbsetcmpfunc(db, tccmpint64, NULL);
-                tcbdbtune(db, -1, -1, -1, -1, -1, BDBTLARGE | BDBTBZIP | BDBONOLCK);
+                tcbdbtune(db, -1, -1, -1, -1, -1, BDBTLARGE | BDBTBZIP);
                 tcbdbopen(db, USER_DB, mode);
             }
             static void open_indx_file_login(TCBDB *db, int mode) {
                 tcbdbsetcmpfunc(db, tccmplexical, NULL);
-                tcbdbtune(db, -1, -1, -1, -1, -1, BDBTLARGE | BDBTBZIP | BDBONOLCK);
+                tcbdbtune(db, -1, -1, -1, -1, -1, BDBTLARGE | BDBTBZIP);
                 tcbdbopen(db, USER_INDX_LOGIN, mode);
             }
             static void open_search_file_name(TCIDB *db, int mode) {
@@ -68,8 +68,8 @@ namespace logjammin {
             }
         public:
             static UserDB* instance() {
-                static UserDB *dbo = new UserDB();
-                return dbo;
+                static UserDB dbo;
+                return &dbo;
             }
             
             tokyo::Index<unsigned long long, std::string> index_login;
@@ -289,8 +289,6 @@ namespace logjammin {
     }
     
     void User::at_login(const std::string &login, User *model) {
-        UserDB dao;
-        
         std::set<unsigned long long> pkeys(UserDB::instance()->index_login.is(login));
         if(pkeys.size() == 0)
             throw std::string("Unknown User Login ").append(login).append(".");
