@@ -11,6 +11,11 @@
         </label>
     </div>
     <div>
+        <label>Daily Hours
+            <input name="daily_hours" value="${project:daily_hours()}" type="text" />
+        </label>
+    </div>
+    <div>
         <label>Versions
             <?lc for h, version in ipairs(project:versions()) do ?><input name="version" value="${version}" type="text" />
             <?lc end ?>
@@ -24,6 +29,15 @@
             <input name="category" value="" type="text" />
         </label>
     </div>
+    <div>
+        <label>Members
+            <select name="members" multiple>
+            <?lc for h, user in ipairs(users) do ?>
+                <option value="${user:pkey()}"${project:has_member(user) and " selected" or ""}>${user:name()}</option>
+            <?lc end ?>
+            </select>
+        </label>
+    <div>
     <div>
         <input value="Save" type="submit" />
     </div>

@@ -146,6 +146,25 @@ namespace logjammin {
          */
         void commit_feed(const std::string &feed) { _commit_feed = feed; };
         
+        //! Get the estimated number of hours worked each day.
+        /*!
+         \return The estimated number of hours worked each day.
+         */
+        int daily_hours() const { return _daily_hours; };
+        
+        //! Set the estimated number of hours worked each day.
+        /*!
+         \param hours The estimated number of hours worked each day.
+         */
+        void daily_hours(const int hours) { _daily_hours = hours; };
+        
+        //! Check to see if a user is a member of a project.
+        /*!
+         \param user The user to check for membership of.
+         \return True if the user is a member of the project, false otherwise.
+         */
+        bool has_member(const User &user);
+        
         //! List of versions.
         /*!
          \return A reference to the versions list.
@@ -192,5 +211,6 @@ namespace logjammin {
         std::list<std::string> _versions;
         std::list<std::string> _categories;
         std::list<User> _members;
+        int _daily_hours;
     };
 }; // namespace logjammin

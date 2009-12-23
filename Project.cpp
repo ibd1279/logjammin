@@ -41,6 +41,7 @@ namespace logjammin {
         
         const char PROJECT_DB[] = "/var/db/logjammin/project.tcb";
         const char PROJECT_INDX_NAME[] = "/var/db/logjammin/project_name.tcb";
+        const char PROJECT_INDX_USER[] = "/var/db/logjammin/project_user.tcb";
         const char PROJECT_SRCH_CATEGORY[] = "/var/db/logjammin/project_categories";
         const char PROJECT_SRCH_VERSION[] = "/var/db/logjammin/project_versions";
         const char PROJECT_SRCH_NAME[] = "/var/db/logjammin/project_name";
@@ -63,6 +64,11 @@ namespace logjammin {
                 tcbdbtune(db, -1, -1, -1, -1, -1, BDBTLARGE | BDBTBZIP);
                 tcbdbopen(db, PROJECT_INDX_NAME, mode);
             }
+            static void open_indx_file_user(TCBDB *db, int mode) {
+                tcbdbsetcmpfunc(db, tccmpint64, NULL);
+                tcbdbtune(db, -1, -1, -1, -1, -1, BDBTLARGE | BDBTBZIP);
+                tcbdbopen(db, PROJECT_INDX_USER, mode);
+            }
             static void open_search_file_category(TCJDB *db, int mode) {
                 tcjdbtune(db, -1, -1, -1, JDBTLARGE | JDBTBZIP);
                 tcjdbopen(db, PROJECT_SRCH_CATEGORY, mode);
@@ -82,6 +88,7 @@ namespace logjammin {
             }
             
             tokyo::Index<unsigned long long, std::string> index_name;
+            tokyo::Index<unsigned long long, unsigned long long> index_user;
             tokyo::Search<unsigned long long> search_name;
             tokyo::Tags<unsigned long long> search_category, search_version;
             
@@ -89,6 +96,7 @@ namespace logjammin {
             ProjectDB() :
             ModelDB<Project>(&open_db_file, BDBOREADER | BDBOWRITER | BDBOCREAT),
             index_name(&open_indx_file_name, BDBOREADER | BDBOWRITER | BDBOCREAT),
+            index_user(&open_indx_file_user, BDBOREADER | BDBOWRITER | BDBOCREAT),
             search_category(&open_search_file_category, JDBOREADER | JDBOWRITER | JDBOCREAT),
             search_version(&open_search_file_version, JDBOREADER | JDBOWRITER | JDBOCREAT),
             search_name(&open_search_file_name, IDBOREADER | IDBOWRITER | IDBOCREAT)
@@ -100,11 +108,17 @@ namespace logjammin {
                 try {
                     begin_transaction();
                     index_name.begin_transaction();
+                    index_user.begin_transaction();
                     
                     // Clean up the index.
                     if(model->pkey() != 0) {
-                        Project p(model->pkey());
+                        const Project p(model->pkey());
                         index_name.remove(p.name(), model->pkey());
+                        for(std::list<User>::const_iterator iter = p.members().begin();
+                            iter != p.members().end();
+                            ++iter) {
+                            index_user.remove(iter->pkey(), model->pkey());
+                        }
                     }
                     
                     // Make sure the name isn't used elsewhere.
@@ -125,10 +139,16 @@ namespace logjammin {
                     // Store the records.
                     this->_put(key, model->serialize());
                     index_name.put(model->name(), key);
+                    for(std::list<User>::const_iterator iter = model->members().begin();
+                        iter != model->members().end();
+                        ++iter) {
+                        index_user.put(iter->pkey(), key);
+                    }
                     search_category.index(std::set<std::string>(model->categories().begin(), model->categories().end()), key);
                     search_version.index(std::set<std::string>(model->versions().begin(), model->versions().end()), key);
                     search_name.index(model->name(), key);
-                    
+
+                    index_user.commit_transaction();
                     index_name.commit_transaction();
                     commit_transaction();
                     
@@ -150,10 +170,16 @@ namespace logjammin {
                     try {
                         begin_transaction();
                         index_name.begin_transaction();
+                        index_user.begin_transaction();
                         
-                        Project p(model->pkey());
+                        const Project p(model->pkey());
                         this->_remove(model->pkey());
                         index_name.remove(p.name(), model->pkey());
+                        for(std::list<User>::const_iterator iter = p.members().begin();
+                            iter != p.members().end();
+                            ++iter) {
+                            index_user.remove(iter->pkey(), model->pkey());
+                        }
                         search_category.remove(model->pkey());
                         search_version.remove(model->pkey());
                         search_name.remove(model->pkey());
@@ -202,6 +228,23 @@ namespace logjammin {
             }
             return 1;
         }
+        
+        int Project_members(Project *obj, lua_State *L) {
+            lua_newtable(L);
+            int i = 0;
+            std::list<User> mems = obj->members();
+            for(std::list<User>::const_iterator iter = mems.begin(); iter != mems.end(); ++iter) {
+                Lunar<User>::push(L, new User(*iter), true);
+                lua_rawseti(L, -2, ++i);
+            }
+            return 1;
+        }
+        
+        int Project_has_member(Project *obj, lua_State *L) {
+            User *user = Lunar<User>::check(L, -1);
+            lua_pushboolean(L, obj->has_member(*user));
+            return 1;
+        }
     }; // namespace
     
     const char Project::LUNAR_CLASS_NAME[] = "Project";
@@ -210,7 +253,10 @@ namespace logjammin {
     LUNAR_STRING_GETTER(Project, commit_feed),
     LUNAR_STATIC_METHOD(Project, categories),
     LUNAR_STATIC_METHOD(Project, versions),
+    LUNAR_STATIC_METHOD(Project, members),
+    LUNAR_STATIC_METHOD(Project, has_member),
     LUNAR_INTEGER_GETTER(Project, pkey, unsigned long long),
+    LUNAR_INTEGER_GETTER(Project, daily_hours, int),
     {0,0,0,0}
     };
     
@@ -255,7 +301,7 @@ namespace logjammin {
         ProjectDB::instance()->at(key, model);
     }
     
-    Project::Project() {
+    Project::Project() : _daily_hours(0) {
     }
     
     Project::Project(unsigned long long key) {
@@ -272,12 +318,26 @@ namespace logjammin {
     Project::~Project() {
     }
     
+    bool Project::has_member(const User &user) {
+        for(std::list<User>::const_iterator iter = members().begin();
+            iter != members().end();
+            ++iter) {
+            if(iter->pkey() == user.pkey()) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
     void Project::populate(OpenProp::File *props) {
         if(props->getValue("name").exists())
             name(std::string(props->getValue("name")));
         
         if(props->getValue("feed").exists())
             commit_feed(std::string(props->getValue("feed")));
+        
+        if(props->getValue("daily_hours").exists())
+            daily_hours((long)props->getValue("daily_hours"));
         
         OpenProp::ElementIterator *iter = props->getElement("versions")->getElements();
         _versions.clear();
@@ -288,14 +348,22 @@ namespace logjammin {
         _categories.clear();
         while(iter->more())
             _categories.push_back(std::string(iter->next()->getValue()));
+        
+        if(props->getElement("members")) {
+            iter = props->getElement("members")->getElements();
+            _members.clear();
+            while(iter->more())
+                _members.push_back(User((long)iter->next()->getValue()));
+        }
     }
     
     const std::string Project::serialize() const {
         std::ostringstream data;
-        int i = 0, j = 0;
+        int i = 0, j = 0, k = 0;
         
         data << "name=\"" << escape(_name) << "\";\n";
         data << "feed=\"" << escape(_commit_feed) << "\";\n";
+        data << "daily_hours=\"" << _daily_hours << "\";\n";
         data << "versions{\n";
         for(std::list<std::string>::const_iterator iter = _versions.begin(); iter != _versions.end(); ++iter, ++i) {
             data << "    v" << i << "=\"" << escape(*iter) << "\";\n";
@@ -305,6 +373,11 @@ namespace logjammin {
         for(std::list<std::string>::const_iterator iter = _categories.begin(); iter != _categories.end(); ++iter, ++j) {
             data << "    c" << j << "=\"" << escape(*iter) << "\";\n";
         }
+        data << "};\n";
+        data << "members{\n";
+        for(std::list<User>::const_iterator iter = _members.begin(); iter != _members.end(); ++iter, ++k) {
+            data << "    m" << k << "=\"" << iter->pkey() << "\";\n";
+        };
         data << "};\n";
         
         return data.str();

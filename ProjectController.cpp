@@ -96,6 +96,7 @@ namespace logjammin {
             if(request->is_post()) {
                 p.name(request->param("name"));
                 p.commit_feed(request->param("commit_feed"));
+                p.daily_hours(atol(request->param("daily_hours").c_str()));
                 
                 std::pair<CGI::Request::param_map::const_iterator, CGI::Request::param_map::const_iterator> range;
                 range = request->params().equal_range("version");
@@ -117,6 +118,15 @@ namespace logjammin {
                 }
                 p.categories().sort();
                 
+                // Members.
+                range = request->params().equal_range("members");
+                p.members().clear();
+                for(CGI::Request::param_map::const_iterator iter = range.first;
+                    iter != range.second;
+                    ++iter) {
+                    if(iter->second.size()) p.members().push_back(atol(iter->second.c_str()));
+                }
+                
                 // Attempt to save.
                 try {
                     p.save();
@@ -127,13 +137,16 @@ namespace logjammin {
                     url << "/" << p.pkey() << "/project-edit?_msg=SAVE_SUCCESS";
                     response->redirect(url.str());
                 } catch(const std::string &ex) {
+                    std::cerr << "str " << ex << std::endl;
                     request->attribute("_error", ex);
                 } catch(tokyo::Exception &ex) {
+                    std::cerr << "ex  " << ex.msg << std::endl;
                     request->attribute("_error", ex.msg);
                 }
             }
             
             request->context_object("project", &p, false);
+            request->context_object_list("users", User::all(), true);
             response->execute("project-edit.html", request);
             request->attribute("handled", "true");
         }
