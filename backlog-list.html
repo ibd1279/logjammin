@@ -13,6 +13,9 @@
 </div><?lc else ?><div>
     <a href="backlog-edit?project=${_html(request:attribute("project"))}&amp;version=${_html(request:attribute("version"))}&amp;category=${_html(request:attribute("category"))}">Create a new task...</a>
 </div><?lc end ?>
+<?lc if project:daily_hours() > 0 then ?><div id="burndown_chart">
+</div><?lc end ?>
+<?lc actual_done, estimate_done, estimate_remaining = 0.0, 0.0, 0.0 ?>
 <table>
   <thead>
   <tr>
@@ -42,6 +45,14 @@
   <tbody>
     <?lc if backlogs and table.getn(backlogs) > 0 then ?>
       <?lc for h, backlog in ipairs(backlogs) do ?><tr>
+        <?lc 
+          if tonumber(backlog:disposition():sub(0,3)) < 400 then
+            estimate_remaining = estimate_remaining + backlog:estimate()
+          else
+            estimate_done = estimate_done + backlog:estimate()
+            actual_done = actual_done + backlog:actual()
+          end
+        ?>
         <td>${_html(backlog:pkey())}</td>
         <td><a href="${_html(backlog:pkey())}/backlog-edit">${_html(backlog:brief())}</a></td>
         <td>${_html(backlog:version())}</td>
@@ -55,3 +66,49 @@
     <?lc end ?>
   </tbody>
 </table>
+<?lc if project:daily_hours() > 0 then ?><table>
+  <?lc 
+    done_slope = estimate_done / actual_done
+    schedule = estimate_done + estimate_remaining
+    schedule_drift = actual_done - estimate_done
+    chart_days = (schedule_drift < 0 and schedule or schedule + schedule_drift) / project:daily_hours()
+    done_days = math.floor(actual_done / project:daily_hours())
+  ?>
+  <table id="burndown_table">
+    <thead>
+      <tr>
+        <td></td>
+        <?lc for i = 0, chart_days do ?><th>${math.fmod(i, 3) == 0 and i or ""}</th><?lc end ?>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th>Estimate</th>
+        <?lc for i = 0, chart_days do
+          x = schedule - (i * project:daily_hours())
+          response:write("<td>" .. (x > 0 and x or 0) .. "</td>")
+        end ?>
+      </tr>
+      <tr>
+        <th>Actual</th>
+        <?lc for i = 0, done_days do
+          x = schedule - (i * project:daily_hours() * done_slope)
+          response:write("<td>" .. (x > 0 and x or 0) .. "</td>")
+        end
+        for i = done_days + 1, chart_days do
+          x = schedule + schedule_drift - (i * project:daily_hours())
+          response:write("<td>" .. (x > 0 and x or 0) .. "</td>")
+        end ?>
+      </tr>
+    </tbody>
+  </table>
+  <script>
+    $(document).ready(function(){
+        $('#burndown_table')
+            .hide()
+            .visualize({ type: 'area', width: '350px', height: '180px', title: 'Burndown' })
+            .appendTo('#burndown_chart')
+            .trigger('visualizeRefresh');
+    });
+  </script>
+<?lc end ?>

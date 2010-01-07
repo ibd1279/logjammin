@@ -86,6 +86,9 @@ namespace logjammin {
                                                           request->param("disposition-above"),
                                                           request->param("disposition-below")),
                                              true);
+                request->context_object("project",
+                                        &project,
+                                        false);
             } catch(const std::string &ex) {
                 request->attribute("_error", ex);
             } catch(tokyo::Exception &ex) {
