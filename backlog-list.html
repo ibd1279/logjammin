@@ -68,7 +68,8 @@
 </table>
 <?lc if project:daily_hours() > 0 then ?><table>
   <?lc 
-    done_slope = estimate_done / actual_done
+    if actual_done > 0 then done_slope = estimate_done / actual_done
+    else done_slope = 0 end
     schedule = estimate_done + estimate_remaining
     schedule_drift = actual_done - estimate_done
     chart_days = (schedule_drift < 0 and schedule or schedule + schedule_drift) / project:daily_hours()
