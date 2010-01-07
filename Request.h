@@ -79,9 +79,12 @@ namespace CGI {
         std::string original_request_file() const;
         std::string original_request() const;
         const param_map &params() const { return _params; };
-        std::string param(const std::string &key) const {
+        std::string param(const std::string &key, const std::string &def_value) const {
             param_map::const_iterator iter;
-            return (iter = _params.find(key)) != _params.end() ? iter->second : std::string("");
+            return (iter = _params.find(key)) != _params.end() ? iter->second : std::string(def_value);
+        };
+        std::string param(const std::string &key) const {
+            return param(key, "");
         };
         const bool has_param(const std::string &key) const {
             param_map::const_iterator iter;
