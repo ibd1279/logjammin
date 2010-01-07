@@ -329,9 +329,6 @@ namespace  {
                 case '&':
                     result.append("&amp;");
                     break;
-                case '|':
-                    result.append("&brvbar;");
-                    break;
                 default:
                     result.push_back(str[h]);
             }
