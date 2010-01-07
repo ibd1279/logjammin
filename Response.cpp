@@ -218,6 +218,36 @@ int CGI::Response::write(lua_State *L) {
     return 0;
 }
 
+void CGI::Response::stream(const std::string &t, Request *request) {
+    if(_is_closed) return;
+    
+    std::string fname = "/var/db/logjammin/";
+    fname.append(t);
+    
+    std::ifstream file;
+    file.open(fname.c_str());
+    if(!file) {
+        _buffer = std::string("Unable to find ").append(t).append(" for response. \n");
+        std::cerr << "Unable to find " << t << " for response." << std::endl;
+        status(404);
+        close();
+        return;
+    }
+    
+    // Close the stream to dump the headers.
+    _buffer.clear();
+    close();
+    
+    // ready bytes, stream to cout.
+    char *buffer = new char[4096];
+    while(true) {
+        file.read(buffer, 4096);
+        std::cout.write(buffer, file.gcount());
+        if(!file.good()) break;
+    }
+    file.close();
+}
+
 void CGI::Response::execute(const std::string &t, Request *request) {
     if(_is_closed) return;
     

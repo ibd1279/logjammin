@@ -235,7 +235,21 @@ namespace logjammin {
         void NotFoundController::execute(CGI::Request *request, CGI::Response *response) {
             response->status(404);
             response->execute("error-404.html", request);
-            request->attribute("handled");
+            request->attribute("handled", "true");
+        }
+        
+        bool StaticAssetController::is_requested(CGI::Request *request, CGI::Response *response) {
+            std::list<std::string> args(request->split_path_info());
+            
+            if(args.size() < 2)
+                return false;
+            return (args.front().compare("static") == 0);
+        }
+        
+        void StaticAssetController::execute(CGI::Request *request, CGI::Response *response) {
+            response->header("Cache-Control", "max-age=3600, public");
+            response->stream(request->path_info(), request);
+            request->attribute("handled", "true");
         }
     }; // namespace controller
 }; // namespace logjammin

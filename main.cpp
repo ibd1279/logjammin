@@ -61,6 +61,7 @@ int main (int argc, char * const argv[]) {
         new logjammin::controller::MessageExpanderFilter(),
         new logjammin::controller::TemplateTopFilter(),
         new logjammin::controller::Seed(),
+        new logjammin::controller::StaticAssetController(),
         new logjammin::controller::BacklogEditController(),
         new logjammin::controller::BacklogSearchController(),
         new logjammin::controller::BacklogListController(),

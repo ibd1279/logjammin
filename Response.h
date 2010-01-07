@@ -63,6 +63,7 @@ namespace CGI {
                 
         void write(const std::string &);
         int write(lua_State *);
+        void stream(const std::string &, Request *);
         void execute(const std::string &, Request *);
         int execute(lua_State *);
         void close();
