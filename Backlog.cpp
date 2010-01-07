@@ -329,7 +329,7 @@ namespace logjammin {
     
     
     /******************************************************************************
-     * Backlog Database
+     * Backlog Methods
      *****************************************************************************/
     
     BacklogComment::BacklogComment(OpenProp::Element *props) {
