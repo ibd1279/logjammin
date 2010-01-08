@@ -28,8 +28,8 @@
   <?lc if projects and table.getn(projects) > 0 then ?>
     <?lc for h, project in ipairs(projects) do ?>
     <tr>
-      <td><a href="${project:pkey()}/project-edit">${_html(project:name())}</a></td>
-      <td><?lc for i, version in ipairs(project:versions()) do ?>${i == 1 and "" or ", "}<a href="${project:pkey()}/${_html(version)}/backlog-list">${_html(version)}</a><?lc end ?></td>
+      <td><?lc if _user:check_allowed("backlog:project:write") then ?><a href="${project:pkey()}/project-edit">${_html(project:name())}</a><?lc else ?>${_html(project:name())}<?lc end ?></td>
+      <td><?lc for i, version in ipairs(project:versions()) do ?>${i == 1 and "" or ", "}<?lc if _user:check_allowed("backlog:backlog:read") then ?><a href="${project:pkey()}/${_html(version)}/backlog-list">${_html(version)}</a><?lc else ?>${_html(version)}<?lc end ?><?lc end ?></td>
     </tr>
     <?lc end ?>
   <?lc else ?>
