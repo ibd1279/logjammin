@@ -9,7 +9,7 @@
 * { -moz-box-sizing:border-box; -webkit-box-sizing:border-box; -ms-box-sizing:border-box; box-sizing:border-box; }
 body { font-family:'Helvetica', sans-serif; font-size:12px; margin:0; padding:0; }
 
-#app-header { background-color:black; color:white; overflow:hidden; padding:10px 10px 0 10px; width:100%; }
+#app-header { background-color:#347235; color:white; overflow:hidden; padding:10px 10px 0 10px; width:100%; }
 #app-header a { color:white; }
 #app-login { float:right; }
 #app-title { float:left; margin:0; }
@@ -20,6 +20,9 @@ body { font-family:'Helvetica', sans-serif; font-size:12px; margin:0; padding:0;
 #app-menu li.selected a { color:black; text-decoration:none; }
 #app-content { margin:20px; }
 #burndown_chart { float:right; margin-left:5em; }
+.error { background-color:#C11B17; color:white; padding: 1em; margin:0.75em }
+.success { background-color:#4E9258; color:black; padding: 1em; margin:0.75em }
+.success { background-color:#FBB917; color:black; padding: 1em; margin:0.75em }
 input[type="text"] { width:20em; }
 </style>
 </head>
@@ -31,7 +34,7 @@ input[type="text"] { width:20em; }
     <h1 id="app-title">Logjammin'</h1>
     <ul id="app-menu">
         <li><a href=".">Home</a></li>
-        <?lc if _user:check_allowed("backlog:project:read") then ?><li${request:original_request_file():find("project") and " class=\"selected\"" or ""}${request:original_request_file():find("backlog") and " class=\"selected\"" or ""}><a href="project-list">Project List</a></li><?lc end ?>
+        <?lc if _user:check_allowed("backlog:project:read") then ?><li${request:original_request_file():find("project") and " class=\"selected\"" or ""}<a href="project-list">Projects</a></li><?lc end ?>
         <?lc if _user:check_allowed("admin:user:read") then ?><li${request:original_request_file():find("user") and " class=\"selected\"" or ""}><a href="user-list">Users</a></li><?lc end ?>
         <?lc if _user:check_allowed("admin:role:read") then ?><li${request:original_request_file():find("role") and " class=\"selected\"" or ""}><a href="role-list">Roles</a></li><?lc end ?>
     </ul>
