@@ -10,30 +10,31 @@
 </div>
 <?lc if request:has_param("q") then ?><div>
     Search results for &quot;${_html(request:param("q"))}&quot;.
-</div><?lc else ?><div>
+</div><?lc elseif _user:check_allowed("backlog:project:write") then ?><div>
     <a href="project-edit">Create a new project...</a>
 </div><?lc end ?>
-<table>
-  <thead>
-  <tr>
-    <th>
-      Project
-    </th>
-    <th>
-      Versions
-    </th>
-  </tr>
-  </thead>
-  <tbody>
-  <?lc if projects and table.getn(projects) > 0 then ?>
-    <?lc for h, project in ipairs(projects) do ?>
-    <tr>
-      <td><?lc if _user:check_allowed("backlog:project:write") then ?><a href="${project:pkey()}/project-edit">${_html(project:name())}</a><?lc else ?>${_html(project:name())}<?lc end ?></td>
-      <td><?lc for i, version in ipairs(project:versions()) do ?>${i == 1 and "" or ", "}<?lc if _user:check_allowed("backlog:backlog:read") then ?><a href="${project:pkey()}/${_html(version)}/backlog-list">${_html(version)}</a><?lc else ?>${_html(version)}<?lc end ?><?lc end ?></td>
-    </tr>
-    <?lc end ?>
-  <?lc else ?>
-    <tr><td colspan="2">No projects found.</td></tr>
+<?lc if projects and table.getn(projects) > 0 then ?>
+  <ul id="project-list">
+  <?lc for h, project in ipairs(projects) do ?>
+    <li>
+      ${_html(project:name())} (${table.getn(project:versions())} major version${table.getn(project:versions()) == 1 and "" or "s"}) <a href="${project:pkey()}/project-edit">Edit &darr;</a>
+      <?lc if table.getn(project:versions()) > 0 then ?>
+      <ul>
+        <?lc for i, version in ipairs(project:versions()) do ?><li>${_html(version)} -- Requirements | Releases | Tasks</li><?lc end ?>
+      </ul>
+      <?lc end ?>
+    </li>
   <?lc end ?>
+  </ul>
+<?lc else ?>
+<div>No projects found.</div>
+<?lc end ?>
   </tbody>
 </table>
+<script>
+$(document).ready(function() {
+    edit_links = $("#project-list li a");
+    edit_links.one("click", function() { var self = $(this); $('<div />').hide().load(self.attr('href')).insertAfter(self); })
+            .click(function() { $(this).next().slideToggle(); return false; });
+});
+</script>
