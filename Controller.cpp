@@ -197,6 +197,9 @@ namespace logjammin {
             } else if(msg_code.compare("PURGE_SUCCESS") == 0) {
                 request->attribute("_msg", "Purge Successful.");
                 request->attribute("_msg_class", "success");
+            } else if(msg_code.compare("FAUX_ERROR") == 0) {
+                request->attribute("_msg", "Showing an error message of some sort.");
+                request->attribute("_msg_class", "error");
             }
         }
         
