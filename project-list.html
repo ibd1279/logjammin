@@ -34,7 +34,15 @@
 <script>
 $(document).ready(function() {
     edit_links = $("#project-list li a");
-    edit_links.one("click", function() { var self = $(this); $('<div />').hide().load(self.attr('href')).insertAfter(self); })
-            .click(function() { $(this).next().slideToggle(); return false; });
+    edit_links.one("click", function() {
+        var self = $(this);
+        $('<div />').hide()
+                .insertAfter(self)
+                .load(self.attr('href'), null, function() {
+                        self.click(function() { $(this).next().slideToggle(); return false; });
+                        self.click();
+                });
+        return false;
+    });
 });
 </script>

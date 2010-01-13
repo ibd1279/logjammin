@@ -1,7 +1,7 @@
 <?lc if request:has_attribute("_error") then ?><div class="error">${request:attribute("_error")}</div><?lc end ?>
 <form method="POST" action="${request:original_request_file()}">
     <div>
-        <label>Name
+        <label>Project Name
             <input name="name" value="${project:name()}" type="text" />
         </label>
     </div>
@@ -23,11 +23,13 @@
         </label>
     </div>
     <div>
-        <label>Categories
-            <?lc for h, category in ipairs(project:categories()) do ?><input name="category" value="${category}" type="text" />
-            <?lc end ?>
-            <input name="category" value="" type="text" />
-        </label>
+        <label for="project-category">Categories</label>
+        <input name="category" value="" type="text" id="project-category" class="tag-list" />
+        <ul class="tag-list">
+        <?lc for h, category in ipairs(project:categories()) do ?>
+            <li><input name="category" value="${category}" type="text"/></li>
+        <?lc end ?>
+        </ul>
     </div>
     <div>
         <label>Members
@@ -45,4 +47,37 @@
 <?lc if project:pkey() > 0 then ?><div>
     <a href="${project:pkey()}/project-purge">Delete</a>
 </div><?lc end ?>
-
+<script>
+$(document).ready(function() {
+    var taglist_display = function()  {
+        $('ul.tag-list li input:text:visible').each(function(i) {
+            var self = $(this);
+            $('<a href="#">X</a>').insertAfter(self).toggle(function() {
+                var parent = $(this).parent();
+                parent.children('span').css('text-decoration', 'line-through');
+                parent.children('input').attr('disabled', 'disabled');
+                return false;
+            }, function() {
+                var parent = $(this).parent();
+                parent.children('span').css('text-decoration', '');
+                parent.children('input').removeAttr('disabled');
+                return false;
+            });
+            self.hide();
+            $('<span/>').text(self.val()).insertAfter(self);
+        });
+    };
+    $('input.tag-list').keypress(function(e) {
+        if(e.which == 13) {
+            var self = $(this);
+            if(self.val().length < 1) return false;            
+            self.siblings('.tag-list').append($('<li/>').append(self.clone(false)));
+            taglist_display();
+            self.val('');
+            return false;
+        }
+        return true;
+    });
+    taglist_display();
+});
+</script>
