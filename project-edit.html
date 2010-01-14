@@ -16,11 +16,13 @@
         </label>
     </div>
     <div>
-        <label>Versions
-            <?lc for h, version in ipairs(project:versions()) do ?><input name="version" value="${version}" type="text" />
-            <?lc end ?>
-            <input name="version" value="" type="text" />
-        </label>
+        <label for="project-version">Versions</label>
+        <input name="version" value="" type="text" id="project-version" class="tag-list" />
+        <ul class="tag-list">
+        <?lc for h, version in ipairs(project:versions()) do ?>
+            <li><input name="version" value="${version}" type="text" /></li>
+        <?lc end ?>
+        </ul>
     </div>
     <div>
         <label for="project-category">Categories</label>
@@ -47,37 +49,3 @@
 <?lc if project:pkey() > 0 then ?><div>
     <a href="${project:pkey()}/project-purge">Delete</a>
 </div><?lc end ?>
-<script>
-$(document).ready(function() {
-    var taglist_display = function()  {
-        $('ul.tag-list li input:text:visible').each(function(i) {
-            var self = $(this);
-            $('<a href="#">X</a>').insertAfter(self).toggle(function() {
-                var parent = $(this).parent();
-                parent.children('span').css('text-decoration', 'line-through');
-                parent.children('input').attr('disabled', 'disabled');
-                return false;
-            }, function() {
-                var parent = $(this).parent();
-                parent.children('span').css('text-decoration', '');
-                parent.children('input').removeAttr('disabled');
-                return false;
-            });
-            self.hide();
-            $('<span/>').text(self.val()).insertAfter(self);
-        });
-    };
-    $('input.tag-list').keypress(function(e) {
-        if(e.which == 13) {
-            var self = $(this);
-            if(self.val().length < 1) return false;            
-            self.siblings('.tag-list').append($('<li/>').append(self.clone(false)));
-            taglist_display();
-            self.val('');
-            return false;
-        }
-        return true;
-    });
-    taglist_display();
-});
-</script>

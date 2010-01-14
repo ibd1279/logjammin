@@ -36,11 +36,13 @@ $(document).ready(function() {
     edit_links = $("#project-list li a");
     edit_links.one("click", function() {
         var self = $(this);
-        $('<div />').hide()
+        var div = $('<div/>');
+        div.hide()
                 .insertAfter(self)
                 .load(self.attr('href'), null, function() {
                         self.click(function() { $(this).next().slideToggle(); return false; });
                         self.click();
+                        Toolbox.redraw(div);
                 });
         return false;
     });
