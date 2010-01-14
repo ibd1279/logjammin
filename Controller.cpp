@@ -181,7 +181,19 @@ namespace logjammin {
         }
         
         void HttpHeadersFilter::execute(CGI::Request *request, CGI::Response *response) {
-            response->content_type("text/html; charset=UTF-8");
+            std::list<std::string> args(request->split_path_info());
+            std::string file = args.back();
+            size_t extension_start = args.back().find_last_of('.');
+            
+            if(std::string::npos == extension_start) {
+                response->content_type("text/html; charset=UTF-8");
+            } else if(file.substr(extension_start).compare(".js") == 0) {
+                response->content_type("text/javascript; charset=UTF-8");
+            } else if(file.substr(extension_start).compare(".css") == 0) {
+                response->content_type("text/css; charset=UTF-8");
+            } else {
+                response->content_type("text/html; charset=UTF-8");
+            }
         }
         
         bool MessageExpanderFilter::is_requested(CGI::Request *request, CGI::Response *response) {
