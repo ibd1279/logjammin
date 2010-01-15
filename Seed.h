@@ -59,15 +59,23 @@ namespace logjammin {
                 
                 Role admin_role;
                 admin_role.name("Administrator");
-                admin_role.allowed().push_back("admin:user:read");
-                admin_role.allowed().push_back("admin:user:write");
                 admin_role.allowed().push_back("admin:role:read");
                 admin_role.allowed().push_back("admin:role:write");
+                admin_role.allowed().push_back("admin:user:impersonate");
+                admin_role.allowed().push_back("admin:user:read");
+                admin_role.allowed().push_back("admin:user:write");
+                admin_role.allowed().push_back("backlog:backlog:read");
+                admin_role.allowed().push_back("backlog:backlog:write");
+                admin_role.allowed().push_back("backlog:project:read");
+                admin_role.allowed().push_back("backlog:project:write");
                 admin_role.save();
                 
-                Role role2;
-                role2.name("User");
-                role2.save();
+                Role user_role;
+                user_role.name("User");
+                admin_role.allowed().push_back("backlog:backlog:read");
+                admin_role.allowed().push_back("backlog:backlog:write");
+                admin_role.allowed().push_back("backlog:project:read");
+                user_role.save();
                 
                 User user;
                 user.name("Jason Watson");

@@ -57,6 +57,7 @@ int main (int argc, char * const argv[]) {
     // Create an array of the controllers in the order to evaluate.
     logjammin::controller::Controller *controllers[] = {
         new logjammin::controller::AuthenticateFilter(),
+        new logjammin::controller::ImpersonationFilter(),
         new logjammin::controller::HttpHeadersFilter(),
         new logjammin::controller::MessageExpanderFilter(),
         new logjammin::controller::TemplateTopFilter(),

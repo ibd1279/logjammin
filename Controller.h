@@ -73,8 +73,28 @@ namespace logjammin {
             virtual void execute(CGI::Request *request, CGI::Response *response) = 0;
         };
         
+        //! Authentication Filter
+        /*!
+         \par Authenticates a user and grants access or not.  Currently uses OpenID.
+         \author Jason Watson
+         \version 1.0
+         \date August 1, 2009.
+         */
         class AuthenticateFilter : public Controller {
         public:
+            virtual bool is_requested(CGI::Request *request, CGI::Response *response);
+            virtual void execute(CGI::Request *request, CGI::Response *response);
+        };
+        
+        //! Impersonation Filter
+        /*!
+         \par A user with specific access is allowed to impersonate other users.
+         This filter enables that functionality.
+         \author Jason Watson
+         \version 1.0
+         \date January 15, 2009.
+         */
+        class ImpersonationFilter : public Controller { 
             virtual bool is_requested(CGI::Request *request, CGI::Response *response);
             virtual void execute(CGI::Request *request, CGI::Response *response);
         };

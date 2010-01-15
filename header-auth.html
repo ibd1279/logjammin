@@ -30,7 +30,7 @@ input[type="text"] { width:20em; }
 <body>
 <div id="app-header">
     <div id="app-login">
-        <a href="?logout=true">Logout ${_html(_user:name())}</a>
+        <a href="?logout=true">Logout ${_html(_real_user:name())}</a><?lc if _user:pkey() ~= _real_user:pkey() then ?> (impersonating <a href="user-list?lj_user_myself=1">${_html(_user:name())}</a>).<?lc end ?>
     </div>
     <h1 id="app-title">Logjammin'</h1>
     <ul id="app-menu">

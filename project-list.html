@@ -17,7 +17,7 @@
   <ul id="project-list">
   <?lc for h, project in ipairs(projects) do ?>
     <li>
-      <a name="pe_${project:pkey()}">${_html(project:name())} (${table.getn(project:versions())} major version${table.getn(project:versions()) == 1 and "" or "s"}) <a href="${project:pkey()}/project-edit" class="fetch-toggle">Edit &darr;</a>
+      <a name="pe_${project:pkey()}">${_html(project:name())} (${table.getn(project:versions())} major version${table.getn(project:versions()) == 1 and "" or "s"}) <?lc if _user:check_allowed("backlog:project:write") then ?><a href="${project:pkey()}/project-edit" class="fetch-toggle">Edit &darr;</a><?lc end ?>
       <?lc if table.getn(project:versions()) > 0 then ?>
       <ul>
         <?lc for i, version in ipairs(project:versions()) do ?><li>${_html(version)} -- Requirements | Releases | <a href="${project:pkey()}/${_html(version)}/backlog-list">Tasks</a></li><?lc end ?>

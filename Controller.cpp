@@ -60,19 +60,22 @@ namespace logjammin {
                         if(user->check_cookie(request->cookie("lj_user_cookie")) || request->has_attribute("gdb_mode")) {
                             
                             // User is authenticated, setup the context.
-                            request->context_object("_user", user, true);
+                            request->context_object("_real_user", user, true);
                             request->attribute("authenticated", "true");
                         } else {
                             response->cookie("lj_user_login", "", request->script_name(), 0, true);
                             response->cookie("lj_user_cookie", "", request->script_name(), 0, true);
+                            response->cookie("lj_user_impersonate", "", request->script_name(), 0, true);
                             delete user;
                         }
                     } catch(const std::string &ex) {
                         response->cookie("lj_user_login", "", request->script_name(), 0, true);
                         response->cookie("lj_user_cookie", "", request->script_name(), 0, true);
+                        response->cookie("lj_user_impersonate", "", request->script_name(), 0, true);
                     } catch(tokyo::Exception &ex) {
                         response->cookie("lj_user_login", "", request->script_name(), 0, true);
                         response->cookie("lj_user_cookie", "", request->script_name(), 0, true);
+                        response->cookie("lj_user_impersonate", "", request->script_name(), 0, true);
                     }
                 }
                 
@@ -96,10 +99,12 @@ namespace logjammin {
                         std::cerr << "Exception loging in " << ex << std::endl;
                         response->cookie("lj_user_login", "", request->script_name(), 0, true);
                         response->cookie("lj_user_cookie", "", request->script_name(), 0, true);
+                        response->cookie("lj_user_impersonate", "", request->script_name(), 0, true);
                     } catch(tokyo::Exception &ex) {
                         std::cerr << "Exception loging in " << ex.msg << std::endl;
                         response->cookie("lj_user_login", "", request->script_name(), 0, true);
                         response->cookie("lj_user_cookie", "", request->script_name(), 0, true);
+                        response->cookie("lj_user_impersonate", "", request->script_name(), 0, true);
                     }
                 } else if(request->param("openid.mode").compare("id_res") == 0 &&
                           request->has_param("login_count")) {
@@ -119,6 +124,7 @@ namespace logjammin {
                             
                             // User is authenticated, setup the context.
                             request->context_object("_user", user, true);
+                            request->context_object("_real_user", user, true);
                             request->attribute("authenticated", "true");
                             
                             // Create the random string for the cookie.
@@ -132,9 +138,7 @@ namespace logjammin {
                             // Store the updated cookie in the DB.
                             user->cookie(ingredients);
                             user->incr_login_count();
-                            std::cerr << "post login 5" << std::endl;
                             user->save();
-                            std::cerr << "post login 6" << std::endl;
                             
                             // Send the cookies in the response.
                             response->cookie("lj_user_login",
@@ -146,6 +150,11 @@ namespace logjammin {
                                              ingredients,
                                              request->script_name(),
                                              36000,
+                                             true);
+                            response->cookie("lj_user_impersonate",
+                                             "",
+                                             request->script_name(),
+                                             0,
                                              true);
                             
                             // Redirect to where they were trying to go.
@@ -159,23 +168,62 @@ namespace logjammin {
                             delete user;
                             response->cookie("lj_user_login", "", request->script_name(), 0, true);
                             response->cookie("lj_user_cookie", "", request->script_name(), 0, true);
+                            response->cookie("lj_user_impersonate", "", request->script_name(), 0, true);
                         }
                     } catch(const std::string &ex) {
                         std::cerr << "Validation failed " << ex << "." << std::endl;
                         response->cookie("lj_user_login", "", request->script_name(), 0, true);
                         response->cookie("lj_user_cookie", "", request->script_name(), 0, true);
+                        response->cookie("lj_user_impersonate", "", request->script_name(), 0, true);
                     } catch(tokyo::Exception &ex) {
                         std::cerr << "Exception loging in " << ex.msg << std::endl;
                         response->cookie("lj_user_login", "", request->script_name(), 0, true);
                         response->cookie("lj_user_cookie", "", request->script_name(), 0, true);
+                        response->cookie("lj_user_impersonate", "", request->script_name(), 0, true);
                     }
                 }
             } else {
                 response->cookie("lj_user_login", "", request->script_name(), 0, true);
                 response->cookie("lj_user_cookie", "", request->script_name(), 0, true);
+                response->cookie("lj_user_impersonate", "", request->script_name(), 0, true);
             }
         }
         
+        bool ImpersonationFilter::is_requested(CGI::Request *request, CGI::Response *response) {
+            return true;
+        }
+        
+        void ImpersonationFilter::execute(CGI::Request *request, CGI::Response *response) {
+            User *user = request->context_object<User>("_real_user");
+            
+            // Enable impersonation
+            User *impersonation = NULL;
+            if(user->check_allowed("admin:user:impersonate")) {
+                if(request->has_cookie("lj_user_impersonate")) {
+                    impersonation = new User(request->cookie("lj_user_impersonate"));
+                } else if(request->has_param("lj_user_impersonate")) {
+                    impersonation = new User(request->param("lj_user_impersonate"));
+                }
+            }
+
+            // Disable impersonation.
+            if(request->has_param("lj_user_myself")) {
+                impersonation = NULL;
+                response->cookie("lj_user_impersonate", "", request->script_name(), 0, true);
+            }
+            
+            // Check to see if impersonation is active.
+            if(user->check_allowed("admin:user:impersonate") && impersonation) {
+                request->context_object("_user", impersonation, true);
+                response->cookie("lj_user_impersonate",
+                                 impersonation->logins().front(),
+                                 request->script_name(), 1800, true);
+            } else {
+                // GC is false, because this a second reference to the same object.
+                request->context_object("_user", user, false); 
+            }
+        }
+            
         bool HttpHeadersFilter::is_requested(CGI::Request *request, CGI::Response *response) {
             return true;
         }
@@ -183,14 +231,15 @@ namespace logjammin {
         void HttpHeadersFilter::execute(CGI::Request *request, CGI::Response *response) {
             std::list<std::string> args(request->split_path_info());
             
+            // Default to html if the path is not provided.
             if(args.size() < 1) {
                 response->content_type("text/html; charset=UTF-8");
                 return;
             }
-            
+
+            // If there is a file, try to find an extension.
             std::string file = args.back();
             size_t extension_start = args.back().find_last_of('.');
-            
             if(std::string::npos == extension_start) {
                 response->content_type("text/html; charset=UTF-8");
             } else if(file.substr(extension_start).compare(".js") == 0) {
@@ -200,6 +249,10 @@ namespace logjammin {
             } else {
                 response->content_type("text/html; charset=UTF-8");
             }
+            
+            // Check to see if this is an AJAX request.
+            if(request->header("HTTP_X_REQUESTED_WITH").compare("XMLHttpRequest") == 0)
+                request->attribute("ajax", "true");
         }
         
         bool MessageExpanderFilter::is_requested(CGI::Request *request, CGI::Response *response) {
