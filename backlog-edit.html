@@ -35,22 +35,27 @@
             </label>
         </div>
         <div>
-            <label>Tags
-                <?lc for h, tag in ipairs(backlog:tags()) do if tag:sub(0,9) ~= "assigned:" then ?><input name="tags" value="${tag}" type="text" />
+            <label for="backlog-tags">Tags</label>
+            <input name="tags" value="" type="text" id="backlog-tags" class="tag-list" />
+            <ul class="tag-list">
+                <?lc for h, tag in ipairs(backlog:tags()) do if tag:sub(0,9) ~= "assigned:" then ?>
+                    <li><input name="tags" value="${tag}" type="text" /></li>
                 <?lc end end ?>
-                <input name="tags" type="text" />
-            </label>
+            </ul>
         </div>
         <div>
-            <label>Assigned
-                <?lc for h, tag in ipairs(backlog:tags()) do if tag:sub(0,9) == "assigned:" and tonumber(tag:sub(10)) then ?><select name="assigned"><option value="">-- Remove Assignment --</option>
-                    <?lc for i, user in ipairs(users) do ?><option value="${user:pkey()}"${user:pkey() == tonumber(tag:sub(10)) and " selected" or ""}>${user:name() }</option>
-                    <?lc end ?>
-                </select><?lc end end ?>
-                <select name="assigned"><option value="">-- New Assignment --</option>
-                    <?lc for i, user in ipairs(users) do ?><option value="${user:pkey()}">${user:name() }</option>
-                    <?lc end ?>
-            </label>
+            <label for="backlog-assigned">Assigned</label>
+            <select name="assigned" id="backlog-assigned" class="tag-list"><option value="">-- New Assignment --</option>
+                <?lc for i, user in ipairs(users) do ?><option value="${user:pkey()}">${user:name()}</option>
+                <?lc end ?>
+            </select>
+            <ul class="tag-list">
+                <?lc for h, tag in ipairs(backlog:tags()) do if tag:sub(0,9) == "assigned:" and tonumber(tag:sub(10)) then ?>
+                    <?lc for i, user in ipairs(users) do if tonumber(tag:sub(10)) == user:pkey() then ?>
+                        <li><input name="assigned" value="${user:pkey()}" type="text" friendly="${_html(user:name())}" /></li>
+                    <?lc end end ?>
+                <?lc end end ?>
+            </ul>
         <div>
             <input value="Save" type="submit" />
         </div>
