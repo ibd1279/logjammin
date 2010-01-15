@@ -45,6 +45,7 @@ namespace logjammin {
         const char BACKLOG_INDX_DISPOSITION[] = "/var/db/logjammin/backlog_disposition.tcb";
         const char BACKLOG_INDX_ESTIMATE[] = "/var/db/logjammin/backlog_estimate.tcb";
         const char BACKLOG_INDX_ACTUAL[] = "/var/db/logjammin/backlog_actual.tcb";
+		const char BACKLOG_INDX_PARENT[] = "/var/db/logjammin/backlog_parent.tcb";
         const char BACKLOG_SRCH_NAME[] = "/var/db/logjammin/backlog_name";
         const char BACKLOG_SRCH_STORY[] = "/var/db/logjammin/backlog_story";
         const char BACKLOG_SRCH_COMMENTS[] = "/var/db/logjammin/backlog_comments";
@@ -83,6 +84,11 @@ namespace logjammin {
                 tcbdbtune(db, -1, -1, -1, -1, -1, BDBTLARGE | BDBTBZIP);
                 tcbdbopen(db, BACKLOG_INDX_ACTUAL, mode);
             }
+			static void open_index_file_parent(TCBDB *db, int mode) {
+                tcbdbsetcmpfunc(db, tccmpdecimal, NULL);
+                tcbdbtune(db, -1, -1, -1, -1, -1, BDBTLARGE | BDBTBZIP);
+                tcbdbopen(db, BACKLOG_INDX_PARENT, mode);
+			}
             static void open_search_file_name(TCIDB *db, int mode) {
                 tcidbtune(db, -1, -1, -1, IDBTLARGE | IDBTBZIP);
                 tcidbopen(db, BACKLOG_SRCH_NAME, mode);
@@ -107,6 +113,7 @@ namespace logjammin {
             
             tokyo::Index<unsigned long long, std::string> index_natural, index_disposition;
             tokyo::Index<unsigned long long, double> index_estimate, index_actual;
+			tokyo::Index<unsigned long long, unsigned long long> index_parent;
             tokyo::Search<unsigned long long> search_name, search_story, search_comments;
             tokyo::Tags<unsigned long long> search_tags;
             
@@ -117,6 +124,7 @@ namespace logjammin {
             index_disposition(open_index_file_disposition, BDBOREADER | BDBOWRITER | BDBOCREAT),
             index_estimate(open_index_file_estimate, BDBOREADER | BDBOWRITER | BDBOCREAT),
             index_actual(open_index_file_actual, BDBOREADER | BDBOWRITER | BDBOCREAT),
+			index_parent(open_index_file_parent, BDBOREADER | BDBOWRITER | BDBOCREAT),
             search_name(open_search_file_name, IDBOREADER | IDBOWRITER | IDBOCREAT),
             search_story(open_search_file_story, IDBOREADER | IDBOWRITER | IDBOCREAT),
             search_comments(open_search_file_comments, IDBOREADER | IDBOWRITER | IDBOCREAT),
@@ -131,6 +139,7 @@ namespace logjammin {
                     index_disposition.begin_transaction();
                     index_estimate.begin_transaction();
                     index_actual.begin_transaction();
+					index_parent.begin_transaction();
                     
                     // Clean up the index.
                     if(model->pkey() != 0) {
@@ -139,6 +148,11 @@ namespace logjammin {
                         index_disposition.remove(b.disposition(), model->pkey());
                         index_estimate.remove(b.estimate(), model->pkey());
                         index_actual.remove(b.actual(), model->pkey());
+						Backlog *parent = b.parent();
+						if(parent) {
+							index_parent.remove(parent->pkey(), model->pkey());
+							delete parent;
+						}
                     }
                     
                     // Make sure the name isn't used elsewhere.
@@ -163,6 +177,11 @@ namespace logjammin {
                     index_disposition.put(model->disposition(), key);
                     index_estimate.put(model->estimate(), key);
                     index_actual.put(model->actual(), key);
+					Backlog *parent = model->parent();
+					if(parent) {
+						index_parent.put(parent->pkey(), key);
+						delete parent;
+					}
                     
                     // Field Search indicies.
                     search_name.index(model->brief(), key);
@@ -184,6 +203,7 @@ namespace logjammin {
                     full_tags.insert(model->version());
                     search_tags.index(full_tags, key);
                     
+					index_parent.commit_transaction();
                     index_actual.commit_transaction();
                     index_estimate.commit_transaction();
                     index_disposition.commit_transaction();
@@ -192,6 +212,7 @@ namespace logjammin {
                     
                     set_pkey(model, key);
                 } catch (tokyo::Exception &ex) {
+					index_parent.abort_transaction();
                     index_actual.abort_transaction();
                     index_estimate.abort_transaction();
                     index_disposition.abort_transaction();
@@ -199,6 +220,7 @@ namespace logjammin {
                     abort_transaction();
                     throw ex;
                 } catch (std::string &ex) {
+					index_parent.abort_transaction();
                     index_actual.abort_transaction();
                     index_estimate.abort_transaction();
                     index_disposition.abort_transaction();
@@ -216,6 +238,7 @@ namespace logjammin {
                         index_disposition.begin_transaction();
                         index_estimate.begin_transaction();
                         index_actual.begin_transaction();
+						index_parent.begin_transaction();
                         
                         Backlog b(model->pkey());
                         this->_remove(model->pkey());
@@ -223,11 +246,17 @@ namespace logjammin {
                         index_disposition.remove(b.disposition(), model->pkey());
                         index_estimate.remove(b.estimate(), model->pkey());
                         index_actual.remove(b.actual(), model->pkey());
+						Backlog *parent = b.parent();
+						if(parent) {
+							index_parent.remove(parent->pkey(), model->pkey());
+							delete parent;
+						}
                         search_name.remove(model->pkey());
                         search_story.remove(model->pkey());
                         search_comments.remove(model->pkey());
                         search_tags.remove(model->pkey());
                         
+						index_parent.commit_transaction();
                         index_actual.commit_transaction();
                         index_estimate.commit_transaction();
                         index_disposition.commit_transaction();
@@ -236,6 +265,7 @@ namespace logjammin {
                         
                         set_pkey(model, 0);
                     } catch (tokyo::Exception &ex) {
+						index_parent.abort_transaction();
                         index_actual.abort_transaction();
                         index_estimate.abort_transaction();
                         index_disposition.abort_transaction();
@@ -243,6 +273,7 @@ namespace logjammin {
                         abort_transaction();
                         throw ex;
                     } catch (std::string &ex) {
+						index_parent.abort_transaction();
                         index_actual.abort_transaction();
                         index_estimate.abort_transaction();
                         index_disposition.abort_transaction();
@@ -299,6 +330,15 @@ namespace logjammin {
             }
             return 1;
         }
+		
+		int Backlog_parent(Backlog *obj, lua_State *L) {
+			Backlog *parent = obj->parent();
+			if(parent)
+				Lunar<Backlog>::push(L, obj->parent(), true);
+			else
+				lua_pushnil(L);
+			return 1;
+		}
     }; // namespace
     
     const char BacklogComment::LUNAR_CLASS_NAME[] = "BacklogComment";
@@ -318,12 +358,14 @@ namespace logjammin {
     LUNAR_STRING_GETTER(Backlog, version),
     LUNAR_STRING_GETTER(Backlog, story),
     LUNAR_STRING_GETTER(Backlog, disposition),
+	LUNAR_STRING_GETTER(Backlog, priority),
     LUNAR_NUMBER_GETTER(Backlog, estimate, double),
     LUNAR_NUMBER_GETTER(Backlog, actual, double),
     LUNAR_STRING_GETTER(Backlog, natural_key),
     LUNAR_INTEGER_GETTER(Backlog, pkey, unsigned long long),
     LUNAR_STATIC_METHOD(Backlog, comments),
     LUNAR_STATIC_METHOD(Backlog, tags),
+	LUNAR_STATIC_METHOD(Backlog, parent),
     {0,0,0,0}
     };
     
@@ -495,6 +537,12 @@ namespace logjammin {
         data << category() << "::" << brief();
         return data.str();
     }
+	
+	Backlog *Backlog::parent() const {
+		if(_parent)
+			return new Backlog(_parent);
+		return NULL;
+	}
     
     const std::string Backlog::serialize() const {
         std::ostringstream data;
@@ -505,8 +553,10 @@ namespace logjammin {
         data << "project=\"" << _project.pkey() << "\";\n";
         data << "story=\"" << escape(_story) << "\";\n";
         data << "disposition=\"" << escape(_disposition) << "\";\n";
+		data << "priority=\"" << escape(_priority) << "\";\n";
         data << "estimate=\"" << _estimate << "\";\n";
         data << "actual=\"" << _actual << "\";\n";
+		data << "parent=\"" << _parent << "\";\n";
         data << "comments{\n";
         for(std::list<BacklogComment>::const_iterator iter = _comments.begin();
             iter != _comments.end();
@@ -533,10 +583,14 @@ namespace logjammin {
         project(Project((long)props->getValue("project")));
         story(std::string(props->getValue("story")));
         disposition(std::string(props->getValue("disposition")));
+		if(props->getValue("priority").exists())
+			priority(std::string(props->getValue("priority")));
         if(props->getValue("estimate").exists())
             estimate(props->getValue("estimate"));
         if(props->getValue("actual").exists())
             actual(props->getValue("actual"));
+		if(props->getValue("parent").exists())
+			_parent = (long)props->getValue("parent");
         
         OpenProp::ElementIterator *iter = props->getElement("comments")->getElements();
         _comments.clear();

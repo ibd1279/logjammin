@@ -54,7 +54,15 @@ namespace logjammin {
         
         //! Lua bindings method array.
         static Lunar<BacklogComment>::RegType LUNAR_METHODS[];
-        
+
+        /*******************************************************************
+         * Static methods.
+         ******************************************************************/
+
+        /*******************************************************************
+         * ctor's and dtor's
+         ******************************************************************/
+		
         //! Create a new Backlog comment from a property record.
         BacklogComment(OpenProp::Element *props);
         
@@ -72,6 +80,10 @@ namespace logjammin {
         
         //! Destructor.
         ~BacklogComment();
+		
+        /*******************************************************************
+         * instance methods.
+         ******************************************************************/
         
         //! Get the comment body.
         std::string comment() const { return _comment; };
@@ -269,6 +281,18 @@ namespace logjammin {
          \param s The disposition.
          */
         void disposition(const std::string &s) { _disposition = s; };
+		
+		//! Get a copy of the priority of this task.
+		/*!
+		 \return A copy of the priority of this task.
+		 */
+		std::string priority() const { return _priority; };
+		
+		//! Set the priority of this task.
+		/*!
+		 \param s The priority.
+		 */
+		void priority(const std::string &s) { _priority = s; };
         
         //! Get the estimated effort for this task.
         /*!
@@ -339,14 +363,28 @@ namespace logjammin {
          \return A constant reference to the tags set.
          */
         const std::set<std::string> &tags() const { return _tags; };
+		
+		//! Get a reference of the parent backlog object.
+		/*!
+		 \par The returned pointer must be released using delete.
+		 \return Pointer to the parent backlog.
+		 */
+		Backlog *parent() const;
+		
+		//! Set the parent backlog upgrade.
+		/*!
+		 \param p The new parent.
+		 */
+		void parent(const Backlog &p) { _parent = p.pkey(); };
         
         virtual const std::string serialize() const;
         virtual void populate(OpenProp::File *props);
     protected:
         virtual ModelDB<Backlog> *dao() const;
     private:
-        std::string _brief, _version, _category, _story, _disposition;
+        std::string _brief, _version, _category, _story, _disposition, _priority;
         Project _project;
+		unsigned long long _parent;
         std::list<BacklogComment> _comments;
         std::set<std::string> _tags;
         double _estimate, _actual;
