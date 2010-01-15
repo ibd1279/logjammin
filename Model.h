@@ -127,6 +127,10 @@ namespace logjammin {
             _pkey = 0;
         }
         
+        //! Copy constructor.
+        /*!
+         \param orig The orignal model to copy.
+         */
         Model(const Model &orig) : _pkey(orig._pkey) {
         }
         

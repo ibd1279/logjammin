@@ -115,6 +115,12 @@ namespace logjammin {
         //! Set if this is a historical comment.
         void historical(const bool historical) { _historical = historical; };
         
+        //! Get a serialized version of this comment.
+        /*!
+         \par
+         Used for storing the data in the backlog record.
+         \return A serialized representation of this object.
+         */
         std::string serialize() const;
     private:
         std::string _comment;
@@ -359,7 +365,8 @@ namespace logjammin {
         
         //! Get a constant reference to the tags set.
         /*!
-         \par Internal tags start with an underscore.
+         \par
+         Internal tags start with an underscore.
          \return A constant reference to the tags set.
          */
         const std::set<std::string> &tags() const { return _tags; };

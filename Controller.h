@@ -75,7 +75,8 @@ namespace logjammin {
         
         //! Authentication Filter
         /*!
-         \par Authenticates a user and grants access or not.  Currently uses OpenID.
+         \par
+         Authenticates a user and grants access or not.  Currently uses OpenID.
          \author Jason Watson
          \version 1.0
          \date August 1, 2009.
@@ -88,11 +89,12 @@ namespace logjammin {
         
         //! Impersonation Filter
         /*!
-         \par A user with specific access is allowed to impersonate other users.
+         \par
+         A user with specific access is allowed to impersonate other users.
          This filter enables that functionality.
          \author Jason Watson
          \version 1.0
-         \date January 15, 2009.
+         \date January 15, 2010.
          */
         class ImpersonationFilter : public Controller { 
             virtual bool is_requested(CGI::Request *request, CGI::Response *response);

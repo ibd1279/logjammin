@@ -181,7 +181,8 @@ namespace logjammin {
         
         //! Increment the login count for the user.
         /*!
-         \par After a successful login, this method is called and the user is
+         \par
+         After a successful login, this method is called and the user is
          updated with the new count, and a new cookie hash.
          */
         void incr_login_count() { _login_count++; };
@@ -261,16 +262,17 @@ namespace logjammin {
         
         //! Set the cookie value.
         /*!
-         \par Sets the cookie value.  The value of the cookie is not actually stored.
-         A SHA-1 digest of the message is computed and the digest is stored with the
-         user.
+         \par
+         The value of the cookie is not actually stored.  A SHA-1 digest of
+         the message is computed and the digest is stored with the user.
          \param cookie String to create a cookie digest for.
          */
         void cookie(const std::string &cookie);
         
         //! Checks that the provided string matches the stored cookie.
         /*!
-         \par Used to verify that a cookie value matches the stored cookie value.
+         \par
+         Used to verify that a cookie value matches the stored cookie value.
          \param cookie String to compare to the stored cookie digest.
          \return true if the cookies match, false otherwise.
          */
@@ -278,7 +280,8 @@ namespace logjammin {
         
         //! Check a user is allowed to invoke an action.
         /*!
-         \par Actions allowed in the role and the user are flattened into a single
+         \par 
+         Actions allowed in the role and the user are flattened into a single
          set. The users specifically denied actions are removed from that set. This
          method looks to find an action in the set. If the action does not exist in
          the set, it returns false.

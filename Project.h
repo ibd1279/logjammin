@@ -59,14 +59,16 @@ namespace logjammin {
         
         //! Get a list of all projects.
         /*!
-         \par Projects in the list must be deallocated with "delete".
+         \par
+         Projects in the list must be deallocated with "delete".
          \return A list of all projects.
          */
         static std::list<Project *> all();
         
         //! Get a list of projects matching a search term.
         /*!
-         \par Projects in the list must be deallocated with "delete".
+         \par
+         Projects in the list must be deallocated with "delete".
          \param term The term to search for.
          \return A list of matching Projects.
          */

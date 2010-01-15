@@ -54,13 +54,25 @@ namespace logjammin {
             tcbdbopen(db, ROLE_INDX_NAME, mode);
         }
     public:
+        //! Get the connection to the database.
+        /*!
+         \par Do NOT release this pointer.
+         \return A database connection.
+         */
         static RoleDB* instance() {
             static RoleDB dbo;
             return &dbo;
         }
         
+        //! Index for the name field of roles.
         tokyo::Index<unsigned long long, std::string> index_name;
         
+        // Create a new RoleDB object.
+        /*!
+         \par
+         This should probably be moved to static now that everything uses
+         the instance method to get the current DB instance.
+         */
         RoleDB() :
         ModelDB<Role>(&open_db_file, BDBOREADER | BDBOWRITER | BDBOCREAT),
         index_name(&open_indx_file_name, BDBOREADER | BDBOWRITER | BDBOCREAT)

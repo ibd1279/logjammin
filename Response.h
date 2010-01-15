@@ -42,16 +42,41 @@ namespace CGI {
     
     class Response {
     public:
+        //! Lua bindings classname.
         static const char LUNAR_CLASS_NAME[];
-        static Lunar<Response>::RegType LUNAR_METHODS[];
         
+        //! Lua Bindings method array.
+        static Lunar<Response>::RegType LUNAR_METHODS[];
+
+        /*******************************************************************
+         * Static methods.
+         ******************************************************************/
+        
+        //! Encode a string using percent encoding.
+        /*!
+         \par
+         URL paths should use \c false for \c spaces_as_plus. Querystring
+         parameters should use \c true for \c spaces_as_plus.
+         \param input The string to encode.
+         \param spaces_as_plus True to use '+' for spaces, false to use "%20"
+         for spaces.
+         \return Encoded string.
+         */
         static std::string percent_encode(const std::string &input, bool spaces_as_plus=true);
         
         typedef std::multimap<std::string, std::string> header_map;
         
+        /*******************************************************************
+         * ctor's and dtor's
+         ******************************************************************/
+        
         Response();
         Response(lua_State *L);
         ~Response();
+        
+        /*******************************************************************
+         * instance methods.
+         ******************************************************************/
         
         bool is_closed() { return _is_closed; };
         
