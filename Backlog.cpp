@@ -507,14 +507,14 @@ namespace logjammin {
         BacklogDB::instance()->at(key, model);
     }
     
-    Backlog::Backlog() : _estimate(4.0), _actual(0.0) {
+    Backlog::Backlog() : _estimate(4.0), _actual(0.0), _parent(0) {
     }
     
-    Backlog::Backlog(const unsigned long long key) : _estimate(4.0), _actual(0.0) {
+    Backlog::Backlog(const unsigned long long key) : _estimate(4.0), _actual(0.0), _parent(0) {
         Backlog::at(key, this);
     }
     
-    Backlog::Backlog(lua_State *L) : _estimate(4.0), _actual(0.0) {
+    Backlog::Backlog(lua_State *L) : _estimate(4.0), _actual(0.0), _parent(0) {
     }
     
     Backlog::~Backlog() { 
