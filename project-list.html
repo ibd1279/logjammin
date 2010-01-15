@@ -17,10 +17,10 @@
   <ul id="project-list">
   <?lc for h, project in ipairs(projects) do ?>
     <li>
-      ${_html(project:name())} (${table.getn(project:versions())} major version${table.getn(project:versions()) == 1 and "" or "s"}) <a href="${project:pkey()}/project-edit">Edit &darr;</a>
+      <a name="pe_${project:pkey()}">${_html(project:name())} (${table.getn(project:versions())} major version${table.getn(project:versions()) == 1 and "" or "s"}) <a href="${project:pkey()}/project-edit" class="fetch-toggle">Edit &darr;</a>
       <?lc if table.getn(project:versions()) > 0 then ?>
       <ul>
-        <?lc for i, version in ipairs(project:versions()) do ?><li>${_html(version)} -- Requirements | Releases | Tasks</li><?lc end ?>
+        <?lc for i, version in ipairs(project:versions()) do ?><li>${_html(version)} -- Requirements | Releases | <a href="${project:pkey()}/${_html(version)}/backlog-list">Tasks</a></li><?lc end ?>
       </ul>
       <?lc end ?>
     </li>
@@ -29,22 +29,13 @@
 <?lc else ?>
 <div>No projects found.</div>
 <?lc end ?>
-  </tbody>
-</table>
 <script>
 $(document).ready(function() {
-    edit_links = $("#project-list li a");
-    edit_links.one("click", function() {
-        var self = $(this);
-        var div = $('<div/>');
-        div.hide()
-                .insertAfter(self)
-                .load(self.attr('href'), null, function() {
-                        self.click(function() { $(this).next().slideToggle(); return false; });
-                        self.click();
-                        Toolbox.redraw(div);
-                });
-        return false;
-    });
+    if(location.hash) {
+        if(location.hash.substring(1,4) == 'pe_') {
+            var focus = $("a.fetch-toggle[href^=" + location.hash.substring(4) + "/]");
+            focus.click();
+        }
+    }
 });
 </script>

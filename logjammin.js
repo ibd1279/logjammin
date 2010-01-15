@@ -32,8 +32,32 @@ Toolbox = {
         });
         toolbox_taglist_display(selector);
     },
+    fetch : function(selector) {
+        selector.find('a.fetch[href]').each(function(i) {
+            var self = $(this);
+            var div = $('<div/>');
+            self.replaceWith(div.load(self.attr('href')));
+            Toolbox.redraw(div);
+        });
+        selector.find('a.fetch-toggle[href]').each(function(i) {
+            var self = $(this);
+            self.one('click', function() {
+                var div = $('<div />');
+                div.hide().insertAfter(self).load(self.attr('href'), null, function() {
+                    self.click(function() {
+                        div.slideToggle();
+                        return false;
+                    });
+                    self.click();
+                    Toolbox.redraw(div);
+                });
+                return false;
+            });
+        });
+    },
     redraw : function(selector) {
         this.taglist(selector);
+        this.fetch(selector);
     }
 }
 

@@ -182,6 +182,12 @@ namespace logjammin {
         
         void HttpHeadersFilter::execute(CGI::Request *request, CGI::Response *response) {
             std::list<std::string> args(request->split_path_info());
+            
+            if(args.size() < 1) {
+                response->content_type("text/html; charset=UTF-8");
+                return;
+            }
+            
             std::string file = args.back();
             size_t extension_start = args.back().find_last_of('.');
             
