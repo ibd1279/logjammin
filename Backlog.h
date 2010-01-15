@@ -269,6 +269,18 @@ namespace logjammin {
          \param s The disposition.
          */
         void disposition(const std::string &s) { _disposition = s; };
+		
+		//! Get a copy of the priority of this task.
+		/*!
+		 \return A copy of the priority of this task.
+		 */
+		std::string priority() const { return _priority; };
+		
+		//! Set the priority of this task.
+		/*!
+		 \param s The priority.
+		 */
+		void priority(const std::string &s) { _priority = s; };
         
         //! Get the estimated effort for this task.
         /*!
@@ -345,7 +357,7 @@ namespace logjammin {
     protected:
         virtual ModelDB<Backlog> *dao() const;
     private:
-        std::string _brief, _version, _category, _story, _disposition;
+        std::string _brief, _version, _category, _story, _disposition, _priority;
         Project _project;
         std::list<BacklogComment> _comments;
         std::set<std::string> _tags;

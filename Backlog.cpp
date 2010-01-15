@@ -505,6 +505,7 @@ namespace logjammin {
         data << "project=\"" << _project.pkey() << "\";\n";
         data << "story=\"" << escape(_story) << "\";\n";
         data << "disposition=\"" << escape(_disposition) << "\";\n";
+		data << "priority=\"" << escape(_priority) << "\";\n";
         data << "estimate=\"" << _estimate << "\";\n";
         data << "actual=\"" << _actual << "\";\n";
         data << "comments{\n";
@@ -533,6 +534,8 @@ namespace logjammin {
         project(Project((long)props->getValue("project")));
         story(std::string(props->getValue("story")));
         disposition(std::string(props->getValue("disposition")));
+		if(props->getValue("priority").exists())
+			priority(std::string(props->getValue("priority")));
         if(props->getValue("estimate").exists())
             estimate(props->getValue("estimate"));
         if(props->getValue("actual").exists())
