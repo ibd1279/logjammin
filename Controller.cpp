@@ -190,7 +190,10 @@ namespace logjammin {
         }
         
         bool ImpersonationFilter::is_requested(CGI::Request *request, CGI::Response *response) {
-            return true;
+            if(request->has_attribute("authenticated"))
+                return true;
+            else
+                return false;
         }
         
         void ImpersonationFilter::execute(CGI::Request *request, CGI::Response *response) {
