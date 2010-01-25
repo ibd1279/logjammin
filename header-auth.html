@@ -7,6 +7,7 @@
 <script type="text/javascript" src="static/visualize.jQuery.js"></script>
 <script type="text/javascript" src="static/logjammin.js"></script>
 <style>
+/*
 * { -moz-box-sizing:border-box; -webkit-box-sizing:border-box; -ms-box-sizing:border-box; box-sizing:border-box; }
 body { font-family:'Helvetica', sans-serif; font-size:12px; margin:0; padding:0; }
 
@@ -25,22 +26,76 @@ body { font-family:'Helvetica', sans-serif; font-size:12px; margin:0; padding:0;
 .success { background-color:#4E9258; color:black; padding: 1em; margin:0.75em }
 .warning { background-color:#FBB917; color:black; padding: 1em; margin:0.75em }
 input[type="text"] { width:20em; }
+*/
+
+* { font-family:inherit; font-size:100%; font-style:inherit; font-weight:inherit; text-decoration:inherit; vertical-align:inherit; }
+a { color:#000; text-decoration:underline; }
+a:focus { outline-style:none; }
+a img { border-style:none; text-decoration:none; }
+abbr, acronym, *[title] { border-bottom:0.1em dotted #6b6b6b; }
+article, header, nav, section { display:block; }
+b, strong { font-weight:bold; }
+body { background-color:#fff; color:#000; font-family:'Helvetica Neue', 'Arial', sans-serif; font-size:80%; font-style:normal; font-weight:normal; line-height:1.5; margin:1.5em; min-width:75em; padding:0; vertical-align:baseline; }
+code, pre, tt { font-family:'Andale Mono', 'Lucida Console', monospace; }
+dl, ol, ul { margin:0 0 1.5em 1.5em; padding:0; }
+em, i { font-style:italic; }
+form, p { margin:0 0 1.5em 0; }
+h1, h2, h3, h4, h5, h6 { font-size:2em; margin:0 0 0.75em 0; padding:0; }
+hr { margin:1.5em; border-color:#6b6b6b; border-style:solid; border-width:0 0 0.1em 0; }
+iframe { border-style:none; height:400px; width:100%; }
+optgroup { font-weight:bold; }
+option { font-weight:normal; }
+sub, sup { line-height:0; }
+iframe { border-style:none; margin:0; width:auto; }
+nav a { text-decoration:none; }
+
+body > header h1 { background-color:#000; color:#fff; display:inline-block; margin:0 0 0.75em 0; padding:0.25em 0.5em; }
+body > header h1 + ul { position:absolute; right:1.5em; top:1.5em; list-style-type:none; margin:0; padding:0; }
+body > header nav ul { position:absolute; list-style-type:none; margin:0; padding:0; white-space:nowrap; }
+body > header nav > ul { left:15em; top:1.4em; }
+body > header nav > ul ul { left:0; top:2.1em; }
+body > header nav li { float:left; margin-left:0.75em; padding:0; }
+body > header nav li > a { border-bottom:0.5em solid transparent; display:block; }
+body > header nav li > a:hover { border-color:#ccc; }
+body > header nav li.selected > a { border-color:#000; }
+
+body > nav { border-right:0.5em solid #000; float:left; padding-bottom:1.5em; width:20em; }
+body > nav ul { list-style-type:none; margin:0; padding:0; }
+body > nav li { padding-left:1.5em; }
+body > nav li a { display:block; }
+body > nav li a:hover { display:block; }
+body > nav li.selected { position:relative; left:0.6em; top:0; margin-left:-0.6em; padding-left:1.4em; background-color:#fff; border:0.1em solid #000; border-right-color:#fff; }
+body > nav + section { margin-left:22em; width:auto; margin-right:0; }
+
+article { width:50em; }
+article > h2 { background-color:#00c; color:#fff; padding:0.25em 0.5em; }
+article input[type=submit] { font-size:2em; }
+
+.popup::after { content:'...'; }
+.selected, .selected a { font-weight:bold; }
+
+div.input { margin-bottom:0.5em; }
+div.input label { display:block; }
+div.input input[type=text], div.input input[type=password], div.input select, div.input textarea { width:100%; }
+div.input ul { margin-bottom:0; }
+
 </style>
 </head>
 <body>
-<div id="app-header">
-    <div id="app-login">
-        <a href="?logout=true">Logout ${_html(_real_user:name())}</a><?lc if _user:pkey() ~= _real_user:pkey() then ?> (impersonating <a href="user-list?lj_user_myself=1">${_html(_user:name())}</a>).<?lc end ?>
-    </div>
-    <h1 id="app-title">Logjammin'</h1>
-    <ul id="app-menu">
-        <li><a href=".">Home</a></li>
-        <?lc if _user:check_allowed("backlog:project:read") then ?><li${request:original_request_file():find("project") and " class=\"selected\"" or ""}<a href="project-list">Projects</a></li><?lc end ?>
-        <?lc if _user:check_allowed("admin:user:read") then ?><li${request:original_request_file():find("user") and " class=\"selected\"" or ""}><a href="user-list">Users</a></li><?lc end ?>
-        <?lc if _user:check_allowed("admin:role:read") then ?><li${request:original_request_file():find("role") and " class=\"selected\"" or ""}><a href="role-list">Roles</a></li><?lc end ?>
+<header>
+    <h1>Logjammin'</h1>
+    <ul>
+        <li><a href="?logout=true">Logout ${_html(_real_user:name())}</a><?lc if _user:pkey() ~= _real_user:pkey() then ?> (impersonating <a href="user-list?lj_user_myself=1">${_html(_user:name())}</a>).<?lc end ?></li>
     </ul>
-</div>
-<div id="app-content">
+    <nav>
+        <ul>
+            <li><a href=".">Home</a></li>
+            <?lc if _user:check_allowed("backlog:project:read") then ?><li${request:original_request_file():find("project") and " class=\"selected\"" or ""}<a href="project-list">Projects</a></li><?lc end ?>
+            <?lc if _user:check_allowed("admin:user:read") then ?><li${request:original_request_file():find("user") and " class=\"selected\"" or ""}><a href="user-list">Users</a></li><?lc end ?>
+            <?lc if _user:check_allowed("admin:role:read") then ?><li${request:original_request_file():find("role") and " class=\"selected\"" or ""}><a href="role-list">Roles</a></li><?lc end ?>
+        </ul>
+    </nav>
+</header>
 <?lc if request:has_attribute("_msg") then ?><div class="${_html(request:attribute("_msg_class"))}">
     ${_html(request:attribute("_msg"))}
-</div><?lc end ?>
+<?lc end ?>

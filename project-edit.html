@@ -1,21 +1,20 @@
 <?lc if request:has_attribute("_error") then ?><div class="error">${request:attribute("_error")}</div><?lc end ?>
+<article>
+<h2>Editing ${project:name() == "" and "New User" or project:name()}</h2>
 <form method="POST" action="${request:original_request_file()}">
-    <div>
-        <label>Project Name
-            <input name="name" value="${project:name()}" type="text" />
-        </label>
+    <div class="input">
+        <label>Project Name</label>
+        <input name="name" value="${project:name()}" type="text" />
     </div>
-    <div>
-        <label>RSS Feed
-            <input name="commit_feed" value="${project:commit_feed()}" type="text" />
-        </label>
+    <div class="input">
+        <label>RSS Feed</label>
+        <input name="commit_feed" value="${project:commit_feed()}" type="text" />
     </div>
-    <div>
-        <label>Daily Hours
-            <input name="daily_hours" value="${project:daily_hours()}" type="text" />
-        </label>
+    <div class="input">
+        <label>Daily Hours</label>
+        <input name="daily_hours" value="${project:daily_hours()}" type="text" />
     </div>
-    <div>
+    <div class="input">
         <label for="project-version">Versions</label>
         <input name="version" value="" type="text" id="project-version" class="tag-list" />
         <ul class="tag-list">
@@ -24,7 +23,7 @@
         <?lc end ?>
         </ul>
     </div>
-    <div>
+    <div class="input">
         <label for="project-category">Categories</label>
         <input name="category" value="" type="text" id="project-category" class="tag-list" />
         <ul class="tag-list">
@@ -33,19 +32,17 @@
         <?lc end ?>
         </ul>
     </div>
-    <div>
-        <label>Members
-            <select name="members" multiple>
-            <?lc for h, user in ipairs(users) do ?>
-                <option value="${user:pkey()}"${project:has_member(user) and " selected" or ""}>${user:name()}</option>
-            <?lc end ?>
-            </select>
-        </label>
-    <div>
-    <div>
-        <input value="Save" type="submit" />
+    <div class="input">
+        <label>Members</label>
+        <select name="members" multiple>
+        <?lc for h, user in ipairs(users) do ?>
+            <option value="${user:pkey()}"${project:has_member(user) and " selected" or ""}>${user:name()}</option>
+        <?lc end ?>
+        </select>
     </div>
+    <input value="Save" type="submit" />
 </form>
 <?lc if project:pkey() > 0 then ?><div>
     <a href="${project:pkey()}/project-purge">Delete</a>
 </div><?lc end ?>
+</article>
