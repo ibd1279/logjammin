@@ -1,3 +1,4 @@
 syntax: regexp
 ^build/
 ^logjammin\.xcodeproj/jasonwat\.
+^logjammin\.xcodeproj/ewatson\.

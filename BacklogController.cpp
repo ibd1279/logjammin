@@ -79,6 +79,9 @@ namespace logjammin {
             }
             
             try {
+                request->context_object("project",
+                                        &project,
+                                        false);
                 request->context_object_list("backlogs",
                                              Backlog::all(project,
                                                           version,
@@ -86,9 +89,6 @@ namespace logjammin {
                                                           request->param("disposition-above"),
                                                           request->param("disposition-below")),
                                              true);
-                request->context_object("project",
-                                        &project,
-                                        false);
             } catch(const std::string &ex) {
                 request->attribute("_error", ex);
             } catch(tokyo::Exception &ex) {
@@ -130,7 +130,7 @@ namespace logjammin {
                 b.version(request->param("version"));
                 b.category(request->param("category"));
             }
-            
+			
             if(request->is_post()) {
                 std::ostringstream history;
                 Project::at(atol(request->param("project").c_str()), &(b.project()));
@@ -138,9 +138,10 @@ namespace logjammin {
                 b.category(request->param("category"));
                 b.story(request->param("story"));
                 b.disposition(request->param("disposition"));
+				b.priority(request->param("priority"));
                 b.estimate(atof(request->param("estimate").c_str()));
                 b.actual(atof(request->param("actual").c_str()));
-                
+				
                 // Store the comment.
                 if(request->param("comments").size() > 0) {
                     b.comments().push_back(BacklogComment(request->param("comments"), *user, false));

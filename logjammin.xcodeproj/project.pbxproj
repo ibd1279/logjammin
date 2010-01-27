@@ -84,7 +84,6 @@
 		2222C09B1021D11200CE52E6 /* libexpat.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libexpat.dylib; path = usr/lib/libexpat.dylib; sourceTree = SDKROOT; };
 		2222C10C1021F5D500CE52E6 /* commit-feed.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "commit-feed.html"; sourceTree = "<group>"; };
 		222B665C101E46F300F45B04 /* libcrypto.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcrypto.dylib; path = usr/lib/libcrypto.dylib; sourceTree = SDKROOT; };
-		2238DF210FBDD47700842744 /* template.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = template.html; sourceTree = "<group>"; };
 		2238DF8C0FBE000100842744 /* backlog-edit.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "backlog-edit.html"; sourceTree = "<group>"; };
 		223D698310078F5800F79019 /* Controller.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Controller.cpp; sourceTree = "<group>"; };
 		224046D5100595160005461A /* User.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = User.h; sourceTree = "<group>"; };
@@ -264,7 +263,6 @@
 				2271D98F1012C06D00749D9A /* login.html */,
 				22157781100EBAD60020B133 /* header-auth.html */,
 				2215778F100EBF150020B133 /* header-unauth.html */,
-				2238DF210FBDD47700842744 /* template.html */,
 				2238DF8C0FBE000100842744 /* backlog-edit.html */,
 				22ED3CFA0FBA00C9004E2511 /* backlog-list.html */,
 				2265F69B1023E39500B3621F /* backlog-list.json */,
@@ -363,7 +361,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(NATIVE_ARCH)";
+				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
 				COPY_PHASE_STRIP = NO;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_DYNAMIC_NO_PIC = NO;

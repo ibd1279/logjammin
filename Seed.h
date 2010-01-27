@@ -72,9 +72,9 @@ namespace logjammin {
                 
                 Role user_role;
                 user_role.name("User");
-                admin_role.allowed().push_back("backlog:backlog:read");
-                admin_role.allowed().push_back("backlog:backlog:write");
-                admin_role.allowed().push_back("backlog:project:read");
+                user_role.allowed().push_back("backlog:backlog:read");
+                user_role.allowed().push_back("backlog:backlog:write");
+                user_role.allowed().push_back("backlog:project:read");
                 user_role.save();
                 
                 User user;
@@ -96,7 +96,7 @@ namespace logjammin {
                 user3.name("Jeremy Collins");
                 user3.logins().push_back("http://openid.aol.com/jeremycollins11");
                 user3.email("Jeremy.Collins@corp.aol.com");
-                user3.role(admin_role);
+                user3.role(user_role);
                 user3.save();
                 
                 response->redirect(request->original_request_script());

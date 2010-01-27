@@ -13,16 +13,27 @@
         </label>
     </div>
     <div>
-        <label>Disposition
-            <select name="disposition">
-                <option value="100-UNDEFINED"${"100-UNDEFINED" == backlog:disposition() and " selected" or ""}>Undefined</option>
-                <option value="200-DEFINED"${"200-DEFINED" == backlog:disposition() and " selected" or ""}>Defined</option>
-                <option value="300-ASSIGNED"${"300-ASSIGNED" == backlog:disposition() and " selected" or ""}>Assigned</option>
-                <option value="400-COMPLETED"${"400-COMPLETED" == backlog:disposition() and " selected" or ""}>Completed</option>
-                <option value="500-CLOSED"${"500-CLOSED" == backlog:disposition() and " selected" or ""}>Closed</option>
+        <label>Priority
+            <select name="priority">
+                <option value="100-HIGHEST"${tonumber(backlog:priority():sub(0,3)) == 100 and " selected" or ""}>Highest</option>
+                <option value="200-HIGHER"${tonumber(backlog:priority():sub(0,3)) == 200 and " selected" or ""}>Higher</option>
+                <option value="300-HIGH"${tonumber(backlog:priority():sub(0,3)) == 300 and " selected" or ""}>High</option>
+                <option value="400-MEDIUM"${tonumber(backlog:priority():sub(0,3)) == 400 and " selected" or ""}>Medium</option>
+                <option value="500-LOW"${tonumber(backlog:priority():sub(0,3)) == 500 and " selected" or ""}>Low</option>
             </select>
         </label>
     </div>
+    <div>
+        <label>Disposition
+            <select name="disposition">
+                <option value="100-UNDEFINED"${tonumber(backlog:disposition():sub(0,3)) == 100 and " selected" or ""}>Undefined</option>
+                <option value="200-DEFINED"${tonumber(backlog:disposition():sub(0,3)) == 200 and " selected" or ""}>Defined</option>
+                <option value="300-ASSIGNED"${tonumber(backlog:disposition():sub(0,3)) == 300 and " selected" or ""}>Assigned</option>
+                <option value="400-COMPLETED"${tonumber(backlog:disposition():sub(0,3)) == 400 and " selected" or ""}>Completed</option>
+                <option value="500-CLOSED"${tonumber(backlog:disposition():sub(0,3)) == 500 and " selected" or ""}>Closed</option>
+            </select>
+        </label>
+    </div><?lc end ?>
     <div>
         <label>Estimate (hours)
             <input type="text" name="estimate" value="${backlog:estimate()}" />
