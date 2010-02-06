@@ -315,6 +315,12 @@ namespace logjammin {
     Project::Project(lua_State *L) {
     }
     
+    Project::Project(const Project &orig) : Model<Project>(orig),
+    _name(orig._name), _commit_feed(orig._commit_feed), 
+    _versions(orig._versions), _categories(orig._categories), _members(orig._members),
+    _daily_hours(orig._daily_hours) {
+    }
+    
     Project::~Project() {
     }
     

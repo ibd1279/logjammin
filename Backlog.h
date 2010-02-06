@@ -209,6 +209,12 @@ namespace logjammin {
          */    
         Backlog(lua_State *L);
         
+        //! Copy constructor.
+        /*!
+         \param orig The Backlog to copy form.
+         */
+        Backlog(const Backlog &orig);
+        
         //! Delete the backlog object.
         virtual ~Backlog();
         

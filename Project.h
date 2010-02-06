@@ -117,6 +117,12 @@ namespace logjammin {
          */
         Project(lua_State *L);
         
+        //! Copy Constructor
+        /*!
+         \param orig The original.
+         */
+        Project(const Project &orig);
+        
         //! Delete the project object.
         virtual ~Project();
         

@@ -517,6 +517,16 @@ namespace logjammin {
     Backlog::Backlog(lua_State *L) : _estimate(4.0), _actual(0.0), _parent(0) {
     }
     
+    Backlog::Backlog(const Backlog &orig) : Model<Backlog>(orig),
+    _brief(orig._brief),  _version(orig._version), _category(orig._category), _story(orig._story), _disposition(orig._disposition), _priority(orig._priority),
+    _project(orig._project),
+    _parent(orig._parent),
+    _comments(orig._comments),
+    _tags(orig._tags),
+    _estimate(orig._estimate),
+    _actual(orig._actual) {
+    }
+    
     Backlog::~Backlog() { 
     }
     
