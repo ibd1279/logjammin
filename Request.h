@@ -34,6 +34,7 @@
 
 #include <map>
 #include <list>
+#include <vector>
 #include <string>
 #include "lunar.h"
 #include "Response.h"
@@ -62,7 +63,7 @@ namespace CGI {
         std::string server_port() const { return _server_port; };
         std::string request_method() const { return _request_method; };
         std::string path_info() const { return _path_info; };
-        std::list<std::string> split_path_info() const { return _split_path_info; };
+        const std::list<std::string> &split_path_info() const { return _split_path_info; };
         std::string path_translated() const { return _path_translated; };
         std::string script_name() const { return _script_name; };
         std::string query_string() const { return _query_string; };

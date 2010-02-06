@@ -76,21 +76,5 @@ namespace logjammin {
             virtual bool is_requested(CGI::Request *request, CGI::Response *response);
             virtual void execute(CGI::Request *request, CGI::Response *response);
         };
-        
-        //! Controller for searching projects.
-        /*!
-         \par XXX Clean Up?
-         Could this be moved into the list controller as another code path?
-         or is this seperation a better long term division.  The only difference
-         is the method used to populate the project array.
-         \author Jason Watson
-         \version 1.0
-         \date August 12, 2009.
-         */
-        class ProjectSearchController : public Controller {
-        public:
-            virtual bool is_requested(CGI::Request *request, CGI::Response *response);
-            virtual void execute(CGI::Request *request, CGI::Response *response);
-        };
     }; // namespace logjammin::controller
 }; // namespace controller

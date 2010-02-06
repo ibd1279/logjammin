@@ -38,57 +38,64 @@
 namespace logjammin {
     namespace controller {
         bool BacklogListController::is_requested(CGI::Request *request, CGI::Response *response) {
-            std::list<std::string> args(request->split_path_info());
+            std::vector<std::string> args(request->split_path_info().begin(), request->split_path_info().end());
             
             if(!request->has_attribute("authenticated"))
                 return false;
             if(request->has_attribute("handled"))
                 return false;
             
-            if(args.size() < 2)
+            if(args.size() < 5)
                 return false;
-            return (args.back().compare("backlog-list") == 0);
+            return (args[0].compare("project") == 0) &&
+                    (args[3].compare("backlog") == 0) &&
+                    (args[4].compare("list") == 0);
         }
         
         void BacklogListController::execute(CGI::Request *request, CGI::Response *response) {
-            std::list<std::string> args(request->split_path_info());
+            std::vector<std::string> args(request->split_path_info().begin(), request->split_path_info().end());
             
             // Remove the command name.
             args.pop_back();
+            args.pop_back();
             
             Project project;
-            if(args.size() > 0) {
-                std::string project_key = args.front();
-                Project::at(atol(project_key.c_str()), &project);
-                request->attribute("project", project_key);
-                args.pop_front();
-            }
+            std::string project_key = args[1];
+            Project::at(atol(project_key.c_str()), &project);
+            request->attribute("project", project_key);
+            request->context_object("project",
+                                    &project,
+                                    false);
             
             std::string version;
-            if(args.size() > 0) {
-                version = args.front();
-                request->attribute("version", version);
-                args.pop_front();
-            }
+            version = args[2];
+            request->attribute("version", version);
             
             std::string category;
-            if(args.size() > 0) {
-                category = args.front();
+            if(request->has_param("category")) {
+                category = request->param("category");
                 request->attribute("category", category);
-                args.pop_front();
             }
             
             try {
-                request->context_object("project",
-                                        &project,
-                                        false);
-                request->context_object_list("backlogs",
-                                             Backlog::all(project,
-                                                          version,
-                                                          category,
-                                                          request->param("disposition-above"),
-                                                          request->param("disposition-below")),
-                                             true);
+                if(request->has_param("q")) {
+                    request->context_object_list("backlogs",
+                                                 Backlog::like(request->param("q"), 
+                                                               project,
+                                                               version,
+                                                               category,
+                                                               request->param("disposition-above"),
+                                                               request->param("disposition-below")),
+                                                 true);                    
+                } else {
+                    request->context_object_list("backlogs",
+                                                 Backlog::all(project,
+                                                              version,
+                                                              category,
+                                                              request->param("disposition-above"),
+                                                              request->param("disposition-below")),
+                                                 true);
+                }
             } catch(const std::string &ex) {
                 request->attribute("_error", ex);
             } catch(tokyo::Exception &ex) {
@@ -110,9 +117,9 @@ namespace logjammin {
             if(request->has_attribute("handled"))
                 return false;
             
-            if(args.size() < 1)
+            if(args.size() < 3)
                 return false;
-            return (args.back().compare("backlog-edit") == 0);
+            return (args.front().compare("backlog") == 0) && (args.back().compare("edit") == 0);
         }
         
         void BacklogEditController::execute(CGI::Request *request, CGI::Response *response) {
@@ -120,6 +127,7 @@ namespace logjammin {
             
             // Remove the command name.
             args.pop_back();
+            args.pop_front();
             
             User *user = request->context_object<User>("_user");
             Backlog b;
@@ -197,7 +205,7 @@ namespace logjammin {
             request->attribute("handled", "true");
         }
         
-        bool BacklogSearchController::is_requested(CGI::Request *request, CGI::Response *response) {
+        bool BacklogPurgeController::is_requested(CGI::Request *request, CGI::Response *response) {
             std::list<std::string> args(request->split_path_info());
             
             if(!request->has_attribute("authenticated"))
@@ -205,56 +213,41 @@ namespace logjammin {
             if(request->has_attribute("handled"))
                 return false;
             
-            if(args.size() != 2)
+            if(args.size() != 3)
                 return false;
-            return (args.back().compare("backlog-search") == 0);
+            return (args.front().compare("backlog") == 0) && (args.back().compare("purge") == 0);
         }
         
-        void BacklogSearchController::execute(CGI::Request *request, CGI::Response *response) {
+        void BacklogPurgeController::execute(CGI::Request *request, CGI::Response *response) {
             std::list<std::string> args(request->split_path_info());
             
             // Remove the command name.
             args.pop_back();
+            args.pop_front();
             
-            Project project;
-            if(args.size() > 0) {
-                std::string project_key = args.front();
-                Project::at(atol(project_key.c_str()), &project);
-                request->attribute("project", project_key);
-                args.pop_front();
+            Backlog b(atol(args.front().c_str()));
+            
+            if(request->is_post()) {
+                try {
+                    std::ostringstream url;
+                    url << request->original_request_script();
+                    url << "/project/" << b.project().pkey();
+                    url << "/" << b.version();
+                    url << "backlog/list?_msg=PURGE_SUCCESS";
+                    
+                    b.purge();
+                    response->redirect(url.str());
+                } catch(const std::string &ex) {
+                    request->attribute("_error", ex);
+                } catch(tokyo::Exception &ex) {
+                    request->attribute("_error", ex.msg);
+                }
             }
             
-            std::string version;
-            if(args.size() > 0) {
-                version = args.front();
-                request->attribute("version", version);
-                args.pop_front();
-            }
-            
-            std::string category;
-            if(args.size() > 0) {
-                category = args.front();
-                request->attribute("category", category);
-                args.pop_front();
-            }
-            
-            try {
-                request->context_object_list("backlogs",
-                                             Backlog::like(request->param("q"), 
-                                                           project,
-                                                           version,
-                                                           category,
-                                                           request->param("disposition-above"),
-                                                           request->param("disposition-below")),
-                                             true);
-            } catch(const std::string &ex) {
-                request->attribute("_error", ex);
-            } catch(tokyo::Exception &ex) {
-                request->attribute("_error", ex.msg);
-            }
-            
-            response->execute("backlog-list.html", request);
+            request->context_object("backlog", &b, false);
+            response->execute("backlog-purge.html", request);
             request->attribute("handled", "true");
         }
+        
     };
 };

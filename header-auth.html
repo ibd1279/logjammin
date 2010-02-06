@@ -90,7 +90,7 @@ div.input ul { margin-bottom:0; }
     <nav>
         <ul>
             <li><a href=".">Home</a></li>
-            <?lc if _user:check_allowed("backlog:project:read") then ?><li${request:original_request_file():find("project") and " class=\"selected\"" or ""}<a href="project-list">Projects</a></li><?lc end ?>
+            <?lc if _user:check_allowed("backlog:project:read") then ?><li${request:original_request_file():find("project") and " class=\"selected\"" or ""}<a href="project/list">Projects</a></li><?lc end ?>
             <?lc if _user:check_allowed("admin:user:read") then ?><li${request:original_request_file():find("user") and " class=\"selected\"" or ""}><a href="user-list">Users</a></li><?lc end ?>
             <?lc if _user:check_allowed("admin:role:read") then ?><li${request:original_request_file():find("role") and " class=\"selected\"" or ""}><a href="role-list">Roles</a></li><?lc end ?>
         </ul>

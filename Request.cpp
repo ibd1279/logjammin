@@ -247,8 +247,10 @@ namespace  {
     }
     void parse_path_info(const std::string &path_info, std::list<std::string> &result) {
         std::string val;
-        std::string::const_iterator iter = path_info.begin();
-        for(; iter != path_info.end(); ++iter) {
+        result.clear();
+        for(std::string::const_iterator iter = path_info.begin();
+            iter != path_info.end();
+            ++iter) {
             if(*iter == '/') {
                 if(iter != path_info.begin()) {
                     result.push_back(val);
