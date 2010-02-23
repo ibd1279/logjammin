@@ -121,7 +121,7 @@ namespace logjammin {
             User *user = request->context_object<User>("_user");
             Release r;
             if(args.size() > 0)
-                Release::at(atol(args.front().c_str()), &b);
+                Release::at(atol(args.front().c_str()), &r);
             else {
                 r.project(Project(atol(request->param("project").c_str())));
                 r.version(request->param("version"));
@@ -137,7 +137,7 @@ namespace logjammin {
                 for(CGI::Request::param_map::const_iterator iter = range.first;
                     iter != range.second;
                     ++iter) {
-                    if(iter->second.size()) r.tasks().push_back(Backlog(iter->second));
+                    if(iter->second.size()) r.tasks().push_back(Backlog(atol(iter->second.c_str())));
                 }
                                 
                 // Attempt to save.

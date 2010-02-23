@@ -2,7 +2,7 @@
     ${_html(request:attribute("_error"))}
 </div><?lc end ?>
 <div>
-    <form action="${_html(request:attribute("project"))}/backlog-search">
+    <form action="project/${_html(request:attribute("project"))}/${_html(request:attribute("version"))}/backlog/list">
         <label for="q">Search</label>
         <input type="text" name="q" value="${_html(request:param("q"))}" />
         <input type="submit" value="Search" />
