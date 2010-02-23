@@ -11,7 +11,7 @@
 <?lc if request:has_param("q") then ?><div>
     Search results for &quot;${_html(request:param("q"))}&quot;.
 </div><?lc else ?><div>
-    <a href="backlog-edit?project=${_html(request:attribute("project"))}&amp;version=${_html(request:attribute("version"))}&amp;category=${_html(request:attribute("category"))}">Create a new task...</a>
+    <a href="backlog/edit?project=${_html(request:attribute("project"))}&amp;version=${_html(request:attribute("version"))}&amp;category=${_html(request:attribute("category"))}">Create a new task...</a>
 </div><?lc end ?>
 <?lc if project:daily_hours() > 0 then ?><div id="burndown_chart">
 </div><?lc end ?>
@@ -54,7 +54,7 @@
           end
         ?>
         <td>${_html(backlog:pkey())}</td>
-        <td><a href="${_html(backlog:pkey())}/backlog-edit">${_html(backlog:brief())}</a></td>
+        <td><a href="backlog/${_html(backlog:pkey())}/edit">${_html(backlog:brief())}</a></td>
         <td>${_html(backlog:version())}</td>
         <td>${_html(backlog:category())}</td>
         <td>${_html(backlog:disposition():sub(5))}</td>

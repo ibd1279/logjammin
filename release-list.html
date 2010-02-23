@@ -1,0 +1,24 @@
+<?lc if request:has_attribute("_error") then ?><div class="error">
+    ${_html(request:attribute("_error"))}
+</div><?lc end ?>
+<div>
+    <form action="${_html(request:attribute("project"))}/release-search">
+        <label for="q">Search</label>
+        <input type="text" name="q" value="${_html(request:param("q"))}" />
+        <input type="submit" value="Search" />
+    </form>
+</div>
+<?lc if request:has_param("q") then ?><div>
+    Search results for &quot;${_html(request:param("q"))}&quot;.
+</div><?lc else ?><div>
+    <a href="release-edit?project=${_html(request:attribute("project"))}&amp;version=${_html(request:attribute("version"))}">Create a new release...</a>
+</div><?lc end ?>
+<ul>
+  <?lc if releases and table.getn(releases) > 0 then ?>
+    <?lc for h, release in ipairs(releases) do ?><tr>
+      <li><a href="${_html(release:pkey())}/release-edit" class="fetch-toggle">${_html(release:name())}</a></li>
+    <?lc end ?>
+  <?lc else ?>
+    <li><td colspan="7">No releases found.</li>
+  <?lc end ?>
+</ul>

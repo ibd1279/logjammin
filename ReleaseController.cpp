@@ -1,7 +1,7 @@
 /*
- \file ProjectController.cpp
+ \file ReleaseController.cpp
  \author Jason Watson
- Copyright (c) 2009, Jason Watson
+ Copyright (c) 2010, Jason Watson
  All rights reserved.
  
  Redistribution and use in source and binary forms, with or without
@@ -31,34 +31,58 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ProjectController.h"
+#include "ReleaseController.h"
+#include "Release.h"
 #include "Project.h"
+#include "Backlog.h"
 
 namespace logjammin {
     namespace controller {
-        
-        bool ProjectListController::is_requested(CGI::Request *request, CGI::Response *response) {
-            std::list<std::string> args(request->split_path_info());
+        bool ReleaseListController::is_requested(CGI::Request *request, CGI::Response *response) {
+            std::vector<std::string> args(request->split_path_info().begin(), request->split_path_info().end());
             
             if(!request->has_attribute("authenticated"))
                 return false;
             if(request->has_attribute("handled"))
                 return false;
             
-            if(args.size() < 2)
+            if(args.size() < 5)
                 return false;
-            return (args.front().compare("project") == 0) && (args.back().compare("list") == 0);
+            return (args[0].compare("project") == 0) &&
+            (args[3].compare("release") == 0) &&
+            (args[4].compare("list") == 0);
         }
         
-        void ProjectListController::execute(CGI::Request *request, CGI::Response *response) {
+        void ReleaseListController::execute(CGI::Request *request, CGI::Response *response) {
+            std::vector<std::string> args(request->split_path_info().begin(), request->split_path_info().end());
+            
+            // Remove the command name.
+            args.pop_back();
+            args.pop_back();
+            
+            Project project;
+            std::string project_key = args[1];
+            Project::at(atol(project_key.c_str()), &project);
+            request->attribute("project", project_key);
+            request->context_object("project",
+                                    &project,
+                                    false);
+            
+            std::string version;
+            version = args[2];
+            request->attribute("version", version);
+            
             try {
                 if(request->has_param("q")) {
-                    request->context_object_list("projects",
-                                                 Project::like(request->param("q")),
+                    request->context_object_list("releases",
+                                                 Release::like(request->param("q"), 
+                                                               project,
+                                                               version),
                                                  true);
                 } else {
-                    request->context_object_list("projects",
-                                                 Project::all(),
+                    request->context_object_list("releases",
+                                                 Release::all(project,
+                                                              version),
                                                  true);
                 }
             } catch(const std::string &ex) {
@@ -67,11 +91,14 @@ namespace logjammin {
                 request->attribute("_error", ex.msg);
             }
             
-            response->execute("project-list.html", request);
+            if(request->header("HTTP_X_REQUESTED_WITH").compare("XMLHttpRequest") == 0)
+                response->execute("release-list.json", request);
+            else
+                response->execute("release-list.html", request);
             request->attribute("handled", "true");
         }
         
-        bool ProjectEditController::is_requested(CGI::Request *request, CGI::Response *response) {
+        bool ReleaseEditController::is_requested(CGI::Request *request, CGI::Response *response) {
             std::list<std::string> args(request->split_path_info());
             
             if(!request->has_attribute("authenticated"))
@@ -81,79 +108,66 @@ namespace logjammin {
             
             if(args.size() < 2 || args.size() > 3)
                 return false;
-            return (args.front().compare("project") == 0) && (args.back().compare("edit") == 0);
+            return (args.front().compare("release") == 0) && (args.back().compare("edit") == 0);
         }
         
-        void ProjectEditController::execute(CGI::Request *request, CGI::Response *response) {
+        void ReleaseEditController::execute(CGI::Request *request, CGI::Response *response) {
             std::list<std::string> args(request->split_path_info());
             
             // Remove the command name.
             args.pop_back();
             args.pop_front();
             
-            Project p;
+            User *user = request->context_object<User>("_user");
+            Release r;
             if(args.size() > 0)
-                Project::at(atol(args.front().c_str()), &p);
-            
+                Release::at(atol(args.front().c_str()), &b);
+            else {
+                r.project(Project(atol(request->param("project").c_str())));
+                r.version(request->param("version"));
+            }
+			
             if(request->is_post()) {
-                p.name(request->param("name"));
-                p.commit_feed(request->param("commit_feed"));
-                p.daily_hours(atol(request->param("daily_hours").c_str()));
+                r.name(request->param("name"));
                 
+                // Store the tags.
                 std::pair<CGI::Request::param_map::const_iterator, CGI::Request::param_map::const_iterator> range;
-                range = request->params().equal_range("version");
-                p.versions().clear();
+                range = request->params().equal_range("task");
+                r.tasks().clear();
                 for(CGI::Request::param_map::const_iterator iter = range.first;
                     iter != range.second;
                     ++iter) {
-                    if(iter->second.size()) p.versions().push_back(iter->second);
+                    if(iter->second.size()) r.tasks().push_back(Backlog(iter->second));
                 }
-                p.versions().sort();
-                
-                // Categories.
-                range = request->params().equal_range("category");
-                p.categories().clear();
-                for(CGI::Request::param_map::const_iterator iter = range.first;
-                    iter != range.second;
-                    ++iter) {
-                    if(iter->second.size()) p.categories().push_back(iter->second);
-                }
-                p.categories().sort();
-                
-                // Members.
-                range = request->params().equal_range("members");
-                p.members().clear();
-                for(CGI::Request::param_map::const_iterator iter = range.first;
-                    iter != range.second;
-                    ++iter) {
-                    if(iter->second.size()) p.members().push_back(atol(iter->second.c_str()));
-                }
-                
+                                
                 // Attempt to save.
                 try {
-                    p.save();
+                    r.save();
                     
                     // On success, redirect.
                     std::ostringstream url;
                     url << request->original_request_script();
-                    url << "/project/list?_msg=SAVE_SUCCESS#pe_" << p.pkey();
+                    url << "/" << r.project().pkey() << "/" << r.version() << "/release/list?_msg=SAVE_SUCCESS";
                     response->redirect(url.str());
                 } catch(const std::string &ex) {
-                    std::cerr << "str " << ex << std::endl;
                     request->attribute("_error", ex);
                 } catch(tokyo::Exception &ex) {
-                    std::cerr << "ex  " << ex.msg << std::endl;
                     request->attribute("_error", ex.msg);
                 }
             }
             
-            request->context_object("project", &p, false);
-            request->context_object_list("users", User::all(), true);
-            response->execute("project-edit.html", request);
+            request->context_object("release", &r, false);
+            request->context_object_list("projects", Project::all(), true);
+            request->context_object_list("backlogs", Backlog::all(r.project(),
+                                                                  r.version(),
+                                                                  "",
+                                                                  "",
+                                                                  ""), true);
+            response->execute("backlog-edit.html", request);
             request->attribute("handled", "true");
         }
         
-        bool ProjectPurgeController::is_requested(CGI::Request *request, CGI::Response *response) {
+        bool ReleasePurgeController::is_requested(CGI::Request *request, CGI::Response *response) {
             std::list<std::string> args(request->split_path_info());
             
             if(!request->has_attribute("authenticated"))
@@ -163,24 +177,27 @@ namespace logjammin {
             
             if(args.size() != 3)
                 return false;
-            return (args.front().compare("project") == 0) && (args.back().compare("purge") == 0);
+            return (args.front().compare("backlog") == 0) && (args.back().compare("purge") == 0);
         }
         
-        void ProjectPurgeController::execute(CGI::Request *request, CGI::Response *response) {
+        void ReleasePurgeController::execute(CGI::Request *request, CGI::Response *response) {
             std::list<std::string> args(request->split_path_info());
             
             // Remove the command name.
             args.pop_back();
             args.pop_front();
             
-            Project p(atol(args.front().c_str()));
+            Backlog b(atol(args.front().c_str()));
             
             if(request->is_post()) {
                 try {
-                    p.purge();
                     std::ostringstream url;
                     url << request->original_request_script();
-                    url << "/project/list?_msg=PURGE_SUCCESS";
+                    url << "/project/" << b.project().pkey();
+                    url << "/" << b.version();
+                    url << "backlog/list?_msg=PURGE_SUCCESS";
+                    
+                    b.purge();
                     response->redirect(url.str());
                 } catch(const std::string &ex) {
                     request->attribute("_error", ex);
@@ -189,9 +206,10 @@ namespace logjammin {
                 }
             }
             
-            request->context_object("project", &p, false);
-            response->execute("project-purge.html", request);
+            request->context_object("backlog", &b, false);
+            response->execute("backlog-purge.html", request);
             request->attribute("handled", "true");
         }
+        
     };
 };

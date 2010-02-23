@@ -20,7 +20,7 @@
       <a name="pe_${project:pkey()}">${_html(project:name())} (${table.getn(project:versions())} major version${table.getn(project:versions()) == 1 and "" or "s"}) <?lc if _user:check_allowed("backlog:project:write") then ?><a href="project/${project:pkey()}/edit" class="fetch-toggle">Edit &darr;</a><?lc end ?>
       <?lc if table.getn(project:versions()) > 0 then ?>
       <ul>
-        <?lc for i, version in ipairs(project:versions()) do ?><li>${_html(version)} -- <?lc if _user:check_allowed("backlog:backlog:read") then ?><a href="project/${project:pkey()}/Requirements-${_html(version)}/backlog/list">Requirements</a> |<?lc end ?> Releases <?lc if _user:check_allowed("backlog:backlog:read") then ?>| <a href="project/${project:pkey()}/${_html(version)}/backlog/list">All Tasks</a> | <a href="project/${project:pkey()}/${_html(version)}/backlog/list?disposition-below=400">Open Tasks</a><?lc end ?></li><?lc end ?>
+        <?lc for i, version in ipairs(project:versions()) do ?><li>${_html(version)} -- <?lc if _user:check_allowed("backlog:backlog:read") then ?><a href="project/${project:pkey()}/Requirements-${_html(version)}/backlog/list">Requirements</a> |<?lc end ?> <a href="project/${project:pkey()}/${_html(version)}/release/list">Releases</a> <?lc if _user:check_allowed("backlog:backlog:read") then ?>| <a href="project/${project:pkey()}/${_html(version)}/backlog/list">All Tasks</a> | <a href="project/${project:pkey()}/${_html(version)}/backlog/list?disposition-below=400">Open Tasks</a><?lc end ?></li><?lc end ?>
       </ul>
       <?lc end ?>
     </li>

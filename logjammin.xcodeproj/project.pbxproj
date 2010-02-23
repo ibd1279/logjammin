@@ -22,6 +22,8 @@
 		2222C09810214AB600CE52E6 /* RssController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2222C09710214AB600CE52E6 /* RssController.cpp */; };
 		2222C09C1021D11200CE52E6 /* libexpat.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2222C09B1021D11200CE52E6 /* libexpat.dylib */; };
 		222B665D101E46F300F45B04 /* libcrypto.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222B665C101E46F300F45B04 /* libcrypto.dylib */; };
+		223517361114E14000871FBF /* Release.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 223517351114E14000871FBF /* Release.cpp */; };
+		223619AF111DDFF00019641E /* ReleaseController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 223619AE111DDFF00019641E /* ReleaseController.cpp */; };
 		223D698410078F5800F79019 /* Controller.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 223D698310078F5800F79019 /* Controller.cpp */; };
 		224046D7100595160005461A /* User.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 224046D6100595160005461A /* User.cpp */; };
 		224046DC100597D90005461A /* Role.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 224046DB100597D90005461A /* Role.cpp */; };
@@ -84,6 +86,12 @@
 		2222C09B1021D11200CE52E6 /* libexpat.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libexpat.dylib; path = usr/lib/libexpat.dylib; sourceTree = SDKROOT; };
 		2222C10C1021F5D500CE52E6 /* commit-feed.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "commit-feed.html"; sourceTree = "<group>"; };
 		222B665C101E46F300F45B04 /* libcrypto.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcrypto.dylib; path = usr/lib/libcrypto.dylib; sourceTree = SDKROOT; };
+		223517341114E14000871FBF /* Release.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Release.h; sourceTree = "<group>"; };
+		223517351114E14000871FBF /* Release.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Release.cpp; sourceTree = "<group>"; };
+		2236197A111D0D880019641E /* release-list.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "release-list.html"; sourceTree = "<group>"; };
+		223619A3111D31310019641E /* backlog-purge.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "backlog-purge.html"; sourceTree = "<group>"; };
+		223619AD111DDFF00019641E /* ReleaseController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ReleaseController.h; sourceTree = "<group>"; };
+		223619AE111DDFF00019641E /* ReleaseController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ReleaseController.cpp; sourceTree = "<group>"; };
 		2238DF8C0FBE000100842744 /* backlog-edit.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "backlog-edit.html"; sourceTree = "<group>"; };
 		223D698310078F5800F79019 /* Controller.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Controller.cpp; sourceTree = "<group>"; };
 		224046D5100595160005461A /* User.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = User.h; sourceTree = "<group>"; };
@@ -198,10 +206,12 @@
 				224046DB100597D90005461A /* Role.cpp */,
 				224046D5100595160005461A /* User.h */,
 				224046D6100595160005461A /* User.cpp */,
-				2202B35C0FFFA4D100B6FCEC /* Project.h */,
-				2202B35D0FFFA4D100B6FCEC /* Project.cpp */,
 				2202B3720FFFAAA200B6FCEC /* Backlog.h */,
 				2202B3730FFFAAA200B6FCEC /* Backlog.cpp */,
+				223517341114E14000871FBF /* Release.h */,
+				223517351114E14000871FBF /* Release.cpp */,
+				2202B35C0FFFA4D100B6FCEC /* Project.h */,
+				2202B35D0FFFA4D100B6FCEC /* Project.cpp */,
 				2222C04C1020D5BC00CE52E6 /* RssItem.h */,
 				2222C04D1020D5BC00CE52E6 /* RssItem.cpp */,
 			);
@@ -240,10 +250,12 @@
 				22ED3BBF0FB8704A004E2511 /* Controller.h */,
 				223D698310078F5800F79019 /* Controller.cpp */,
 				22ED3C110FB8F99C004E2511 /* Seed.h */,
-				221577CA100F38270020B133 /* ProjectController.h */,
-				221577CB100F38270020B133 /* ProjectController.cpp */,
 				2271D918101288A000749D9A /* BacklogController.h */,
 				2271D919101288A000749D9A /* BacklogController.cpp */,
+				223619AD111DDFF00019641E /* ReleaseController.h */,
+				223619AE111DDFF00019641E /* ReleaseController.cpp */,
+				221577CA100F38270020B133 /* ProjectController.h */,
+				221577CB100F38270020B133 /* ProjectController.cpp */,
 				2222BE34101E89D000CE52E6 /* UserController.h */,
 				2222BE35101E89D000CE52E6 /* UserController.cpp */,
 				22D32C9F102AAA3E0015E71D /* RoleController.h */,
@@ -266,6 +278,8 @@
 				2238DF8C0FBE000100842744 /* backlog-edit.html */,
 				22ED3CFA0FBA00C9004E2511 /* backlog-list.html */,
 				2265F69B1023E39500B3621F /* backlog-list.json */,
+				223619A3111D31310019641E /* backlog-purge.html */,
+				2236197A111D0D880019641E /* release-list.html */,
 				22ED3CFB0FBA00C9004E2511 /* project-edit.html */,
 				22ED3CB90FB9210C004E2511 /* project-list.html */,
 				2271D9901012C06D00749D9A /* project-purge.html */,
@@ -351,6 +365,8 @@
 				2222C04E1020D5BC00CE52E6 /* RssItem.cpp in Sources */,
 				2222C09810214AB600CE52E6 /* RssController.cpp in Sources */,
 				22D32CA1102AAA3E0015E71D /* RoleController.cpp in Sources */,
+				223517361114E14000871FBF /* Release.cpp in Sources */,
+				223619AF111DDFF00019641E /* ReleaseController.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -361,7 +377,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
+				ARCHS = "$(NATIVE_ARCH)";
 				COPY_PHASE_STRIP = NO;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_DYNAMIC_NO_PIC = NO;

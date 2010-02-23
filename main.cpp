@@ -39,6 +39,7 @@
 #include "Response.h"
 #include "Controller.h"
 #include "ProjectController.h"
+#include "ReleaseController.h"
 #include "BacklogController.h"
 #include "UserController.h"
 #include "Seed.h"
@@ -66,6 +67,7 @@ int main (int argc, char * const argv[]) {
         new logjammin::controller::BacklogEditController(),
         new logjammin::controller::BacklogPurgeController(),
         new logjammin::controller::BacklogListController(),
+        new logjammin::controller::ReleaseListController(),
         new logjammin::controller::ProjectEditController(),
         new logjammin::controller::ProjectPurgeController(),
         new logjammin::controller::ProjectListController(),
