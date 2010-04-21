@@ -32,137 +32,28 @@
  */
 
 #include "Role.h"
-
+#include <iostream>
 
 namespace logjammin {
-    /**************************************************************************
-     * Role Database
-     *************************************************************************/
-    
-    const char ROLE_DB[] = "/var/db/logjammin/role.tcb";
-    const char ROLE_INDX_NAME[] = "/var/db/logjammin/role_name.tcb";
-    
-    class RoleDB : public ModelDB<Role> {
-        static void open_db_file(TCBDB *db, int mode) {
-            tcbdbsetcmpfunc(db, tccmpint64, NULL);
-            tcbdbtune(db, -1, -1, -1, -1, -1, BDBTLARGE | BDBTBZIP);
-            tcbdbopen(db, ROLE_DB, mode);
-        }
-        static void open_indx_file_name(TCBDB *db, int mode) {
-            tcbdbsetcmpfunc(db, tccmplexical, NULL);
-            tcbdbtune(db, -1, -1, -1, -1, -1, BDBTLARGE | BDBTBZIP);
-            tcbdbopen(db, ROLE_INDX_NAME, mode);
-        }
-    public:
-        //! Get the connection to the database.
-        /*!
-         \par Do NOT release this pointer.
-         \return A database connection.
-         */
-        static RoleDB* instance() {
-            static RoleDB dbo;
+    //=====================================================================
+    // Role Database
+    //=====================================================================
+    namespace {
+        tokyo::Storage * role_storage() {
+            static tokyo::Storage dbo("/var/db/logjammin/role");
             return &dbo;
         }
-        
-        //! Index for the name field of roles.
-        tokyo::Index<unsigned long long, std::string> index_name;
-        
-        // Create a new RoleDB object.
-        /*!
-         \par
-         This should probably be moved to static now that everything uses
-         the instance method to get the current DB instance.
-         */
-        RoleDB() :
-        ModelDB<Role>(&open_db_file, BDBOREADER | BDBOWRITER | BDBOCREAT),
-        index_name(&open_indx_file_name, BDBOREADER | BDBOWRITER | BDBOCREAT)
-        {
-        }
-        
-        virtual void put(Role *model) {
-            try {
-                begin_transaction();
-                index_name.begin_transaction();
-                
-                // Clean up the index.
-                if(model->pkey() != 0) {
-                    Role r(model->pkey());
-                    index_name.remove(r.name(), model->pkey());
-                }
-                
-                // Make sure the name isn't used elsewhere.
-                std::set<unsigned long long> tmp = index_name.is(model->name());
-                if(tmp.size() != 0)
-                    throw tokyo::Exception("Constraint error",
-                                           "Name already exists in role database.");
-                
-                // Get the primary key for new objects.
-                unsigned long long key = model->pkey();
-                if(key == 0) {
-                    try {
-                        key = max() + 1;
-                    } catch(tokyo::Exception &ex) {
-                        key = 1;
-                    }
-                }
-                
-                // Store the records.
-                this->_put(key, model->serialize());
-                index_name.put(model->name(), key);
-                
-                index_name.commit_transaction();
-                commit_transaction();
-                
-                set_pkey(model, key);
-            } catch (tokyo::Exception &ex) {
-                index_name.abort_transaction();
-                abort_transaction();
-                throw ex;
-            } catch (std::string &ex) {
-                index_name.abort_transaction();
-                abort_transaction();
-                throw ex;
-            }
-        }
-        
-        virtual void remove(Role *model) {
-            if(model->pkey() != 0) {
-                try {
-                    begin_transaction();
-                    index_name.begin_transaction();
-                    
-                    Role r(model->pkey());
-                    this->_remove(model->pkey());
-                    index_name.remove(r.name(), model->pkey());
-                    
-                    index_name.commit_transaction();
-                    commit_transaction();
-                    
-                    set_pkey(model, 0);
-                } catch (tokyo::Exception &ex) {
-                    index_name.abort_transaction();
-                    abort_transaction();
-                    throw ex;
-                } catch (std::string &ex) {
-                    index_name.abort_transaction();
-                    abort_transaction();
-                    throw ex;
-                }
-            }
-        }
-    };
-        
+    }; // namespace
 
+    //=====================================================================
+    // Role Lua Integration
+    //=====================================================================        
     namespace {
-        /**************************************************************************
-         * Role Lua Integration.
-         *************************************************************************/
-        
         int Role_allowed(Role *obj, lua_State *L) {
             lua_newtable(L);
             int i = 0;
-            std::list<std::string> allowed = obj->allowed();
-            for(std::list<std::string>::const_iterator iter = allowed.begin();
+            std::set<std::string> allowed = obj->field("allowed").to_str_set();
+            for(std::set<std::string>::const_iterator iter = allowed.begin();
                 iter != allowed.end();
                 ++iter) {
                 lua_pushstring(L, iter->c_str());
@@ -171,89 +62,101 @@ namespace logjammin {
             return 1;
         }
         
+        int Role_name(Role *obj, lua_State *L) {
+            lua_pushstring(L, obj->field("name").to_str().c_str());
+            return 1;
+        }
     }; // namespace
     
     const char Role::LUNAR_CLASS_NAME[] = "Role";
     
     Lunar<Role>::RegType Role::LUNAR_METHODS[] = {
     LUNAR_STATIC_METHOD(Role, allowed),
-    LUNAR_STRING_GETTER(Role, name),
+    LUNAR_STATIC_METHOD(Role, name),
     LUNAR_INTEGER_GETTER(Role, pkey, unsigned long long),
     {0,0,0}
     };
     
-    /******************************************************************************
-     * Role methods
-     *****************************************************************************/
+    //=====================================================================
+    // Role Static Methods
+    //=====================================================================        
     
-    std::list<Role *> Role::all() {
-        std::list<Role *> results;
-        RoleDB::instance()->all(results);
-        return results;
+    void Role::all(std::list<Role *> &results) {
+        role_storage()->all().items<Role>(results);
     }
     
     void Role::at(unsigned long long key,
-                  Role *model) {
-        RoleDB::instance()->at(key, model);
+                  Role &model) {
+        tokyo::Document d(role_storage()->at(key));
+        model._d.swap(d);
     }
     
-    void Role::at_name(const std::string &name, Role *model) {
-        std::set<unsigned long long> pkeys(RoleDB::instance()->index_name.is(name));
-        if(pkeys.size() == 0)
-            throw std::string("Unknown Role Name ").append(name).append(".");
-        else if(pkeys.size() > 1)
-            throw std::string("Ambiguous Role Name ").append(name).append(".");
+    void Role::at_name(const std::string &name, Role &model) {
+        tokyo::StorageFilter sf = role_storage()->filter("name",
+                                                         name.c_str(),
+                                                         name.size() + 1);
         
-        RoleDB::instance()->at(*(pkeys.begin()), model);
+        if(sf.size() == 0) {
+            throw std::string("Unknown Role Name ").append(name).append(".");
+        } else if(sf.size() > 1) {
+            throw std::string("Ambiguous Role Name ").append(name).append(".");
+        }
+        
+        std::list<Role *> results;
+        sf.items<Role>(results);
+        model._d.swap(results.front()->_d);
+        for(std::list<Role *>::const_iterator iter = results.begin();
+            iter != results.end();
+            ++iter) {
+            delete *iter;
+        }
     }
     
-    Role::Role() {
-    }
-    
-    Role::Role(const Role &orig) : Model<Role>(orig),
-    _name(orig._name),
-    _allowed(orig._allowed)
-    {
-    }
-    
-    Role::Role(unsigned long long key) {
-        Role::at(key, this);
-    }
-    
-    Role::Role(const std::string &name) {
-        Role::at_name(name, this);
-    }
-    
-    Role::Role(lua_State *L) {
-    }
-    
+    //=====================================================================
+    // Role ctor/dtor
+    //=====================================================================
+        
     Role::~Role() {
     }
     
-    const std::string Role::serialize() const {
-        std::ostringstream data;
-        int i = 0;
+    //=====================================================================
+    // Role Instance
+    //=====================================================================
+    
+    void Role::add_allowed(const std::string &action) {
+        std::set<std::string> allowed(_d.path("allowed").to_str_set());
+        allowed.insert(action);
         
-        data << "name=\"" << escape(_name) << "\";\nallow{\n";
-        for(std::list<std::string>::const_iterator iter = _allowed.begin();
-            iter != _allowed.end();
-            ++iter, ++i) {
-            data << "    a" << i << "=\"" << escape(*iter) << "\";\n";
+        tokyo::DocumentNode n(tokyo::DOC_NODE, NULL);
+        int h = 0;
+        for(std::set<std::string>::const_iterator iter = allowed.begin();
+            iter != allowed.end();
+            ++iter) {
+            std::ostringstream buf;
+            buf << h++;
+            n.child(buf.str(), tokyo::DocumentNode().value(*iter));
         }
-        data << "};\n";
-        
-        return data.str();
+        _d.path("", "allowed", n);
     }
     
-    void Role::populate(OpenProp::File *props) {
-        name(std::string(props->getValue("name")));
-        
-        OpenProp::ElementIterator *iter = props->getElement("allow")->getElements();
-        while(iter->more())
-            _allowed.push_back(std::string(iter->next()->getValue()));    
+    void Role::remove_allowed(const std::string &action) {
+        std::set<std::string> allowed(field("allowed").to_str_set());
+        allowed.erase(action);
+
+        tokyo::DocumentNode n(tokyo::DOC_NODE, NULL);
+        int h = 0;
+        for(std::set<std::string>::const_iterator iter = allowed.begin();
+            iter != allowed.end();
+            ++iter) {
+            std::ostringstream buf;
+            buf << h++;
+            n.child(buf.str(), tokyo::DocumentNode().value(*iter));
+        }
+        std::cerr << n.to_str() << std::endl;
+        _d.path("", "allowed", n);
     }
     
-    ModelDB<Role> *Role::dao() const {
-        return RoleDB::instance();
+    tokyo::Storage *Role::dao() const {
+        return role_storage();
     }
 }; // namespace logjammin

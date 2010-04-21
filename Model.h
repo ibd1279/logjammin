@@ -35,8 +35,9 @@
 #include <list>
 #include <string>
 #include <sstream>
-#include "openprop.h"
-#include "ModelDB.h"
+#include "Document.h"
+#include "Tokyo.h"
+#include "Storage.h"
 
 namespace logjammin {
     
@@ -46,100 +47,71 @@ namespace logjammin {
      \version 1.0
      \date July 3, 2009
      */
-    template<class V>
     class Model {
-        friend class ModelDB<V>;
-    public:
-        //! Save the current object into the database.
-        virtual void save() {
-            V *model = dynamic_cast<V *>(this);
-            if(model == NULL)
-                throw std::string("Invalid combination of Model and ModelDB.");
-            
-            dao()->put(model);
-        }
-        
-        //! Remove the current object from the database.
-        virtual void purge() {
-            V *model = dynamic_cast<V *>(this);
-            if(model == NULL)
-                throw std::string("Invalid combination of Model and ModelDB.");
-            
-            dao()->remove(model);
-        }
-        
-        //! Get the primary key for the current object.
-        /*!
-         The primary key should be positive for records that exist in the database.
-         Zero for records that do not exist in the database.
-         \return The primary key for the object.
-         */
-        virtual unsigned long long pkey() const { return _pkey; }
-        
-        //! Get the serialized version of this instance.
-        /*!
-         Instances should override this method to serialize the fields of the object.
-         The output format should be in OpenProp format.
-         \return The OpenProp string representing this object.
-         */
-        virtual const std::string serialize() const = 0;
-        
-        //! Convert a database record into an instance object.
-        /*!
-         \param props A structured object to load values from.
-         \sa load().
-         */
-        virtual void populate(OpenProp::File *props) = 0;
-
-        //! Helper method to escape strings for OpenProp format.
-        /*!
-         \param val The value to escape.
-         \return The escaped version.
-         \sa populate() and serialize().
-         */
-        static std::string escape(const std::string &val) {
-            std::string::const_iterator iter = val.begin();
-            std::string r;
-            for(; iter != val.end(); ++iter) {
-                char c = *iter;
-                if(c == '\\' || c == '"')
-                    r.push_back('\\');
-                else if(c == '\n')
-                    r.append("\\n\\");
-                r.push_back(*iter);
-            }
-            return r;
-        }
-                
     protected:
-        //! Set the primary key for the current object.
-        /*!
-         This method should only be called when populating, purging, or saving.
-         \param key The primary key.
-         */
-        virtual void pkey(const unsigned long long key) { _pkey = key; }
-        
-        //! Get the DAO
-        virtual ModelDB<V> *dao() const = 0;
+        tokyo::Document _d;
         
         //! Create and open the DB object.
-        Model() {
-            _pkey = 0;
+        Model() : _d() {
         }
         
         //! Copy constructor.
         /*!
          \param orig The orignal model to copy.
          */
-        Model(const Model &orig) : _pkey(orig._pkey) {
+        Model(const Model &orig) : _d(orig._d) {
+        }
+        
+        Model(const tokyo::Document &d) : _d(d) {
         }
         
         //! Close the database object.
         virtual ~Model() {
         }
         
-        //! Current primary key.
-        unsigned long long _pkey;
+        //! Get the DAO
+        virtual tokyo::Storage *dao() const = 0;
+    public:
+        //! Save the current object into the database.
+        virtual void save() {
+            dao()->place(_d);
+        }
+        
+        //! Remove the current object from the database.
+        virtual void purge() {
+            dao()->remove(_d);
+        }
+        
+        tokyo::Document doc() { return _d; }
+        
+        //! Return a document node for the given path.
+        virtual const tokyo::DocumentNode &field(const std::string &path) const {
+            return _d.path(path);
+        }
+        
+        virtual const tokyo::DocumentNode &operator[](const std::string &path) const {
+            return field(path);
+        }
+        
+        virtual Model &field(const std::string &path, const std::string &value) {
+            _d.path(path, value);
+            return *this;
+        }
+        virtual Model &field(const std::string &path, const long long value) {
+            _d.path(path, value);
+            return *this;
+        }
+        virtual Model &field(const std::string &path, const int &value) {
+            _d.path(path, value);
+            return *this;
+        }
+        virtual Model &field(const std::string &path, const double &value) {
+            _d.path(path, value);
+            return *this;
+        }
+        
+        //! Get the primary key for the current object.
+        unsigned long long pkey() const { return _d.key(); };
     };
 }; // namespace logjammin
 

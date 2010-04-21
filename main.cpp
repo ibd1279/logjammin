@@ -35,6 +35,37 @@
 #include <iostream>
 #include <list>
 #include "Model.h"
+#include "Role.h"
+#include "User.h"
+
+int main(int argc, char * const argv[]) {
+    if(argc > 2) {
+        try {
+            std::cout << "creating some records." << std::endl;
+            logjammin::Role r;
+            r.field("name", "Untrusted");
+            r.add_allowed("login");
+            std::cout << "  " << r["name"].to_str() << std::endl;
+            r.save();
+            
+            r.field("_key", 0);
+            r.field("name", "Trusted");
+            r.add_allowed("login");
+            r.add_allowed("project::view");
+            std::cout << "  " << r["name"].to_str() << std::endl;
+            r.save();
+            std::cout << "Done." << std::endl;
+            
+            logjammin::Role r2;
+            logjammin::Role::at(r.pkey(), r2);
+            std::cout << "  test:" << r2["name"].to_str() << std::endl;
+        } catch(tokyo::Exception &ex) {
+            std::cerr << "SUCK! " << ex.to_s() << std::endl;
+        }
+    }
+}
+
+/*
 #include "Request.h"
 #include "Response.h"
 #include "Controller.h"
@@ -102,4 +133,4 @@ int main (int argc, char * const argv[]) {
     response->close();
     delete response;
     return 0;
-}
+}*/

@@ -39,32 +39,36 @@
 
 namespace logjammin {
     
-    class RoleDB;
-    
     //! Role Class.
     /*!
      \author Jason Watson
      \version 1.0
      \date July 9, 2009
      */
-    class Role : public Model<Role> {
+    class Role : public Model {
     public:
+        
+        //=====================================================================
+        // Role Lua Integration
+        //=====================================================================
+        
         //! Lua bindings class name.
         static const char LUNAR_CLASS_NAME[];
         
         //! Luna bindings method array.
         static Lunar<Role>::RegType LUNAR_METHODS[];
         
-        /*******************************************************************
-         * Static methods.
-         ******************************************************************/
+        //=====================================================================
+        // Role Static Methods
+        //=====================================================================
         
         //! Get a list of all roles in the database.
         /*!
-         \par Roles in the list must be deallocated with "delete".
+         \par
+         Roles in the list must be deallocated with "delete".
          \return A list of roles.
          */
-        static std::list<Role *> all();
+        static void all(std::list<Role *> &results);
         
         //! Get a role by primary key.
         /*!
@@ -73,7 +77,7 @@ namespace logjammin {
          \exception tokyo::Exception When the record cannot be found.
          */
         static void at(unsigned long long key,
-                       Role *model);
+                       Role &model);
         
         //! Get a role by name.
         /*!
@@ -82,79 +86,40 @@ namespace logjammin {
          \exception tokyo::Exception When the record cannot be read.
          \exception std::string When the record does not exist.
          */
-        static void at_name(const std::string &name, Role *model);
+        static void at_name(const std::string &name,
+                            Role &model);
         
-        /*******************************************************************
-         * ctor's and dtor's
-         ******************************************************************/
+        //=====================================================================
+        // Role ctor/dtor
+        //=====================================================================
         
         //! Create a new role object.
-        Role();
+        Role() : Model() {}
         
-        //! Create a copy of a role object.
-        /*!
-         \param orig The original role object.
-         */
-        Role(const Role &orig);
+        //! Create a new role object as a copy an existing role object.
+        Role(const Role &orig) : Model(orig) {}
         
-        //! Create a new role object from a primary key.
-        /*!
-         \param key The primary key.
-         \exception tokyo::Exception When the record cannot be found.
-         */
-        Role(unsigned long long key);
-        
-        //! Create a new role object from the name.
-        /*!
-         \param name The role name.
-         \exception tokyo::Exception When the record cannot be read.
-         \exception std::string When the record does not exist.
-         */
-        Role(const std::string &name);
+        //! Create a new role object with the provided document.
+        Role(const tokyo::Document &d) : Model(d) {}
         
         //! Lua constructor.
-        /*!
-         \param L Pointer to the lua state.
-         */
-        Role(lua_State *L);
+        Role(lua_State *L) : Model() {}
         
         //! Delete the role.
         virtual ~Role();
         
-        /*******************************************************************
-         * instance methods.
-         ******************************************************************/
+        //=====================================================================
+        // Role Instance
+        //=====================================================================
         
-        //! Get the name.
-        /*!
-         \return The name of the project.
-         */
-        std::string name() const { return _name; };
+        //! Add an allowed action to the role.
+        void add_allowed(const std::string &action);
         
-        //! Set the name.
-        /*!
-         \param name The name of the project.
-         */
-        void name(const std::string &name) { _name = name; };
+        //! Remove an allowed action from the role.
+        void remove_allowed(const std::string &action);
         
-        //! List of allowed actions.
-        /*!
-         \return A reference to the list of allowed actions.
-         */
-        std::list<std::string> &allowed() { return _allowed; };
-        
-        //! List of allowed actions.
-        /*!
-         \return A copy of the list of allowed actions.
-         */
-        std::list<std::string> allowed() const { return _allowed; };
-        
-        virtual const std::string serialize() const;
-        virtual void populate(OpenProp::File *props);
     protected:
-        virtual ModelDB<Role> *dao() const;
+        virtual tokyo::Storage *dao() const;
     private:
-        std::string _name;
-        std::list<std::string> _allowed;
     };
 }; // namespace logjammin

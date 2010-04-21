@@ -147,7 +147,7 @@ namespace logjammin {
                     // On success, redirect.
                     std::ostringstream url;
                     url << request->original_request_script();
-                    url << "/" << r.project().pkey() << "/" << r.version() << "/release/list?_msg=SAVE_SUCCESS";
+                    url << "/project/" << r.project().pkey() << "/" << r.version() << "/release/list?_msg=SAVE_SUCCESS";
                     response->redirect(url.str());
                 } catch(const std::string &ex) {
                     request->attribute("_error", ex);
