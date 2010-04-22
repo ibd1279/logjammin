@@ -19,7 +19,7 @@ def configure(ctx):
 def build(ctx):
     t = ctx(
         features = ['cxx', 'cprogram'],
-        source = 'main.cpp Tokyo.cpp Document.cpp Storage.cpp',
+        source = 'logjam.cpp Tokyo.cpp Document.cpp Storage.cpp',
         target = 'logjam',
         vnum = '0.1.0',
         includes = ['.', '/usr/local/include/', '/opt/local/include/', '/usr/include'],

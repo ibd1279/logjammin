@@ -1,65 +1,15 @@
-LogJammin 1.0
+LogJammin 0.1
 
-Depends on the following libraries (must exist).
-
-tokyocabinet
-    1.4.23
-    Can be installed via mac ports.
-
-tokyodystopia
-    0.9.12
-    http://tokyocabinet.sourceforge.net/ see the "Inverted Index" links.
-    http://tokyocabinet.sourceforge.net/dystopiapkg/
-
-lua
-    5.1.4
-    Can be installed via mac ports.
-curl
-    7.19.5 + SSL
-    Can be installed via mac ports. Make sure to use the SSL variation.
-    Version that comes with the mac may work.
-
-crypto
-    0.9.7
-    Version that comes with the mac works fine.
-
-expat
-    1.5.0
-    Version that comes with the mac works fine.
-
-After installing the necessary libraries, Open the project in xcode, and
-verify header search and library search paths are correct.
+Depends on the following libraries:
+    tokyocabinet
+    tokyodystopia
+    lua
+    libedit (NetBSD editline)
+    curl
+    crypto
+    expact
 
 
-Installation:
-
-Paths are hard coded at the moment, so execute the following commands as root:
-
-mkdir -p /var/db/logjammin
-chown _www:wheel /var/db/logjammin
-./install.sh
-
-This will create the directory where logjammin stores its files, grant the
-apache service ownership of the directory.
-
-The install.sh script copies the presentation files to the /var/db/logjammin
-directory, and copies the logjammin executable to the
-/Library/WebServer/CGI-Executables directory.
-
-If everything worked, you should be able to hit logjammin at
-http://localhost/cgi-bin/logjammin
-
-Since the database is empty by default, you need to execute the seed. This is 
-currently hard coded, but can be invoked by going to
-http://localhost/cgi-bin/logjammin/__seed
-
-After running the seed, three users will exist and a default project.
-
-
-Debug:
-
-Use the error_log in apache. Your best friend.
-
-Another useful command is:
-tcbmgr list -pv /var/db/logjammin/<db>
-This will show you the values stored in the database file provided.
+Build using:
+    ./waf configure
+    ./waf build
