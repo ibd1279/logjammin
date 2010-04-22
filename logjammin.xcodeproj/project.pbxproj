@@ -35,35 +35,12 @@
 		22DB7C5F101A5CC800BEEB52 /* OpenID.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */; };
 		22E9C71B1176BA8000557ADA /* Tokyo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 22E9C71A1176BA8000557ADA /* Tokyo.cpp */; };
 		22E9C96D117BF18B00557ADA /* Storage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 22E9C96C117BF18B00557ADA /* Storage.cpp */; };
-		22E9CC4A117D110900557ADA /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 08FB7796FE84155DC02AAC07 /* main.cpp */; settings = {ATTRIBUTES = (); }; };
-		22E9CC52117D110900557ADA /* User.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 224046D6100595160005461A /* User.cpp */; };
-		22E9CC53117D110900557ADA /* Role.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 224046DB100597D90005461A /* Role.cpp */; };
-		22E9CC5F117D110900557ADA /* Document.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31B1564E11714D5B008A5BE3 /* Document.cpp */; };
-		22E9CC60117D110900557ADA /* Tokyo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 22E9C71A1176BA8000557ADA /* Tokyo.cpp */; };
-		22E9CC61117D110900557ADA /* Storage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 22E9C96C117BF18B00557ADA /* Storage.cpp */; };
-		22E9CC63117D110900557ADA /* libtokyocabinet.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 220AD6C20FA1FFD400C604BE /* libtokyocabinet.a */; };
-		22E9CC64117D110900557ADA /* liblua.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 221B34450FA8995D009AB597 /* liblua.a */; };
-		22E9CC65117D110900557ADA /* libcurl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 227A47051018186B0013EACE /* libcurl.dylib */; };
-		22E9CC66117D110900557ADA /* libcrypto.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222B665C101E46F300F45B04 /* libcrypto.dylib */; };
-		22E9CC67117D110900557ADA /* libtokyodystopia.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2222BE6E101F83B400CE52E6 /* libtokyodystopia.dylib */; };
-		22E9CC68117D110900557ADA /* libexpat.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2222C09B1021D11200CE52E6 /* libexpat.dylib */; };
-		22E9CC6A117D110900557ADA /* logjammin.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = C6859E8B029090EE04C91782 /* logjammin.1 */; };
 		31B1564F11714D5B008A5BE3 /* Document.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31B1564E11714D5B008A5BE3 /* Document.cpp */; };
 		8DD76F650486A84900D96B5E /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 08FB7796FE84155DC02AAC07 /* main.cpp */; settings = {ATTRIBUTES = (); }; };
 		8DD76F6A0486A84900D96B5E /* logjammin.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = C6859E8B029090EE04C91782 /* logjammin.1 */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		22E9CC69117D110900557ADA /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 8;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
-			files = (
-				22E9CC6A117D110900557ADA /* logjammin.1 in CopyFiles */,
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-		};
 		8DD76F690486A84900D96B5E /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 8;
@@ -150,7 +127,6 @@
 		22E9C96B117BF18B00557ADA /* Storage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Storage.h; sourceTree = "<group>"; };
 		22E9C96C117BF18B00557ADA /* Storage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Storage.cpp; sourceTree = "<group>"; };
 		22E9C9A8117C894700557ADA /* Exception.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Exception.h; sourceTree = "<group>"; };
-		22E9CC6E117D110900557ADA /* logjammin */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = logjammin; sourceTree = BUILT_PRODUCTS_DIR; };
 		22ED3BBF0FB8704A004E2511 /* Controller.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Controller.h; sourceTree = "<group>"; };
 		22ED3C110FB8F99C004E2511 /* Seed.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Seed.h; sourceTree = "<group>"; };
 		22ED3CB90FB9210C004E2511 /* project-list.html */ = {isa = PBXFileReference; explicitFileType = text.html; fileEncoding = 4; path = "project-list.html"; sourceTree = "<group>"; };
@@ -163,19 +139,6 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		22E9CC62117D110900557ADA /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				22E9CC63117D110900557ADA /* libtokyocabinet.a in Frameworks */,
-				22E9CC64117D110900557ADA /* liblua.a in Frameworks */,
-				22E9CC65117D110900557ADA /* libcurl.dylib in Frameworks */,
-				22E9CC66117D110900557ADA /* libcrypto.dylib in Frameworks */,
-				22E9CC67117D110900557ADA /* libtokyodystopia.dylib in Frameworks */,
-				22E9CC68117D110900557ADA /* libexpat.dylib in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		8DD76F660486A84900D96B5E /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -226,7 +189,6 @@
 			isa = PBXGroup;
 			children = (
 				8DD76F6C0486A84900D96B5E /* logjammin */,
-				22E9CC6E117D110900557ADA /* logjammin */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -246,7 +208,6 @@
 		220AD7060FA233CB00C604BE /* Model */ = {
 			isa = PBXGroup;
 			children = (
-				221B34820FA8C302009AB597 /* lunar.h */,
 				220AD7070FA233E600C604BE /* Model.h */,
 				224046DA100597D90005461A /* Role.h */,
 				224046DB100597D90005461A /* Role.cpp */,
@@ -267,6 +228,7 @@
 		2261AF4F10D1E63000841C84 /* Database */ = {
 			isa = PBXGroup;
 			children = (
+				221B34820FA8C302009AB597 /* lunar.h */,
 				22E9C9A8117C894700557ADA /* Exception.h */,
 				2202B2430FFE56C000B6FCEC /* Tokyo.h */,
 				22E9C71A1176BA8000557ADA /* Tokyo.cpp */,
@@ -356,25 +318,23 @@
 		};
 /* End PBXGroup section */
 
-/* Begin PBXNativeTarget section */
-		22E9CC48117D110900557ADA /* tokyoserver */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 22E9CC6B117D110900557ADA /* Build configuration list for PBXNativeTarget "tokyoserver" */;
+/* Begin PBXLegacyTarget section */
+		220D9C66117FA0BA000F20D0 /* logjam */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "$(ACTION)";
+			buildConfigurationList = 220D9C69117FA0E4000F20D0 /* Build configuration list for PBXLegacyTarget "logjam" */;
 			buildPhases = (
-				22E9CC49117D110900557ADA /* Sources */,
-				22E9CC62117D110900557ADA /* Frameworks */,
-				22E9CC69117D110900557ADA /* CopyFiles */,
 			);
-			buildRules = (
-			);
+			buildToolPath = ./waf;
 			dependencies = (
 			);
-			name = tokyoserver;
-			productInstallPath = "$(HOME)/bin";
-			productName = logjammin;
-			productReference = 22E9CC6E117D110900557ADA /* logjammin */;
-			productType = "com.apple.product-type.tool";
+			name = logjam;
+			passBuildSettingsInEnvironment = 0;
+			productName = logjam;
 		};
+/* End PBXLegacyTarget section */
+
+/* Begin PBXNativeTarget section */
 		8DD76F620486A84900D96B5E /* logjammin */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 1DEB923108733DC60010E9CD /* Build configuration list for PBXNativeTarget "logjammin" */;
@@ -406,25 +366,12 @@
 			projectRoot = "";
 			targets = (
 				8DD76F620486A84900D96B5E /* logjammin */,
-				22E9CC48117D110900557ADA /* tokyoserver */,
+				220D9C66117FA0BA000F20D0 /* logjam */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
-		22E9CC49117D110900557ADA /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				22E9CC4A117D110900557ADA /* main.cpp in Sources */,
-				22E9CC52117D110900557ADA /* User.cpp in Sources */,
-				22E9CC53117D110900557ADA /* Role.cpp in Sources */,
-				22E9CC5F117D110900557ADA /* Document.cpp in Sources */,
-				22E9CC60117D110900557ADA /* Tokyo.cpp in Sources */,
-				22E9CC61117D110900557ADA /* Storage.cpp in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		8DD76F640486A84900D96B5E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -534,52 +481,24 @@
 			};
 			name = Release;
 		};
-		22E9CC6C117D110900557ADA /* Debug */ = {
+		220D9C67117FA0BA000F20D0 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(NATIVE_ARCH)";
 				COPY_PHASE_STRIP = NO;
-				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_FIX_AND_CONTINUE = YES;
-				GCC_LINK_WITH_DYNAMIC_LIBRARIES = YES;
-				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"_GLIBCXX_DEBUG=1",
-					"_GLIBCXX_DEBUG_PEDANTIC=1",
-				);
-				HEADER_SEARCH_PATHS = (
-					/usr/local/include/,
-					/opt/local/include/,
-					/usr/include/,
-				);
-				INSTALL_PATH = /usr/local/bin;
-				LIBRARY_SEARCH_PATHS = (
-					/usr/local/lib/,
-					/opt/local/lib/,
-					/usr/lib/,
-				);
-				OTHER_LDFLAGS = "";
-				PRODUCT_NAME = logjammin;
-				STANDARD_C_PLUS_PLUS_LIBRARY_TYPE = dynamic;
+				PRODUCT_NAME = logjam;
 			};
 			name = Debug;
 		};
-		22E9CC6D117D110900557ADA /* Release */ = {
+		220D9C68117FA0BA000F20D0 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				GCC_MODEL_TUNING = G5;
-				INSTALL_PATH = /usr/local/bin;
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					/opt/local/lib,
-					"\\\"$(SRCROOT)\\\"",
-				);
-				PRODUCT_NAME = logjammin;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				PRODUCT_NAME = logjam;
+				ZERO_LINK = NO;
 			};
 			name = Release;
 		};
@@ -604,11 +523,11 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		22E9CC6B117D110900557ADA /* Build configuration list for PBXNativeTarget "tokyoserver" */ = {
+		220D9C69117FA0E4000F20D0 /* Build configuration list for PBXLegacyTarget "logjam" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				22E9CC6C117D110900557ADA /* Debug */,
-				22E9CC6D117D110900557ADA /* Release */,
+				220D9C67117FA0BA000F20D0 /* Debug */,
+				220D9C68117FA0BA000F20D0 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

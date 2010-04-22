@@ -101,16 +101,84 @@ namespace tokyo {
                     case ARRAY_NODE:
                         memcpy(&sz, ptr, 4);
                         break;
+                    default:
+                        break;
                 }
                 ptr += sz;
             }
         }
     };
+
+    //=====================================================================
+    // DocumentNode Lua integration
+    //=====================================================================
+    const char DocumentNode::LUNAR_CLASS_NAME[] = "DocumentNode";
+    
+    Lunar<DocumentNode>::RegType DocumentNode::LUNAR_METHODS[] = {
+    LUNAR_MEMBER_METHOD(DocumentNode, at),
+    LUNAR_MEMBER_METHOD(DocumentNode, set),
+    {0, 0}
+    };
+    
+    int DocumentNode::_at(lua_State *L) {
+        std::string name(luaL_checkstring(L, -1));
+        switch(child(name).type()) {
+            case DOC_NODE:
+            case ARRAY_NODE:
+                Lunar<DocumentNode>::push(L, &(child(name)), false);
+                break;
+            case INT32_NODE:
+            case INT64_NODE:
+                lua_pushinteger(L, child(name).to_long());
+                break;
+            case DOUBLE_NODE:
+            default:
+                lua_pushnil(L);
+                break;
+        }
+        return 1;
+    }
+    
+    int DocumentNode::_set(lua_State *L) {
+        size_t len = 0;
+        const char *str;
+        int tmp;
+        lua_settop(L, 1);
+        switch(lua_type(L, 1)) {
+            case LUA_TSTRING:
+                str = lua_tolstring(L, 1, &len);
+                value(std::string(str));
+                break;
+            case LUA_TNUMBER:
+                value(lua_tointeger(L, 1));
+                break;
+            case LUA_TNIL:
+                value(NULL_NODE, NULL);
+                break;
+            case LUA_TBOOLEAN:
+                tmp = lua_toboolean(L, 1) ? 1 : 0;
+                value(BOOL_NODE, &tmp);
+                break;
+            case LUA_TTABLE:
+            case LUA_TFUNCTION:
+            case LUA_TTHREAD:
+            case LUA_TUSERDATA:
+            case LUA_TLIGHTUSERDATA:
+            case LUA_TNONE:
+            default:
+                break;
+        }
+        return 0;
+    }
     
     //=====================================================================
     // DocumentNode ctor/dtor
-    //=====================================================================            
+    //=====================================================================
     
+    DocumentNode::DocumentNode(lua_State *L) : _children(), _value(NULL), _type(DOC_NODE) {
+        // Add some logic to distinguish copy constructor from empty constructor.
+    }
+                                            
     DocumentNode::DocumentNode() : _children(), _value(NULL), _type(DOC_NODE) {
     }
     
@@ -193,6 +261,8 @@ namespace tokyo {
                     memcpy(&sz, v, 4);
                     subdocument(*this, v);
                     break;
+                default:
+                    break;
             }
         }
         
@@ -257,6 +327,8 @@ namespace tokyo {
                 return "document";
             case ARRAY_NODE:
                 return "array";
+            default:
+                break;
         }
         return "unknown";
     }
@@ -298,6 +370,8 @@ namespace tokyo {
                     ++iter) {
                     sz += iter->second->size() + iter->first.size() + 2;
                 }
+                break;
+            default:
                 break;
         }
         return sz;
@@ -347,6 +421,8 @@ namespace tokyo {
                     buf << ",";
                 }
                 return buf.str().erase(buf.str().size() - 1).append("(1-0)}");
+            default:
+                break;
         }
         return std::string();
     }
@@ -393,6 +469,8 @@ namespace tokyo {
                     buf << ",";
                 }
                 return buf.str().erase(buf.str().size() - 1).append("}");
+            default:
+                break;
         }
         return std::string();
     }
@@ -436,6 +514,8 @@ namespace tokyo {
             case BOOL_NODE:
                 memcpy(&l, _value, 1);
                 return (int)l;
+            default:
+                break;
         }
         return 0;
     }
@@ -459,6 +539,8 @@ namespace tokyo {
             case BOOL_NODE:
                 memcpy(&l, _value, 1);
                 return l;
+            default:
+                break;
         }
         return 0;
     }
@@ -492,6 +574,8 @@ namespace tokyo {
             case BOOL_NODE:
                 memcpy(&l, _value, 1);
                 return l;
+            default:
+                break;
         }
         return false;
     }
@@ -557,8 +641,26 @@ namespace tokyo {
     }
 
     //=====================================================================
+    // Document Lua integration
+    //=====================================================================
+    const char Document::LUNAR_CLASS_NAME[] = "Document";
+    
+    Lunar<Document>::RegType Document::LUNAR_METHODS[] = {
+    LUNAR_MEMBER_METHOD(Document, at),
+    {0, 0}
+    };
+    
+    int Document::_at(lua_State *L) {
+        return _doc->_at(L);
+    }
+    
+    //=====================================================================
     // Document ctor/dtor
     //=====================================================================
+    
+    Document::Document(lua_State *L) : _doc(NULL) {
+        _doc = new DocumentNode(DOC_NODE, NULL);
+    }
     
     Document::Document() : _doc(NULL) {
         _doc = new DocumentNode(DOC_NODE, NULL);

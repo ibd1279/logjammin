@@ -159,6 +159,8 @@ namespace tokyo {
         //! type for a collection of IDs.
         typedef std::set<unsigned long long> set_key_t;
         
+        virtual ~Searcher() { }
+        
         //! Index a document.
         virtual void index(const key_t key,
                            const value_t &txt) = 0;

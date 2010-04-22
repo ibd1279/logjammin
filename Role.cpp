@@ -71,10 +71,7 @@ namespace logjammin {
     const char Role::LUNAR_CLASS_NAME[] = "Role";
     
     Lunar<Role>::RegType Role::LUNAR_METHODS[] = {
-    LUNAR_STATIC_METHOD(Role, allowed),
-    LUNAR_STATIC_METHOD(Role, name),
-    LUNAR_INTEGER_GETTER(Role, pkey, unsigned long long),
-    {0,0,0}
+    {0,0}
     };
     
     //=====================================================================

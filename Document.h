@@ -36,6 +36,7 @@
 #include <string>
 #include "Exception.h"
 #include "Tokyo.h"
+#include "lunar.h"
 
 namespace tokyo {
     //! Enumeration of Document Node Types.
@@ -72,8 +73,25 @@ namespace tokyo {
         DocumentNodeType _type;
     public:
         //=====================================================================
+        // DocumentNode Lua Integration
+        //=====================================================================
+        
+        //! Lua bindings class name.
+        static const char LUNAR_CLASS_NAME[];
+        
+        //! Lua bindings method array.
+        static Lunar<DocumentNode>::RegType LUNAR_METHODS[];
+        
+        //! Create a new document node for lua.
+        DocumentNode(lua_State *L);
+        
+        virtual int _at(lua_State *L);
+        
+        virtual int _set(lua_State *L);
+        
+        //=====================================================================
         // DocumentNode ctor/dtor
-        //=====================================================================            
+        //=====================================================================
         
         //! Create a new document Node.
         DocumentNode();
@@ -151,6 +169,21 @@ namespace tokyo {
     class Document {
         DocumentNode *_doc;
     public:
+        //=====================================================================
+        // DocumentNode Lua Integration
+        //=====================================================================
+        
+        //! Lua bindings class name.
+        static const char LUNAR_CLASS_NAME[];
+        
+        //! Lua bindings method array.
+        static Lunar<Document>::RegType LUNAR_METHODS[];
+        
+        //! Create a new document node for lua.
+        Document(lua_State *L);
+        
+        virtual int _at(lua_State *L);
+        
         //=====================================================================
         // Document ctor/dtor
         //=====================================================================

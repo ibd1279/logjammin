@@ -95,9 +95,9 @@ namespace tokyo {
         return *this;
     }
     
-    StorageFilter StorageFilter::filter(const std::string &indx,
+    StorageFilter &StorageFilter::filter(const std::string &indx,
                                         const void * const val,
-                                        const size_t val_len) const {
+                                        const size_t val_len) {
         std::map<std::string, TreeDB *>::const_iterator index = _storage->_fields_tree.find(indx);
         if(index == _storage->_fields_tree.end())
             return *this;
@@ -108,20 +108,19 @@ namespace tokyo {
         db->at_together(val, val_len, db_values);
         dbvalue_to_storagekey(db_values, storage_keys);
         
-        StorageFilter sf(*this);
         switch(_mode) {
             case INTERSECTION:
-                sf.intersect_keys(storage_keys);
+                intersect_keys(storage_keys);
                 break;
             case UNION:
-                sf.union_keys(storage_keys);
+                union_keys(storage_keys);
                 break;
         }
-        return sf;
+        return *this;
     }
     
-    StorageFilter StorageFilter::search(const std::string &indx,
-                                        const std::string &terms) const {
+    StorageFilter &StorageFilter::search(const std::string &indx,
+                                        const std::string &terms) {
         std::map<std::string, TextSearcher *>::const_iterator index = _storage->_fields_text.find(indx);
         if(index == _storage->_fields_text.end())
             return *this;
@@ -130,20 +129,19 @@ namespace tokyo {
         Searcher::set_key_t searcher_values;
         searcher->search(terms, searcher_values);
         
-        StorageFilter sf(*this);
         switch(_mode) {
             case INTERSECTION:
-                sf.intersect_keys(searcher_values);
+                intersect_keys(searcher_values);
                 break;
             case UNION:
-                sf.union_keys(searcher_values);
+                union_keys(searcher_values);
                 break;
         }
-        return sf;
+        return *this;
     }
     
-    StorageFilter StorageFilter::tagged(const std::string &indx,
-                                        const std::string &word) const {
+    StorageFilter &StorageFilter::tagged(const std::string &indx,
+                                        const std::string &word) {
         std::map<std::string, TagSearcher *>::const_iterator index = _storage->_fields_tag.find(indx);
         if(index == _storage->_fields_tag.end())
             return *this;
@@ -152,23 +150,22 @@ namespace tokyo {
         Searcher::set_key_t searcher_values;
         searcher->search(word, searcher_values);
         
-        StorageFilter sf(*this);
         switch(_mode) {
             case INTERSECTION:
-                sf.intersect_keys(searcher_values);
+                intersect_keys(searcher_values);
                 break;
             case UNION:
-                sf.intersect_keys(searcher_values);
+                intersect_keys(searcher_values);
                 break;
         }
-        return sf;
+        return *this;
     }
     
     //=====================================================================
     // Storage Implementation.
     //=====================================================================    
     
-    Storage::Storage(const std::string &dir) : _directory(dir), _fields_tree(), _fields_text(), _fields_tag(), _fields_unique() {
+    Storage::Storage(const std::string &dir) : _db(NULL), _fields_tree(), _fields_text(), _fields_tag(), _fields_unique(), _directory(dir) {
         std::string configfile(dir + "/logjam.cfg");
         // XXX load some configuration
         // XXX log the configuration

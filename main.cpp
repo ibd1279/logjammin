@@ -32,37 +32,82 @@
  */
 
 
+#include "build/default/config.h"
 #include <iostream>
 #include <list>
-#include "Model.h"
-#include "Role.h"
-#include "User.h"
+#include "lunar.h"
+#include "Document.h"
+extern "C" {
+#include "lualib.h"
+}
 
-int main(int argc, char * const argv[]) {
-    if(argc > 2) {
-        try {
-            std::cout << "creating some records." << std::endl;
-            logjammin::Role r;
-            r.field("name", "Untrusted");
-            r.add_allowed("login");
-            std::cout << "  " << r["name"].to_str() << std::endl;
-            r.save();
-            
-            r.field("_key", 0);
-            r.field("name", "Trusted");
-            r.add_allowed("login");
-            r.add_allowed("project::view");
-            std::cout << "  " << r["name"].to_str() << std::endl;
-            r.save();
-            std::cout << "Done." << std::endl;
-            
-            logjammin::Role r2;
-            logjammin::Role::at(r.pkey(), r2);
-            std::cout << "  test:" << r2["name"].to_str() << std::endl;
-        } catch(tokyo::Exception &ex) {
-            std::cerr << "SUCK! " << ex.to_s() << std::endl;
+#ifdef HAVE_EDITLINE
+#include <histedit.h>
+#endif
+
+namespace {
+#ifdef HAVE_EDITLINE
+    char *editline_prompt(EditLine *e) {
+        return ">";
+    }
+    void input_loop(lua_State *L) {
+        EditLine *el = el_init("logjam", stdin, stdout, stderr);
+        History *hist = history_init();
+        HistEvent ev;
+        
+        el_set(el, EL_PROMPT, &editline_prompt);
+        el_set(el, EL_EDITOR, "vi");
+        history(hist, &ev, H_SETSIZE, 100);
+        el_set(el, EL_HIST, history, hist);
+        
+        while(1) {
+            int sz;
+            const char *line = el_gets(el, &sz);
+            if(!line)
+                break;
+            if(sz && line && *line) {
+                history(hist, &ev, H_ENTER, line);
+            } else {
+                continue;
+            }
+            if(std::string("quit\n").compare(line) == 0 || std::string("exit\n").compare(line) == 0)
+                break;
+            int error = luaL_loadbuffer(L, line, sz, "line") || lua_pcall(L, 0, 0, 0);
+            if(error) {
+                std::cerr << lua_tostring(L, -1) << std::endl;
+                lua_pop(L, 1);  /* pop error message from the stack */
+            }
+        }
+        history_end(hist);
+        el_end(el);
+    }
+#else
+    void input_loop(lua_State *L) {
+        while(std::cin.good()) {
+            std::string buffer;
+            std::cout << ">" << std::flush;
+            getline(std::cin, buffer);
+            int error = luaL_loadbuffer(L, buffer.c_str(), buffer.size(), "line") || lua_pcall(L, 0, 0, 0);
+            if(error) {
+                std::cerr << lua_tostring(L, -1) << std::endl;
+                lua_pop(L, 1);  /* pop error message from the stack */
+            }
         }
     }
+#endif
+};
+
+
+int main(int argc, char * const argv[]) {
+    lua_State *L = lua_open();   /* opens Lua */
+    luaL_openlibs(L);            /* opens the math lib. */
+    Lunar<tokyo::DocumentNode>::Register(L);
+    Lunar<tokyo::Document>::Register(L);
+    
+    input_loop(L);
+    
+    lua_close(L);
+    return 0;
 }
 
 /*

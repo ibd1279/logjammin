@@ -133,17 +133,7 @@ namespace logjammin {
     const char User::LUNAR_CLASS_NAME[] = "User";
     
     Lunar<User>::RegType User::LUNAR_METHODS[] = {
-    LUNAR_STATIC_METHOD(User, name),
-    LUNAR_STATIC_METHOD(User, email),
-    LUNAR_STATIC_METHOD(User, aim),
-    LUNAR_STATIC_METHOD(User, login_count),
-    LUNAR_INTEGER_GETTER(User, pkey, unsigned long long),
-    LUNAR_STATIC_METHOD(User, allowed),
-    LUNAR_STATIC_METHOD(User, denied),
-    LUNAR_STATIC_METHOD(User, logins),
-    LUNAR_STATIC_METHOD(User, check_allowed),
-    LUNAR_STATIC_METHOD(User, role),
-    {0,0,0}
+    {0,0}
     };
     
     //=====================================================================

@@ -40,7 +40,7 @@ namespace tokyo {
                           const void * const b,
                           size_t b_len) {
             if(a_len != b_len) return false;
-            for(int h = 0; h < b_len; ++h)
+            for(unsigned int h = 0; h < b_len; ++h)
                 if(((const char * const)a)[h] ^ ((const char * const)b)[h])
                     return false;
             return true;

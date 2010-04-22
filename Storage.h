@@ -121,17 +121,17 @@ namespace tokyo {
         }
         
         //! Filter a set based on the Storage field indicies.
-        StorageFilter filter(const std::string &indx,
+        StorageFilter &filter(const std::string &indx,
                              const void * const val,
-                             const size_t val_len) const;
+                             const size_t val_len);
         
         //! Filter a set based on the Storage text indicies.
-        StorageFilter search(const std::string &indx,
-                             const std::string &terms) const;
+        StorageFilter &search(const std::string &indx,
+                             const std::string &terms);
         
         //! Filter a set based on the Storage word indicies.
-        StorageFilter tagged(const std::string &indx,
-                             const std::string &word) const;
+        StorageFilter &tagged(const std::string &indx,
+                             const std::string &word);
         
         //! How many keys are in the set.
         unsigned long long size() { return _keys.size(); }

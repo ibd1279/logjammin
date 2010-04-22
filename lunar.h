@@ -14,8 +14,7 @@ template <typename T> class Lunar {
 public:
     typedef int (T::*mfp)(lua_State *L);
     typedef int (*nmfp)(T*, lua_State *);
-    struct lua_method_wrapper { virtual int operator()(const T*, lua_State *) = 0; };
-    typedef struct { const char *name; mfp mfunc; nmfp nmfunc; lua_method_wrapper *wmfunc; } RegType;
+    typedef struct { const char *name; mfp mfunc; nmfp nmfunc; } RegType;
     
     static void Register(lua_State *L) {
         lua_newtable(L);
@@ -124,42 +123,7 @@ public:
         static_cast<userdataType*>(luaL_checkudata(L, narg, T::LUNAR_CLASS_NAME));
         if(!ud) luaL_typerror(L, narg, T::LUNAR_CLASS_NAME);
         return ud->pT;  // pointer to T object
-    }
-    
-    class string_method : public lua_method_wrapper {
-        typedef std::string (T::*method_type)() const;
-        method_type method;
-    public:
-        string_method(method_type ptr) { method = ptr; }
-        int operator()(const T *obj, lua_State *L) {
-            lua_pushstring(L, (obj->*method)().c_str());
-            return 1;
-        }
-    };
-
-    template <typename R>
-    class integer_method : public lua_method_wrapper {
-        typedef R (T::*method_type)() const;
-        method_type method;
-    public:
-        integer_method(method_type ptr) { method = ptr; }
-        int operator()(const T *obj, lua_State *L) {
-            lua_pushinteger(L, (obj->*method)());
-            return 1;
-        }
-    };
-
-    template <typename R>
-    class number_method : public lua_method_wrapper {
-        typedef R (T::*method_type)() const;
-        method_type method;
-    public:
-        number_method(method_type ptr) { method = ptr; }
-        int operator()(const T *obj, lua_State *L) {
-            lua_pushnumber(L, (obj->*method)());
-            return 1;
-        }
-    };
+    }    
     
 private:
     Lunar();  // hide default constructor
@@ -175,8 +139,7 @@ private:
             return (obj->*(l->mfunc))(L);
         else if(l->nmfunc)
             return (*(l->nmfunc))(obj, L);
-        else
-            return (*(l->wmfunc))(obj, L);
+        return 0;
     }
     
     // create a new T object and
@@ -255,8 +218,5 @@ private:
     }
 };
 
-#define LUNAR_MEMBER_METHOD(Class, Name) {#Name, &Class::Name, 0, 0}
-#define LUNAR_STATIC_METHOD(Prefix, Name) {#Name, 0, &Prefix##_##Name, 0}
-#define LUNAR_STRING_GETTER(Class, Name) {#Name, 0, 0, new Lunar<Class>::string_method(&Class::Name)}
-#define LUNAR_NUMBER_GETTER(Class, Name, Type) {#Name, 0, 0, new Lunar<Class>::number_method<Type>(&Class::Name)}
-#define LUNAR_INTEGER_GETTER(Class, Name, Type) {#Name, 0, 0, new Lunar<Class>::integer_method<Type>(&Class::Name)}
+#define LUNAR_MEMBER_METHOD(Class, Name) {#Name, &Class::_##Name, 0}
+#define LUNAR_STATIC_METHOD(Prefix, Name) {#Name, 0, &Prefix##_##Name}
