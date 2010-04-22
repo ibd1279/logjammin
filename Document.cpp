@@ -37,6 +37,7 @@
 #include <list>
 #include <sstream>
 #include <iostream>
+#include <fstream>
 
 namespace tokyo {
     namespace {
@@ -130,6 +131,9 @@ namespace tokyo {
             case INT32_NODE:
             case INT64_NODE:
                 lua_pushinteger(L, child(name).to_long());
+                break;
+            case STRING_NODE:
+                lua_pushstring(L, child(name).to_str().c_str());
                 break;
             case DOUBLE_NODE:
             default:
@@ -647,11 +651,25 @@ namespace tokyo {
     
     Lunar<Document>::RegType Document::LUNAR_METHODS[] = {
     LUNAR_MEMBER_METHOD(Document, at),
+    LUNAR_MEMBER_METHOD(Document, save),
+    LUNAR_MEMBER_METHOD(Document, load),
     {0, 0}
     };
     
     int Document::_at(lua_State *L) {
         return _doc->_at(L);
+    }
+    
+    int Document::_save(lua_State *L) {
+        std::string n(luaL_checkstring(L, -1));
+        save(n);
+        return 0;
+    }
+    
+    int Document::_load(lua_State *L) {
+        std::string n(luaL_checkstring(L, -1));
+        load(n);
+        return 0;
     }
     
     //=====================================================================
@@ -784,5 +802,33 @@ namespace tokyo {
         navigate_document(*_doc, parts).child(child, v);
         return *this;
     }
-
+    Document &Document::load(const std::string &filename) {
+        std::ifstream f(filename.c_str());
+        long sz = 0, offset = 4;
+        
+        f.read((char *)(&sz), 4);
+        char *data = new char[sz];
+        memcpy(data, &sz, 4);
+        
+        while(offset < sz) {
+            f.read((data + offset), sz - offset);
+            offset += f.gcount();
+        }
+        _doc->value(DOC_NODE, data);
+        
+        delete[] data;
+        f.close();
+        return *this;
+    }
+    Document &Document::save(const std::string &filename) {
+        std::ofstream f(filename.c_str());
+        long sz = _doc->size();
+        
+        char *data = (char *)_doc->to_bson();
+        f.write(data, sz);
+        
+        free(data);
+        f.close();
+        return *this;
+    }
 };

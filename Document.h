@@ -184,6 +184,10 @@ namespace tokyo {
         
         virtual int _at(lua_State *L);
         
+        virtual int _load(lua_State *L);
+        
+        virtual int _save(lua_State *L);
+        
         //=====================================================================
         // Document ctor/dtor
         //=====================================================================
@@ -241,5 +245,11 @@ namespace tokyo {
         void key(unsigned long long k) {
             path("_key", (const long long)k);
         }
+        
+        //! load the Document object from a specific file path.
+        virtual Document &load(const std::string &filename);
+        
+        //! Save the Document object to a specific file path.
+        virtual Document &save(const std::string &filename);
     };
 };
