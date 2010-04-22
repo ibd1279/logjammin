@@ -31,6 +31,7 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "build/default/config.h"
 #include "Document.h"
 #include "Exception.h"
 #include <cstring>
@@ -803,7 +804,9 @@ namespace tokyo {
         return *this;
     }
     Document &Document::load(const std::string &filename) {
-        std::ifstream f(filename.c_str());
+        std::string fn(DBDIR);
+        fn.append(filename);
+        std::ifstream f(fn.c_str());
         long sz = 0, offset = 4;
         
         f.read((char *)(&sz), 4);
@@ -821,7 +824,9 @@ namespace tokyo {
         return *this;
     }
     Document &Document::save(const std::string &filename) {
-        std::ofstream f(filename.c_str());
+        std::string fn(DBDIR);
+        fn.append(filename);
+        std::ofstream f(fn.c_str());
         long sz = _doc->size();
         
         char *data = (char *)_doc->to_bson();

@@ -4,12 +4,18 @@ Depends on the following libraries:
     tokyocabinet
     tokyodystopia
     lua
-    libedit (NetBSD editline)
+    libedit (optional)
     curl
     crypto
     expact
 
+Configure using:
+    ./waf configure
+
+    options
+        --dbdir=["/var/db/logjam"]
 
 Build using:
-    ./waf configure
     ./waf build
+
+
