@@ -85,9 +85,11 @@ namespace tokyo {
         //! Create a new document node for lua.
         DocumentNode(lua_State *L);
         
-        virtual int _at(lua_State *L);
+        virtual int _child(lua_State *L);
         
         virtual int _set(lua_State *L);
+        
+        virtual int _val(lua_State *L);
         
         //=====================================================================
         // DocumentNode ctor/dtor
@@ -182,7 +184,9 @@ namespace tokyo {
         //! Create a new document node for lua.
         Document(lua_State *L);
         
-        virtual int _at(lua_State *L);
+        virtual int _child(lua_State *L);
+        
+        virtual int _root(lua_State *L);
         
         virtual int _load(lua_State *L);
         

@@ -117,24 +117,29 @@ namespace tokyo {
     const char DocumentNode::LUNAR_CLASS_NAME[] = "DocumentNode";
     
     Lunar<DocumentNode>::RegType DocumentNode::LUNAR_METHODS[] = {
-    LUNAR_MEMBER_METHOD(DocumentNode, at),
+    LUNAR_MEMBER_METHOD(DocumentNode, child),
+    LUNAR_MEMBER_METHOD(DocumentNode, val),
     LUNAR_MEMBER_METHOD(DocumentNode, set),
     {0, 0}
     };
     
-    int DocumentNode::_at(lua_State *L) {
+    int DocumentNode::_child(lua_State *L) {
         std::string name(luaL_checkstring(L, -1));
-        switch(child(name).type()) {
-            case DOC_NODE:
-            case ARRAY_NODE:
-                Lunar<DocumentNode>::push(L, &(child(name)), false);
-                break;
+        Lunar<DocumentNode>::push(L, &(child(name)), false);
+        return 1;
+    }
+    
+    int DocumentNode::_val(lua_State *L) {
+        switch(type()) {
             case INT32_NODE:
             case INT64_NODE:
-                lua_pushinteger(L, child(name).to_long());
+            case TIMESTAMP_NODE:
+                lua_pushinteger(L, to_long());
                 break;
+            case DOC_NODE:
+            case ARRAY_NODE:
             case STRING_NODE:
-                lua_pushstring(L, child(name).to_str().c_str());
+                lua_pushstring(L, to_str().c_str());
                 break;
             case DOUBLE_NODE:
             default:
@@ -651,14 +656,20 @@ namespace tokyo {
     const char Document::LUNAR_CLASS_NAME[] = "Document";
     
     Lunar<Document>::RegType Document::LUNAR_METHODS[] = {
-    LUNAR_MEMBER_METHOD(Document, at),
+    LUNAR_MEMBER_METHOD(Document, child),
+    LUNAR_MEMBER_METHOD(Document, root),
     LUNAR_MEMBER_METHOD(Document, save),
     LUNAR_MEMBER_METHOD(Document, load),
     {0, 0}
     };
     
-    int Document::_at(lua_State *L) {
-        return _doc->_at(L);
+    int Document::_child(lua_State *L) {
+        return _doc->_child(L);
+    }
+    
+    int Document::_root(lua_State *L) {
+        Lunar<DocumentNode>::push(L, _doc, false);
+        return 1;
     }
     
     int Document::_save(lua_State *L) {
@@ -805,7 +816,7 @@ namespace tokyo {
     }
     Document &Document::load(const std::string &filename) {
         std::string fn(DBDIR);
-        fn.append(filename);
+        fn.append("/").append(filename);
         std::ifstream f(fn.c_str());
         long sz = 0, offset = 4;
         
@@ -825,7 +836,7 @@ namespace tokyo {
     }
     Document &Document::save(const std::string &filename) {
         std::string fn(DBDIR);
-        fn.append(filename);
+        fn.append("/").append(filename);
         std::ofstream f(fn.c_str());
         long sz = _doc->size();
         
