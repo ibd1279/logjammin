@@ -12,6 +12,7 @@
 		220AD6C30FA1FFD400C604BE /* libtokyocabinet.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 220AD6C20FA1FFD400C604BE /* libtokyocabinet.a */; };
 		220AD6F90FA215F800C604BE /* openprop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 220AD6F50FA215F800C604BE /* openprop.cpp */; };
 		220AD6FA0FA215F800C604BE /* parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 220AD6F80FA215F800C604BE /* parser.cpp */; };
+		220D9D2F117FD8C0000F20D0 /* logjam.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 220D9D2E117FD8C0000F20D0 /* logjam.cpp */; };
 		221577CC100F38270020B133 /* ProjectController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 221577CB100F38270020B133 /* ProjectController.cpp */; };
 		221B34460FA8995D009AB597 /* liblua.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 221B34450FA8995D009AB597 /* liblua.a */; };
 		221B344D0FA89B99009AB597 /* ModuleCompilier.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 221B344A0FA89B99009AB597 /* ModuleCompilier.cpp */; };
@@ -36,7 +37,6 @@
 		22E9C71B1176BA8000557ADA /* Tokyo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 22E9C71A1176BA8000557ADA /* Tokyo.cpp */; };
 		22E9C96D117BF18B00557ADA /* Storage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 22E9C96C117BF18B00557ADA /* Storage.cpp */; };
 		31B1564F11714D5B008A5BE3 /* Document.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31B1564E11714D5B008A5BE3 /* Document.cpp */; };
-		8DD76F650486A84900D96B5E /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 08FB7796FE84155DC02AAC07 /* main.cpp */; settings = {ATTRIBUTES = (); }; };
 		8DD76F6A0486A84900D96B5E /* logjammin.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = C6859E8B029090EE04C91782 /* logjammin.1 */; };
 /* End PBXBuildFile section */
 
@@ -54,7 +54,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		08FB7796FE84155DC02AAC07 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		2202B2430FFE56C000B6FCEC /* Tokyo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Tokyo.h; sourceTree = "<group>"; };
 		2202B35C0FFFA4D100B6FCEC /* Project.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Project.h; sourceTree = "<group>"; };
 		2202B35D0FFFA4D100B6FCEC /* Project.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Project.cpp; sourceTree = "<group>"; };
@@ -67,8 +66,7 @@
 		220AD6F70FA215F800C604BE /* parser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parser.h; sourceTree = "<group>"; };
 		220AD6F80FA215F800C604BE /* parser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parser.cpp; sourceTree = "<group>"; };
 		220AD7070FA233E600C604BE /* Model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Model.h; sourceTree = "<group>"; };
-		22157781100EBAD60020B133 /* header-auth.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "header-auth.html"; sourceTree = "<group>"; };
-		2215778F100EBF150020B133 /* header-unauth.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "header-unauth.html"; sourceTree = "<group>"; };
+		220D9D2E117FD8C0000F20D0 /* logjam.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = logjam.cpp; sourceTree = "<group>"; };
 		221577CA100F38270020B133 /* ProjectController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ProjectController.h; sourceTree = "<group>"; };
 		221577CB100F38270020B133 /* ProjectController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ProjectController.cpp; sourceTree = "<group>"; };
 		221B34450FA8995D009AB597 /* liblua.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblua.a; path = /opt/local/lib/liblua.a; sourceTree = "<absolute>"; };
@@ -77,8 +75,6 @@
 		221B34820FA8C302009AB597 /* lunar.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lunar.h; sourceTree = "<group>"; };
 		2222BE34101E89D000CE52E6 /* UserController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UserController.h; sourceTree = "<group>"; };
 		2222BE35101E89D000CE52E6 /* UserController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = UserController.cpp; sourceTree = "<group>"; };
-		2222BE42101E8BEB00CE52E6 /* user-list.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "user-list.html"; sourceTree = "<group>"; };
-		2222BE49101F24D300CE52E6 /* user-edit.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "user-edit.html"; sourceTree = "<group>"; };
 		2222BE6E101F83B400CE52E6 /* libtokyodystopia.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libtokyodystopia.dylib; path = /usr/local/lib/libtokyodystopia.dylib; sourceTree = "<absolute>"; };
 		2222BE7D101FA32100CE52E6 /* OpenIDConsumer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenIDConsumer.h; sourceTree = "<group>"; };
 		2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = OpenIDConsumer.cpp; sourceTree = "<group>"; };
@@ -87,28 +83,18 @@
 		2222C09610214AB600CE52E6 /* RssController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RssController.h; sourceTree = "<group>"; };
 		2222C09710214AB600CE52E6 /* RssController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RssController.cpp; sourceTree = "<group>"; };
 		2222C09B1021D11200CE52E6 /* libexpat.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libexpat.dylib; path = usr/lib/libexpat.dylib; sourceTree = SDKROOT; };
-		2222C10C1021F5D500CE52E6 /* commit-feed.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "commit-feed.html"; sourceTree = "<group>"; };
 		222B665C101E46F300F45B04 /* libcrypto.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcrypto.dylib; path = usr/lib/libcrypto.dylib; sourceTree = SDKROOT; };
 		223517341114E14000871FBF /* Release.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Release.h; sourceTree = "<group>"; };
 		223517351114E14000871FBF /* Release.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Release.cpp; sourceTree = "<group>"; };
-		2236197A111D0D880019641E /* release-list.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "release-list.html"; sourceTree = "<group>"; };
-		223619A3111D31310019641E /* backlog-purge.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "backlog-purge.html"; sourceTree = "<group>"; };
 		223619AD111DDFF00019641E /* ReleaseController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ReleaseController.h; sourceTree = "<group>"; };
 		223619AE111DDFF00019641E /* ReleaseController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ReleaseController.cpp; sourceTree = "<group>"; };
-		2238DF8C0FBE000100842744 /* backlog-edit.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "backlog-edit.html"; sourceTree = "<group>"; };
 		223D698310078F5800F79019 /* Controller.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Controller.cpp; sourceTree = "<group>"; };
 		224046D5100595160005461A /* User.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = User.h; sourceTree = "<group>"; };
 		224046D6100595160005461A /* User.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = User.cpp; sourceTree = "<group>"; };
 		224046DA100597D90005461A /* Role.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Role.h; sourceTree = "<group>"; };
 		224046DB100597D90005461A /* Role.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Role.cpp; sourceTree = "<group>"; };
-		2265F69B1023E39500B3621F /* backlog-list.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = "backlog-list.json"; sourceTree = "<group>"; };
 		2271D918101288A000749D9A /* BacklogController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BacklogController.h; sourceTree = "<group>"; };
 		2271D919101288A000749D9A /* BacklogController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BacklogController.cpp; sourceTree = "<group>"; };
-		2271D98C1012C06D00749D9A /* error-404.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "error-404.html"; sourceTree = "<group>"; };
-		2271D98D1012C06D00749D9A /* footer-auth.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "footer-auth.html"; sourceTree = "<group>"; };
-		2271D98E1012C06D00749D9A /* footer-unauth.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "footer-unauth.html"; sourceTree = "<group>"; };
-		2271D98F1012C06D00749D9A /* login.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = login.html; sourceTree = "<group>"; };
-		2271D9901012C06D00749D9A /* project-purge.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "project-purge.html"; sourceTree = "<group>"; };
 		227A47051018186B0013EACE /* libcurl.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcurl.dylib; path = /usr/lib/libcurl.dylib; sourceTree = "<absolute>"; };
 		229F36090FAA34E3003A1626 /* Response.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Response.h; sourceTree = "<group>"; };
 		229F360A0FAA34E3003A1626 /* Response.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Response.cpp; sourceTree = "<group>"; };
@@ -119,8 +105,6 @@
 		22D32CA8102AACB50015E71D /* Doxyfile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Doxyfile; sourceTree = "<group>"; };
 		22D32CA9102AACB50015E71D /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		22D32CAA102AACB50015E71D /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
-		22D32CBB102AB3330015E71D /* role-edit.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "role-edit.html"; sourceTree = "<group>"; };
-		22D32CBC102AB3330015E71D /* role-list.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "role-list.html"; sourceTree = "<group>"; };
 		22DB7C5D101A5CC800BEEB52 /* OpenID.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenID.h; sourceTree = "<group>"; };
 		22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = OpenID.cpp; sourceTree = "<group>"; };
 		22E9C71A1176BA8000557ADA /* Tokyo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Tokyo.cpp; sourceTree = "<group>"; };
@@ -129,9 +113,6 @@
 		22E9C9A8117C894700557ADA /* Exception.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Exception.h; sourceTree = "<group>"; };
 		22ED3BBF0FB8704A004E2511 /* Controller.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Controller.h; sourceTree = "<group>"; };
 		22ED3C110FB8F99C004E2511 /* Seed.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Seed.h; sourceTree = "<group>"; };
-		22ED3CB90FB9210C004E2511 /* project-list.html */ = {isa = PBXFileReference; explicitFileType = text.html; fileEncoding = 4; path = "project-list.html"; sourceTree = "<group>"; };
-		22ED3CFA0FBA00C9004E2511 /* backlog-list.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "backlog-list.html"; sourceTree = "<group>"; };
-		22ED3CFB0FBA00C9004E2511 /* project-edit.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = "project-edit.html"; sourceTree = "<group>"; };
 		31B1564D11714D5B008A5BE3 /* Document.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Document.h; sourceTree = "<group>"; };
 		31B1564E11714D5B008A5BE3 /* Document.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Document.cpp; sourceTree = "<group>"; };
 		8DD76F6C0486A84900D96B5E /* logjammin */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = logjammin; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -174,10 +155,9 @@
 		08FB7795FE84155DC02AAC07 /* Source */ = {
 			isa = PBXGroup;
 			children = (
-				08FB7796FE84155DC02AAC07 /* main.cpp */,
+				220D9D2E117FD8C0000F20D0 /* logjam.cpp */,
 				2261AF4F10D1E63000841C84 /* Database */,
 				220AD7060FA233CB00C604BE /* Model */,
-				22ED3CB80FB920F7004E2511 /* Templates */,
 				22ED3BBE0FB8701A004E2511 /* Controller */,
 				22D30BE00FA78EF8005DE0D9 /* CGI */,
 				220AD6F30FA215F800C604BE /* Config Parser */,
@@ -279,32 +259,6 @@
 			name = Controller;
 			sourceTree = "<group>";
 		};
-		22ED3CB80FB920F7004E2511 /* Templates */ = {
-			isa = PBXGroup;
-			children = (
-				2271D98C1012C06D00749D9A /* error-404.html */,
-				2271D98D1012C06D00749D9A /* footer-auth.html */,
-				2271D98E1012C06D00749D9A /* footer-unauth.html */,
-				2271D98F1012C06D00749D9A /* login.html */,
-				22157781100EBAD60020B133 /* header-auth.html */,
-				2215778F100EBF150020B133 /* header-unauth.html */,
-				2238DF8C0FBE000100842744 /* backlog-edit.html */,
-				22ED3CFA0FBA00C9004E2511 /* backlog-list.html */,
-				2265F69B1023E39500B3621F /* backlog-list.json */,
-				223619A3111D31310019641E /* backlog-purge.html */,
-				2236197A111D0D880019641E /* release-list.html */,
-				22ED3CFB0FBA00C9004E2511 /* project-edit.html */,
-				22ED3CB90FB9210C004E2511 /* project-list.html */,
-				2271D9901012C06D00749D9A /* project-purge.html */,
-				2222BE49101F24D300CE52E6 /* user-edit.html */,
-				2222BE42101E8BEB00CE52E6 /* user-list.html */,
-				22D32CBB102AB3330015E71D /* role-edit.html */,
-				22D32CBC102AB3330015E71D /* role-list.html */,
-				2222C10C1021F5D500CE52E6 /* commit-feed.html */,
-			);
-			name = Templates;
-			sourceTree = "<group>";
-		};
 		C6859E8C029090F304C91782 /* Documentation */ = {
 			isa = PBXGroup;
 			children = (
@@ -376,7 +330,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8DD76F650486A84900D96B5E /* main.cpp in Sources */,
 				220AD6F90FA215F800C604BE /* openprop.cpp in Sources */,
 				220AD6FA0FA215F800C604BE /* parser.cpp in Sources */,
 				22D30BE30FA78F53005DE0D9 /* Request.cpp in Sources */,
@@ -400,6 +353,7 @@
 				31B1564F11714D5B008A5BE3 /* Document.cpp in Sources */,
 				22E9C71B1176BA8000557ADA /* Tokyo.cpp in Sources */,
 				22E9C96D117BF18B00557ADA /* Storage.cpp in Sources */,
+				220D9D2F117FD8C0000F20D0 /* logjam.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
