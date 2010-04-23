@@ -31,6 +31,7 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "build/default/config.h"
 #include "Tokyo.h"
 
 namespace tokyo {

@@ -13,6 +13,7 @@
 		220AD6F90FA215F800C604BE /* openprop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 220AD6F50FA215F800C604BE /* openprop.cpp */; };
 		220AD6FA0FA215F800C604BE /* parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 220AD6F80FA215F800C604BE /* parser.cpp */; };
 		220D9D2F117FD8C0000F20D0 /* logjam.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 220D9D2E117FD8C0000F20D0 /* logjam.cpp */; };
+		220D9D7811809F70000F20D0 /* DocumentNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 220D9D7711809F70000F20D0 /* DocumentNode.cpp */; };
 		221577CC100F38270020B133 /* ProjectController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 221577CB100F38270020B133 /* ProjectController.cpp */; };
 		221B34460FA8995D009AB597 /* liblua.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 221B34450FA8995D009AB597 /* liblua.a */; };
 		221B344D0FA89B99009AB597 /* ModuleCompilier.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 221B344A0FA89B99009AB597 /* ModuleCompilier.cpp */; };
@@ -67,6 +68,8 @@
 		220AD6F80FA215F800C604BE /* parser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parser.cpp; sourceTree = "<group>"; };
 		220AD7070FA233E600C604BE /* Model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Model.h; sourceTree = "<group>"; };
 		220D9D2E117FD8C0000F20D0 /* logjam.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = logjam.cpp; sourceTree = "<group>"; };
+		220D9D7611809F70000F20D0 /* DocumentNode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DocumentNode.h; sourceTree = "<group>"; };
+		220D9D7711809F70000F20D0 /* DocumentNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DocumentNode.cpp; sourceTree = "<group>"; };
 		221577CA100F38270020B133 /* ProjectController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ProjectController.h; sourceTree = "<group>"; };
 		221577CB100F38270020B133 /* ProjectController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ProjectController.cpp; sourceTree = "<group>"; };
 		221B34450FA8995D009AB597 /* liblua.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblua.a; path = /opt/local/lib/liblua.a; sourceTree = "<absolute>"; };
@@ -212,6 +215,8 @@
 				22E9C9A8117C894700557ADA /* Exception.h */,
 				2202B2430FFE56C000B6FCEC /* Tokyo.h */,
 				22E9C71A1176BA8000557ADA /* Tokyo.cpp */,
+				220D9D7611809F70000F20D0 /* DocumentNode.h */,
+				220D9D7711809F70000F20D0 /* DocumentNode.cpp */,
 				31B1564D11714D5B008A5BE3 /* Document.h */,
 				31B1564E11714D5B008A5BE3 /* Document.cpp */,
 				22E9C96B117BF18B00557ADA /* Storage.h */,
@@ -354,6 +359,7 @@
 				22E9C71B1176BA8000557ADA /* Tokyo.cpp in Sources */,
 				22E9C96D117BF18B00557ADA /* Storage.cpp in Sources */,
 				220D9D2F117FD8C0000F20D0 /* logjam.cpp in Sources */,
+				220D9D7811809F70000F20D0 /* DocumentNode.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

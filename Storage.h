@@ -33,7 +33,7 @@
  */
 
 #include "Tokyo.h"
-#include "Document.h"
+#include "DocumentNode.h"
 #include <list>
 #include <map>
 #include <set>
@@ -79,7 +79,7 @@ namespace tokyo {
         long long _length;
         
         //! Internal method to hide some logic for the template code below.
-        Document doc_at(unsigned long long pkey) const;
+        DocumentNode doc_at(unsigned long long pkey) const;
     public:
         //! Create a new Storage Filter.
         StorageFilter(const Storage *storage,
@@ -196,7 +196,7 @@ namespace tokyo {
         virtual ~Storage();
         
         //! Get the document stored for the key.
-        virtual Document at(const unsigned long long key) const;
+        virtual DocumentNode at(const unsigned long long key) const;
         
         //! Get a set of all keys.
         virtual StorageFilter all() const;
@@ -218,10 +218,10 @@ namespace tokyo {
                                      const std::string &word) const;
         
         //! place a document in storage.
-        virtual Storage &place(Document &value);
+        virtual Storage &place(DocumentNode &value);
         
         //! remove a document from storage.
-        virtual Storage &remove(Document &value);
+        virtual Storage &remove(DocumentNode &value);
         
         //! Begin a transaction.
         void begin_transaction();

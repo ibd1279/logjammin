@@ -31,6 +31,8 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "build/default/config.h"
+#include <iostream>
 #include "Storage.h"
 #include "Exception.h"
 
@@ -52,7 +54,7 @@ namespace tokyo {
     // Storage Filter Implementation.
     //=====================================================================
     
-    Document StorageFilter::doc_at(unsigned long long pkey) const {
+    DocumentNode StorageFilter::doc_at(unsigned long long pkey) const {
         return _storage->at(pkey);
     }
     
@@ -165,12 +167,15 @@ namespace tokyo {
     // Storage Implementation.
     //=====================================================================    
     
-    Storage::Storage(const std::string &dir) : _db(NULL), _fields_tree(), _fields_text(), _fields_tag(), _fields_unique(), _directory(dir) {
-        std::string configfile(dir + "/logjam.cfg");
-        // XXX load some configuration
-        // XXX log the configuration
-        // XXX log the start up of the db.
-        _db = new TreeDB(dir + "/db.tcb",
+    Storage::Storage(const std::string &dir) : _db(NULL), _fields_tree(), _fields_text(), _fields_tag(), _fields_unique(), _directory(DBDIR) {
+        _directory.append("/").append(dir);
+        std::string configfile(_directory + "/config");
+        std::cerr << "Loading configuration from " << configfile << std::endl;
+        DocumentNode cfg;
+        cfg.load(configfile);
+        std::cerr << "Loaded Settings " << cfg.to_s() << std::endl;
+        std::cerr << "Starting Database " << _directory << "/" << cfg.nav("main/file").to_s() << std::endl;
+        _db = new TreeDB(_directory + "/" + cfg.nav("main/file").to_s(),
                          BDBOREADER | BDBOWRITER | BDBOCREAT,
                          NULL);
         // XXX allocate different indicies.
@@ -201,11 +206,13 @@ namespace tokyo {
         delete _db;
     }
     
-    Document Storage::at(const unsigned long long key) const {
+    DocumentNode Storage::at(const unsigned long long key) const {
         DB::value_t p = _db->at(&key, sizeof(unsigned long long));
         if(!p.first)
-            return Document();
-        return Document(p);
+            return DocumentNode();
+        DocumentNode n(DOC_NODE, (char *)p.first);
+        free(p.first);
+        return n;
     }
     
     StorageFilter Storage::all() const {
@@ -271,8 +278,9 @@ namespace tokyo {
         return StorageFilter(this, searcher_values);
     }
     
-    Storage &Storage::place(Document &value) {
-        unsigned long long key = value.key(), original_key = value.key();
+    Storage &Storage::place(DocumentNode &value) {
+        unsigned long long key = value.nav("__key").to_l();
+        unsigned long long original_key = value.nav("__key").to_l();
         try {
             begin_transaction();
             if(key) {
@@ -287,15 +295,14 @@ namespace tokyo {
             for(std::set<std::string>::const_iterator iter = _fields_unique.begin();
                 iter != _fields_unique.end();
                 ++iter) {
-                DocumentNode n(value.path(*iter));
+                DocumentNode n(value.nav(*iter));
                 if(n.exists()) {
                     std::map<std::string, TreeDB *>::const_iterator index = _fields_tree.find(*iter);
                     if(index != _fields_tree.end()) {
-                        void *bson = n.to_bson();
+                        char *bson = n.bson();
                         DB::value_t existing = index->second->at(bson,
                                                                  n.size());
-                        if(n.type() == DOC_NODE || n.type() == ARRAY_NODE)
-                            free(bson);
+                        delete[] bson;
                         if(existing.first)
                             throw Exception("StorageError",
                                             std::string("Unable to place record because of unique constraint [").append(*iter).append("]."));
@@ -304,34 +311,34 @@ namespace tokyo {
             }
             
             // Place in the primary database.
-            value.key(key);
-            DB::value_t v(value.to_db_value());
+            value.nav("__key").value((long long)key);
+            char *bson = value.bson();
             _db->place(&key,
                        sizeof(unsigned long long),
-                       v.first,
-                       v.second);
-            free(v.first);
+                       bson,
+                       value.size());
+            delete[] bson;
             
             reindex(key);
             commit_transaction();
         } catch(Exception ex) {
-            value.key(original_key);
+            value.nav("__key").value((long long)original_key);
             abort_transaction();
             throw ex;
         }
         return *this;
     }
     
-    Storage &Storage::remove(Document &value) {
-        if(value.key()) {
-            unsigned long long key = value.key();
+    Storage &Storage::remove(DocumentNode &value) {
+        unsigned long long key = value.nav("__key").to_l();
+        if(key) {
             try {
                 begin_transaction();
                 deindex(key);
                 _db->remove(&key,
                             sizeof(unsigned long long));
                 commit_transaction();
-                value.key(0);
+                value.nav("__key").value(0LL);
             } catch(Exception ex) {
                 abort_transaction();
                 throw ex;
@@ -344,37 +351,36 @@ namespace tokyo {
         if(!key) return *this;
         
         // Get the original document
-        Document original = at(key);
+        DocumentNode original = at(key);
         
         // Remove from index entries.
         for(std::map<std::string, TreeDB *>::const_iterator iter = _fields_tree.begin();
             iter != _fields_tree.end();
             ++iter) {
-            DocumentNode n(original.path(iter->first));
+            DocumentNode n(original.nav(iter->first));
             if(n.exists()) {
-                void *bson = n.to_bson();
+                char *bson = n.bson();
                 iter->second->remove_from_existing(bson,
                                                    n.size(),
                                                    &key,
                                                    sizeof(unsigned long long));
-                if(n.type() == DOC_NODE || n.type() == ARRAY_NODE)
-                    free(bson);
+                delete[] bson;
             }
         }
         for(std::map<std::string, TextSearcher *>::const_iterator iter = _fields_text.begin();
             iter != _fields_text.end();
             ++iter) {
-            DocumentNode n(original.path(iter->first));
+            DocumentNode n(original.nav(iter->first));
             if(n.exists()) {
-                iter->second->remove(key, n.to_str());
+                iter->second->remove(key, n.to_s());
             }
         }
         for(std::map<std::string, TagSearcher *>::const_iterator iter = _fields_tag.begin();
             iter != _fields_tag.end();
             ++iter) {
-            DocumentNode n(original.path(iter->first));
+            DocumentNode n(original.nav(iter->first));
             if(n.exists()) {
-                iter->second->remove(key, n.to_str_set());
+                iter->second->remove(key, n.to_set());
             }
         }
         return *this;
@@ -383,15 +389,15 @@ namespace tokyo {
         if(!key) return *this;
         
         // Get the original document
-        Document original = at(key);
+        DocumentNode original = at(key);
         
         // Place in the index.
         for(std::map<std::string, TreeDB *>::const_iterator iter = _fields_tree.begin();
             iter != _fields_tree.end();
             ++iter) {
-            DocumentNode n(original.path(iter->first));
+            DocumentNode n(original.nav(iter->first));
             if(n.exists()) {
-                void *bson = n.to_bson();
+                char *bson = n.bson();
                 if(_fields_unique.find(iter->first) == _fields_unique.end()) {
                     iter->second->place_with_existing(bson,
                                                       n.size(),
@@ -403,24 +409,23 @@ namespace tokyo {
                                         &key,
                                         sizeof(unsigned long long));
                 }
-                if(n.type() == DOC_NODE || n.type() == ARRAY_NODE)
-                    free(bson);
+                delete[] bson;
             }
         }
         for(std::map<std::string, TextSearcher *>::const_iterator iter = _fields_text.begin();
             iter != _fields_text.end();
             ++iter) {
-            DocumentNode n(original.path(iter->first));
+            DocumentNode n(original.nav(iter->first));
             if(n.exists()) {
-                iter->second->index(key, n.to_str());
+                iter->second->index(key, n.to_s());
             }
         }
         for(std::map<std::string, TagSearcher *>::const_iterator iter = _fields_tag.begin();
             iter != _fields_tag.end();
             ++iter) {
-            DocumentNode n(original.path(iter->first));
+            DocumentNode n(original.nav(iter->first));
             if(n.exists()) {
-                iter->second->index(key, n.to_str_set());
+                iter->second->index(key, n.to_set());
             }
         }
         return *this;

@@ -51,8 +51,8 @@ namespace tokyo {
     public:
         //! Create a new exception object.
         /*!
-         \param lbl The type of exception.
-         \param emsg Exception message.
+         \param label The type of exception.
+         \param msg Exception message.
          */
         Exception(const char *label, const std::string &msg) : _msg(msg), _label(label) {
         }

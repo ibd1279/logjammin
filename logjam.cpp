@@ -37,6 +37,7 @@
 #include <list>
 #include "lunar.h"
 #include "Document.h"
+#include "Storage.h"
 extern "C" {
 #include "lualib.h"
 }
@@ -46,6 +47,21 @@ extern "C" {
 #endif
 
 namespace {
+    void read_from_cin(bool prompt, lua_State *L) {
+        while(std::cin.good()) {
+            std::string buffer;
+            if(prompt) {
+                std::cout << ">" << std::flush;
+            }
+            getline(std::cin, buffer);
+            int error = luaL_loadbuffer(L, buffer.c_str(), buffer.size(), "line") || lua_pcall(L, 0, 0, 0);
+            if(error) {
+                std::cerr << lua_tostring(L, -1) << std::endl;
+                lua_pop(L, 1);  /* pop error message from the stack */
+            }
+        }
+    }
+    
 #ifdef HAVE_EDITLINE
     char *editline_prompt(EditLine *e) {
         return ">";
@@ -83,28 +99,23 @@ namespace {
     }
 #else
     void input_loop(lua_State *L) {
-        while(std::cin.good()) {
-            std::string buffer;
-            std::cout << ">" << std::flush;
-            getline(std::cin, buffer);
-            int error = luaL_loadbuffer(L, buffer.c_str(), buffer.size(), "line") || lua_pcall(L, 0, 0, 0);
-            if(error) {
-                std::cerr << lua_tostring(L, -1) << std::endl;
-                lua_pop(L, 1);  /* pop error message from the stack */
-            }
-        }
+        read_from_cin(true, L);
     }
 #endif
 };
 
 
 int main(int argc, char * const argv[]) {
-    lua_State *L = lua_open();   /* opens Lua */
-    luaL_openlibs(L);            /* opens the math lib. */
+    lua_State *L = lua_open();
+    luaL_openlibs(L);
     Lunar<tokyo::DocumentNode>::Register(L);
-    Lunar<tokyo::Document>::Register(L);
-    
-    input_loop(L);
+
+    tokyo::Storage s("role");
+    if(argc > 1 && strcmp(argv[1], "-") == 0) {
+        read_from_cin(false, L);
+    } else {
+        input_loop(L);
+    }
     
     lua_close(L);
     return 0;

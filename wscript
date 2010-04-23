@@ -24,6 +24,20 @@ def configure(ctx):
         includes='/usr/include/',
         define_name='HAVE_EDITLINE'
     )
+    ctx.check_cxx(
+        header_name='dystopia.h',
+        lib=['tokyodystopia'],
+        libpath=['/usr/local/lib', '/opt/local/lib/'],
+        includes=['/usr/local/include', '/opt/local/include/'],
+        mandatory=True
+    )
+    ctx.check_cxx(
+        header_name='tcutil.h',
+        lib=['tokyocabinet'],
+        libpath=['/usr/local/lib', '/opt/local/lib/'],
+        includes=['/usr/local/include', '/opt/local/include/'],
+        mandatory=True
+    )
     ctx.write_config_header('config.h')
 
 def make_data_dir(ctx):
@@ -36,14 +50,14 @@ def build(ctx):
 
     t = ctx(
         features = ['cxx', 'cprogram'],
-        source = 'logjam.cpp Tokyo.cpp Document.cpp Storage.cpp',
+        source = 'logjam.cpp Tokyo.cpp DocumentNode.cpp Storage.cpp Document.cpp',
         target = 'logjam',
         vnum = '0.1.0',
         includes = ['.', '/usr/local/include/', '/opt/local/include/', '/usr/include'],
         cxxflags = ['-O0', '-Wall'],
-        lib = ['tokyocabinet', 'lua', 'tokyodystopia'],
+        lib = ['lua'],
         libpath = ['/usr/local/lib/', '/opt/local/lib/', '/usr/lib'],
         linkflags = ['-g'],
-        uselib = ['HISTEDIT.H']
+        uselib = ['HISTEDIT.H','TCUTIL.H', 'DYSTOPIA.H']
     )
     t
