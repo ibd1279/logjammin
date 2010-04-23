@@ -35,6 +35,7 @@
 #include <iostream>
 #include "Storage.h"
 #include "Exception.h"
+#include "Logger.h"
 
 namespace tokyo {
     
@@ -165,22 +166,70 @@ namespace tokyo {
     
     //=====================================================================
     // Storage Implementation.
-    //=====================================================================    
+    //=====================================================================
     
     Storage::Storage(const std::string &dir) : _db(NULL), _fields_tree(), _fields_text(), _fields_tag(), _fields_unique(), _directory(DBDIR) {
         _directory.append("/").append(dir);
         std::string configfile(_directory + "/config");
-        std::cerr << "Loading configuration from " << configfile << std::endl;
+        
+        logjam::Log::info() << "Loading configuration from " << configfile << "." << std::endl;
         DocumentNode cfg;
         cfg.load(configfile);
-        std::cerr << "Loaded Settings " << cfg.to_s() << std::endl;
-        std::cerr << "Starting Database " << _directory << "/" << cfg.nav("main/file").to_s() << std::endl;
-        _db = new TreeDB(_directory + "/" + cfg.nav("main/file").to_s(),
+        logjam::Log::info() << "Loaded Settings " << cfg.to_s() << std::endl;
+        
+        std::string dbfile(_directory + "/" + cfg.nav("main/file").to_s());
+        logjam::Log::info() << "Opening Database " << dbfile << "." << std::endl;
+        _db = new TreeDB(dbfile,
                          BDBOREADER | BDBOWRITER | BDBOCREAT,
                          NULL);
-        // XXX allocate different indicies.
-        // XXX allocate different text-searchers.
-        // XXX allocate different tag-searchers.
+
+        logjam::Log::info() << "Opening tree indices under " << _directory << "." << std::endl;
+        for(DocumentNode::childmap_t::const_iterator iter = cfg.nav("index/tree").to_map().begin();
+            iter != cfg.nav("index/tree").to_map().end();
+            ++iter) {
+            if(!iter->second->nav("file").exists() || !iter->second->nav("field").exists()) {
+                logjam::Log::error() << "Unable to open tree index [" << iter->first << "] because either file or field is not set." << std::endl; 
+                continue;
+            }
+            std::string indexfile(_directory + "/" + iter->second->nav("file").to_s());
+            logjam::Log::info() << "Opening tree index " << indexfile << "." << std::endl;
+            TreeDB *tdb = new TreeDB(indexfile,
+                                     BDBOREADER | BDBOWRITER | BDBOCREAT,
+                                     NULL);
+            _fields_tree.insert(std::pair<std::string, TreeDB *>(iter->second->nav("field").to_s(), tdb));
+        }
+        
+        logjam::Log::info() << "Opening text indices under " << _directory << "." << std::endl;
+        for(DocumentNode::childmap_t::const_iterator iter = cfg.nav("index/text").to_map().begin();
+            iter != cfg.nav("index/text").to_map().end();
+            ++iter) {
+            if(!iter->second->nav("file").exists() || !iter->second->nav("field").exists()) {
+                logjam::Log::error() << "Unable to open text index [" << iter->first << "] because either file or field is not set." << std::endl; 
+                continue;
+            }
+            std::string indexfile(_directory + "/" + iter->second->nav("file").to_s());
+            logjam::Log::info() << "Opening text index " << indexfile << "." << std::endl;
+            TextSearcher *ts = new TextSearcher(indexfile,
+                                                QDBOREADER | QDBOWRITER | QDBOCREAT,
+                                                NULL);
+            _fields_text.insert(std::pair<std::string, TextSearcher *>(iter->second->nav("field").to_s(), ts));
+        }
+
+        logjam::Log::info() << "Opening tag indices under " << _directory << "." << std::endl;
+        for(DocumentNode::childmap_t::const_iterator iter = cfg.nav("index/tag").to_map().begin();
+            iter != cfg.nav("index/tag").to_map().end();
+            ++iter) {
+            if(!iter->second->nav("file").exists() || !iter->second->nav("field").exists()) {
+                logjam::Log::error() << "Unable to open tag index [" << iter->first << "] because either file or field is not set." << std::endl; 
+                continue;
+            }
+            std::string indexfile(_directory + "/" + iter->second->nav("file").to_s());
+            logjam::Log::info() << "Opening tag index " << indexfile << "." << std::endl;
+            TagSearcher *ts = new TagSearcher(indexfile,
+                                              WDBOREADER | WDBOWRITER | WDBOCREAT,
+                                              NULL);
+            _fields_tag.insert(std::pair<std::string, TagSearcher *>(iter->second->nav("field").to_s(), ts));
+        }
     }
     
     Storage::~Storage() {

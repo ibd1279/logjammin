@@ -26,6 +26,7 @@
 		222B665D101E46F300F45B04 /* libcrypto.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222B665C101E46F300F45B04 /* libcrypto.dylib */; };
 		223517361114E14000871FBF /* Release.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 223517351114E14000871FBF /* Release.cpp */; };
 		223619AF111DDFF00019641E /* ReleaseController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 223619AE111DDFF00019641E /* ReleaseController.cpp */; };
+		2236823811815E2E002FD990 /* Logger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2236823711815E2E002FD990 /* Logger.cpp */; };
 		223D698410078F5800F79019 /* Controller.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 223D698310078F5800F79019 /* Controller.cpp */; };
 		224046D7100595160005461A /* User.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 224046D6100595160005461A /* User.cpp */; };
 		224046DC100597D90005461A /* Role.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 224046DB100597D90005461A /* Role.cpp */; };
@@ -91,6 +92,8 @@
 		223517351114E14000871FBF /* Release.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Release.cpp; sourceTree = "<group>"; };
 		223619AD111DDFF00019641E /* ReleaseController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ReleaseController.h; sourceTree = "<group>"; };
 		223619AE111DDFF00019641E /* ReleaseController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ReleaseController.cpp; sourceTree = "<group>"; };
+		2236823611815E2E002FD990 /* Logger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Logger.h; sourceTree = "<group>"; };
+		2236823711815E2E002FD990 /* Logger.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Logger.cpp; sourceTree = "<group>"; };
 		223D698310078F5800F79019 /* Controller.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Controller.cpp; sourceTree = "<group>"; };
 		224046D5100595160005461A /* User.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = User.h; sourceTree = "<group>"; };
 		224046D6100595160005461A /* User.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = User.cpp; sourceTree = "<group>"; };
@@ -221,6 +224,8 @@
 				31B1564E11714D5B008A5BE3 /* Document.cpp */,
 				22E9C96B117BF18B00557ADA /* Storage.h */,
 				22E9C96C117BF18B00557ADA /* Storage.cpp */,
+				2236823611815E2E002FD990 /* Logger.h */,
+				2236823711815E2E002FD990 /* Logger.cpp */,
 			);
 			name = Database;
 			sourceTree = "<group>";
@@ -360,6 +365,7 @@
 				22E9C96D117BF18B00557ADA /* Storage.cpp in Sources */,
 				220D9D2F117FD8C0000F20D0 /* logjam.cpp in Sources */,
 				220D9D7811809F70000F20D0 /* DocumentNode.cpp in Sources */,
+				2236823811815E2E002FD990 /* Logger.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
