@@ -39,6 +39,8 @@
 
 namespace tokyo {
     
+    using logjam::Log;
+    
     namespace {
         void dbvalue_to_storagekey(const DB::list_value_t &ptr,
                                    std::set<unsigned long long> &keys) {
@@ -172,59 +174,59 @@ namespace tokyo {
         _directory.append("/").append(dir);
         std::string configfile(_directory + "/config");
         
-        logjam::Log::info() << "Loading configuration from " << configfile << "." << std::endl;
+        Log::info("Loading configuration from [%s].") << configfile << Log::end;
         DocumentNode cfg;
         cfg.load(configfile);
-        logjam::Log::info() << "Loaded Settings " << cfg.to_s() << std::endl;
+        Log::info("Loaded Settings [%s].") << cfg.to_pretty_s() << Log::end;
         
         std::string dbfile(_directory + "/" + cfg.nav("main/file").to_s());
-        logjam::Log::info() << "Opening Database " << dbfile << "." << std::endl;
+        Log::info("Opening database [%s].") << dbfile << Log::end;
         _db = new TreeDB(dbfile,
                          BDBOREADER | BDBOWRITER | BDBOCREAT,
                          NULL);
 
-        logjam::Log::info() << "Opening tree indices under " << _directory << "." << std::endl;
+        Log::info("Opening tree indices under [%s].") << _directory << Log::end;
         for(DocumentNode::childmap_t::const_iterator iter = cfg.nav("index/tree").to_map().begin();
             iter != cfg.nav("index/tree").to_map().end();
             ++iter) {
             if(!iter->second->nav("file").exists() || !iter->second->nav("field").exists()) {
-                logjam::Log::error() << "Unable to open tree index [" << iter->first << "] because either file or field is not set." << std::endl; 
+                Log::error("Unable to open tree index [%s] because either file or field is not set.") << iter->first << Log::end; 
                 continue;
             }
             std::string indexfile(_directory + "/" + iter->second->nav("file").to_s());
-            logjam::Log::info() << "Opening tree index " << indexfile << "." << std::endl;
+            Log::info("Opening tree index [%s].") << indexfile << Log::end;
             TreeDB *tdb = new TreeDB(indexfile,
                                      BDBOREADER | BDBOWRITER | BDBOCREAT,
                                      NULL);
             _fields_tree.insert(std::pair<std::string, TreeDB *>(iter->second->nav("field").to_s(), tdb));
         }
         
-        logjam::Log::info() << "Opening text indices under " << _directory << "." << std::endl;
+        Log::info("Opening text indices under [%s].") << _directory << Log::end;
         for(DocumentNode::childmap_t::const_iterator iter = cfg.nav("index/text").to_map().begin();
             iter != cfg.nav("index/text").to_map().end();
             ++iter) {
             if(!iter->second->nav("file").exists() || !iter->second->nav("field").exists()) {
-                logjam::Log::error() << "Unable to open text index [" << iter->first << "] because either file or field is not set." << std::endl; 
+                Log::error("Unable to open text index [%s] because either file or field is not set.") << iter->first << Log::end;
                 continue;
             }
             std::string indexfile(_directory + "/" + iter->second->nav("file").to_s());
-            logjam::Log::info() << "Opening text index " << indexfile << "." << std::endl;
+            Log::info("Opening text index [%s].") << indexfile << Log::end;
             TextSearcher *ts = new TextSearcher(indexfile,
                                                 QDBOREADER | QDBOWRITER | QDBOCREAT,
                                                 NULL);
             _fields_text.insert(std::pair<std::string, TextSearcher *>(iter->second->nav("field").to_s(), ts));
         }
 
-        logjam::Log::info() << "Opening tag indices under " << _directory << "." << std::endl;
+        logjam::Log::info("Opening tag indices under [%s].") << _directory << Log::end;
         for(DocumentNode::childmap_t::const_iterator iter = cfg.nav("index/tag").to_map().begin();
             iter != cfg.nav("index/tag").to_map().end();
             ++iter) {
             if(!iter->second->nav("file").exists() || !iter->second->nav("field").exists()) {
-                logjam::Log::error() << "Unable to open tag index [" << iter->first << "] because either file or field is not set." << std::endl; 
+                Log::error("Unable to open tag index [%s] because either file or field is not set.") << iter->first << Log::end;
                 continue;
             }
             std::string indexfile(_directory + "/" + iter->second->nav("file").to_s());
-            logjam::Log::info() << "Opening tag index " << indexfile << "." << std::endl;
+            Log::info("Opening tag index [%s].") << indexfile << Log::end;
             TagSearcher *ts = new TagSearcher(indexfile,
                                               WDBOREADER | WDBOWRITER | WDBOCREAT,
                                               NULL);
@@ -233,25 +235,28 @@ namespace tokyo {
     }
     
     Storage::~Storage() {
+        Log::info("Closing tag indicies under [%s].") << _directory << Log::end;
         for(std::map<std::string, TagSearcher *>::const_iterator iter = _fields_tag.begin();
             iter != _fields_tag.end();
             ++iter) {
-            // XXX log the shut down of the text search.
+            Log::info("Closing tag index for field [%s].") << iter->first << Log::end;
             delete iter->second;
         }
+        Log::info("Closing database for field [%s].") << _directory << Log::end;
         for(std::map<std::string, TextSearcher *>::const_iterator iter = _fields_text.begin();
             iter != _fields_text.end();
             ++iter) {
-            // XXX log the shut down of the text search.
+            Log::info("Closing text index for field [%s].") << iter->first << Log::end;
             delete iter->second;
         }
+        Log::info("Closing database for field [%s].") << _directory << Log::end;
         for(std::map<std::string, TreeDB *>::const_iterator iter = _fields_tree.begin();
             iter != _fields_tree.end();
             ++iter) {
-            // XXX log the shut down of the index.
+            Log::info("Closing tree index for field [%s].") << iter->first << Log::end;
             delete iter->second;
         }
-        // XXX log the shut down of the db.
+        Log::info("Closing database for field [%s].") << _directory << Log::end;
         delete _db;
     }
     

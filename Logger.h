@@ -49,12 +49,14 @@ namespace logjam {
             INFO,
             DEBUG
         };
-    private:
-        event_level l;
-        bool enabled;
-        std::ostream *strm;
+        struct End {
+        };
+    protected:
+        event_level _level;
+        bool _enabled;
+        std::ostream *_strm;
         std::string lvl_txt() const {
-            switch(l) {
+            switch(_level) {
                 case EMERGENCY:
                     return std::string("EMERGENCY");
                 case ALERT:
@@ -75,11 +77,15 @@ namespace logjam {
         }
     protected:
     public:
-        Log(std::ostream *s, event_level lvl) : l(lvl), enabled(false), strm(s) { }
-        ~Log() { }
-        Log &disable() { enabled  = false; return *this; }
-        Log &enable() { enabled = true; return *this; }
-        std::ostream &operator()() { if(enabled) (*strm) << lvl_txt() << ": "; return *strm; }
+        Log(std::ostream *s, event_level lvl) : _level(lvl), _enabled(true), _strm(s) { }
+        virtual ~Log() {}
+        Log &disable() { _enabled  = false; return *this; }
+        Log &enable() { _enabled = true; return *this; }
+        Log &operator()(const std::string &m);
+        virtual Log &operator<<(const std::string &msg) { return *this; };
+        virtual Log &operator<<(const char *msg) {return *this; };
+        virtual void operator<<(const End &msg) { };
         static Log emergency, alert, critical, error, warning, notice, info, debug;
+        static End end;
     };
 };

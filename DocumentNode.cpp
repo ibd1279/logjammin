@@ -426,6 +426,61 @@ namespace tokyo {
         return std::string();
     }
     
+    std::string DocumentNode::to_pretty_s(int lvl) const {
+        long long l = 0;
+        double d = 0.0;
+        std::ostringstream buf;
+        std::string indent;
+        switch(type()) {
+            case STRING_NODE:
+                memcpy(&l, _value, 4);
+                return std::string(_value + 4);
+            case INT32_NODE:
+                memcpy(&l, _value, 4);
+                buf << l;
+                return buf.str();
+            case DOUBLE_NODE:
+                memcpy(&d, _value, 8);
+                buf << d;
+                return buf.str();
+            case INT64_NODE:
+            case TIMESTAMP_NODE:
+                memcpy(&l, _value, 8);
+                buf << l;
+                return buf.str();
+            case BOOL_NODE:
+                memcpy(&l, _value, 1);
+                buf << ((bool)l);
+                return buf.str();
+            case NULL_NODE:
+                return std::string("null");
+            case DOC_NODE:
+            case ARRAY_NODE:
+                if(!_children.size())
+                    return "{}";
+                buf << "{\n";
+                for(int h = 0; h < lvl; ++h)
+                    indent.append("  ");
+                for(childmap_t::const_iterator iter = _children.begin();
+                    iter != _children.end();
+                    ++iter) {
+                    if(!iter->second->exists())
+                        continue;
+                    buf << indent << "  \"" << escape(iter->first) << "\":";
+                    if(iter->second->type() == STRING_NODE)
+                        buf << "\"";
+                    buf << iter->second->to_pretty_s(lvl + 1);
+                    if(iter->second->type() == STRING_NODE)
+                        buf << "\"";
+                    buf << ",\n";
+                }
+                return buf.str().erase(buf.str().size() - 2).append("\n").append(indent).append("}");
+            default:
+                break;
+        }
+        return std::string();
+    }
+    
     std::set<std::string> DocumentNode::to_set() const {
         std::set<std::string> f;
         switch(type()) {

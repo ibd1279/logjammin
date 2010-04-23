@@ -181,6 +181,8 @@ namespace tokyo {
         std::string to_dbg_s() const;
         //! get the value of the document node as a string.
         std::string to_s() const;
+        //! get the value of the document node as a pretty string.
+        std::string to_pretty_s(int lvl = 0) const;
         //! get the value of the children of a document node as a set of strings.
         std::set<std::string> to_set() const;
         //! get the value of the children of a document node as a list of strings.

@@ -32,7 +32,10 @@
  */
 
 #include "Logger.h"
+#include <cstdio>
 #include <iostream>
+#include <list>
+#include <sstream>
 
 logjam::Log logjam::Log::emergency(&std::cerr, logjam::Log::EMERGENCY);
 logjam::Log logjam::Log::alert(&std::cerr, logjam::Log::ALERT);
@@ -42,3 +45,79 @@ logjam::Log logjam::Log::warning(&std::cerr, logjam::Log::WARNING);
 logjam::Log logjam::Log::notice(&std::cerr, logjam::Log::DEBUG);
 logjam::Log logjam::Log::info(&std::cerr, logjam::Log::INFO);
 logjam::Log logjam::Log::debug(&std::cerr, logjam::Log::DEBUG);
+logjam::Log::End logjam::Log::end;
+
+namespace logjam {
+    namespace {
+        class RealLogger : public Log {
+            std::list<std::string> _parts;
+            std::ostringstream _buffer;
+        public:
+            RealLogger(std::ostream *strm, event_level level, const std::string &msg) : Log(strm, level), _parts(), _buffer() {
+                std::string tmp;
+                for(std::string::const_iterator iter = msg.begin();
+                    iter != msg.end();
+                    ++iter) {
+                    if(*iter == '%') {
+                        _parts.push_back(tmp);
+                        tmp.clear();
+                        tmp.push_back((*iter++));
+                        if(iter == msg.end())
+                            break;
+                    }
+                    tmp.push_back(*iter);
+                }
+                if(tmp.size() > 0)
+                    _parts.push_back(tmp);
+                _buffer << "[" << lvl_txt() << "] ";
+                if(_parts.size() < 2) {
+                    _buffer << tmp << std::endl;
+                } else {
+                    _buffer << _parts.front();
+                    _parts.pop_front();
+                }
+            }
+            virtual Log &operator<<(const std::string &msg) {
+                if(_parts.size() > 0) {
+                    char *buffer = new char[msg.size() + _parts.front().size()];
+                    sprintf(buffer, _parts.front().c_str(), msg.c_str());
+                    _buffer << buffer;
+                    _parts.pop_front();
+                    delete[] buffer;
+                } else {
+                    _buffer << msg;
+                }
+                return *this;
+            }
+            virtual Log &operator<<(const char *msg) {
+                if(_parts.size() > 0) {
+                    char *buffer = new char[strlen(msg) + _parts.front().size()];
+                    std::cout << _parts.front() << std::endl;
+                    sprintf(buffer, _parts.front().c_str(), msg);
+                    _buffer << buffer;
+                    _parts.pop_front();
+                    delete[] buffer;
+                } else {
+                    _buffer << msg;
+                }
+                return *this;
+            }
+            virtual void operator<<(const Log::End &msg) {
+                for(std::list<std::string>::const_iterator iter = _parts.begin();
+                    iter != _parts.end();
+                    ++iter) {
+                    _buffer << "..." << (*iter);
+                }
+                (*_strm) << _buffer.str() << std::endl;
+                delete this;
+            }
+        };
+    };
+
+    Log &Log::operator()(const std::string &m) {
+        if(_enabled) {
+            return *(new RealLogger(_strm, _level, m));
+        }
+        else return *this;
+    }
+};
