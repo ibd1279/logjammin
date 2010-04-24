@@ -1,5 +1,5 @@
 /*
- *  DocumentNode.cpp
+ *  BSONNode.cpp
  *  logjammin
  *
  *  Created by Jason Watson on 4/22/10.
@@ -8,14 +8,14 @@
  */
 
 #include "build/default/config.h"
-#include "DocumentNode.h"
+#include "BSONNode.h"
 #include "Exception.h"
 #include <cstring>
 #include <sstream>
 #include <iostream>
 #include <fstream>
 
-namespace tokyo {
+namespace lj {
     namespace {
         //! escape a string.
         std::string escape(const std::string &val) {
@@ -31,7 +31,7 @@ namespace tokyo {
             return r;
         }
         
-        void subdocument(DocumentNode &node, const char *value) {
+        void subdocument(BSONNode &node, const char *value) {
             // treat it as a char * for pointer math reasons.
             const char *ptr = value;
             
@@ -56,9 +56,9 @@ namespace tokyo {
                 ptr += name.size() + 1;
                 
                 // child node.
-                node.child(name, DocumentNode((DocumentNodeType)t, ptr));
+                node.child(name, BSONNode((BSONNodeType)t, ptr));
                 sz = 0;
-                switch((DocumentNodeType)t) {
+                switch((BSONNodeType)t) {
                     case STRING_NODE:
                         memcpy(&sz, ptr, 4);
                         sz += 4;
@@ -87,26 +87,26 @@ namespace tokyo {
     };
     
     //=====================================================================
-    // DocumentNode Lua integration
+    // BSONNode Lua integration
     //=====================================================================
-    const char DocumentNode::LUNAR_CLASS_NAME[] = "DocumentNode";
+    const char BSONNode::LUNAR_CLASS_NAME[] = "BSONNode";
     
-    Lunar<DocumentNode>::RegType DocumentNode::LUNAR_METHODS[] = {
-    LUNAR_MEMBER_METHOD(DocumentNode, nav),
-    LUNAR_MEMBER_METHOD(DocumentNode, set),
-    LUNAR_MEMBER_METHOD(DocumentNode, get),
-    LUNAR_MEMBER_METHOD(DocumentNode, load),
-    LUNAR_MEMBER_METHOD(DocumentNode, save),
+    Lunar<BSONNode>::RegType BSONNode::LUNAR_METHODS[] = {
+    LUNAR_MEMBER_METHOD(BSONNode, nav),
+    LUNAR_MEMBER_METHOD(BSONNode, set),
+    LUNAR_MEMBER_METHOD(BSONNode, get),
+    LUNAR_MEMBER_METHOD(BSONNode, load),
+    LUNAR_MEMBER_METHOD(BSONNode, save),
     {0, 0}
     };
     
-    int DocumentNode::_nav(lua_State *L) {
+    int BSONNode::_nav(lua_State *L) {
         std::string path(luaL_checkstring(L, -1));
-        Lunar<DocumentNode>::push(L, &(nav(path)), false);
+        Lunar<BSONNode>::push(L, &(nav(path)), false);
         return 1;
     }
     
-    int DocumentNode::_set(lua_State *L) {
+    int BSONNode::_set(lua_State *L) {
         const char *str;
         int tmp;
         lua_settop(L, 1);
@@ -137,7 +137,7 @@ namespace tokyo {
         return 0;
     }
     
-    int DocumentNode::_get(lua_State *L) {
+    int BSONNode::_get(lua_State *L) {
         switch(type()) {
             case INT32_NODE:
             case INT64_NODE:
@@ -157,47 +157,47 @@ namespace tokyo {
         return 1;
     }
         
-    int DocumentNode::_save(lua_State *L) {
+    int BSONNode::_save(lua_State *L) {
         std::string fn(luaL_checkstring(L, -1));
         save(fn);
         return 0;
     }
     
-    int DocumentNode::_load(lua_State *L) {
+    int BSONNode::_load(lua_State *L) {
         std::string fn(luaL_checkstring(L, -1));
         load(fn);
         return 0;
     }
     
     //=====================================================================
-    // DocumentNode ctor/dtor
+    // BSONNode ctor/dtor
     //=====================================================================
     
-    DocumentNode::DocumentNode(lua_State *L) : _children(), _value(NULL), _type(DOC_NODE) {
+    BSONNode::BSONNode(lua_State *L) : _children(), _value(NULL), _type(DOC_NODE) {
         // Add some logic to distinguish copy constructor from empty constructor.
     }
     
-    DocumentNode::DocumentNode() : _children(), _value(NULL), _type(DOC_NODE) {
+    BSONNode::BSONNode() : _children(), _value(NULL), _type(DOC_NODE) {
     }
     
-    DocumentNode::DocumentNode(const DocumentNodeType t, const char *v) : _children(), _value(NULL), _type(DOC_NODE) {
+    BSONNode::BSONNode(const BSONNodeType t, const char *v) : _children(), _value(NULL), _type(DOC_NODE) {
         set_value(t, v);
     }
     
-    DocumentNode::DocumentNode(const DocumentNode &o) : _children(), _value(NULL), _type(o._type) {
+    BSONNode::BSONNode(const BSONNode &o) : _children(), _value(NULL), _type(o._type) {
         if(o.nested()) {
-            for(std::map<std::string, DocumentNode *>::const_iterator iter = o._children.begin();
+            for(std::map<std::string, BSONNode *>::const_iterator iter = o._children.begin();
                 iter != o._children.end();
                 ++iter) {
-                DocumentNode *ptr = new DocumentNode(*(iter->second));
-                _children.insert(std::pair<std::string, DocumentNode *>(iter->first, ptr));
+                BSONNode *ptr = new BSONNode(*(iter->second));
+                _children.insert(std::pair<std::string, BSONNode *>(iter->first, ptr));
             }
         } else {
             set_value(o._type, o._value);
         }
     }
     
-    DocumentNode::~DocumentNode() {
+    BSONNode::~BSONNode() {
         if(_value)
             delete[] _value;
         for(childmap_t::const_iterator iter = _children.begin();
@@ -208,10 +208,10 @@ namespace tokyo {
     }
     
     //=====================================================================
-    // DocumentNode Instance
+    // BSONNode Instance
     //=====================================================================
     
-    DocumentNode &DocumentNode::set_value(const DocumentNodeType t, const char *v) {
+    BSONNode &BSONNode::set_value(const BSONNodeType t, const char *v) {
         // assume the type may have changed.
         char *old = NULL;
         if(nested()) {
@@ -271,7 +271,7 @@ namespace tokyo {
         return *this;
     }
     
-    DocumentNode &DocumentNode::value(const std::string &v) {
+    BSONNode &BSONNode::value(const std::string &v) {
         long sz = v.size() + 1;
         char *ptr = new char[sz + 4];;
         memcpy(ptr, &sz, 4);
@@ -281,50 +281,50 @@ namespace tokyo {
         return *this;
     }
     
-    DocumentNode &DocumentNode::value(const int v) {
+    BSONNode &BSONNode::value(const int v) {
         char ptr[4];
         memcpy(ptr, &v, 4);
         set_value(INT32_NODE, ptr);
         return *this;
     }
     
-    DocumentNode &DocumentNode::value(const long long v) {
+    BSONNode &BSONNode::value(const long long v) {
         char ptr[8];
         memcpy(ptr, &v, 8);
         set_value(INT64_NODE, ptr);
         return *this;
     }
     
-    DocumentNode &DocumentNode::value(const double v) {
+    BSONNode &BSONNode::value(const double v) {
         char ptr[8];
         memcpy(ptr, &v, 8);
         set_value(DOUBLE_NODE, ptr);
         return *this;
     }
     
-    DocumentNode &DocumentNode::nullify() {
+    BSONNode &BSONNode::nullify() {
         set_value(NULL_NODE, NULL);
         return *this;
     }
 
-    DocumentNode &DocumentNode::destroy() {
+    BSONNode &BSONNode::destroy() {
         set_value(DOC_NODE, NULL);
         return *this;
     }
     
-    DocumentNode &DocumentNode::child(const std::string &n, const DocumentNode &c) {
+    BSONNode &BSONNode::child(const std::string &n, const BSONNode &c) {
         childmap_t::iterator iter = _children.find(n);
-        DocumentNode *ptr = new DocumentNode(c);
+        BSONNode *ptr = new BSONNode(c);
         if(iter != _children.end()) {
             delete iter->second;
             _children.erase(iter);
         }
         
-        _children.insert(std::pair<std::string, DocumentNode *>(n, ptr));
+        _children.insert(std::pair<std::string, BSONNode *>(n, ptr));
         return *ptr;
     }
     
-    std::string DocumentNode::to_dbg_s() const {
+    std::string BSONNode::to_dbg_s() const {
         long long l = 0;
         double d = 0.0;
         std::ostringstream buf;
@@ -374,7 +374,7 @@ namespace tokyo {
         return std::string();
     }
 
-    std::string DocumentNode::to_s() const {
+    std::string BSONNode::to_s() const {
         long long l = 0;
         double d = 0.0;
         std::ostringstream buf;
@@ -426,7 +426,7 @@ namespace tokyo {
         return std::string();
     }
     
-    std::string DocumentNode::to_pretty_s(int lvl) const {
+    std::string BSONNode::to_pretty_s(int lvl) const {
         long long l = 0;
         double d = 0.0;
         std::ostringstream buf;
@@ -481,7 +481,7 @@ namespace tokyo {
         return std::string();
     }
     
-    std::set<std::string> DocumentNode::to_set() const {
+    std::set<std::string> BSONNode::to_set() const {
         std::set<std::string> f;
         switch(type()) {
             case DOC_NODE:
@@ -501,7 +501,7 @@ namespace tokyo {
         return f;
     }
     
-    std::list<std::string> DocumentNode::to_list() const {
+    std::list<std::string> BSONNode::to_list() const {
         std::list<std::string> f;
         switch(type()) {
             case DOC_NODE:
@@ -521,7 +521,7 @@ namespace tokyo {
         return f;
     }
     
-    int DocumentNode::to_i() const {
+    int BSONNode::to_i() const {
         long l = 0;
         double d = 0.0;
         switch(type()) {
@@ -546,7 +546,7 @@ namespace tokyo {
         return 0;
     }
     
-    long long DocumentNode::to_l() const {
+    long long BSONNode::to_l() const {
         long l = 0;
         double d = 0.0;
         switch(type()) {
@@ -571,7 +571,7 @@ namespace tokyo {
         return 0;
     }
     
-    bool DocumentNode::to_b() const  {
+    bool BSONNode::to_b() const  {
         long l = 0;
         double d = 0.0;
         char *s = _value + 4;
@@ -606,7 +606,7 @@ namespace tokyo {
         return false;
     }
     
-    double DocumentNode::to_d() const {
+    double BSONNode::to_d() const {
         long l = 0;
         double d = 0.0;
         switch(type()) {
@@ -631,13 +631,13 @@ namespace tokyo {
         return 0.0;
     }
     
-    char *DocumentNode::bson() const {
+    char *BSONNode::bson() const {
         char *ptr = new char[size()];
         copy_to_bson(ptr);
         return ptr;
     }
     
-    size_t DocumentNode::copy_to_bson(char *ptr) const {
+    size_t BSONNode::copy_to_bson(char *ptr) const {
         size_t sz = size();
         switch(type()) {
             case DOC_NODE:
@@ -648,7 +648,7 @@ namespace tokyo {
                 for(childmap_t::const_iterator iter = _children.begin();
                     iter != _children.end();
                     ++iter) {
-                    DocumentNodeType t = iter->second->type();
+                    BSONNodeType t = iter->second->type();
                     memcpy(ptr++, &t, 1);
                     memcpy(ptr, iter->first.c_str(), iter->first.size() + 1);
                     ptr += iter->first.size() + 1;
@@ -663,7 +663,7 @@ namespace tokyo {
         return sz;
     }
     
-    std::set<std::string> DocumentNode::children() const {
+    std::set<std::string> BSONNode::children() const {
         std::set<std::string> f;
         if(nested()) {
             for(childmap_t::const_iterator iter = _children.begin();
@@ -676,16 +676,16 @@ namespace tokyo {
         return f;
     }
     
-    DocumentNode &DocumentNode::child(const std::string &n) {
+    BSONNode &BSONNode::child(const std::string &n) {
         childmap_t::iterator iter = _children.find(n);
         if(iter != _children.end())
             return *(iter->second);
-        DocumentNode *ptr = new DocumentNode();
-        _children.insert(std::pair<std::string, DocumentNode *>(n, ptr));
+        BSONNode *ptr = new BSONNode();
+        _children.insert(std::pair<std::string, BSONNode *>(n, ptr));
         return *ptr;
     }
     
-    const DocumentNode &DocumentNode::child(const std::string &n) const {
+    const BSONNode &BSONNode::child(const std::string &n) const {
         childmap_t::const_iterator iter = _children.find(n);
         if(iter == _children.end())
             throw Exception("DocumentError", std::string("Unable to find child [").append(n).append("]."));
@@ -711,14 +711,14 @@ namespace tokyo {
             if(current.size() > 0)
                 parts.push_back(current);
         }
-        const DocumentNode &navigate_document(const DocumentNode &n, std::list<std::string> &p) {
+        const BSONNode &navigate_document(const BSONNode &n, std::list<std::string> &p) {
             if(p.size() < 1)
                 return n;
             std::string front = p.front();
             p.pop_front();
             return navigate_document(n.child(front), p);
         }
-        DocumentNode &navigate_document(DocumentNode &n, std::list<std::string> &p) {
+        BSONNode &navigate_document(BSONNode &n, std::list<std::string> &p) {
             if(p.size() < 1)
                 return n;
             std::string front = p.front();
@@ -727,19 +727,19 @@ namespace tokyo {
         }
     };
     
-    DocumentNode &DocumentNode::nav(const std::string &p) {
+    BSONNode &BSONNode::nav(const std::string &p) {
         std::list<std::string> parts;
         split_path(p, parts);
         return navigate_document(*this, parts);
     }
     
-    const DocumentNode &DocumentNode::nav(const std::string &p) const {
+    const BSONNode &BSONNode::nav(const std::string &p) const {
         std::list<std::string> parts;
         split_path(p, parts);
         return navigate_document(*this, parts);
     }
     
-    std::string DocumentNode::type_string() const {
+    std::string BSONNode::type_string() const {
         switch(_type) {
             case STRING_NODE:
                 return "string";
@@ -765,19 +765,19 @@ namespace tokyo {
         return "unknown";
     }
     
-    bool DocumentNode::exists() const {
+    bool BSONNode::exists() const {
         return _children.size() ? true : (_value ? true : false);
     }
     
-    bool DocumentNode::nested() const {
+    bool BSONNode::nested() const {
         return (_type == DOC_NODE || _type == ARRAY_NODE);
     }
     
-    bool DocumentNode::quotable() const {
+    bool BSONNode::quotable() const {
         return (_type == STRING_NODE);
     }
     
-    size_t DocumentNode::size() const {
+    size_t BSONNode::size() const {
         long sz = 0;
         switch(_type) {
             case STRING_NODE:
@@ -801,7 +801,7 @@ namespace tokyo {
             case DOC_NODE:
             case ARRAY_NODE:
                 sz += 5;
-                for(std::map<std::string, DocumentNode *>::const_iterator iter = _children.begin();
+                for(std::map<std::string, BSONNode *>::const_iterator iter = _children.begin();
                     iter != _children.end();
                     ++iter) {
                     sz += iter->second->size() + iter->first.size() + 2;
@@ -813,7 +813,7 @@ namespace tokyo {
         return sz;
     }
     
-    const DocumentNode &DocumentNode::save(const std::string &fn) const {
+    const BSONNode &BSONNode::save(const std::string &fn) const {
         std::ofstream f(fn.c_str());
         char *ptr = bson();
         f.write(ptr, size());
@@ -822,7 +822,7 @@ namespace tokyo {
         return *this;
     }
     
-    DocumentNode &DocumentNode::load(const std::string &fn) {
+    BSONNode &BSONNode::load(const std::string &fn) {
         std::ifstream f(fn.c_str());
         size_t sz = 0;
         f.read((char *)&sz, 4);

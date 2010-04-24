@@ -34,6 +34,8 @@
 #include "build/default/config.h"
 #include "Tokyo.h"
 
+using lj::Exception;
+
 namespace tokyo {
     namespace {
         bool arrays_equal(const void * const a,

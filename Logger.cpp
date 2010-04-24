@@ -37,17 +37,17 @@
 #include <list>
 #include <sstream>
 
-logjam::Log logjam::Log::emergency(&std::cerr, logjam::Log::EMERGENCY);
-logjam::Log logjam::Log::alert(&std::cerr, logjam::Log::ALERT);
-logjam::Log logjam::Log::critical(&std::cerr, logjam::Log::CRITICAL);
-logjam::Log logjam::Log::error(&std::cerr, logjam::Log::ERROR);
-logjam::Log logjam::Log::warning(&std::cerr, logjam::Log::WARNING);
-logjam::Log logjam::Log::notice(&std::cerr, logjam::Log::DEBUG);
-logjam::Log logjam::Log::info(&std::cerr, logjam::Log::INFO);
-logjam::Log logjam::Log::debug(&std::cerr, logjam::Log::DEBUG);
-logjam::Log::End logjam::Log::end;
+lj::Log lj::Log::emergency(&std::cerr, lj::Log::EMERGENCY);
+lj::Log lj::Log::alert(&std::cerr, lj::Log::ALERT);
+lj::Log lj::Log::critical(&std::cerr, lj::Log::CRITICAL);
+lj::Log lj::Log::error(&std::cerr, lj::Log::ERROR);
+lj::Log lj::Log::warning(&std::cerr, lj::Log::WARNING);
+lj::Log lj::Log::notice(&std::cerr, lj::Log::DEBUG);
+lj::Log lj::Log::info(&std::cerr, lj::Log::INFO);
+lj::Log lj::Log::debug(&std::cerr, lj::Log::DEBUG);
+lj::Log::End lj::Log::end;
 
-namespace logjam {
+namespace lj {
     namespace {
         class RealLogger : public Log {
             std::list<std::string> _parts;

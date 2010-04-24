@@ -48,9 +48,14 @@ def make_data_dir(ctx):
 def build(ctx):
     ctx.add_post_fun(make_data_dir)
 
-    t = ctx(
+    logjam = ctx(
         features = ['cxx', 'cprogram'],
-        source = 'logjam.cpp Tokyo.cpp DocumentNode.cpp Storage.cpp Document.cpp Logger.cpp',
+        source = ['Tokyo.cpp',
+                'Logger.cpp',
+                'BSONNode.cpp',
+                'BSONParser.cpp',
+                'Storage.cpp',
+                'logjam.cpp'],
         target = 'logjam',
         vnum = '0.1.0',
         includes = ['.', '/usr/local/include/', '/opt/local/include/', '/usr/include'],
@@ -60,4 +65,3 @@ def build(ctx):
         linkflags = ['-g'],
         uselib = ['HISTEDIT.H','TCUTIL.H', 'DYSTOPIA.H']
     )
-    t

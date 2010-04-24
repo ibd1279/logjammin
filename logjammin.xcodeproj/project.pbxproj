@@ -13,7 +13,6 @@
 		220AD6F90FA215F800C604BE /* openprop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 220AD6F50FA215F800C604BE /* openprop.cpp */; };
 		220AD6FA0FA215F800C604BE /* parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 220AD6F80FA215F800C604BE /* parser.cpp */; };
 		220D9D2F117FD8C0000F20D0 /* logjam.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 220D9D2E117FD8C0000F20D0 /* logjam.cpp */; };
-		220D9D7811809F70000F20D0 /* DocumentNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 220D9D7711809F70000F20D0 /* DocumentNode.cpp */; };
 		221577CC100F38270020B133 /* ProjectController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 221577CB100F38270020B133 /* ProjectController.cpp */; };
 		221B34460FA8995D009AB597 /* liblua.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 221B34450FA8995D009AB597 /* liblua.a */; };
 		221B344D0FA89B99009AB597 /* ModuleCompilier.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 221B344A0FA89B99009AB597 /* ModuleCompilier.cpp */; };
@@ -27,6 +26,8 @@
 		223517361114E14000871FBF /* Release.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 223517351114E14000871FBF /* Release.cpp */; };
 		223619AF111DDFF00019641E /* ReleaseController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 223619AE111DDFF00019641E /* ReleaseController.cpp */; };
 		2236823811815E2E002FD990 /* Logger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2236823711815E2E002FD990 /* Logger.cpp */; };
+		2236838C118270B8002FD990 /* BSONParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2236838A118270B8002FD990 /* BSONParser.cpp */; };
+		2236838F11827124002FD990 /* BSONNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2236838D11827124002FD990 /* BSONNode.cpp */; };
 		223D698410078F5800F79019 /* Controller.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 223D698310078F5800F79019 /* Controller.cpp */; };
 		224046D7100595160005461A /* User.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 224046D6100595160005461A /* User.cpp */; };
 		224046DC100597D90005461A /* Role.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 224046DB100597D90005461A /* Role.cpp */; };
@@ -38,7 +39,6 @@
 		22DB7C5F101A5CC800BEEB52 /* OpenID.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */; };
 		22E9C71B1176BA8000557ADA /* Tokyo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 22E9C71A1176BA8000557ADA /* Tokyo.cpp */; };
 		22E9C96D117BF18B00557ADA /* Storage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 22E9C96C117BF18B00557ADA /* Storage.cpp */; };
-		31B1564F11714D5B008A5BE3 /* Document.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 31B1564E11714D5B008A5BE3 /* Document.cpp */; };
 		8DD76F6A0486A84900D96B5E /* logjammin.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = C6859E8B029090EE04C91782 /* logjammin.1 */; };
 /* End PBXBuildFile section */
 
@@ -69,8 +69,6 @@
 		220AD6F80FA215F800C604BE /* parser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parser.cpp; sourceTree = "<group>"; };
 		220AD7070FA233E600C604BE /* Model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Model.h; sourceTree = "<group>"; };
 		220D9D2E117FD8C0000F20D0 /* logjam.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = logjam.cpp; sourceTree = "<group>"; };
-		220D9D7611809F70000F20D0 /* DocumentNode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DocumentNode.h; sourceTree = "<group>"; };
-		220D9D7711809F70000F20D0 /* DocumentNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = DocumentNode.cpp; sourceTree = "<group>"; };
 		221577CA100F38270020B133 /* ProjectController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ProjectController.h; sourceTree = "<group>"; };
 		221577CB100F38270020B133 /* ProjectController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ProjectController.cpp; sourceTree = "<group>"; };
 		221B34450FA8995D009AB597 /* liblua.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblua.a; path = /opt/local/lib/liblua.a; sourceTree = "<absolute>"; };
@@ -94,6 +92,10 @@
 		223619AE111DDFF00019641E /* ReleaseController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ReleaseController.cpp; sourceTree = "<group>"; };
 		2236823611815E2E002FD990 /* Logger.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Logger.h; sourceTree = "<group>"; };
 		2236823711815E2E002FD990 /* Logger.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Logger.cpp; sourceTree = "<group>"; };
+		2236838A118270B8002FD990 /* BSONParser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BSONParser.cpp; sourceTree = "<group>"; };
+		2236838B118270B8002FD990 /* BSONParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BSONParser.h; sourceTree = "<group>"; };
+		2236838D11827124002FD990 /* BSONNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BSONNode.cpp; sourceTree = "<group>"; };
+		2236838E11827124002FD990 /* BSONNode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BSONNode.h; sourceTree = "<group>"; };
 		223D698310078F5800F79019 /* Controller.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Controller.cpp; sourceTree = "<group>"; };
 		224046D5100595160005461A /* User.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = User.h; sourceTree = "<group>"; };
 		224046D6100595160005461A /* User.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = User.cpp; sourceTree = "<group>"; };
@@ -119,8 +121,6 @@
 		22E9C9A8117C894700557ADA /* Exception.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Exception.h; sourceTree = "<group>"; };
 		22ED3BBF0FB8704A004E2511 /* Controller.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Controller.h; sourceTree = "<group>"; };
 		22ED3C110FB8F99C004E2511 /* Seed.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Seed.h; sourceTree = "<group>"; };
-		31B1564D11714D5B008A5BE3 /* Document.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Document.h; sourceTree = "<group>"; };
-		31B1564E11714D5B008A5BE3 /* Document.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Document.cpp; sourceTree = "<group>"; };
 		8DD76F6C0486A84900D96B5E /* logjammin */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = logjammin; sourceTree = BUILT_PRODUCTS_DIR; };
 		C6859E8B029090EE04C91782 /* logjammin.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = logjammin.1; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -161,7 +161,8 @@
 		08FB7795FE84155DC02AAC07 /* Source */ = {
 			isa = PBXGroup;
 			children = (
-				220D9D2E117FD8C0000F20D0 /* logjam.cpp */,
+				2236839411827230002FD990 /* logjam */,
+				2236837211825B97002FD990 /* Utility */,
 				2261AF4F10D1E63000841C84 /* Database */,
 				220AD7060FA233CB00C604BE /* Model */,
 				22ED3BBE0FB8701A004E2511 /* Controller */,
@@ -211,21 +212,36 @@
 			name = Model;
 			sourceTree = "<group>";
 		};
+		2236837211825B97002FD990 /* Utility */ = {
+			isa = PBXGroup;
+			children = (
+				22E9C9A8117C894700557ADA /* Exception.h */,
+				2236823611815E2E002FD990 /* Logger.h */,
+				2236823711815E2E002FD990 /* Logger.cpp */,
+				221B34820FA8C302009AB597 /* lunar.h */,
+				2236838E11827124002FD990 /* BSONNode.h */,
+				2236838D11827124002FD990 /* BSONNode.cpp */,
+				2236838B118270B8002FD990 /* BSONParser.h */,
+				2236838A118270B8002FD990 /* BSONParser.cpp */,
+				22E9C96B117BF18B00557ADA /* Storage.h */,
+				22E9C96C117BF18B00557ADA /* Storage.cpp */,
+			);
+			name = Utility;
+			sourceTree = "<group>";
+		};
+		2236839411827230002FD990 /* logjam */ = {
+			isa = PBXGroup;
+			children = (
+				220D9D2E117FD8C0000F20D0 /* logjam.cpp */,
+			);
+			name = logjam;
+			sourceTree = "<group>";
+		};
 		2261AF4F10D1E63000841C84 /* Database */ = {
 			isa = PBXGroup;
 			children = (
-				221B34820FA8C302009AB597 /* lunar.h */,
-				22E9C9A8117C894700557ADA /* Exception.h */,
 				2202B2430FFE56C000B6FCEC /* Tokyo.h */,
 				22E9C71A1176BA8000557ADA /* Tokyo.cpp */,
-				220D9D7611809F70000F20D0 /* DocumentNode.h */,
-				220D9D7711809F70000F20D0 /* DocumentNode.cpp */,
-				31B1564D11714D5B008A5BE3 /* Document.h */,
-				31B1564E11714D5B008A5BE3 /* Document.cpp */,
-				22E9C96B117BF18B00557ADA /* Storage.h */,
-				22E9C96C117BF18B00557ADA /* Storage.cpp */,
-				2236823611815E2E002FD990 /* Logger.h */,
-				2236823711815E2E002FD990 /* Logger.cpp */,
 			);
 			name = Database;
 			sourceTree = "<group>";
@@ -360,12 +376,12 @@
 				22D32CA1102AAA3E0015E71D /* RoleController.cpp in Sources */,
 				223517361114E14000871FBF /* Release.cpp in Sources */,
 				223619AF111DDFF00019641E /* ReleaseController.cpp in Sources */,
-				31B1564F11714D5B008A5BE3 /* Document.cpp in Sources */,
 				22E9C71B1176BA8000557ADA /* Tokyo.cpp in Sources */,
 				22E9C96D117BF18B00557ADA /* Storage.cpp in Sources */,
 				220D9D2F117FD8C0000F20D0 /* logjam.cpp in Sources */,
-				220D9D7811809F70000F20D0 /* DocumentNode.cpp in Sources */,
 				2236823811815E2E002FD990 /* Logger.cpp in Sources */,
+				2236838C118270B8002FD990 /* BSONParser.cpp in Sources */,
+				2236838F11827124002FD990 /* BSONNode.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

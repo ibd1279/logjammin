@@ -37,14 +37,16 @@
 #include "Exception.h"
 #include "Logger.h"
 
-namespace tokyo {
-    
-    using logjam::Log;
+using tokyo::TreeDB;
+using tokyo::TextSearcher;
+using tokyo::TagSearcher;
+
+namespace lj {
     
     namespace {
-        void dbvalue_to_storagekey(const DB::list_value_t &ptr,
+        void dbvalue_to_storagekey(const tokyo::DB::list_value_t &ptr,
                                    std::set<unsigned long long> &keys) {
-            for(std::list<std::pair<void *, size_t> >::const_iterator iter = ptr.begin();
+            for(tokyo::DB::list_value_t::const_iterator iter = ptr.begin();
                 iter != ptr.end();
                 ++iter) {
                 keys.insert(*((unsigned long long *)(iter->first)));
@@ -57,7 +59,7 @@ namespace tokyo {
     // Storage Filter Implementation.
     //=====================================================================
     
-    DocumentNode StorageFilter::doc_at(unsigned long long pkey) const {
+    BSONNode StorageFilter::doc_at(unsigned long long pkey) const {
         return _storage->at(pkey);
     }
     
@@ -107,8 +109,8 @@ namespace tokyo {
         if(index == _storage->_fields_tree.end())
             return *this;
         
-        DB *db = index->second;
-        DB::list_value_t db_values;
+        tokyo::DB *db = index->second;
+        tokyo::DB::list_value_t db_values;
         std::set<unsigned long long> storage_keys;
         db->at_together(val, val_len, db_values);
         dbvalue_to_storagekey(db_values, storage_keys);
@@ -131,7 +133,7 @@ namespace tokyo {
             return *this;
         
         TextSearcher *searcher = index->second;
-        Searcher::set_key_t searcher_values;
+        tokyo::Searcher::set_key_t searcher_values;
         searcher->search(terms, searcher_values);
         
         switch(_mode) {
@@ -152,7 +154,7 @@ namespace tokyo {
             return *this;
         
         TagSearcher *searcher = index->second;
-        Searcher::set_key_t searcher_values;
+        tokyo::Searcher::set_key_t searcher_values;
         searcher->search(word, searcher_values);
         
         switch(_mode) {
@@ -175,7 +177,7 @@ namespace tokyo {
         std::string configfile(_directory + "/config");
         
         Log::info("Loading configuration from [%s].") << configfile << Log::end;
-        DocumentNode cfg;
+        BSONNode cfg;
         cfg.load(configfile);
         Log::info("Loaded Settings [%s].") << cfg.to_pretty_s() << Log::end;
         
@@ -186,7 +188,7 @@ namespace tokyo {
                          NULL);
 
         Log::info("Opening tree indices under [%s].") << _directory << Log::end;
-        for(DocumentNode::childmap_t::const_iterator iter = cfg.nav("index/tree").to_map().begin();
+        for(BSONNode::childmap_t::const_iterator iter = cfg.nav("index/tree").to_map().begin();
             iter != cfg.nav("index/tree").to_map().end();
             ++iter) {
             if(!iter->second->nav("file").exists() || !iter->second->nav("field").exists()) {
@@ -202,7 +204,7 @@ namespace tokyo {
         }
         
         Log::info("Opening text indices under [%s].") << _directory << Log::end;
-        for(DocumentNode::childmap_t::const_iterator iter = cfg.nav("index/text").to_map().begin();
+        for(BSONNode::childmap_t::const_iterator iter = cfg.nav("index/text").to_map().begin();
             iter != cfg.nav("index/text").to_map().end();
             ++iter) {
             if(!iter->second->nav("file").exists() || !iter->second->nav("field").exists()) {
@@ -217,8 +219,8 @@ namespace tokyo {
             _fields_text.insert(std::pair<std::string, TextSearcher *>(iter->second->nav("field").to_s(), ts));
         }
 
-        logjam::Log::info("Opening tag indices under [%s].") << _directory << Log::end;
-        for(DocumentNode::childmap_t::const_iterator iter = cfg.nav("index/tag").to_map().begin();
+        Log::info("Opening tag indices under [%s].") << _directory << Log::end;
+        for(BSONNode::childmap_t::const_iterator iter = cfg.nav("index/tag").to_map().begin();
             iter != cfg.nav("index/tag").to_map().end();
             ++iter) {
             if(!iter->second->nav("file").exists() || !iter->second->nav("field").exists()) {
@@ -260,18 +262,18 @@ namespace tokyo {
         delete _db;
     }
     
-    DocumentNode Storage::at(const unsigned long long key) const {
-        DB::value_t p = _db->at(&key, sizeof(unsigned long long));
+    BSONNode Storage::at(const unsigned long long key) const {
+        tokyo::DB::value_t p = _db->at(&key, sizeof(unsigned long long));
         if(!p.first)
-            return DocumentNode();
-        DocumentNode n(DOC_NODE, (char *)p.first);
+            return BSONNode();
+        BSONNode n(DOC_NODE, (char *)p.first);
         free(p.first);
         return n;
     }
     
     StorageFilter Storage::all() const {
-        DB::list_value_t keys;
-        DB::value_t max = _db->max_key(), min = _db->min_key();
+        tokyo::DB::list_value_t keys;
+        tokyo::DB::value_t max = _db->max_key(), min = _db->min_key();
         if(_db->range_keys(min.first,
                            min.second,
                            true,
@@ -297,8 +299,8 @@ namespace tokyo {
         if(index == _fields_tree.end())
             return none();
         
-        DB *db = index->second;
-        DB::list_value_t db_values;
+        tokyo::DB *db = index->second;
+        tokyo::DB::list_value_t db_values;
         std::set<unsigned long long> storage_keys;
         db->at_together(val, val_len, db_values);
         dbvalue_to_storagekey(db_values, storage_keys);
@@ -313,7 +315,7 @@ namespace tokyo {
             return none();
         
         TextSearcher *searcher = index->second;
-        Searcher::set_key_t searcher_values;
+        tokyo::Searcher::set_key_t searcher_values;
         searcher->search(terms, searcher_values);
         
         return StorageFilter(this, searcher_values);
@@ -326,13 +328,13 @@ namespace tokyo {
             return none();
         
         TagSearcher *searcher = index->second;
-        Searcher::set_key_t searcher_values;
+        tokyo::Searcher::set_key_t searcher_values;
         searcher->search(word, searcher_values);
         
         return StorageFilter(this, searcher_values);
     }
     
-    Storage &Storage::place(DocumentNode &value) {
+    Storage &Storage::place(BSONNode &value) {
         unsigned long long key = value.nav("__key").to_l();
         unsigned long long original_key = value.nav("__key").to_l();
         try {
@@ -349,12 +351,12 @@ namespace tokyo {
             for(std::set<std::string>::const_iterator iter = _fields_unique.begin();
                 iter != _fields_unique.end();
                 ++iter) {
-                DocumentNode n(value.nav(*iter));
+                BSONNode n(value.nav(*iter));
                 if(n.exists()) {
                     std::map<std::string, TreeDB *>::const_iterator index = _fields_tree.find(*iter);
                     if(index != _fields_tree.end()) {
                         char *bson = n.bson();
-                        DB::value_t existing = index->second->at(bson,
+                        tokyo::DB::value_t existing = index->second->at(bson,
                                                                  n.size());
                         delete[] bson;
                         if(existing.first)
@@ -383,7 +385,7 @@ namespace tokyo {
         return *this;
     }
     
-    Storage &Storage::remove(DocumentNode &value) {
+    Storage &Storage::remove(BSONNode &value) {
         unsigned long long key = value.nav("__key").to_l();
         if(key) {
             try {
@@ -405,13 +407,13 @@ namespace tokyo {
         if(!key) return *this;
         
         // Get the original document
-        DocumentNode original = at(key);
+        BSONNode original = at(key);
         
         // Remove from index entries.
         for(std::map<std::string, TreeDB *>::const_iterator iter = _fields_tree.begin();
             iter != _fields_tree.end();
             ++iter) {
-            DocumentNode n(original.nav(iter->first));
+            BSONNode n(original.nav(iter->first));
             if(n.exists()) {
                 char *bson = n.bson();
                 iter->second->remove_from_existing(bson,
@@ -424,7 +426,7 @@ namespace tokyo {
         for(std::map<std::string, TextSearcher *>::const_iterator iter = _fields_text.begin();
             iter != _fields_text.end();
             ++iter) {
-            DocumentNode n(original.nav(iter->first));
+            BSONNode n(original.nav(iter->first));
             if(n.exists()) {
                 iter->second->remove(key, n.to_s());
             }
@@ -432,7 +434,7 @@ namespace tokyo {
         for(std::map<std::string, TagSearcher *>::const_iterator iter = _fields_tag.begin();
             iter != _fields_tag.end();
             ++iter) {
-            DocumentNode n(original.nav(iter->first));
+            BSONNode n(original.nav(iter->first));
             if(n.exists()) {
                 iter->second->remove(key, n.to_set());
             }
@@ -443,13 +445,13 @@ namespace tokyo {
         if(!key) return *this;
         
         // Get the original document
-        DocumentNode original = at(key);
+        BSONNode original = at(key);
         
         // Place in the index.
         for(std::map<std::string, TreeDB *>::const_iterator iter = _fields_tree.begin();
             iter != _fields_tree.end();
             ++iter) {
-            DocumentNode n(original.nav(iter->first));
+            BSONNode n(original.nav(iter->first));
             if(n.exists()) {
                 char *bson = n.bson();
                 if(_fields_unique.find(iter->first) == _fields_unique.end()) {
@@ -469,7 +471,7 @@ namespace tokyo {
         for(std::map<std::string, TextSearcher *>::const_iterator iter = _fields_text.begin();
             iter != _fields_text.end();
             ++iter) {
-            DocumentNode n(original.nav(iter->first));
+            BSONNode n(original.nav(iter->first));
             if(n.exists()) {
                 iter->second->index(key, n.to_s());
             }
@@ -477,7 +479,7 @@ namespace tokyo {
         for(std::map<std::string, TagSearcher *>::const_iterator iter = _fields_tag.begin();
             iter != _fields_tag.end();
             ++iter) {
-            DocumentNode n(original.nav(iter->first));
+            BSONNode n(original.nav(iter->first));
             if(n.exists()) {
                 iter->second->index(key, n.to_set());
             }

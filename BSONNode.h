@@ -39,9 +39,9 @@
 #include "lunar.h"
 #include "Exception.h"
 
-namespace tokyo {
+namespace lj {
     //! Enumeration of Document Node Types.
-    enum DocumentNodeType {
+    enum BSONNodeType {
         DOUBLE_NODE = 0x01,
         STRING_NODE = 0x02,
         DOC_NODE = 0x03,
@@ -58,7 +58,7 @@ namespace tokyo {
         MAXKEY_NODE = 0x7F
     };
     
-    class DocumentNode;
+    class BSONNode;
     
     //! Node in a BSON document.
     /*!
@@ -66,25 +66,25 @@ namespace tokyo {
      \version 1.0
      \date April 19, 2010
      */
-    class DocumentNode {
+    class BSONNode {
     private:
-        typedef std::map<std::string, DocumentNode *> childmap_t;
+        typedef std::map<std::string, BSONNode *> childmap_t;
         childmap_t _children;
         char *_value;
-        DocumentNodeType _type;
+        BSONNodeType _type;
     public:
         //=====================================================================
-        // DocumentNode Lua Integration
+        // BSONNode Lua Integration
         //=====================================================================
         
         //! Lua bindings class name.
         static const char LUNAR_CLASS_NAME[];
         
         //! Lua bindings method array.
-        static Lunar<DocumentNode>::RegType LUNAR_METHODS[];
+        static Lunar<BSONNode>::RegType LUNAR_METHODS[];
         
         //! Create a new document node for lua.
-        DocumentNode(lua_State *L);
+        BSONNode(lua_State *L);
         
         int _nav(lua_State *L);
         
@@ -101,23 +101,23 @@ namespace tokyo {
         //=====================================================================
         
         //! Create a new document Node.
-        DocumentNode();
+        BSONNode();
         
         //! Create a new document node based on some data.
-        DocumentNode(const DocumentNodeType t, const char *v);
+        BSONNode(const BSONNodeType t, const char *v);
         
         //! Create a new document node as a copy.
-        DocumentNode(const DocumentNode &o);
+        BSONNode(const BSONNode &o);
         
         //! Destructor.
-        ~DocumentNode();
+        ~BSONNode();
         
         //=====================================================================
-        // DocumentNode Instance
+        // BSONNode Instance
         //=====================================================================            
         
         //---------------------------------------------------------------------
-        // DocumentNode value setters.
+        // BSONNode value setters.
         //---------------------------------------------------------------------
         
         //! Set the value of the document node based on a bson string.
@@ -129,29 +129,29 @@ namespace tokyo {
          \param v Array of data to read the new value from.
          \return Reference to \c this .
          */
-        DocumentNode &set_value(const DocumentNodeType t, const char *v);
+        BSONNode &set_value(const BSONNodeType t, const char *v);
         //! Set the value of the document node to a string value.
-        DocumentNode &value(const std::string &v);
+        BSONNode &value(const std::string &v);
         //! Set the value of the document node to a int value.
-        DocumentNode &value(const int v);
+        BSONNode &value(const int v);
         //! Set the value of the document node to a long long value.
-        DocumentNode &value(const long long v);
+        BSONNode &value(const long long v);
         //! Set the value of the document node to a double value.
-        DocumentNode &value(const double v);
+        BSONNode &value(const double v);
         //! Set the value of the document node to null.
         /*!
          \par
          Nullified nodes exist, but do not contain a value.
          \return Reference to \c this .
          */
-        DocumentNode &nullify();
+        BSONNode &nullify();
         //! Set the value of the document node to not exist.
         /*!
          \par
          Destroyed values no longer exist, and have no value.
          \return Reference to \c this .
          */
-        DocumentNode &destroy();
+        BSONNode &destroy();
         //! set or create a child of this node.
         /*!
          \par
@@ -161,10 +161,10 @@ namespace tokyo {
          \param c The child to copy from.
          \return Reference to \c this .
          */
-        DocumentNode &child(const std::string &n, const DocumentNode &c);
+        BSONNode &child(const std::string &n, const BSONNode &c);
 
         //---------------------------------------------------------------------
-        // DocumentNode value getters.
+        // BSONNode value getters.
         //---------------------------------------------------------------------
         
         //! get the value of the document node as a debug string.
@@ -229,7 +229,7 @@ namespace tokyo {
          \param n The name of the child to get.
          \return Reference to the child.
          */
-        DocumentNode &child(const std::string &n);
+        BSONNode &child(const std::string &n);
         //! get a specific child of this node.
         /*!
          \par
@@ -238,18 +238,18 @@ namespace tokyo {
          \return Reference to the child.
          \throws Exception if the child does not exist.
          */
-        const DocumentNode &child(const std::string &n) const;
+        const BSONNode &child(const std::string &n) const;
         //! navigate to a specific child.
-        DocumentNode &nav(const std::string &p);
+        BSONNode &nav(const std::string &p);
         //! navigate to a specific child.
-        const DocumentNode &nav(const std::string &p) const;
+        const BSONNode &nav(const std::string &p) const;
         
         //---------------------------------------------------------------------
         // DocumentNode inspectors.
         //---------------------------------------------------------------------
         
         //! Get the type of the document node.
-        DocumentNodeType type() const { return _type; }
+        BSONNodeType type() const { return _type; }
         //! Get a string version of the type.
         std::string type_string() const;
         //! Get if the node actually exists.
@@ -266,8 +266,8 @@ namespace tokyo {
         //---------------------------------------------------------------------
         
         //! Save this document node to disk.
-        const DocumentNode &save(const std::string &fn) const;
+        const BSONNode &save(const std::string &fn) const;
         //! Load this document node from disk.
-        DocumentNode &load(const std::string &fn);
+        BSONNode &load(const std::string &fn);
     };
 };

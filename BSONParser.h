@@ -36,9 +36,9 @@
 #include <map>
 #include <string>
 #include "Exception.h"
-#include "DocumentNode.h"
+#include "BSONNode.h"
 
-namespace tokyo {
+namespace lj {
 
     //! SAX like BSON parser.
     /*!
@@ -55,7 +55,7 @@ namespace tokyo {
         virtual ~StreamingBSONParser();
         void parse(std::istream is);
         virtual bool start_doc(size_t length) { return true; };
-        virtual bool start_field(DocumentNodeType t, std::string name) { return true; };
+        virtual bool start_field(BSONNodeType t, std::string name) { return true; };
         virtual bool bytes(const char *ptr, size_t len) { return true; };
         virtual bool end_field() { return true; };
         virtual bool end_doc() { return true; };

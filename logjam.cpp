@@ -36,7 +36,6 @@
 #include <iostream>
 #include <list>
 #include "lunar.h"
-#include "Document.h"
 #include "Storage.h"
 extern "C" {
 #include "lualib.h"
@@ -108,9 +107,9 @@ namespace {
 int main(int argc, char * const argv[]) {
     lua_State *L = lua_open();
     luaL_openlibs(L);
-    Lunar<tokyo::DocumentNode>::Register(L);
+    Lunar<lj::BSONNode>::Register(L);
 
-    tokyo::Storage s("role");
+    lj::Storage s("role");
     if(argc > 1 && strcmp(argv[1], "-") == 0) {
         read_from_cin(false, L);
     } else {

@@ -33,13 +33,13 @@
  */
 
 #include "Tokyo.h"
-#include "DocumentNode.h"
+#include "BSONNode.h"
 #include <list>
 #include <map>
 #include <set>
 #include <string>
 
-namespace tokyo {
+namespace lj {
     class Storage;
     
     //! Filter used in Storage Queries.
@@ -79,7 +79,7 @@ namespace tokyo {
         long long _length;
         
         //! Internal method to hide some logic for the template code below.
-        DocumentNode doc_at(unsigned long long pkey) const;
+        BSONNode doc_at(unsigned long long pkey) const;
     public:
         //! Create a new Storage Filter.
         StorageFilter(const Storage *storage,
@@ -163,19 +163,19 @@ namespace tokyo {
         /*!
          \par Stores the actual documents, indexed by primary key.
          */
-        TreeDB *_db;
+        tokyo::TreeDB *_db;
         
         //! Fields using a tree index.
         /*!
          \par used for range selected values.
          */
-        std::map<std::string, TreeDB *> _fields_tree;
+        std::map<std::string, tokyo::TreeDB *> _fields_tree;
         
         //! Fields indexed using full text searcher.
-        std::map<std::string, TextSearcher *> _fields_text;
+        std::map<std::string, tokyo::TextSearcher *> _fields_text;
         
         //! Fields indexed using word searcher.
-        std::map<std::string, TagSearcher *> _fields_tag;
+        std::map<std::string, tokyo::TagSearcher *> _fields_tag;
         
         //! Fields that have unique constraints.
         std::set<std::string> _fields_unique;
@@ -196,7 +196,7 @@ namespace tokyo {
         virtual ~Storage();
         
         //! Get the document stored for the key.
-        virtual DocumentNode at(const unsigned long long key) const;
+        virtual BSONNode at(const unsigned long long key) const;
         
         //! Get a set of all keys.
         virtual StorageFilter all() const;
@@ -218,10 +218,10 @@ namespace tokyo {
                                      const std::string &word) const;
         
         //! place a document in storage.
-        virtual Storage &place(DocumentNode &value);
+        virtual Storage &place(BSONNode &value);
         
         //! remove a document from storage.
-        virtual Storage &remove(DocumentNode &value);
+        virtual Storage &remove(BSONNode &value);
         
         //! Begin a transaction.
         void begin_transaction();

@@ -32,10 +32,10 @@
  */
 
 #include "build/default/config.h"
-#include "Document.h"
+#include "BSONParser.h"
 #define BUFFER_SIZE 1024
 
-namespace tokyo {
+namespace lj {
     namespace {
         enum WhatShouldThisBe {
             DOC_SIZE,
@@ -45,7 +45,7 @@ namespace tokyo {
             STRING_END,
             DOC_END
         };
-        size_t field_length(DocumentNodeType t) {
+        size_t field_length(BSONNodeType t) {
             switch(t) {
                 case INT32_NODE:
                     return 4;
@@ -74,7 +74,7 @@ namespace tokyo {
         delete[] buffer;
     }
     void StreamingBSONParser::parse(std::istream is) {
-        DocumentNodeType t = DOC_NODE;
+        BSONNodeType t = DOC_NODE;
         WhatShouldThisBe looking_at = DOC_SIZE;
         std::list<long long> doc_sizes;
         size_t sz = 0;
@@ -115,7 +115,7 @@ namespace tokyo {
                         
                         break;
                     case FIELD_TYPE:
-                        t = (DocumentNodeType)buffer[curr];
+                        t = (BSONNodeType)buffer[curr];
                         
                         curr++;
                         docsz--;

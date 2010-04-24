@@ -36,7 +36,7 @@
 #include <ostream>
 #include <string>
 
-namespace logjam {
+namespace lj {
     class Log {
     public:
         enum event_level {

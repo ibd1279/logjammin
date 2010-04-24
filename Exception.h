@@ -34,7 +34,7 @@
 
 #include <string>
 
-namespace tokyo {
+namespace lj {
     //! DB Exception type.
     /*!
      \author Jason Watson
