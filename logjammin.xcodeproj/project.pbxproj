@@ -28,6 +28,7 @@
 		2236823811815E2E002FD990 /* Logger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2236823711815E2E002FD990 /* Logger.cpp */; };
 		2236838C118270B8002FD990 /* BSONParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2236838A118270B8002FD990 /* BSONParser.cpp */; };
 		2236838F11827124002FD990 /* BSONNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2236838D11827124002FD990 /* BSONNode.cpp */; };
+		223683C6118279D9002FD990 /* LuaStorageFactory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 223683C5118279D9002FD990 /* LuaStorageFactory.cpp */; };
 		223D698410078F5800F79019 /* Controller.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 223D698310078F5800F79019 /* Controller.cpp */; };
 		224046D7100595160005461A /* User.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 224046D6100595160005461A /* User.cpp */; };
 		224046DC100597D90005461A /* Role.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 224046DB100597D90005461A /* Role.cpp */; };
@@ -96,6 +97,8 @@
 		2236838B118270B8002FD990 /* BSONParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BSONParser.h; sourceTree = "<group>"; };
 		2236838D11827124002FD990 /* BSONNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BSONNode.cpp; sourceTree = "<group>"; };
 		2236838E11827124002FD990 /* BSONNode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BSONNode.h; sourceTree = "<group>"; };
+		223683C4118279D9002FD990 /* LuaStorageFactory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LuaStorageFactory.h; sourceTree = "<group>"; };
+		223683C5118279D9002FD990 /* LuaStorageFactory.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LuaStorageFactory.cpp; sourceTree = "<group>"; };
 		223D698310078F5800F79019 /* Controller.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Controller.cpp; sourceTree = "<group>"; };
 		224046D5100595160005461A /* User.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = User.h; sourceTree = "<group>"; };
 		224046D6100595160005461A /* User.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = User.cpp; sourceTree = "<group>"; };
@@ -233,6 +236,8 @@
 			isa = PBXGroup;
 			children = (
 				220D9D2E117FD8C0000F20D0 /* logjam.cpp */,
+				223683C4118279D9002FD990 /* LuaStorageFactory.h */,
+				223683C5118279D9002FD990 /* LuaStorageFactory.cpp */,
 			);
 			name = logjam;
 			sourceTree = "<group>";
@@ -382,6 +387,7 @@
 				2236823811815E2E002FD990 /* Logger.cpp in Sources */,
 				2236838C118270B8002FD990 /* BSONParser.cpp in Sources */,
 				2236838F11827124002FD990 /* BSONNode.cpp in Sources */,
+				223683C6118279D9002FD990 /* LuaStorageFactory.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

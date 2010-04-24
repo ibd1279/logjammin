@@ -1,6 +1,6 @@
 #pragma once
 /*
- \file DocumentNode.h
+ \file BSONNode.h
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.

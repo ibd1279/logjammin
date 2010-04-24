@@ -37,6 +37,7 @@
 #include <list>
 #include "lunar.h"
 #include "Storage.h"
+#include "LuaStorageFactory.h"
 extern "C" {
 #include "lualib.h"
 }
@@ -108,6 +109,9 @@ int main(int argc, char * const argv[]) {
     lua_State *L = lua_open();
     luaL_openlibs(L);
     Lunar<lj::BSONNode>::Register(L);
+    Lunar<logjam::LuaStorageFactory>::Register(L);
+    Lunar<logjam::LuaStorageFactory>::push(L, new logjam::LuaStorageFactory(), true);
+    lua_setglobal(L, "StorageFactory");
 
     lj::Storage s("role");
     if(argc > 1 && strcmp(argv[1], "-") == 0) {
