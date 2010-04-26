@@ -1,5 +1,5 @@
 /*
- \file main.cpp
+ \file logjam.cpp
  \author Jason Watson
  Copyright (c) 2009, Jason Watson
  All rights reserved.
@@ -36,8 +36,7 @@
 #include <iostream>
 #include <list>
 #include "lunar.h"
-#include "Storage.h"
-#include "LuaStorageFactory.h"
+#include "logjam_lua.h"
 extern "C" {
 #include "lualib.h"
 }
@@ -108,12 +107,8 @@ namespace {
 int main(int argc, char * const argv[]) {
     lua_State *L = lua_open();
     luaL_openlibs(L);
-    Lunar<lj::BSONNode>::Register(L);
-    Lunar<logjam::LuaStorageFactory>::Register(L);
-    Lunar<logjam::LuaStorageFactory>::push(L, new logjam::LuaStorageFactory(), true);
-    lua_setglobal(L, "StorageFactory");
+    logjam::register_logjam_functions(L);
 
-    lj::Storage s("role");
     if(argc > 1 && strcmp(argv[1], "-") == 0) {
         read_from_cin(false, L);
     } else {
@@ -123,73 +118,3 @@ int main(int argc, char * const argv[]) {
     lua_close(L);
     return 0;
 }
-
-/*
-#include "Request.h"
-#include "Response.h"
-#include "Controller.h"
-#include "ProjectController.h"
-#include "ReleaseController.h"
-#include "BacklogController.h"
-#include "UserController.h"
-#include "Seed.h"
-#include "RssController.h"
-#include "RoleController.h"
-
-int main (int argc, char * const argv[]) {
-        
-    // Create the request/response wrappers.
-    CGI::Request *request = new CGI::Request();
-    CGI::Response *response = new CGI::Response();
-    
-    request->context_object("request", request, false);
-    request->context_object("response", response, false);
-    
-    // Create an array of the controllers in the order to evaluate.
-    logjammin::controller::Controller *controllers[] = {
-        new logjammin::controller::AuthenticateFilter(),
-        new logjammin::controller::ImpersonationFilter(),
-        new logjammin::controller::HttpHeadersFilter(),
-        new logjammin::controller::MessageExpanderFilter(),
-        new logjammin::controller::TemplateTopFilter(),
-        new logjammin::controller::Seed(),
-        new logjammin::controller::StaticAssetController(),
-        new logjammin::controller::BacklogEditController(),
-        new logjammin::controller::BacklogPurgeController(),
-        new logjammin::controller::BacklogListController(),
-        new logjammin::controller::ReleaseListController(),
-        new logjammin::controller::ProjectEditController(),
-        new logjammin::controller::ProjectPurgeController(),
-        new logjammin::controller::ProjectListController(),
-        new logjammin::controller::UserEditController(),
-        new logjammin::controller::UserSearchController(),
-        new logjammin::controller::UserPurgeController(),
-        new logjammin::controller::UserListController(),
-        new logjammin::controller::RoleEditController(),
-        new logjammin::controller::RolePurgeController(),
-        new logjammin::controller::RoleListController(),
-        new logjammin::controller::CommitFeedController(),
-        new logjammin::controller::NotFoundController(),
-        new logjammin::controller::TemplateBottomFilter(),
-        0
-    };
-
-    try {
-        for(logjammin::controller::Controller **iter = controllers; *iter; ++iter) {
-            if((*iter)->is_requested(request, response))
-                (*iter)->execute(request, response);
-            if(response->is_closed())
-                break;
-        }
-    } catch(std::string &ex) {
-        std::cerr << ex << std::endl;
-        response->status(500);
-    } catch(tokyo::Exception &ex) {
-        std::cerr << ex.msg << std::endl;
-        response->status(500);
-    }
-    
-    response->close();
-    delete response;
-    return 0;
-}*/

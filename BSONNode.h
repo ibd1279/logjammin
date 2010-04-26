@@ -36,7 +36,6 @@
 #include <map>
 #include <set>
 #include <string>
-#include "lunar.h"
 #include "Exception.h"
 
 namespace lj {
@@ -73,29 +72,6 @@ namespace lj {
         char *_value;
         BSONNodeType _type;
     public:
-        //=====================================================================
-        // BSONNode Lua Integration
-        //=====================================================================
-        
-        //! Lua bindings class name.
-        static const char LUNAR_CLASS_NAME[];
-        
-        //! Lua bindings method array.
-        static Lunar<BSONNode>::RegType LUNAR_METHODS[];
-        
-        //! Create a new document node for lua.
-        BSONNode(lua_State *L);
-        
-        int _nav(lua_State *L);
-        
-        int _set(lua_State *L);
-        
-        int _get(lua_State *L);
-        
-        int _save(lua_State *L);
-        
-        int _load(lua_State *L);
-        
         //=====================================================================
         // DocumentNode ctor/dtor
         //=====================================================================

@@ -6,63 +6,12 @@
 	objectVersion = 45;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		2202B35E0FFFA4D100B6FCEC /* Project.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2202B35D0FFFA4D100B6FCEC /* Project.cpp */; };
-		2202B3740FFFAAA200B6FCEC /* Backlog.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2202B3730FFFAAA200B6FCEC /* Backlog.cpp */; };
-		220AD6C30FA1FFD400C604BE /* libtokyocabinet.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 220AD6C20FA1FFD400C604BE /* libtokyocabinet.a */; };
-		220AD6F90FA215F800C604BE /* openprop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 220AD6F50FA215F800C604BE /* openprop.cpp */; };
-		220AD6FA0FA215F800C604BE /* parser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 220AD6F80FA215F800C604BE /* parser.cpp */; };
-		220D9D2F117FD8C0000F20D0 /* logjam.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 220D9D2E117FD8C0000F20D0 /* logjam.cpp */; };
-		221577CC100F38270020B133 /* ProjectController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 221577CB100F38270020B133 /* ProjectController.cpp */; };
-		221B34460FA8995D009AB597 /* liblua.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 221B34450FA8995D009AB597 /* liblua.a */; };
-		221B344D0FA89B99009AB597 /* ModuleCompilier.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 221B344A0FA89B99009AB597 /* ModuleCompilier.cpp */; };
-		2222BE36101E89D000CE52E6 /* UserController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2222BE35101E89D000CE52E6 /* UserController.cpp */; };
-		2222BE6F101F83B400CE52E6 /* libtokyodystopia.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2222BE6E101F83B400CE52E6 /* libtokyodystopia.dylib */; };
-		2222BE7F101FA32100CE52E6 /* OpenIDConsumer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */; };
-		2222C04E1020D5BC00CE52E6 /* RssItem.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2222C04D1020D5BC00CE52E6 /* RssItem.cpp */; };
-		2222C09810214AB600CE52E6 /* RssController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2222C09710214AB600CE52E6 /* RssController.cpp */; };
-		2222C09C1021D11200CE52E6 /* libexpat.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2222C09B1021D11200CE52E6 /* libexpat.dylib */; };
-		222B665D101E46F300F45B04 /* libcrypto.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 222B665C101E46F300F45B04 /* libcrypto.dylib */; };
-		223517361114E14000871FBF /* Release.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 223517351114E14000871FBF /* Release.cpp */; };
-		223619AF111DDFF00019641E /* ReleaseController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 223619AE111DDFF00019641E /* ReleaseController.cpp */; };
-		2236823811815E2E002FD990 /* Logger.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2236823711815E2E002FD990 /* Logger.cpp */; };
-		2236838C118270B8002FD990 /* BSONParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2236838A118270B8002FD990 /* BSONParser.cpp */; };
-		2236838F11827124002FD990 /* BSONNode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2236838D11827124002FD990 /* BSONNode.cpp */; };
-		223683C6118279D9002FD990 /* LuaStorageFactory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 223683C5118279D9002FD990 /* LuaStorageFactory.cpp */; };
-		223D698410078F5800F79019 /* Controller.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 223D698310078F5800F79019 /* Controller.cpp */; };
-		224046D7100595160005461A /* User.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 224046D6100595160005461A /* User.cpp */; };
-		224046DC100597D90005461A /* Role.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 224046DB100597D90005461A /* Role.cpp */; };
-		2271D91A101288A000749D9A /* BacklogController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2271D919101288A000749D9A /* BacklogController.cpp */; };
-		227A47061018186B0013EACE /* libcurl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 227A47051018186B0013EACE /* libcurl.dylib */; };
-		229F360B0FAA34E3003A1626 /* Response.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 229F360A0FAA34E3003A1626 /* Response.cpp */; };
-		22D30BE30FA78F53005DE0D9 /* Request.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 22D30BE20FA78F53005DE0D9 /* Request.cpp */; };
-		22D32CA1102AAA3E0015E71D /* RoleController.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 22D32CA0102AAA3E0015E71D /* RoleController.cpp */; };
-		22DB7C5F101A5CC800BEEB52 /* OpenID.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */; };
-		22E9C71B1176BA8000557ADA /* Tokyo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 22E9C71A1176BA8000557ADA /* Tokyo.cpp */; };
-		22E9C96D117BF18B00557ADA /* Storage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 22E9C96C117BF18B00557ADA /* Storage.cpp */; };
-		8DD76F6A0486A84900D96B5E /* logjammin.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = C6859E8B029090EE04C91782 /* logjammin.1 */; };
-/* End PBXBuildFile section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		8DD76F690486A84900D96B5E /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 8;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
-			files = (
-				8DD76F6A0486A84900D96B5E /* logjammin.1 in CopyFiles */,
-			);
-			runOnlyForDeploymentPostprocessing = 1;
-		};
-/* End PBXCopyFilesBuildPhase section */
-
 /* Begin PBXFileReference section */
 		2202B2430FFE56C000B6FCEC /* Tokyo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Tokyo.h; sourceTree = "<group>"; };
 		2202B35C0FFFA4D100B6FCEC /* Project.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Project.h; sourceTree = "<group>"; };
 		2202B35D0FFFA4D100B6FCEC /* Project.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Project.cpp; sourceTree = "<group>"; };
 		2202B3720FFFAAA200B6FCEC /* Backlog.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Backlog.h; sourceTree = "<group>"; };
 		2202B3730FFFAAA200B6FCEC /* Backlog.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Backlog.cpp; sourceTree = "<group>"; };
-		220AD6C20FA1FFD400C604BE /* libtokyocabinet.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libtokyocabinet.a; path = /opt/local/lib/libtokyocabinet.a; sourceTree = "<absolute>"; };
 		220AD6F40FA215F800C604BE /* openprop.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = openprop.h; sourceTree = "<group>"; };
 		220AD6F50FA215F800C604BE /* openprop.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = openprop.cpp; sourceTree = "<group>"; };
 		220AD6F60FA215F800C604BE /* openprop_int.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = openprop_int.h; sourceTree = "<group>"; };
@@ -72,13 +21,11 @@
 		220D9D2E117FD8C0000F20D0 /* logjam.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = logjam.cpp; sourceTree = "<group>"; };
 		221577CA100F38270020B133 /* ProjectController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ProjectController.h; sourceTree = "<group>"; };
 		221577CB100F38270020B133 /* ProjectController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ProjectController.cpp; sourceTree = "<group>"; };
-		221B34450FA8995D009AB597 /* liblua.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblua.a; path = /opt/local/lib/liblua.a; sourceTree = "<absolute>"; };
 		221B344A0FA89B99009AB597 /* ModuleCompilier.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModuleCompilier.cpp; sourceTree = "<group>"; };
 		221B344B0FA89B99009AB597 /* ModuleCompilier.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ModuleCompilier.h; sourceTree = "<group>"; };
 		221B34820FA8C302009AB597 /* lunar.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lunar.h; sourceTree = "<group>"; };
 		2222BE34101E89D000CE52E6 /* UserController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UserController.h; sourceTree = "<group>"; };
 		2222BE35101E89D000CE52E6 /* UserController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = UserController.cpp; sourceTree = "<group>"; };
-		2222BE6E101F83B400CE52E6 /* libtokyodystopia.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libtokyodystopia.dylib; path = /usr/local/lib/libtokyodystopia.dylib; sourceTree = "<absolute>"; };
 		2222BE7D101FA32100CE52E6 /* OpenIDConsumer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenIDConsumer.h; sourceTree = "<group>"; };
 		2222BE7E101FA32100CE52E6 /* OpenIDConsumer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = OpenIDConsumer.cpp; sourceTree = "<group>"; };
 		2222C04C1020D5BC00CE52E6 /* RssItem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RssItem.h; sourceTree = "<group>"; };
@@ -97,13 +44,14 @@
 		2236838B118270B8002FD990 /* BSONParser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BSONParser.h; sourceTree = "<group>"; };
 		2236838D11827124002FD990 /* BSONNode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BSONNode.cpp; sourceTree = "<group>"; };
 		2236838E11827124002FD990 /* BSONNode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BSONNode.h; sourceTree = "<group>"; };
-		223683C4118279D9002FD990 /* LuaStorageFactory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LuaStorageFactory.h; sourceTree = "<group>"; };
-		223683C5118279D9002FD990 /* LuaStorageFactory.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LuaStorageFactory.cpp; sourceTree = "<group>"; };
 		223D698310078F5800F79019 /* Controller.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Controller.cpp; sourceTree = "<group>"; };
 		224046D5100595160005461A /* User.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = User.h; sourceTree = "<group>"; };
 		224046D6100595160005461A /* User.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = User.cpp; sourceTree = "<group>"; };
 		224046DA100597D90005461A /* Role.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Role.h; sourceTree = "<group>"; };
 		224046DB100597D90005461A /* Role.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Role.cpp; sourceTree = "<group>"; };
+		2267589A1185C8870097ADE1 /* logjammin.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = logjammin.cpp; sourceTree = "<group>"; };
+		226758A21185CCE50097ADE1 /* logjam_lua.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = logjam_lua.cpp; sourceTree = "<group>"; };
+		226758A31185CCE50097ADE1 /* logjam_lua.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = logjam_lua.h; sourceTree = "<group>"; };
 		2271D918101288A000749D9A /* BacklogController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BacklogController.h; sourceTree = "<group>"; };
 		2271D919101288A000749D9A /* BacklogController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BacklogController.cpp; sourceTree = "<group>"; };
 		227A47051018186B0013EACE /* libcurl.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcurl.dylib; path = /usr/lib/libcurl.dylib; sourceTree = "<absolute>"; };
@@ -124,25 +72,8 @@
 		22E9C9A8117C894700557ADA /* Exception.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Exception.h; sourceTree = "<group>"; };
 		22ED3BBF0FB8704A004E2511 /* Controller.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Controller.h; sourceTree = "<group>"; };
 		22ED3C110FB8F99C004E2511 /* Seed.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Seed.h; sourceTree = "<group>"; };
-		8DD76F6C0486A84900D96B5E /* logjammin */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = logjammin; sourceTree = BUILT_PRODUCTS_DIR; };
 		C6859E8B029090EE04C91782 /* logjammin.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = logjammin.1; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFrameworksBuildPhase section */
-		8DD76F660486A84900D96B5E /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				220AD6C30FA1FFD400C604BE /* libtokyocabinet.a in Frameworks */,
-				221B34460FA8995D009AB597 /* liblua.a in Frameworks */,
-				227A47061018186B0013EACE /* libcurl.dylib in Frameworks */,
-				222B665D101E46F300F45B04 /* libcrypto.dylib in Frameworks */,
-				2222BE6F101F83B400CE52E6 /* libtokyodystopia.dylib in Frameworks */,
-				2222C09C1021D11200CE52E6 /* libexpat.dylib in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		08FB7794FE84155DC02AAC07 /* logjammin */ = {
@@ -151,9 +82,6 @@
 				222B665C101E46F300F45B04 /* libcrypto.dylib */,
 				227A47051018186B0013EACE /* libcurl.dylib */,
 				2222C09B1021D11200CE52E6 /* libexpat.dylib */,
-				221B34450FA8995D009AB597 /* liblua.a */,
-				220AD6C20FA1FFD400C604BE /* libtokyocabinet.a */,
-				2222BE6E101F83B400CE52E6 /* libtokyodystopia.dylib */,
 				08FB7795FE84155DC02AAC07 /* Source */,
 				C6859E8C029090F304C91782 /* Documentation */,
 				1AB674ADFE9D54B511CA2CBB /* Products */,
@@ -165,6 +93,7 @@
 			isa = PBXGroup;
 			children = (
 				2236839411827230002FD990 /* logjam */,
+				226758991185C85F0097ADE1 /* logjammin */,
 				22A77218118547C200E48208 /* global namespace */,
 				2236837211825B97002FD990 /* lj */,
 				2261AF4F10D1E63000841C84 /* tokyo */,
@@ -179,7 +108,6 @@
 		1AB674ADFE9D54B511CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				8DD76F6C0486A84900D96B5E /* logjammin */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -236,8 +164,8 @@
 			isa = PBXGroup;
 			children = (
 				220D9D2E117FD8C0000F20D0 /* logjam.cpp */,
-				223683C4118279D9002FD990 /* LuaStorageFactory.h */,
-				223683C5118279D9002FD990 /* LuaStorageFactory.cpp */,
+				226758A31185CCE50097ADE1 /* logjam_lua.h */,
+				226758A21185CCE50097ADE1 /* logjam_lua.cpp */,
 			);
 			name = logjam;
 			sourceTree = "<group>";
@@ -249,6 +177,14 @@
 				22E9C71A1176BA8000557ADA /* Tokyo.cpp */,
 			);
 			name = tokyo;
+			sourceTree = "<group>";
+		};
+		226758991185C85F0097ADE1 /* logjammin */ = {
+			isa = PBXGroup;
+			children = (
+				2267589A1185C8870097ADE1 /* logjammin.cpp */,
+			);
+			name = logjammin;
 			sourceTree = "<group>";
 		};
 		22A77218118547C200E48208 /* global namespace */ = {
@@ -327,27 +263,6 @@
 		};
 /* End PBXLegacyTarget section */
 
-/* Begin PBXNativeTarget section */
-		8DD76F620486A84900D96B5E /* logjammin */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 1DEB923108733DC60010E9CD /* Build configuration list for PBXNativeTarget "logjammin" */;
-			buildPhases = (
-				8DD76F640486A84900D96B5E /* Sources */,
-				8DD76F660486A84900D96B5E /* Frameworks */,
-				8DD76F690486A84900D96B5E /* CopyFiles */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = logjammin;
-			productInstallPath = "$(HOME)/bin";
-			productName = logjammin;
-			productReference = 8DD76F6C0486A84900D96B5E /* logjammin */;
-			productType = "com.apple.product-type.tool";
-		};
-/* End PBXNativeTarget section */
-
 /* Begin PBXProject section */
 		08FB7793FE84155DC02AAC07 /* Project object */ = {
 			isa = PBXProject;
@@ -358,99 +273,12 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				8DD76F620486A84900D96B5E /* logjammin */,
 				220D9C66117FA0BA000F20D0 /* logjam */,
 			);
 		};
 /* End PBXProject section */
 
-/* Begin PBXSourcesBuildPhase section */
-		8DD76F640486A84900D96B5E /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				220AD6F90FA215F800C604BE /* openprop.cpp in Sources */,
-				220AD6FA0FA215F800C604BE /* parser.cpp in Sources */,
-				22D30BE30FA78F53005DE0D9 /* Request.cpp in Sources */,
-				221B344D0FA89B99009AB597 /* ModuleCompilier.cpp in Sources */,
-				229F360B0FAA34E3003A1626 /* Response.cpp in Sources */,
-				2202B35E0FFFA4D100B6FCEC /* Project.cpp in Sources */,
-				2202B3740FFFAAA200B6FCEC /* Backlog.cpp in Sources */,
-				224046D7100595160005461A /* User.cpp in Sources */,
-				224046DC100597D90005461A /* Role.cpp in Sources */,
-				223D698410078F5800F79019 /* Controller.cpp in Sources */,
-				221577CC100F38270020B133 /* ProjectController.cpp in Sources */,
-				2271D91A101288A000749D9A /* BacklogController.cpp in Sources */,
-				22DB7C5F101A5CC800BEEB52 /* OpenID.cpp in Sources */,
-				2222BE36101E89D000CE52E6 /* UserController.cpp in Sources */,
-				2222BE7F101FA32100CE52E6 /* OpenIDConsumer.cpp in Sources */,
-				2222C04E1020D5BC00CE52E6 /* RssItem.cpp in Sources */,
-				2222C09810214AB600CE52E6 /* RssController.cpp in Sources */,
-				22D32CA1102AAA3E0015E71D /* RoleController.cpp in Sources */,
-				223517361114E14000871FBF /* Release.cpp in Sources */,
-				223619AF111DDFF00019641E /* ReleaseController.cpp in Sources */,
-				22E9C71B1176BA8000557ADA /* Tokyo.cpp in Sources */,
-				22E9C96D117BF18B00557ADA /* Storage.cpp in Sources */,
-				220D9D2F117FD8C0000F20D0 /* logjam.cpp in Sources */,
-				2236823811815E2E002FD990 /* Logger.cpp in Sources */,
-				2236838C118270B8002FD990 /* BSONParser.cpp in Sources */,
-				2236838F11827124002FD990 /* BSONNode.cpp in Sources */,
-				223683C6118279D9002FD990 /* LuaStorageFactory.cpp in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXSourcesBuildPhase section */
-
 /* Begin XCBuildConfiguration section */
-		1DEB923208733DC60010E9CD /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(NATIVE_ARCH)";
-				COPY_PHASE_STRIP = NO;
-				GCC_C_LANGUAGE_STANDARD = c99;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_FIX_AND_CONTINUE = YES;
-				GCC_LINK_WITH_DYNAMIC_LIBRARIES = YES;
-				GCC_MODEL_TUNING = G5;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"_GLIBCXX_DEBUG=1",
-					"_GLIBCXX_DEBUG_PEDANTIC=1",
-				);
-				HEADER_SEARCH_PATHS = (
-					/usr/local/include/,
-					/opt/local/include/,
-					/usr/include/,
-				);
-				INSTALL_PATH = /usr/local/bin;
-				LIBRARY_SEARCH_PATHS = (
-					/usr/local/lib/,
-					/opt/local/lib/,
-					/usr/lib/,
-				);
-				OTHER_LDFLAGS = "";
-				PRODUCT_NAME = logjammin;
-				STANDARD_C_PLUS_PLUS_LIBRARY_TYPE = dynamic;
-			};
-			name = Debug;
-		};
-		1DEB923308733DC60010E9CD /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				GCC_MODEL_TUNING = G5;
-				INSTALL_PATH = /usr/local/bin;
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					/opt/local/lib,
-					"\"$(SRCROOT)\"",
-				);
-				PRODUCT_NAME = logjammin;
-			};
-			name = Release;
-		};
 		1DEB923608733DC60010E9CD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -501,15 +329,6 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		1DEB923108733DC60010E9CD /* Build configuration list for PBXNativeTarget "logjammin" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				1DEB923208733DC60010E9CD /* Debug */,
-				1DEB923308733DC60010E9CD /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		1DEB923508733DC60010E9CD /* Build configuration list for PBXProject "logjammin" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

@@ -218,5 +218,5 @@ private:
     }
 };
 
-#define LUNAR_MEMBER_METHOD(Class, Name) {#Name, &Class::_##Name, 0}
+#define LUNAR_MEMBER_METHOD(Class, Name) {#Name, &Class::Name, 0}
 #define LUNAR_STATIC_METHOD(Prefix, Name) {#Name, 0, &Prefix##_##Name}

@@ -1,6 +1,6 @@
 #pragma once
 /*
- \file LuaStorageFactory.h
+ \file logjam_lua.h
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -33,20 +33,45 @@
  */
 
 #include "lunar.h"
+#include "BSONNode.h"
 
 namespace logjam {
-    class LuaStorageFactory {
-        static std::string _dbdir;
+    void register_logjam_functions(lua_State *L);
+    int storage_config_new(lua_State *L);
+    int storage_config_save(lua_State *L);
+    int storage_config_load(lua_State *L);
+    int storage_config_add_index(lua_State *L);
+    int storage_config_add_unique(lua_State *L);
+    
+    class LuaBSONNode {
+    private:
+        lj::BSONNode *_node;
+        bool _gc;
     public:
-        static const char LUNAR_CLASS_NAME[];
-        static Lunar<LuaStorageFactory>::RegType LUNAR_METHODS[];
-        LuaStorageFactory();
-        LuaStorageFactory(lua_State *L);
-        ~LuaStorageFactory();
+        LuaBSONNode(lj::BSONNode *ptr, bool gc);
         
-        int _add_config_index(lua_State *L);
-        int _new_config(lua_State *L);
-        int _save_config(lua_State *L);
-        int _load_config(lua_State *L);
+        ~LuaBSONNode();
+        
+        //! Lua bindings class name.
+        static const char LUNAR_CLASS_NAME[];
+        
+        //! Lua bindings method array.
+        static Lunar<LuaBSONNode>::RegType LUNAR_METHODS[];
+        
+        //! Create a new document node for lua.
+        LuaBSONNode(lua_State *L);
+        
+        int nav(lua_State *L);
+        
+        int set(lua_State *L);
+        
+        int get(lua_State *L);
+        
+        int save(lua_State *L);
+        
+        int load(lua_State *L);
+        
+        inline lj::BSONNode &node() { return *_node; }
     };
+    
 };
