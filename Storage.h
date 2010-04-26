@@ -138,15 +138,42 @@ namespace lj {
         
         //! Get the list of items contained by the filter.
         template<typename D>
+        bool items(std::list<D> &results,
+                   const long long start = -1,
+                   const long long end = -1) const {
+            for(std::set<unsigned long long>::const_iterator iter = _keys.begin();
+                iter != _keys.end();
+                ++iter) {
+                D obj;
+                obj.assign(doc_at(*iter));
+                results.push_back(obj);
+            }
+            return true;
+        }
+        
+        template<typename D>
         bool items(std::list<D *> &results,
                    const long long start = -1,
                    const long long end = -1) const {
             for(std::set<unsigned long long>::const_iterator iter = _keys.begin();
                 iter != _keys.end();
                 ++iter) {
-                results.push_back(new D(doc_at(*iter)));
+                D *obj = new D();
+                obj->assign(doc_at(*iter));
+                results.push_back(obj);
             }
             return true;
+        }
+        
+        template<typename D>
+        bool first(D &result) const {
+            for(std::set<unsigned long long>::const_iterator iter = _keys.begin();
+                iter != _keys.end();
+                ++iter) {
+                result.assign(doc_at(*iter));
+                return true;
+            }
+            return false;
         }
     };
     

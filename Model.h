@@ -32,11 +32,7 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <list>
-#include <string>
-#include <sstream>
-#include "Document.h"
-#include "Tokyo.h"
+#include "BSONNode.h"
 #include "Storage.h"
 
 namespace logjammin {
@@ -47,22 +43,17 @@ namespace logjammin {
      \version 1.0
      \date July 3, 2009
      */
-    class Model {
+    class Model : public lj::BSONNode {
     protected:
-        tokyo::Document _d;
-        
         //! Create and open the DB object.
-        Model() : _d() {
+        Model() : lj::BSONNode() {
         }
         
         //! Copy constructor.
         /*!
          \param orig The orignal model to copy.
          */
-        Model(const Model &orig) : _d(orig._d) {
-        }
-        
-        Model(const tokyo::Document &d) : _d(d) {
+        Model(const Model &orig) : lj::BSONNode(orig) {
         }
         
         //! Close the database object.
@@ -70,48 +61,20 @@ namespace logjammin {
         }
         
         //! Get the DAO
-        virtual tokyo::Storage *dao() const = 0;
+        virtual lj::Storage *dao() const = 0;
     public:
         //! Save the current object into the database.
         virtual void save() {
-            dao()->place(_d);
+            dao()->place(*this);
         }
         
         //! Remove the current object from the database.
         virtual void purge() {
-            dao()->remove(_d);
-        }
-        
-        tokyo::Document doc() { return _d; }
-        
-        //! Return a document node for the given path.
-        virtual const tokyo::DocumentNode &field(const std::string &path) const {
-            return _d.path(path);
-        }
-        
-        virtual const tokyo::DocumentNode &operator[](const std::string &path) const {
-            return field(path);
-        }
-        
-        virtual Model &field(const std::string &path, const std::string &value) {
-            _d.path(path, value);
-            return *this;
-        }
-        virtual Model &field(const std::string &path, const long long value) {
-            _d.path(path, value);
-            return *this;
-        }
-        virtual Model &field(const std::string &path, const int &value) {
-            _d.path(path, value);
-            return *this;
-        }
-        virtual Model &field(const std::string &path, const double &value) {
-            _d.path(path, value);
-            return *this;
+            dao()->remove(*this);
         }
         
         //! Get the primary key for the current object.
-        unsigned long long pkey() const { return _d.key(); };
+        inline unsigned long long pkey() const { return nav("__key").to_l(); };
     };
 }; // namespace logjammin
 

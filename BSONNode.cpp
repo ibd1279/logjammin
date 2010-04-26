@@ -1,6 +1,5 @@
-#pragma once
 /*
- \file BSONNode.h
+ \file BSONNode.cpp
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -210,16 +209,7 @@ namespace lj {
     }
     
     BSONNode::BSONNode(const BSONNode &o) : _children(), _value(NULL), _type(o._type) {
-        if(o.nested()) {
-            for(std::map<std::string, BSONNode *>::const_iterator iter = o._children.begin();
-                iter != o._children.end();
-                ++iter) {
-                BSONNode *ptr = new BSONNode(*(iter->second));
-                _children.insert(std::pair<std::string, BSONNode *>(iter->first, ptr));
-            }
-        } else {
-            set_value(o._type, o._value);
-        }
+        assign(o);
     }
     
     BSONNode::~BSONNode() {
@@ -334,6 +324,21 @@ namespace lj {
 
     BSONNode &BSONNode::destroy() {
         set_value(DOC_NODE, NULL);
+        return *this;
+    }
+    
+    BSONNode &BSONNode::assign(const BSONNode &o) {
+        destroy();
+        if(o.nested()) {
+            for(std::map<std::string, BSONNode *>::const_iterator iter = o._children.begin();
+                iter != o._children.end();
+                ++iter) {
+                BSONNode *ptr = new BSONNode(*(iter->second));
+                _children.insert(std::pair<std::string, BSONNode *>(iter->first, ptr));
+            }
+        } else {
+            set_value(o._type, o._value);
+        }
         return *this;
     }
     

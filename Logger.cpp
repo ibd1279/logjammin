@@ -71,7 +71,8 @@ namespace lj {
                     _parts.push_back(tmp);
                 _buffer << "[" << lvl_txt() << "] ";
                 if(_parts.size() < 2) {
-                    _buffer << tmp << std::endl;
+                    _parts.clear();
+                    _buffer << tmp;
                 } else {
                     _buffer << _parts.front();
                     _parts.pop_front();

@@ -198,7 +198,8 @@ namespace tokyo {
         //! Tree DB Constructor.
         TreeDB(const std::string &filename,
                const int mode,
-               void (*db_tune_func)(TCBDB *));
+               void (*db_tune_func)(TCBDB *, const void *),
+               const void *ptr);
         
         //! Tree DB Distructor.
         virtual ~TreeDB();
@@ -285,7 +286,8 @@ namespace tokyo {
         //! Create a new searcher.
         TextSearcher(const std::string &filename,
                      const int mode,
-                     void (*db_tune_func)(TCQDB *));
+                     void (*db_tune_func)(TCQDB *, const void *),
+                     const void *ptr);
         virtual ~TextSearcher();
         virtual void index(const key_t key,
                            const value_t &txt);
@@ -323,8 +325,9 @@ namespace tokyo {
         
         //! Crete a new Tag Searcher.
         TagSearcher(const std::string &filename,
-                 const int mode,
-                 void (*db_tune_func)(TCWDB *));
+                    const int mode,
+                    void (*db_tune_func)(TCWDB *, const void *),
+                    const void *ptr);
         virtual ~TagSearcher();
         virtual void index(const key_t key,
                            const value_t &txt);

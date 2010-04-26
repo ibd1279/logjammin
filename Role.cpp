@@ -32,39 +32,29 @@
  */
 
 #include "Role.h"
-#include <iostream>
+#include <sstream>
 
 namespace logjammin {
     //=====================================================================
     // Role Database
     //=====================================================================
     namespace {
-        tokyo::Storage * role_storage() {
-            static tokyo::Storage dbo("/var/db/logjammin/role");
+        lj::Storage * role_storage() {
+            static lj::Storage dbo("role");
             return &dbo;
         }
     }; // namespace
 
     //=====================================================================
     // Role Lua Integration
-    //=====================================================================        
+    //=====================================================================
     namespace {
         int Role_allowed(Role *obj, lua_State *L) {
-            lua_newtable(L);
-            int i = 0;
-            std::set<std::string> allowed = obj->field("allowed").to_str_set();
-            for(std::set<std::string>::const_iterator iter = allowed.begin();
-                iter != allowed.end();
-                ++iter) {
-                lua_pushstring(L, iter->c_str());
-                lua_rawseti(L, -2, ++i);
-            }
-            return 1;
+            return 0;
         }
         
         int Role_name(Role *obj, lua_State *L) {
-            lua_pushstring(L, obj->field("name").to_str().c_str());
-            return 1;
+            return 0;
         }
     }; // namespace
     
@@ -78,35 +68,27 @@ namespace logjammin {
     // Role Static Methods
     //=====================================================================        
     
-    void Role::all(std::list<Role *> &results) {
+    void Role::all(std::list<Role> &results) {
         role_storage()->all().items<Role>(results);
     }
     
     void Role::at(unsigned long long key,
                   Role &model) {
-        tokyo::Document d(role_storage()->at(key));
-        model._d.swap(d);
+        role_storage()->none().union_key(key).first<Role>(model);
     }
     
     void Role::at_name(const std::string &name, Role &model) {
-        tokyo::StorageFilter sf = role_storage()->filter("name",
-                                                         name.c_str(),
-                                                         name.size() + 1);
+        lj::StorageFilter sf = role_storage()->filter("name",
+                                                      name.c_str(),
+                                                      name.size() + 1);
         
         if(sf.size() == 0) {
-            throw std::string("Unknown Role Name ").append(name).append(".");
+            throw lj::Exception("Role", std::string("Unknown Name [").append(name).append("]."));
         } else if(sf.size() > 1) {
-            throw std::string("Ambiguous Role Name ").append(name).append(".");
+            throw lj::Exception("Role", std::string("Ambiguous Name [").append(name).append("]."));
         }
         
-        std::list<Role *> results;
-        sf.items<Role>(results);
-        model._d.swap(results.front()->_d);
-        for(std::list<Role *>::const_iterator iter = results.begin();
-            iter != results.end();
-            ++iter) {
-            delete *iter;
-        }
+        sf.first<Role>(model);
     }
     
     //=====================================================================
@@ -121,39 +103,38 @@ namespace logjammin {
     //=====================================================================
     
     void Role::add_allowed(const std::string &action) {
-        std::set<std::string> allowed(_d.path("allowed").to_str_set());
+        std::set<std::string> allowed(nav("allowed").to_set());
         allowed.insert(action);
         
-        tokyo::DocumentNode n(tokyo::DOC_NODE, NULL);
+        lj::BSONNode n;
         int h = 0;
         for(std::set<std::string>::const_iterator iter = allowed.begin();
             iter != allowed.end();
             ++iter) {
             std::ostringstream buf;
             buf << h++;
-            n.child(buf.str(), tokyo::DocumentNode().value(*iter));
+            n.child(buf.str(), lj::BSONNode().value(*iter));
         }
-        _d.path("", "allowed", n);
+        nav("allowed").assign(n);
     }
     
     void Role::remove_allowed(const std::string &action) {
-        std::set<std::string> allowed(field("allowed").to_str_set());
+        std::set<std::string> allowed(nav("allowed").to_set());
         allowed.erase(action);
 
-        tokyo::DocumentNode n(tokyo::DOC_NODE, NULL);
+        lj::BSONNode n;
         int h = 0;
         for(std::set<std::string>::const_iterator iter = allowed.begin();
             iter != allowed.end();
             ++iter) {
             std::ostringstream buf;
             buf << h++;
-            n.child(buf.str(), tokyo::DocumentNode().value(*iter));
+            n.child(buf.str(), lj::BSONNode().value(*iter));
         }
-        std::cerr << n.to_str() << std::endl;
-        _d.path("", "allowed", n);
+        nav("allowed").assign(n);
     }
     
-    tokyo::Storage *Role::dao() const {
+    lj::Storage *Role::dao() const {
         return role_storage();
     }
 }; // namespace logjammin

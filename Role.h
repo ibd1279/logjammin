@@ -68,7 +68,7 @@ namespace logjammin {
          Roles in the list must be deallocated with "delete".
          \return A list of roles.
          */
-        static void all(std::list<Role *> &results);
+        static void all(std::list<Role> &results);
         
         //! Get a role by primary key.
         /*!
@@ -99,9 +99,6 @@ namespace logjammin {
         //! Create a new role object as a copy an existing role object.
         Role(const Role &orig) : Model(orig) {}
         
-        //! Create a new role object with the provided document.
-        Role(const tokyo::Document &d) : Model(d) {}
-        
         //! Lua constructor.
         Role(lua_State *L) : Model() {}
         
@@ -119,7 +116,6 @@ namespace logjammin {
         void remove_allowed(const std::string &action);
         
     protected:
-        virtual tokyo::Storage *dao() const;
-    private:
+        virtual lj::Storage *dao() const;
     };
 }; // namespace logjammin

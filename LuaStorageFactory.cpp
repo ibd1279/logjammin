@@ -97,7 +97,7 @@ namespace logjam {
         return 0;
     }
     int LuaStorageFactory::_load_config(lua_State *L) {
-        std::string dbname(luaL_checkstring(L, -2));
+        std::string dbname(luaL_checkstring(L, -1));
         std::string dbfile(_dbdir);
         if(dbname.size() > 1 && dbname[dbname.size() - 1] == '/')
             dbfile.append(dbname);

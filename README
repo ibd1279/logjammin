@@ -19,3 +19,74 @@ Build using:
     ./waf build
 
 
+Storage configuration parameters:
+    main - main database config.
+    main/file - filename to load as the main database file.
+    main/mode/[0-9]+ - mode to open the database file (not yet implemented).
+            (options: create read write)
+    main/compare - key type for tree db (not yet implemented).
+            (options: int64 lex decimal ljkey / defaults int64)
+    main/type - type of database to use (not yet implemented).
+            (options: tree hash / default tree)
+    index - configuration entries for the different index types.
+    index/tree - B+Tree Index configuration -- supports ranges.
+    index/hash - Hash index configuration (not yet implemented).
+    index/text - Text index.
+    index/tag - Word or phrase index, no substrings.
+
+All indicies are configured the same way at the moment. The configuration
+for an index goes in the configuration structure at the following key:
+    index/<type>/<unique_id>
+
+example
+    index/tree/role_name
+
+An index is configured with the following parameters:
+    file - filename to load as the main database file.
+    mode/[0-9]+ - mode to open the database file (not yet implemented).
+            (options: create read write)
+    compare - key type for tree db (not yet implemented).
+            (options: int64 lex decimal ljkey / defaults int64)
+    type - type of database to use (not yet implemented, might go away).
+            (options: tree hash / default tree)
+    field - path into the document to find the value to index.
+
+example document:
+{
+  "main":{
+    "compare":"int64",
+    "file":"db_role.tcb",
+    "mode":{
+      "0":"READER",
+      "1":"WRITER",
+      "2":"CREATE"
+    },
+    "type":"tree"
+  },
+  "index":{
+    "text":{
+      "name":{
+        "compare":"lex",
+        "field":"name",
+        "file":"text_name.tdq",
+        "mode":{
+          "0":"READER",
+          "1":"WRITER",
+          "2":"CREATE"
+        }
+      }
+    },
+    "tree":{
+      "name":{
+        "compare":"lex",
+        "field":"name",
+        "file":"tree_name.tcb",
+        "mode":{
+          "0":"READER",
+          "1":"WRITER",
+          "2":"CREATE"
+        }
+      }
+    }
+  }
+}

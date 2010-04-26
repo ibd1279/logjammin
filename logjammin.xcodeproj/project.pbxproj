@@ -165,8 +165,9 @@
 			isa = PBXGroup;
 			children = (
 				2236839411827230002FD990 /* logjam */,
-				2236837211825B97002FD990 /* Utility */,
-				2261AF4F10D1E63000841C84 /* Database */,
+				22A77218118547C200E48208 /* global namespace */,
+				2236837211825B97002FD990 /* lj */,
+				2261AF4F10D1E63000841C84 /* tokyo */,
 				220AD7060FA233CB00C604BE /* Model */,
 				22ED3BBE0FB8701A004E2511 /* Controller */,
 				22D30BE00FA78EF8005DE0D9 /* CGI */,
@@ -215,13 +216,12 @@
 			name = Model;
 			sourceTree = "<group>";
 		};
-		2236837211825B97002FD990 /* Utility */ = {
+		2236837211825B97002FD990 /* lj */ = {
 			isa = PBXGroup;
 			children = (
 				22E9C9A8117C894700557ADA /* Exception.h */,
 				2236823611815E2E002FD990 /* Logger.h */,
 				2236823711815E2E002FD990 /* Logger.cpp */,
-				221B34820FA8C302009AB597 /* lunar.h */,
 				2236838E11827124002FD990 /* BSONNode.h */,
 				2236838D11827124002FD990 /* BSONNode.cpp */,
 				2236838B118270B8002FD990 /* BSONParser.h */,
@@ -229,7 +229,7 @@
 				22E9C96B117BF18B00557ADA /* Storage.h */,
 				22E9C96C117BF18B00557ADA /* Storage.cpp */,
 			);
-			name = Utility;
+			name = lj;
 			sourceTree = "<group>";
 		};
 		2236839411827230002FD990 /* logjam */ = {
@@ -242,13 +242,21 @@
 			name = logjam;
 			sourceTree = "<group>";
 		};
-		2261AF4F10D1E63000841C84 /* Database */ = {
+		2261AF4F10D1E63000841C84 /* tokyo */ = {
 			isa = PBXGroup;
 			children = (
 				2202B2430FFE56C000B6FCEC /* Tokyo.h */,
 				22E9C71A1176BA8000557ADA /* Tokyo.cpp */,
 			);
-			name = Database;
+			name = tokyo;
+			sourceTree = "<group>";
+		};
+		22A77218118547C200E48208 /* global namespace */ = {
+			isa = PBXGroup;
+			children = (
+				221B34820FA8C302009AB597 /* lunar.h */,
+			);
+			name = "global namespace";
 			sourceTree = "<group>";
 		};
 		22D30BE00FA78EF8005DE0D9 /* CGI */ = {

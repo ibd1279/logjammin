@@ -56,6 +56,7 @@ def build(ctx):
                 'BSONParser.cpp',
                 'Storage.cpp',
                 'LuaStorageFactory.cpp',
+                'Role.cpp',
                 'logjam.cpp'],
         target = 'logjam',
         vnum = '0.1.0',

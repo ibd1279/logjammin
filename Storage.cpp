@@ -172,6 +172,28 @@ namespace lj {
     // Storage Implementation.
     //=====================================================================
     
+    namespace {
+        void storage_tree_cfg(TCBDB *db, const void *ptr) {
+            const BSONNode *bn = static_cast<const BSONNode *>(ptr);
+            if(bn->nav("compare").to_s().compare("lex") == 0) {
+                tcbdbsetcmpfunc(db, tcbdbcmplexical, NULL);
+                Log::info("Using lexical for compares") << Log::end;
+            } else if(bn->nav("compare").to_s().compare("int32") == 0) {
+                tcbdbsetcmpfunc(db, tcbdbcmpint32, NULL);
+                Log::info("Using int32 for compares") << Log::end;
+            } else {
+                tcbdbsetcmpfunc(db, tcbdbcmpint64, NULL);
+                Log::info("Using int64 for compares") << Log::end;
+            }
+            
+            // XXX config other things like compression type, tree hight, etc.
+        }
+        
+        // XXX Add configuration method for hash
+        // XXX Add configuration method for text
+        // XXX Add configuration method for tags
+    }
+    
     Storage::Storage(const std::string &dir) : _db(NULL), _fields_tree(), _fields_text(), _fields_tag(), _fields_unique(), _directory(DBDIR) {
         _directory.append("/").append(dir);
         std::string configfile(_directory + "/config");
@@ -185,7 +207,8 @@ namespace lj {
         Log::info("Opening database [%s].") << dbfile << Log::end;
         _db = new TreeDB(dbfile,
                          BDBOREADER | BDBOWRITER | BDBOCREAT,
-                         NULL);
+                         &storage_tree_cfg,
+                         &(cfg.nav("main")));
 
         Log::info("Opening tree indices under [%s].") << _directory << Log::end;
         for(BSONNode::childmap_t::const_iterator iter = cfg.nav("index/tree").to_map().begin();
@@ -199,7 +222,8 @@ namespace lj {
             Log::info("Opening tree index [%s].") << indexfile << Log::end;
             TreeDB *tdb = new TreeDB(indexfile,
                                      BDBOREADER | BDBOWRITER | BDBOCREAT,
-                                     NULL);
+                                     &storage_tree_cfg,
+                                     iter->second);
             _fields_tree.insert(std::pair<std::string, TreeDB *>(iter->second->nav("field").to_s(), tdb));
         }
         
@@ -215,7 +239,8 @@ namespace lj {
             Log::info("Opening text index [%s].") << indexfile << Log::end;
             TextSearcher *ts = new TextSearcher(indexfile,
                                                 QDBOREADER | QDBOWRITER | QDBOCREAT,
-                                                NULL);
+                                                NULL,
+                                                iter->second);
             _fields_text.insert(std::pair<std::string, TextSearcher *>(iter->second->nav("field").to_s(), ts));
         }
 
@@ -231,8 +256,17 @@ namespace lj {
             Log::info("Opening tag index [%s].") << indexfile << Log::end;
             TagSearcher *ts = new TagSearcher(indexfile,
                                               WDBOREADER | WDBOWRITER | WDBOCREAT,
-                                              NULL);
+                                              NULL,
+                                              iter->second);
             _fields_tag.insert(std::pair<std::string, TagSearcher *>(iter->second->nav("field").to_s(), ts));
+        }
+        
+        Log::info("Registering unique fields from [%s].") << _directory << Log::end;
+        for(BSONNode::childmap_t::const_iterator iter = cfg.nav("main/unique").to_map().begin();
+            iter != cfg.nav("main/unique").to_map().end();
+            ++iter) {
+            Log::info("Adding unique field [%s].") << iter->second->to_s() << Log::end;
+            _fields_unique.insert(iter->second->to_s());
         }
     }
     
@@ -244,14 +278,14 @@ namespace lj {
             Log::info("Closing tag index for field [%s].") << iter->first << Log::end;
             delete iter->second;
         }
-        Log::info("Closing database for field [%s].") << _directory << Log::end;
+        Log::info("Closing text indicies under [%s].") << _directory << Log::end;
         for(std::map<std::string, TextSearcher *>::const_iterator iter = _fields_text.begin();
             iter != _fields_text.end();
             ++iter) {
             Log::info("Closing text index for field [%s].") << iter->first << Log::end;
             delete iter->second;
         }
-        Log::info("Closing database for field [%s].") << _directory << Log::end;
+        Log::info("Closing tree indicies under [%s].") << _directory << Log::end;
         for(std::map<std::string, TreeDB *>::const_iterator iter = _fields_tree.begin();
             iter != _fields_tree.end();
             ++iter) {

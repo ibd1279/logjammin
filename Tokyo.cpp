@@ -62,10 +62,11 @@ namespace tokyo {
     
     TreeDB::TreeDB(const std::string &filename,
                    const int mode,
-                   void (*db_tune_func)(TCBDB *)) {
+                   void (*db_tune_func)(TCBDB *, const void *),
+                   const void *ptr) {
         _db = tcbdbnew();
         if(db_tune_func)
-            (*db_tune_func)(db());
+            (*db_tune_func)(db(), ptr);
         tcbdbopen(db(), filename.c_str(), mode);
     }
     
@@ -305,10 +306,11 @@ namespace tokyo {
     
     TextSearcher::TextSearcher(const std::string &filename,
                                const int mode,
-                               void (*db_tune_func)(TCQDB *)) {
+                               void (*db_tune_func)(TCQDB *, const void *),
+                               const void *ptr) {
         _db = tcqdbnew();
         if(db_tune_func)
-            (*db_tune_func)(db());
+            (*db_tune_func)(db(), ptr);
         tcqdbopen(db(), filename.c_str(), mode);
     }
     
@@ -359,11 +361,12 @@ namespace tokyo {
     //=====================================================================
     
     TagSearcher::TagSearcher(const std::string &filename,
-                       const int mode,
-                       void (*db_tune_func)(TCWDB *)) {
+                             const int mode,
+                             void (*db_tune_func)(TCWDB *, const void *),
+                             const void *ptr) {
         _db = tcwdbnew();
         if(db_tune_func)
-            (*db_tune_func)(db());
+            (*db_tune_func)(db(), ptr);
         tcwdbopen(db(), filename.c_str(), mode);
     }
     

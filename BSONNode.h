@@ -162,6 +162,8 @@ namespace lj {
          \return Reference to \c this .
          */
         BSONNode &child(const std::string &n, const BSONNode &c);
+        BSONNode &assign(const BSONNode &o);
+        BSONNode &operator=(const BSONNode &o) { return assign(o); };
 
         //---------------------------------------------------------------------
         // BSONNode value getters.
