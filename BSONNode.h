@@ -66,8 +66,9 @@ namespace lj {
      \date April 19, 2010
      */
     class BSONNode {
-    private:
+    public:
         typedef std::map<std::string, BSONNode *> childmap_t;
+    private:
         childmap_t _children;
         char *_value;
         BSONNodeType _type;
