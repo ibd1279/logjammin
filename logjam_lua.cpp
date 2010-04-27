@@ -95,7 +95,7 @@ namespace logjam {
         
         // This should be moved somewhere for portability.
         if(mkdir(dbfile.c_str(), S_IRWXU | S_IROTH | S_IXOTH | S_IRGRP | S_IXGRP)) {
-            throw lj::Exception("logjam", std::string(strerror(errno)));
+            lj::Log::warning("Failed to create directory [%d][%s].") << errno << strerror(errno) << lj::Log::end;
         }
         
         dbfile.append("/config");

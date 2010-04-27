@@ -38,6 +38,7 @@
 #include "lunar.h"
 #include "logjam_lua.h"
 #include "Logger.h"
+#include "Exception.h"
 extern "C" {
 #include "lualib.h"
 }
@@ -47,13 +48,16 @@ extern "C" {
 #endif
 
 namespace {
-    void read_from_cin(bool prompt, lua_State *L) {
+    void read_from_cin(bool echo, bool prompt, lua_State *L) {
         while(std::cin.good()) {
             std::string buffer;
             if(prompt) {
                 std::cout << ">" << std::flush;
             }
             getline(std::cin, buffer);
+            if(echo) {
+                std::cout << buffer << std::endl;
+            }
             int error = luaL_loadbuffer(L, buffer.c_str(), buffer.size(), "line") || lua_pcall(L, 0, 0, 0);
             if(error) {
                 std::cerr << lua_tostring(L, -1) << std::endl;
@@ -99,7 +103,7 @@ namespace {
     }
 #else
     void input_loop(lua_State *L) {
-        read_from_cin(true, L);
+        read_from_cin(false, true, L);
     }
 #endif
 };
@@ -111,9 +115,9 @@ int main(int argc, char * const argv[]) {
     lua_State *L = lua_open();
     luaL_openlibs(L);
     logjam::register_logjam_functions(L);
-
+    
     if(argc > 1 && strcmp(argv[1], "-") == 0) {
-        read_from_cin(false, L);
+        read_from_cin(true, false, L);
     } else {
         input_loop(L);
     }

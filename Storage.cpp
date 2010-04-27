@@ -112,6 +112,7 @@ namespace lj {
     StorageFilter &StorageFilter::filter(const std::string &indx,
                                         const void * const val,
                                         const size_t val_len) {
+        Log::debug("Filtering on [%s] with [%d][%s].") << indx << ((unsigned long long)val_len) << ((char *)val) << Log::end;
         std::map<std::string, TreeDB *>::const_iterator index = _storage->_fields_tree.find(indx);
         if(index == _storage->_fields_tree.end())
             return *this;
@@ -135,6 +136,7 @@ namespace lj {
     
     StorageFilter &StorageFilter::search(const std::string &indx,
                                         const std::string &terms) {
+        Log::debug("Searching on [%s] with [%s]") << indx << terms << Log::end;
         std::map<std::string, TextSearcher *>::const_iterator index = _storage->_fields_text.find(indx);
         if(index == _storage->_fields_text.end())
             return *this;
@@ -156,6 +158,7 @@ namespace lj {
     
     StorageFilter &StorageFilter::tagged(const std::string &indx,
                                         const std::string &word) {
+        Log::debug("Searching on [%s] with [%s]") << indx << word << Log::end;
         std::map<std::string, TagSearcher *>::const_iterator index = _storage->_fields_tag.find(indx);
         if(index == _storage->_fields_tag.end())
             return *this;
@@ -370,7 +373,7 @@ namespace lj {
     
     StorageFilter Storage::tagged(const std::string &indx,
                                   const std::string &word) const {
-        Log::info("Searching on [%s] with [%s]") << indx << word << Log::end;
+        Log::debug("Searching on [%s] with [%s]") << indx << word << Log::end;
         std::map<std::string, TagSearcher *>::const_iterator index = _fields_tag.find(indx);
         if(index == _fields_tag.end()) {
             Log::warning("Request for unknown tag index [%s] from [%s].") << indx << _directory << Log::end;
