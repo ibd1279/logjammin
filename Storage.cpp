@@ -387,15 +387,34 @@ namespace lj {
                 ++iter) {
                 BSONNode n(value.nav(*iter));
                 if(n.exists()) {
-                    std::map<std::string, TreeDB *>::const_iterator index = _fields_tree.find(*iter);
-                    if(index != _fields_tree.end()) {
-                        char *bson = n.bson();
-                        tokyo::DB::value_t existing = index->second->at(bson,
-                                                                 n.size());
-                        delete[] bson;
-                        if(existing.first)
-                            throw Exception("StorageError",
-                                            std::string("Unable to place record because of unique constraint [").append(*iter).append("]."));
+                    if(n.nested()) {
+                        std::map<std::string, TreeDB *>::const_iterator index = _fields_tree.find(*iter);
+                        if(index != _fields_tree.end()) {
+                            for(BSONNode::childmap_t::const_iterator iter2 = n.to_map().begin();
+                                iter2 != n.to_map().end();
+                                ++iter2) {
+                                char *bson = iter2->second->bson();
+                                int delta = iter2->second->quotable() ? 4 : 0;
+                                tokyo::DB::value_t existing = index->second->at(bson + delta,
+                                                                                iter2->second->size() - delta);
+                                delete[] bson;
+                                if(existing.first)
+                                    throw Exception("StorageError",
+                                                    std::string("Unable to place record because of unique constraint [").append(*iter).append("]."));
+                            }
+                        }
+                    } else {
+                        std::map<std::string, TreeDB *>::const_iterator index = _fields_tree.find(*iter);
+                        if(index != _fields_tree.end()) {
+                            char *bson = n.bson();
+                            int delta = n.quotable() ? 4 : 0;
+                            tokyo::DB::value_t existing = index->second->at(bson + delta,
+                                                                            n.size() - delta);
+                            delete[] bson;
+                            if(existing.first)
+                                throw Exception("StorageError",
+                                                std::string("Unable to place record because of unique constraint [").append(*iter).append("]."));
+                        }
                     }
                 }
             }
@@ -448,13 +467,29 @@ namespace lj {
             iter != _fields_tree.end();
             ++iter) {
             BSONNode n(original.nav(iter->first));
+
             if(n.exists()) {
-                char *bson = n.bson();
-                iter->second->remove_from_existing(bson,
-                                                   n.size(),
-                                                   &key,
-                                                   sizeof(unsigned long long));
-                delete[] bson;
+                if(n.nested()) {
+                    for(BSONNode::childmap_t::const_iterator iter2 = n.to_map().begin();
+                        iter2 != n.to_map().end();
+                        ++iter2) {
+                        char *bson = iter2->second->bson();
+                        int delta = iter2->second->quotable() ? 4 : 0;
+                        iter->second->remove_from_existing(bson + delta,
+                                                           iter2->second->size() - delta,
+                                                           &key,
+                                                           sizeof(unsigned long long));
+                        delete[] bson;
+                    }
+                } else {
+                    char *bson = n.bson();
+                    int delta = n.quotable() ? 4 : 0;
+                    iter->second->remove_from_existing(bson + delta,
+                                                       n.size() - delta,
+                                                       &key,
+                                                       sizeof(unsigned long long));
+                    delete[] bson;
+                }
             }
         }
         for(std::map<std::string, TextSearcher *>::const_iterator iter = _fields_text.begin();
@@ -475,6 +510,7 @@ namespace lj {
         }
         return *this;
     }
+    
     Storage &Storage::reindex(const unsigned long long key) {
         if(!key) return *this;
         
@@ -485,23 +521,33 @@ namespace lj {
         for(std::map<std::string, TreeDB *>::const_iterator iter = _fields_tree.begin();
             iter != _fields_tree.end();
             ++iter) {
+            
             BSONNode n(original.nav(iter->first));
             if(n.exists()) {
-                char *bson = n.bson();
-                if(_fields_unique.find(iter->first) == _fields_unique.end()) {
-                    iter->second->place_with_existing(bson,
-                                                      n.size(),
+                if(n.nested()) {
+                    for(BSONNode::childmap_t::const_iterator iter2 = n.to_map().begin();
+                        iter2 != n.to_map().end();
+                        ++iter2) {
+                        char *bson = iter2->second->bson();
+                        int delta = iter2->second->quotable() ? 4 : 0;
+                        iter->second->place_with_existing(bson + delta,
+                                                          iter2->second->size() - delta,
+                                                          &key,
+                                                          sizeof(unsigned long long));
+                        delete[] bson;
+                    }
+                } else {
+                    char *bson = n.bson();
+                    int delta = n.quotable() ? 4 : 0;
+                    iter->second->place_with_existing(bson + delta,
+                                                      n.size() - delta,
                                                       &key,
                                                       sizeof(unsigned long long));
-                } else {
-                    iter->second->place(bson,
-                                        n.size(),
-                                        &key,
-                                        sizeof(unsigned long long));
+                    delete[] bson;
                 }
-                delete[] bson;
             }
         }
+        
         for(std::map<std::string, TextSearcher *>::const_iterator iter = _fields_text.begin();
             iter != _fields_text.end();
             ++iter) {

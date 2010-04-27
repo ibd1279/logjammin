@@ -86,6 +86,12 @@ namespace logjam {
             dbfile.append(dbname);
         else
             dbfile.append("/").append(dbname);
+        
+        // This should be moved somewhere for portability.
+        if(mkdir(dbfile.c_str(), S_IRWXU | S_IROTH | S_IXOTH | S_IRGRP | S_IXGRP)) {
+            throw lj::Exception("logjam", std::string(strerror(errno)));
+        }
+        
         dbfile.append("/config");
         ptr->node().save(dbfile);
         return 0;
@@ -98,12 +104,6 @@ namespace logjam {
             dbfile.append(dbname);
         else
             dbfile.append("/").append(dbname);
-        
-        // This should be moved somewhere for portability.
-        if(mkdir(dbfile.c_str(), S_IRWXU | S_IROTH | S_IXOTH | S_IRGRP | S_IXGRP)) {
-            throw lj::Exception("logjam", std::string(strerror(errno)));
-        }
-        
         dbfile.append("/config");
         lj::BSONNode *ptr = new lj::BSONNode();
         Log::info("Loading from config file [%s]") << dbfile << Log::end;
