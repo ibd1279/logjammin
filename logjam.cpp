@@ -37,6 +37,7 @@
 #include <list>
 #include "lunar.h"
 #include "logjam_lua.h"
+#include "Logger.h"
 extern "C" {
 #include "lualib.h"
 }
@@ -105,6 +106,8 @@ namespace {
 
 
 int main(int argc, char * const argv[]) {
+    lj::Log::debug.disable();
+    
     lua_State *L = lua_open();
     luaL_openlibs(L);
     logjam::register_logjam_functions(L);

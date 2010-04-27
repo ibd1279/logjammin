@@ -48,6 +48,8 @@ using lj::Log;
 namespace logjam {
     void register_logjam_functions(lua_State *L) {
         Lunar<logjam::LuaBSONNode>::Register(L);
+        Lunar<logjam::LuaStorageFilter>::Register(L);
+        Lunar<logjam::LuaStorage>::Register(L);
         lua_pushcfunction(L, &storage_config_new);
         lua_setglobal(L, "sc_new");
         lua_pushcfunction(L, &storage_config_save);
@@ -59,6 +61,10 @@ namespace logjam {
         lua_pushcfunction(L, &storage_config_add_unique);
         lua_setglobal(L, "sc_add_unique");
     }
+    
+    //=====================================================================
+    // logjam global functions.
+    //=====================================================================
     
     int storage_config_new(lua_State *L) {
         std::string dbname(luaL_checkstring(L, -1));
@@ -93,7 +99,7 @@ namespace logjam {
         }
         
         dbfile.append("/config");
-        ptr->node().save(dbfile);
+        ptr->real_node().save(dbfile);
         return 0;
     }
     
@@ -118,13 +124,14 @@ namespace logjam {
         std::string indxname(luaL_checkstring(L, -3));
         std::string indxtype(luaL_checkstring(L, -4));
         LuaBSONNode *ptr = Lunar<LuaBSONNode>::check(L, -5);
-        ptr->node().nav(std::string("index/") + indxtype + "/" + indxname + "/compare").value(indxcomp);
-        ptr->node().nav(std::string("index/") + indxtype + "/" + indxname + "/file").value(std::string("index_") + indxname + ".tc_");
-        ptr->node().nav(std::string("index/") + indxtype + "/" + indxname + "/mode/0").value("create");
-        ptr->node().nav(std::string("index/") + indxtype + "/" + indxname + "/mode/1").value("read");
-        ptr->node().nav(std::string("index/") + indxtype + "/" + indxname + "/mode/2").value("write");
-        ptr->node().nav(std::string("index/") + indxtype + "/" + indxname + "/type").value(indxtype);
-        ptr->node().nav(std::string("index/") + indxtype + "/" + indxname + "/field").value(indxfield);
+        ptr->real_node().nav(std::string("index/") + indxtype + "/" + indxname + "/compare").value(indxcomp);
+        ptr->real_node().nav(std::string("index/") + indxtype + "/" + indxname + "/file").value(std::string("index.") + indxname + "." + indxtype + ".tc");
+        ptr->real_node().nav(std::string("index/") + indxtype + "/" + indxname + "/mode/0").value("create");
+        ptr->real_node().nav(std::string("index/") + indxtype + "/" + indxname + "/mode/1").value("read");
+        ptr->real_node().nav(std::string("index/") + indxtype + "/" + indxname + "/mode/2").value("write");
+        ptr->real_node().nav(std::string("index/") + indxtype + "/" + indxname + "/type").value(indxtype);
+        ptr->real_node().nav(std::string("index/") + indxtype + "/" + indxname + "/field").value(indxfield);
+        ptr->real_node().nav(std::string("index/") + indxtype + "/" + indxname + "/children").value(false);
         return 0;
     }
     
@@ -132,7 +139,7 @@ namespace logjam {
         std::string field(luaL_checkstring(L, -1));
         LuaBSONNode *ptr = Lunar<LuaBSONNode>::check(L, -2);
         
-        std::set<std::string> allowed(ptr->node().nav("main/unique").to_set());
+        std::set<std::string> allowed(ptr->real_node().nav("main/unique").to_set());
         allowed.insert(field);
         
         lj::BSONNode n;
@@ -144,15 +151,14 @@ namespace logjam {
             buf << h++;
             n.child(buf.str(), lj::BSONNode().value(*iter));
         }
-        ptr->node().nav("main/unique").assign(n);
+        ptr->real_node().nav("main/unique").assign(n);
         return 0;
     }
     
     //=====================================================================
-    // BSONNode Lua integration
+    // BSONNode Lua integration Fields
     //=====================================================================
     const char LuaBSONNode::LUNAR_CLASS_NAME[] = "BSONNode";
-    
     Lunar<LuaBSONNode>::RegType LuaBSONNode::LUNAR_METHODS[] = {
     LUNAR_MEMBER_METHOD(LuaBSONNode, nav),
     LUNAR_MEMBER_METHOD(LuaBSONNode, set),
@@ -162,6 +168,9 @@ namespace logjam {
     {0, 0}
     };
 
+    //=====================================================================
+    // BSONNode Lua integration Methods.
+    //=====================================================================
     LuaBSONNode::LuaBSONNode(lj::BSONNode *ptr, bool gc) : _node(ptr), _gc(gc) {
     }
     
@@ -254,4 +263,174 @@ namespace logjam {
         _node->load(fn);
         return 0;
     }
+    
+    //=====================================================================
+    // Storage Filter Lua integration Methods.
+    //=====================================================================
+    
+    const char LuaStorageFilter::LUNAR_CLASS_NAME[] = "StorageFilter";
+    Lunar<LuaStorageFilter>::RegType LuaStorageFilter::LUNAR_METHODS[] = {
+    LUNAR_MEMBER_METHOD(LuaStorageFilter, mode_and),
+    LUNAR_MEMBER_METHOD(LuaStorageFilter, mode_or),
+    LUNAR_MEMBER_METHOD(LuaStorageFilter, filter),
+    LUNAR_MEMBER_METHOD(LuaStorageFilter, search),
+    LUNAR_MEMBER_METHOD(LuaStorageFilter, tagged),
+    LUNAR_MEMBER_METHOD(LuaStorageFilter, records),
+    LUNAR_MEMBER_METHOD(LuaStorageFilter, first),
+    {0, 0}
+    };
+    
+    LuaStorageFilter::LuaStorageFilter(lua_State *L) : _filter(NULL) {
+        LuaStorage *ptr = Lunar<LuaStorage>::check(L, -1);
+        _filter = new lj::StorageFilter(ptr->real_storage().none());
+    }
+    
+    LuaStorageFilter::LuaStorageFilter(lj::StorageFilter *filter) : _filter(filter) {
+    }
+    
+    LuaStorageFilter::~LuaStorageFilter() {
+        if(_filter)
+            delete _filter;
+    }
+    
+    int LuaStorageFilter::mode_and(lua_State *L) {
+        _filter->mode(lj::StorageFilter::INTERSECTION);
+        Lunar<LuaStorageFilter>::push(L, this, false);
+        return 1;
+    }
+    
+    int LuaStorageFilter::mode_or(lua_State *L) {
+        _filter->mode(lj::StorageFilter::UNION);
+        Lunar<LuaStorageFilter>::push(L, this, false);
+        return 1;
+    }
+    
+    // XXX make more intelligent about the value types.
+    int LuaStorageFilter::filter(lua_State *L) {
+        std::string field(luaL_checkstring(L, -2));
+        std::string val(luaL_checkstring(L, -1));
+        lj::StorageFilter *ptr = new lj::StorageFilter(_filter->filter(field, val.c_str(), val.size()));
+        Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
+        return 1;
+    }
+
+    int LuaStorageFilter::search(lua_State *L) {
+        std::string field(luaL_checkstring(L, -2));
+        std::string val(luaL_checkstring(L, -1));
+        lj::StorageFilter *ptr = new lj::StorageFilter(_filter->search(field, val));
+        Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
+        return 1;
+    }
+    
+    int LuaStorageFilter::tagged(lua_State *L) {
+        std::string field(luaL_checkstring(L, -2));
+        std::string val(luaL_checkstring(L, -1));
+        lj::StorageFilter *ptr = new lj::StorageFilter(_filter->tagged(field, val));
+        Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
+        return 1;
+    }
+    
+    int LuaStorageFilter::records(lua_State *L) {
+        std::list<lj::BSONNode *> d;
+        int h = 0;
+        _filter->items<lj::BSONNode>(d);
+        lua_newtable(L);
+        for(std::list<lj::BSONNode *>::const_iterator iter = d.begin();
+            iter != d.end();
+            ++iter) {
+            Lunar<LuaBSONNode>::push(L, new LuaBSONNode(*iter, true), true);
+            lua_rawseti(L, -2, ++h);
+        }
+        return 1;
+    }
+    
+    int LuaStorageFilter::first(lua_State *L) {
+        if(_filter->size() < 1) {
+            lua_pushnil(L);
+            return 1;
+        }
+        lj::BSONNode *d = new lj::BSONNode();
+        _filter->first(*d);
+        Lunar<LuaBSONNode>::push(L, new LuaBSONNode(d, true), true);
+        return 1;
+    }
+    
+    //=====================================================================
+    // Storage Filter Lua integration Methods.
+    //=====================================================================
+    const char LuaStorage::LUNAR_CLASS_NAME[] = "Storage";
+    Lunar<LuaStorage>::RegType LuaStorage::LUNAR_METHODS[] = {
+    LUNAR_MEMBER_METHOD(LuaStorage, all),
+    LUNAR_MEMBER_METHOD(LuaStorage, none),
+    LUNAR_MEMBER_METHOD(LuaStorage, filter),
+    LUNAR_MEMBER_METHOD(LuaStorage, search),
+    LUNAR_MEMBER_METHOD(LuaStorage, tagged),
+    LUNAR_MEMBER_METHOD(LuaStorage, place),
+    LUNAR_MEMBER_METHOD(LuaStorage, remove),
+    {0, 0}
+    };
+    
+    LuaStorage::LuaStorage(lua_State *L) : _storage(NULL) {
+        std::string dbname(luaL_checkstring(L, -1));
+        _storage = new lj::Storage(dbname);
+    }
+    
+    LuaStorage::~LuaStorage() {
+        if(_storage)
+            delete _storage;
+    }
+    
+    int LuaStorage::all(lua_State *L) {
+        lj::StorageFilter *ptr = new lj::StorageFilter(_storage->all());
+        Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
+        return 1;
+    }
+    
+    int LuaStorage::none(lua_State *L) {
+        lj::StorageFilter *ptr = new lj::StorageFilter(_storage->none());
+        Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
+        return 1;
+    }
+    
+    // XXX make more intelligent about the value types.
+    int LuaStorage::filter(lua_State *L) {
+        std::string field(luaL_checkstring(L, -2));
+        std::string val(luaL_checkstring(L, -1));
+        lj::StorageFilter *ptr = new lj::StorageFilter(_storage->filter(field, val.c_str(), val.size()));
+        Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
+        return 1;
+    }
+    
+    // XXX make more intelligent about the value types.
+    int LuaStorage::search(lua_State *L) {
+        std::string field(luaL_checkstring(L, -2));
+        std::string val(luaL_checkstring(L, -1));
+        lj::StorageFilter *ptr = new lj::StorageFilter(_storage->tagged(field, val));
+        Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
+        return 1;
+    }
+    
+    // XXX make more intelligent about the value types.
+    int LuaStorage::tagged(lua_State *L) {
+        std::string field(luaL_checkstring(L, -2));
+        std::string val(luaL_checkstring(L, -1));
+        lj::StorageFilter *ptr = new lj::StorageFilter(_storage->tagged(field, val));
+        Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
+        return 1;
+    }
+    
+    int LuaStorage::place(lua_State *L) {
+        LuaBSONNode *ptr = Lunar<LuaBSONNode>::check(L, -1);
+        _storage->place(ptr->real_node());
+        Lunar<LuaStorage>::push(L, this, false);
+        return 1;
+    }
+    
+    int LuaStorage::remove(lua_State *L) {
+        LuaBSONNode *ptr = Lunar<LuaBSONNode>::check(L, -1);
+        _storage->remove(ptr->real_node());
+        Lunar<LuaStorage>::push(L, this, false);
+        return 1;
+    }
+    
 };

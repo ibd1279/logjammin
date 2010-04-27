@@ -89,7 +89,6 @@ namespace tokyo {
                              list_value_t &results) {
         TCLIST *ptr = tcbdbget4(db(), key, len);
         if(!ptr) {
-            tclistdel(ptr);
             return false;
         }
         
@@ -284,7 +283,6 @@ namespace tokyo {
                                  end_inc,
                                  -1);
         if(!ptr) {
-            tclistdel(ptr);
             return false;
         }
         

@@ -53,6 +53,13 @@ namespace lj {
                 free(iter->first);
             }
         }
+        std::pair<int, int> bson_to_storage_delta(const BSONNode *ptr) {
+            if(ptr->quotable()) {
+                return std::pair<int, int>(4,5);
+            } else {
+                return std::pair<int, int>(0,0);
+            }
+        }
     };
     
     //=====================================================================
@@ -329,24 +336,30 @@ namespace lj {
     StorageFilter Storage::filter(const std::string &indx,
                                   const void * const val,
                                   const size_t val_len) const {
+        Log::debug("Filtering on [%s] with [%d][%s].") << indx << ((unsigned long long)val_len) << ((char *)val) << Log::end;
         std::map<std::string, TreeDB *>::const_iterator index = _fields_tree.find(indx);
-        if(index == _fields_tree.end())
+        if(index == _fields_tree.end()) {
+            Log::warning("Request for unknown tree index [%s] from [%s].") << indx << _directory << Log::end;
             return none();
+        }
         
+        Log::debug("Index found, returning results.") << Log::end;
         tokyo::DB *db = index->second;
         tokyo::DB::list_value_t db_values;
         std::set<unsigned long long> storage_keys;
         db->at_together(val, val_len, db_values);
         dbvalue_to_storagekey(db_values, storage_keys);
-        
         return StorageFilter(this, storage_keys);
     }
     
     StorageFilter Storage::search(const std::string &indx,
-                                        const std::string &terms) const {
+                                  const std::string &terms) const {
+        Log::debug("Searching on [%s] with [%s]") << indx << terms << Log::end;
         std::map<std::string, TextSearcher *>::const_iterator index = _fields_text.find(indx);
-        if(index == _fields_text.end())
+        if(index == _fields_text.end()) {
+            Log::warning("Request for unknown text index [%s] from [%s].") << indx << _directory << Log::end;
             return none();
+        }
         
         TextSearcher *searcher = index->second;
         tokyo::Searcher::set_key_t searcher_values;
@@ -356,10 +369,13 @@ namespace lj {
     }
     
     StorageFilter Storage::tagged(const std::string &indx,
-                                        const std::string &word) const {
+                                  const std::string &word) const {
+        Log::info("Searching on [%s] with [%s]") << indx << word << Log::end;
         std::map<std::string, TagSearcher *>::const_iterator index = _fields_tag.find(indx);
-        if(index == _fields_tag.end())
+        if(index == _fields_tag.end()) {
+            Log::warning("Request for unknown tag index [%s] from [%s].") << indx << _directory << Log::end;
             return none();
+        }
         
         TagSearcher *searcher = index->second;
         tokyo::Searcher::set_key_t searcher_values;
@@ -371,54 +387,37 @@ namespace lj {
     Storage &Storage::place(BSONNode &value) {
         unsigned long long key = value.nav("__key").to_l();
         unsigned long long original_key = value.nav("__key").to_l();
+        
+        Log::debug("Placing [%llu] [%s]") << key << value.to_pretty_s() << Log::end;
         try {
             begin_transaction();
             if(key) {
+                Log::debug("Deindexing previous record to clean house.") << Log::end;
                 deindex(key);
             } else {
+                Log::debug("New record. calculating key.") << Log::end;
                 // calculate the next key since this is a new document.
                 unsigned long long *ptr = (unsigned long long *)_db->max_key().first;
                 key = (*ptr) + 1;
+                free(ptr);
+                Log::debug("New key value is [%d].") << key << Log::end;
             }
             
             // Enforce unique constraints.
+            Log::debug("Unique constraint check.") << Log::end;
             for(std::set<std::string>::const_iterator iter = _fields_unique.begin();
                 iter != _fields_unique.end();
                 ++iter) {
                 BSONNode n(value.nav(*iter));
                 if(n.exists()) {
-                    if(n.nested()) {
-                        std::map<std::string, TreeDB *>::const_iterator index = _fields_tree.find(*iter);
-                        if(index != _fields_tree.end()) {
-                            for(BSONNode::childmap_t::const_iterator iter2 = n.to_map().begin();
-                                iter2 != n.to_map().end();
-                                ++iter2) {
-                                char *bson = iter2->second->bson();
-                                int delta = iter2->second->quotable() ? 4 : 0;
-                                tokyo::DB::value_t existing = index->second->at(bson + delta,
-                                                                                iter2->second->size() - delta);
-                                delete[] bson;
-                                if(existing.first)
-                                    throw Exception("StorageError",
-                                                    std::string("Unable to place record because of unique constraint [").append(*iter).append("]."));
-                            }
-                        }
-                    } else {
-                        std::map<std::string, TreeDB *>::const_iterator index = _fields_tree.find(*iter);
-                        if(index != _fields_tree.end()) {
-                            char *bson = n.bson();
-                            int delta = n.quotable() ? 4 : 0;
-                            tokyo::DB::value_t existing = index->second->at(bson + delta,
-                                                                            n.size() - delta);
-                            delete[] bson;
-                            if(existing.first)
-                                throw Exception("StorageError",
-                                                std::string("Unable to place record because of unique constraint [").append(*iter).append("]."));
-                        }
+                    std::map<std::string, TreeDB *>::const_iterator index = _fields_tree.find(*iter);
+                    if(index != _fields_tree.end()) {
+                        check_unique(n, *iter, index->second);
                     }
                 }
             }
             
+            Log::debug("Place in DB.") << Log::end;
             // Place in the primary database.
             value.nav("__key").value((long long)key);
             char *bson = value.bson();
@@ -440,6 +439,9 @@ namespace lj {
     
     Storage &Storage::remove(BSONNode &value) {
         unsigned long long key = value.nav("__key").to_l();
+        
+        Log::debug("Removing [%llu] [%s]") << key << value.to_pretty_s() << Log::end;
+        
         if(key) {
             try {
                 begin_transaction();
@@ -448,9 +450,42 @@ namespace lj {
                             sizeof(unsigned long long));
                 commit_transaction();
                 value.nav("__key").value(0LL);
-            } catch(Exception ex) {
+            } catch(Exception &ex) {
                 abort_transaction();
                 throw ex;
+            }
+        }
+        return *this;
+    }
+    
+    Storage &Storage::check_unique(const BSONNode &n, const std::string &name, tokyo::DB *index) {
+        // XXX this should probably be n.nested() && _index_unique_nested.find(indx) != _index_unique_nested.end().
+        // XXX or maybe even n.array().
+        if(n.nested()) {
+            Log::debug("Nested field, dealing with children values.") << Log::end;
+            for(BSONNode::childmap_t::const_iterator iter = n.to_map().begin();
+                iter != n.to_map().end();
+                ++iter) {
+                char *bson = iter->second->bson();
+                std::pair<int, int> delta(bson_to_storage_delta(iter->second));
+                tokyo::DB::value_t existing = index->at(bson + delta.first,
+                                                        iter->second->size() - delta.second);
+                delete[] bson;
+                if(existing.first) {
+                    throw Exception("StorageError",
+                                    std::string("Unable to place record because of unique constraint [").append(name).append("]."));
+                }
+            }
+        } else {
+            Log::debug("Normal field, dealing with values.") << Log::end;
+            char *bson = n.bson();
+            std::pair<int, int> delta(bson_to_storage_delta(&n));
+            tokyo::DB::value_t existing = index->at(bson + delta.first,
+                                                    n.size() - delta.second);
+            delete[] bson;
+            if(existing.first) {
+                throw Exception("StorageError",
+                                std::string("Unable to place record because of unique constraint [").append(name).append("]."));
             }
         }
         return *this;
@@ -459,6 +494,7 @@ namespace lj {
     Storage &Storage::deindex(const unsigned long long key) {
         if(!key) return *this;
         
+        Log::debug("Remove from indicies.") << Log::end;
         // Get the original document
         BSONNode original = at(key);
         
@@ -474,18 +510,18 @@ namespace lj {
                         iter2 != n.to_map().end();
                         ++iter2) {
                         char *bson = iter2->second->bson();
-                        int delta = iter2->second->quotable() ? 4 : 0;
-                        iter->second->remove_from_existing(bson + delta,
-                                                           iter2->second->size() - delta,
+                        std::pair<int, int> delta(bson_to_storage_delta(iter2->second));
+                        iter->second->remove_from_existing(bson + delta.first,
+                                                           iter2->second->size() - delta.second,
                                                            &key,
                                                            sizeof(unsigned long long));
                         delete[] bson;
                     }
                 } else {
                     char *bson = n.bson();
-                    int delta = n.quotable() ? 4 : 0;
-                    iter->second->remove_from_existing(bson + delta,
-                                                       n.size() - delta,
+                    std::pair<int, int> delta(bson_to_storage_delta(&n));
+                    iter->second->remove_from_existing(bson + delta.first,
+                                                       n.size() - delta.second,
                                                        &key,
                                                        sizeof(unsigned long long));
                     delete[] bson;
@@ -514,6 +550,7 @@ namespace lj {
     Storage &Storage::reindex(const unsigned long long key) {
         if(!key) return *this;
         
+        Log::debug("put in indicies.") << Log::end;
         // Get the original document
         BSONNode original = at(key);
         
@@ -529,18 +566,18 @@ namespace lj {
                         iter2 != n.to_map().end();
                         ++iter2) {
                         char *bson = iter2->second->bson();
-                        int delta = iter2->second->quotable() ? 4 : 0;
-                        iter->second->place_with_existing(bson + delta,
-                                                          iter2->second->size() - delta,
+                        std::pair<int, int> delta(bson_to_storage_delta(iter2->second));
+                        iter->second->place_with_existing(bson + delta.first,
+                                                          iter2->second->size() - delta.second,
                                                           &key,
                                                           sizeof(unsigned long long));
                         delete[] bson;
                     }
                 } else {
                     char *bson = n.bson();
-                    int delta = n.quotable() ? 4 : 0;
-                    iter->second->place_with_existing(bson + delta,
-                                                      n.size() - delta,
+                    std::pair<int, int> delta(bson_to_storage_delta(&n));
+                    iter->second->place_with_existing(bson + delta.first,
+                                                      n.size() - delta.second,
                                                       &key,
                                                       sizeof(unsigned long long));
                     delete[] bson;

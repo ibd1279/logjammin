@@ -229,7 +229,12 @@ namespace lj {
         set_value(DOUBLE_NODE, ptr);
         return *this;
     }
-    
+    BSONNode &BSONNode::value(const bool v) {
+        char ptr[1];
+        memcpy(ptr, &v, 1);
+        set_value(BOOL_NODE, ptr);
+        return *this;
+    }
     BSONNode &BSONNode::nullify() {
         set_value(NULL_NODE, NULL);
         return *this;

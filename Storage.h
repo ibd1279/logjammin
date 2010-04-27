@@ -215,6 +215,9 @@ namespace lj {
         
         //! Add a record to the indexed files.
         virtual Storage &reindex(const unsigned long long key);
+        
+        //! Check that an existing record does not exist for a given value.
+        virtual Storage &check_unique(const BSONNode &n, const std::string &name, tokyo::DB *index);
     public:
         //! Consructor
         Storage(const std::string &dir);

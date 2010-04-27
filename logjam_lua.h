@@ -34,6 +34,7 @@
 
 #include "lunar.h"
 #include "BSONNode.h"
+#include "Storage.h"
 
 namespace logjam {
     void register_logjam_functions(lua_State *L);
@@ -43,35 +44,86 @@ namespace logjam {
     int storage_config_add_index(lua_State *L);
     int storage_config_add_unique(lua_State *L);
     
+    //! Lua BSONNode wrapper.
+    /*!
+     \par
+     Known as "BSONNode" in lua.
+     \par
+     TODO This should be modified to override the __index method on the meta
+     table to get children. get() should probably be replaced with type
+     specific getters.
+     \author Jason Watson
+     \version 1.0
+     \date April 26, 2010
+     */
     class LuaBSONNode {
     private:
         lj::BSONNode *_node;
         bool _gc;
     public:
-        LuaBSONNode(lj::BSONNode *ptr, bool gc);
-        
-        ~LuaBSONNode();
-        
-        //! Lua bindings class name.
         static const char LUNAR_CLASS_NAME[];
-        
-        //! Lua bindings method array.
         static Lunar<LuaBSONNode>::RegType LUNAR_METHODS[];
-        
-        //! Create a new document node for lua.
         LuaBSONNode(lua_State *L);
-        
+        LuaBSONNode(lj::BSONNode *ptr, bool gc);
+        ~LuaBSONNode();
         int nav(lua_State *L);
-        
         int set(lua_State *L);
-        
         int get(lua_State *L);
-        
         int save(lua_State *L);
-        
         int load(lua_State *L);
-        
-        inline lj::BSONNode &node() { return *_node; }
+        inline lj::BSONNode &real_node() { return *_node; }
     };
     
+    //! Lua StorageFilter wrapper.
+    /*!
+     \par
+     Known as "StorageFilter" in lua.
+     \author Jason Watson
+     \version 1.0
+     \date April 27, 2010
+     */
+    class LuaStorageFilter {
+    private:
+        lj::StorageFilter *_filter;
+    public:
+        static const char LUNAR_CLASS_NAME[];
+        static Lunar<LuaStorageFilter>::RegType LUNAR_METHODS[];
+        LuaStorageFilter(lua_State *L);
+        LuaStorageFilter(lj::StorageFilter *filter);
+        ~LuaStorageFilter();
+        int mode_and(lua_State *L);
+        int mode_or(lua_State *L);
+        int filter(lua_State *L);
+        int search(lua_State *L);
+        int tagged(lua_State *L);
+        int records(lua_State *L);
+        int first(lua_State *L);
+        inline lj::StorageFilter &real_filter() { return *_filter; }
+    };
+
+    //! Lua Storage wrapper.
+    /*!
+     \par
+     Known as "Storage" in lua.
+     \author Jason Watson
+     \version 1.0
+     \date April 27, 2010
+     */
+    class LuaStorage {
+    private:
+        lj::Storage *_storage;
+    public:
+        static const char LUNAR_CLASS_NAME[];
+        static Lunar<LuaStorage>::RegType LUNAR_METHODS[];
+        LuaStorage(lua_State *L);
+        ~LuaStorage();
+        int all(lua_State *L);
+        int none(lua_State *L);
+        int filter(lua_State *L);
+        int search(lua_State *L);
+        int tagged(lua_State *L);
+        int place(lua_State *L);
+        int remove(lua_State *L);
+        inline lj::Storage &real_storage() { return *_storage; }
+    };        
 };

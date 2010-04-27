@@ -93,8 +93,70 @@ namespace lj {
             virtual Log &operator<<(const char *msg) {
                 if(_parts.size() > 0) {
                     char *buffer = new char[strlen(msg) + _parts.front().size()];
-                    std::cout << _parts.front() << std::endl;
                     sprintf(buffer, _parts.front().c_str(), msg);
+                    _buffer << buffer;
+                    _parts.pop_front();
+                    delete[] buffer;
+                } else {
+                    _buffer << msg;
+                }
+                return *this;
+            }
+            void write_number(long long msg) {
+                if(_parts.size() > 0) {
+                    char *buffer = new char[64 + _parts.front().size()];
+                    sprintf(buffer, _parts.front().c_str(), msg);
+                    _buffer << buffer;
+                    _parts.pop_front();
+                    delete[] buffer;
+                } else {
+                    _buffer << msg;
+                }
+            }
+            Log &operator<<(long long msg) {
+                write_number(msg);
+                return *this;
+            }
+            Log &operator<<(unsigned long long msg) {
+                write_number(static_cast<long long>(msg));
+                return *this;
+            }
+            Log &operator<<(long msg) {
+                write_number(msg);
+                return *this;
+            }
+            Log &operator<<(unsigned long msg) {
+                write_number(static_cast<long long>(msg));
+                return *this;
+            }
+            Log &operator<<(int msg) { 
+                write_number(msg);
+                return *this;
+            }
+            Log &operator<<(unsigned int msg) { 
+                write_number(static_cast<long long>(msg));
+                return *this;
+            }
+            Log &operator<<(short msg) { 
+                write_number(msg);
+                return *this;
+            }
+            Log &operator<<(unsigned short msg) { 
+                write_number(static_cast<long long>(msg));
+                return *this;
+            }
+            Log &operator<<(char msg) { 
+                write_number(msg);
+                return *this;
+            }
+            Log &operator<<(unsigned char msg) { 
+                write_number(static_cast<long long>(msg));
+                return *this;
+            }
+            Log &operator<<(bool msg) { 
+                if(_parts.size() > 0) {
+                    char *buffer = new char[6 + _parts.front().size()];
+                    sprintf(buffer, _parts.front().c_str(), msg ? "true" : "false");
                     _buffer << buffer;
                     _parts.pop_front();
                     delete[] buffer;

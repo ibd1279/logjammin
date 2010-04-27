@@ -83,7 +83,18 @@ namespace lj {
         Log &enable() { _enabled = true; return *this; }
         Log &operator()(const std::string &m);
         virtual Log &operator<<(const std::string &msg) { return *this; };
-        virtual Log &operator<<(const char *msg) {return *this; };
+        virtual Log &operator<<(const char *msg) { return *this; };
+        virtual Log &operator<<(long long msg) { return *this; };
+        virtual Log &operator<<(unsigned long long msg) { return *this; };
+        virtual Log &operator<<(long msg) { return *this; };
+        virtual Log &operator<<(unsigned long msg) { return *this; };
+        virtual Log &operator<<(int msg) { return *this; };
+        virtual Log &operator<<(unsigned int msg) { return *this; };
+        virtual Log &operator<<(short msg) { return *this; };
+        virtual Log &operator<<(unsigned short msg) { return *this; };
+        virtual Log &operator<<(char msg) { return *this; };
+        virtual Log &operator<<(unsigned char msg) { return *this; };
+        virtual Log &operator<<(bool msg) { return *this; };
         virtual void operator<<(const End &msg) { };
         static Log emergency, alert, critical, error, warning, notice, info, debug;
         static End end;

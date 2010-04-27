@@ -114,6 +114,8 @@ namespace lj {
         BSONNode &value(const long long v);
         //! Set the value of the document node to a double value.
         BSONNode &value(const double v);
+        //! Set the value of the document node to a boolean value.
+        BSONNode &value(const bool v);
         //! Set the value of the document node to null.
         /*!
          \par

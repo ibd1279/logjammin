@@ -60,7 +60,7 @@ def build(ctx):
         target = 'logjam',
         vnum = '0.1.0',
         includes = ['.', '/usr/local/include/', '/opt/local/include/', '/usr/include'],
-        cxxflags = ['-O0', '-Wall'],
+        cxxflags = ['-O0', '-Wall', '-g'],
         lib = ['lua'],
         libpath = ['/usr/local/lib/', '/opt/local/lib/', '/usr/lib'],
         linkflags = ['-g'],
