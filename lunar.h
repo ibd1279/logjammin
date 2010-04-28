@@ -49,10 +49,7 @@ public:
         
         // fill method table with methods from class T
         for (RegType *l = T::LUNAR_METHODS; l->name; l++) {
-            lua_pushstring(L, l->name);
-            lua_pushlightuserdata(L, (void*)l);
-            lua_pushcclosure(L, thunk, 1);
-            lua_settable(L, methods);
+            inject_method(L, l->name, l, methods);
         }
         
         lua_pop(L, 2);  // drop metatable and method table
@@ -120,10 +117,26 @@ public:
     // get userdata from Lua stack and return pointer to T object
     static T *check(lua_State *L, int narg) {
         userdataType *ud =
-        static_cast<userdataType*>(luaL_checkudata(L, narg, T::LUNAR_CLASS_NAME));
+        static_cast<userdataType *>(luaL_checkudata(L, narg, T::LUNAR_CLASS_NAME));
         if(!ud) luaL_typerror(L, narg, T::LUNAR_CLASS_NAME);
         return ud->pT;  // pointer to T object
-    }    
+    }
+    
+    
+    static bool is(lua_State *L, int narg) {
+        userdataType *ud =
+        static_cast<userdataType *>(luaL_checkudata(L, narg, T::LUNAR_CLASS_NAME));
+        if(!ud) return false;
+        return true;
+    }
+    
+    static void inject_method(lua_State *L, const char *name, RegType *l, int table) {
+        int methods = (table > 0 ? table : lua_gettop(L) - table + 1);
+        lua_pushstring(L, name);
+        lua_pushlightuserdata(L, (void*)l);
+        lua_pushcclosure(L, thunk, 1);
+        lua_settable(L, methods);
+    }
     
 private:
     Lunar();  // hide default constructor
@@ -165,13 +178,26 @@ private:
     }
     
     static int tostring_T (lua_State *L) {
-        char buff[32];
+        RegType *l = NULL;
+        for (l = T::LUNAR_METHODS; l->name; l++) {
+            if(strcmp(l->name, "__tostring") == 0)
+                break;
+        }
+
         userdataType *ud = static_cast<userdataType*>(lua_touserdata(L, 1));
         T *obj = ud->pT;
-        sprintf(buff, "%p", (void*)obj);
-        lua_pushfstring(L, "%s (%s)", T::LUNAR_CLASS_NAME, buff);
-        
-        return 1;
+        if(l->name) {
+            if(l->mfunc)
+                return (obj->*(l->mfunc))(L);
+            else if(l->nmfunc)
+                return (*(l->nmfunc))(obj, L);
+            return 0;
+        } else {
+            char buff[32];
+            sprintf(buff, "%p", (void*)obj);
+            lua_pushfstring(L, "%s (%s)", T::LUNAR_CLASS_NAME, buff);
+            return 1;
+        }
     }
     
     static void set(lua_State *L, int table_index, const char *key) {

@@ -27,12 +27,12 @@ r1 = role:filter("name", "default"):first()
 r2 = role:filter("name", "admin"):first()
 r3 = role:filter("name", "first"):first()
 
-print(r1:get())
-print(r2:get())
+print(r1)
+print(r2)
 print(r3)
 
-for h, r in ipairs(role:all():records()) do print(r:get()) end
-for h, r in ipairs(role:tagged("allowed", "auth/login"):records()) do print(r:get()) end
-for h, r in ipairs(role:tagged("allowed", "auth/login"):filter("name", "admin"):records()) do print(r:get()) end
-for h, r in ipairs(role:tagged("allowed", "auth/login"):filter("name", "admin"):filter("name", "default"):records()) do print(r:get()) end
-for h, r in ipairs(role:tagged("allowed", "user/edit"):records()) do print(r:get()) end
+for h, r in ipairs(role:all():records()) do print(r) end
+for h, r in ipairs(role:tagged("allowed", "auth/login"):records()) do print(r) end
+for h, r in ipairs(role:tagged("allowed", "auth/login"):filter("name", "admin"):records()) do print(r) end
+for h, r in ipairs(role:tagged("allowed", "auth/login"):filter("name", "admin"):filter("name", "default"):records()) do print(r) end
+for h, r in ipairs(role:tagged("allowed", "user/edit"):records()) do print(r) end

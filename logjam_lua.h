@@ -71,6 +71,7 @@ namespace logjam {
         int get(lua_State *L);
         int save(lua_State *L);
         int load(lua_State *L);
+        int __tostring(lua_State *L);
         inline lj::BSONNode &real_node() { return *_node; }
     };
     

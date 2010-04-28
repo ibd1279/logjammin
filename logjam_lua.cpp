@@ -65,9 +65,16 @@ namespace logjam {
     //=====================================================================
     // logjam global functions.
     //=====================================================================
+    std::string lua_to_string(lua_State *L, int offset) {
+        const char *ptr = luaL_checkstring(L, offset);
+        if(!ptr)
+            return std::string();
+        size_t l = lua_strlen(L, offset);
+        return std::string(ptr, l);
+    }
     
     int storage_config_new(lua_State *L) {
-        std::string dbname(luaL_checkstring(L, -1));
+        std::string dbname(lua_to_string(L, -1));
         lj::BSONNode *ptr = new lj::BSONNode();
         ptr->nav("main/compare").value(std::string("int64"));
         ptr->nav("main/file").value(std::string("db_") + dbname + ".tcb");
@@ -85,7 +92,7 @@ namespace logjam {
     }
     
     int storage_config_save(lua_State *L) {
-        std::string dbname(luaL_checkstring(L, -2));
+        std::string dbname(lua_to_string(L, -2));
         LuaBSONNode *ptr = Lunar<LuaBSONNode>::check(L, -1);
         std::string dbfile(DBDIR);
         if(dbname.size() > 1 && dbname[dbname.size() - 1] == '/')
@@ -95,7 +102,7 @@ namespace logjam {
         
         // This should be moved somewhere for portability.
         if(mkdir(dbfile.c_str(), S_IRWXU | S_IROTH | S_IXOTH | S_IRGRP | S_IXGRP)) {
-            lj::Log::warning("Failed to create directory [%d][%s].") << errno << strerror(errno) << lj::Log::end;
+            return luaL_error(L, "Failed to create directory [%d][%s].", errno, strerror(errno));
         }
         
         dbfile.append("/config");
@@ -104,7 +111,7 @@ namespace logjam {
     }
     
     int storage_config_load(lua_State *L) {
-        std::string dbname(luaL_checkstring(L, -1));
+        std::string dbname(lua_to_string(L, -1));
         std::string dbfile(DBDIR);
         if(dbname.size() > 1 && dbname[dbname.size() - 1] == '/')
             dbfile.append(dbname);
@@ -112,17 +119,16 @@ namespace logjam {
             dbfile.append("/").append(dbname);
         dbfile.append("/config");
         lj::BSONNode *ptr = new lj::BSONNode();
-        Log::info("Loading from config file [%s]") << dbfile << Log::end;
         ptr->load(dbfile);
         Lunar<LuaBSONNode>::push(L, new LuaBSONNode(ptr, true), true);
         return 1;
     }
     
     int storage_config_add_index(lua_State *L) {
-        std::string indxcomp(luaL_checkstring(L, -1));
-        std::string indxfield(luaL_checkstring(L, -2));
-        std::string indxname(luaL_checkstring(L, -3));
-        std::string indxtype(luaL_checkstring(L, -4));
+        std::string indxcomp(lua_to_string(L, -1));
+        std::string indxfield(lua_to_string(L, -2));
+        std::string indxname(lua_to_string(L, -3));
+        std::string indxtype(lua_to_string(L, -4));
         LuaBSONNode *ptr = Lunar<LuaBSONNode>::check(L, -5);
         ptr->real_node().nav(std::string("index/") + indxtype + "/" + indxname + "/compare").value(indxcomp);
         ptr->real_node().nav(std::string("index/") + indxtype + "/" + indxname + "/file").value(std::string("index.") + indxname + "." + indxtype + ".tc");
@@ -136,7 +142,7 @@ namespace logjam {
     }
     
     int storage_config_add_unique(lua_State *L) {
-        std::string field(luaL_checkstring(L, -1));
+        std::string field(lua_to_string(L, -1));
         LuaBSONNode *ptr = Lunar<LuaBSONNode>::check(L, -2);
         
         std::set<std::string> allowed(ptr->real_node().nav("main/unique").to_set());
@@ -165,6 +171,7 @@ namespace logjam {
     LUNAR_MEMBER_METHOD(LuaBSONNode, get),
     LUNAR_MEMBER_METHOD(LuaBSONNode, load),
     LUNAR_MEMBER_METHOD(LuaBSONNode, save),
+    LUNAR_MEMBER_METHOD(LuaBSONNode, __tostring),
     {0, 0}
     };
 
@@ -180,20 +187,16 @@ namespace logjam {
     }
     
     LuaBSONNode::LuaBSONNode(lua_State *L) : _node(NULL), _gc(true) {
-        int argc = lua_gettop(L);
-        if(argc > 0) {
+        if(lua_gettop(L) > 0) {
             LuaBSONNode *ptr = Lunar<LuaBSONNode>::check(L, -1);
-            if(ptr)
-                _node = new lj::BSONNode(*ptr->_node);
-            else
-                _node = new lj::BSONNode();
+            _node = new lj::BSONNode(*ptr->_node);
         } else {
             _node = new lj::BSONNode();
         }
     }
 
     int LuaBSONNode::nav(lua_State *L) {
-        std::string path(luaL_checkstring(L, -1));
+        std::string path(lua_to_string(L, -1));
         // XXX This could be a possible source of memory coruption if 
         // XXX the root was GC'd but the user tried to continue using the
         // XXX the returned node.
@@ -202,23 +205,18 @@ namespace logjam {
     }
     
     int LuaBSONNode::set(lua_State *L) {
-        const char *str;
-        int tmp;
-        lua_settop(L, 1);
-        switch(lua_type(L, 1)) {
+        switch(lua_type(L, -1)) {
             case LUA_TSTRING:
-                str = luaL_checkstring(L, 1);
-                _node->value(std::string(str));
+                _node->value(lua_to_string(L, -1));
                 break;
             case LUA_TNUMBER:
-                _node->value(luaL_checkint(L, 1));
+                _node->value(luaL_checkint(L, -1));
                 break;
             case LUA_TNIL:
-                _node->set_value(lj::NULL_NODE, NULL);
+                _node->nullify();
                 break;
             case LUA_TBOOLEAN:
-                tmp = lua_toboolean(L, 1) ? 1 : 0;
-                _node->set_value(lj::BOOL_NODE, (char *)&tmp);
+                _node->value(static_cast<bool>(lua_toboolean(L, -1)));
                 break;
             case LUA_TTABLE:
             case LUA_TFUNCTION:
@@ -245,6 +243,11 @@ namespace logjam {
                 lua_pushstring(L, _node->to_s().c_str());
                 break;
             case lj::DOUBLE_NODE:
+                lua_pushnumber(L, _node->to_d());
+                break;
+            case lj::BOOL_NODE:
+                lua_pushboolean(L, _node->to_b());
+                break;
             default:
                 lua_pushnil(L);
                 break;
@@ -253,15 +256,20 @@ namespace logjam {
     }
     
     int LuaBSONNode::save(lua_State *L) {
-        std::string fn(luaL_checkstring(L, -1));
+        std::string fn(lua_to_string(L, -1));
         _node->save(fn);
         return 0;
     }
     
     int LuaBSONNode::load(lua_State *L) {
-        std::string fn(luaL_checkstring(L, -1));
+        std::string fn(lua_to_string(L, -1));
         _node->load(fn);
         return 0;
+    }
+    
+    int LuaBSONNode::__tostring(lua_State *L) {
+        lua_pushstring(L, _node->to_s().c_str());
+        return 1;
     }
     
     //=====================================================================
@@ -305,26 +313,38 @@ namespace logjam {
         return 1;
     }
     
-    // XXX make more intelligent about the value types.
     int LuaStorageFilter::filter(lua_State *L) {
-        std::string field(luaL_checkstring(L, -2));
-        std::string val(luaL_checkstring(L, -1));
-        lj::StorageFilter *ptr = new lj::StorageFilter(_filter->filter(field, val.c_str(), val.size()));
-        Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
+        std::string field(lua_to_string(L, -2));
+        if(lua_isstring(L, -1)) {
+            std::string val(lua_to_string(L, -1));
+            lj::StorageFilter *ptr = new lj::StorageFilter(_filter->filter(field, val.c_str(), val.size()));
+            Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
+        } else {
+            LuaBSONNode *n = Lunar<LuaBSONNode>::check(L, -1);
+            char *bson = n->real_node().bson();
+            lj::StorageFilter *ptr = NULL;
+            if(n->real_node().quotable()) {
+                ptr = new lj::StorageFilter(_filter->filter(field, bson + 4, n->real_node().size() - 5));
+            } else {
+                ptr = new lj::StorageFilter(_filter->filter(field, bson, n->real_node().size()));
+            }
+            delete[] bson;
+            Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
+        }
         return 1;
     }
 
     int LuaStorageFilter::search(lua_State *L) {
-        std::string field(luaL_checkstring(L, -2));
-        std::string val(luaL_checkstring(L, -1));
+        std::string field(lua_to_string(L, -2));
+        std::string val(lua_to_string(L, -1));
         lj::StorageFilter *ptr = new lj::StorageFilter(_filter->search(field, val));
         Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
         return 1;
     }
     
     int LuaStorageFilter::tagged(lua_State *L) {
-        std::string field(luaL_checkstring(L, -2));
-        std::string val(luaL_checkstring(L, -1));
+        std::string field(lua_to_string(L, -2));
+        std::string val(lua_to_string(L, -1));
         lj::StorageFilter *ptr = new lj::StorageFilter(_filter->tagged(field, val));
         Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
         return 1;
@@ -371,7 +391,7 @@ namespace logjam {
     };
     
     LuaStorage::LuaStorage(lua_State *L) : _storage(NULL) {
-        std::string dbname(luaL_checkstring(L, -1));
+        std::string dbname(lua_to_string(L, -1));
         _storage = new lj::Storage(dbname);
     }
     
@@ -394,17 +414,29 @@ namespace logjam {
     
     // XXX make more intelligent about the value types.
     int LuaStorage::filter(lua_State *L) {
-        std::string field(luaL_checkstring(L, -2));
-        std::string val(luaL_checkstring(L, -1));
-        lj::StorageFilter *ptr = new lj::StorageFilter(_storage->filter(field, val.c_str(), val.size()));
-        Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
+        std::string field(lua_to_string(L, -2));
+        if(lua_isstring(L, -1)) {
+            std::string val(lua_to_string(L, -1));
+            lj::StorageFilter *ptr = new lj::StorageFilter(_storage->filter(field, val.c_str(), val.size()));
+            Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
+        } else {
+            LuaBSONNode *n = Lunar<LuaBSONNode>::check(L, -1);
+            char *bson = n->real_node().bson();
+            lj::StorageFilter *ptr = NULL;
+            if(n->real_node().quotable()) {
+                ptr = new lj::StorageFilter(_storage->filter(field, bson + 4, n->real_node().size() - 5));
+            } else {
+                ptr = new lj::StorageFilter(_storage->filter(field, bson, n->real_node().size()));
+            }
+            Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
+        }
         return 1;
     }
     
     // XXX make more intelligent about the value types.
     int LuaStorage::search(lua_State *L) {
-        std::string field(luaL_checkstring(L, -2));
-        std::string val(luaL_checkstring(L, -1));
+        std::string field(lua_to_string(L, -2));
+        std::string val(lua_to_string(L, -1));
         lj::StorageFilter *ptr = new lj::StorageFilter(_storage->tagged(field, val));
         Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
         return 1;
@@ -412,8 +444,8 @@ namespace logjam {
     
     // XXX make more intelligent about the value types.
     int LuaStorage::tagged(lua_State *L) {
-        std::string field(luaL_checkstring(L, -2));
-        std::string val(luaL_checkstring(L, -1));
+        std::string field(lua_to_string(L, -2));
+        std::string val(lua_to_string(L, -1));
         lj::StorageFilter *ptr = new lj::StorageFilter(_storage->tagged(field, val));
         Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
         return 1;
@@ -421,7 +453,11 @@ namespace logjam {
     
     int LuaStorage::place(lua_State *L) {
         LuaBSONNode *ptr = Lunar<LuaBSONNode>::check(L, -1);
-        _storage->place(ptr->real_node());
+        try {
+            _storage->place(ptr->real_node());
+        } catch(lj::Exception &ex) {
+            luaL_error(L, "Unable to place content. %s", ex.to_s().c_str());
+        }
         Lunar<LuaStorage>::push(L, this, false);
         return 1;
     }
