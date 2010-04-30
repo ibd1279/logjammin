@@ -460,43 +460,45 @@ namespace lj {
         return StorageFilter(this, searcher_values);
     }
     
-    Storage &Storage::place(BSONNode &value) {
+    Storage &Storage::place(BSONNode &value)
+    {
         unsigned long long key = value.nav("__key").to_l();
         unsigned long long original_key = value.nav("__key").to_l();
         
         Log::debug.log("Placing [%llu] [%s]") << key << value.to_pretty_s() << Log::end;
-        try {
+        try
+        {
             begin_transaction();
-            if(key) {
+            if (key)
+            {
                 Log::debug.log("Deindexing previous record to clean house.") << Log::end;
                 deindex(key);
-            } else {
+            }
+            else
+            {
                 Log::debug.log("New record. calculating key.") << Log::end;
-                // calculate the next key since this is a new document.
-                unsigned long long *ptr = (unsigned long long *)db_->max_key().first;
+                unsigned long long *ptr = static_cast<unsigned long long *>(db_->max_key().first);
                 key = (*ptr) + 1;
                 free(ptr);
-                Log::debug.log("New key value is [%d].") << key << Log::end;
+                Log::debug.log("New key is [%d].") << key << Log::end;
             }
             
             // Enforce unique constraints.
             Log::debug.log("Unique constraint check.") << Log::end;
-            for(std::set<std::string>::const_iterator iter = _fields_unique.begin();
-                iter != _fields_unique.end();
-                ++iter) {
-                BSONNode n(value.nav(*iter));
-                if(n.exists()) {
-                    std::map<std::string, TreeDB *>::const_iterator index = fields_tree_.find(*iter);
-                    if(index != fields_tree_.end()) {
-                        check_unique(n, *iter, index->second);
-                    }
+            for (std::map<std::string, Hash_db*>::const_iterator iter = fields_hash_.begin();
+                 fields_hash_.end() != iter;
+                 ++iter)
+            {
+                BSONNode n(value.nav(iter->first));
+                if (n.exists())
+                {
+                    check_unique(n, iter->first, iter->second);
                 }
             }
             
             Log::debug.log("Place in DB.") << Log::end;
-            // Place in the primary database.
-            value.nav("__key").value((long long)key);
-            char *bson = value.bson();
+            value.nav("__key").value(static_cast<long long>(key));
+            char* bson = value.bson();
             db_->place(&key,
                        sizeof(unsigned long long),
                        bson,
@@ -505,28 +507,34 @@ namespace lj {
             
             reindex(key);
             commit_transaction();
-        } catch(Exception* ex) {
-            value.nav("__key").value((long long)original_key);
+        }
+        catch(Exception* ex)
+        {
+            value.nav("__key").value(static_cast<long long>(original_key));
             abort_transaction();
             throw ex;
         }
         return *this;
     }
     
-    Storage &Storage::remove(BSONNode &value) {
+    Storage &Storage::remove(BSONNode &value)
+    {
         unsigned long long key = value.nav("__key").to_l();
         
         Log::debug.log("Removing [%llu] [%s]") << key << value.to_pretty_s() << Log::end;
         
-        if(key) {
-            try {
+        if (key)
+        {
+            try
+            {
                 begin_transaction();
                 deindex(key);
-                db_->remove(&key,
-                            sizeof(unsigned long long));
+                db_->remove(&key, sizeof(unsigned long long));
                 commit_transaction();
                 value.nav("__key").value(0LL);
-            } catch(Exception* ex) {
+            }
+            catch (Exception* ex)
+            {
                 abort_transaction();
                 throw ex;
             }
@@ -534,32 +542,37 @@ namespace lj {
         return *this;
     }
     
-    Storage &Storage::check_unique(const BSONNode &n, const std::string &name, tokyo::DB *index) {
-        // XXX this should probably be n.nested() && _index_unique_nested.find(indx) != _index_unique_nested.end().
-        // XXX or maybe even n.array().
-        if(n.nested()) {
-            Log::debug.log("Nested field, dealing with children values.") << Log::end;
-            for(BSONNode::childmap_t::const_iterator iter = n.to_map().begin();
-                iter != n.to_map().end();
-                ++iter) {
-                char *bson = iter->second->bson();
+    Storage &Storage::check_unique(const BSONNode &n, const std::string &name, tokyo::DB *index)
+    {
+        if (n.nested() && _fields_unique.end() != _fields_unique.find(name))
+        {
+            Log::debug.log("checking children of [%s].") << name << Log::end;
+            for (BSONNode::childmap_t::const_iterator iter = n.to_map().begin();
+                 iter != n.to_map().end();
+                 ++iter)
+            {
+                char* bson = iter->second->bson();
                 std::pair<int, int> delta(bson_to_storage_delta(iter->second));
                 tokyo::DB::value_t existing = index->at(bson + delta.first,
                                                         iter->second->size() - delta.second);
                 delete[] bson;
-                if(existing.first) {
+                if (existing.first)
+                {
                     throw new Exception("StorageError",
                                         std::string("Unable to place record because of unique constraint [").append(name).append("]."));
                 }
             }
-        } else {
-            Log::debug.log("Normal field, dealing with values.") << Log::end;
+        }
+        else
+        {
+            Log::debug.log("Checking value of [%s].") << name << Log::end;
             char *bson = n.bson();
             std::pair<int, int> delta(bson_to_storage_delta(&n));
             tokyo::DB::value_t existing = index->at(bson + delta.first,
                                                     n.size() - delta.second);
             delete[] bson;
-            if(existing.first) {
+            if (existing.first)
+            {
                 throw new Exception("StorageError",
                                     std::string("Unable to place record because of unique constraint [").append(name).append("]."));
             }
@@ -567,56 +580,103 @@ namespace lj {
         return *this;
     }
     
-    Storage &Storage::deindex(const unsigned long long key) {
-        if(!key) return *this;
+    // XXX Method is too long. Needs to be devided up somehow.
+    Storage &Storage::deindex(const unsigned long long key)
+    {
+        if (!key)
+        {
+            return *this;
+        }
         
-        Log::debug.log("Remove from indicies.") << Log::end;
-        // Get the original document
+        Log::debug.log("Remove [%d] from indicies.") << key << Log::end;
         BSONNode original = at(key);
         
-        // Remove from index entries.
-        for(std::map<std::string, TreeDB *>::const_iterator iter = fields_tree_.begin();
-            iter != fields_tree_.end();
-            ++iter) {
+        // Remove from tree index entries.
+        for (std::map<std::string, TreeDB *>::const_iterator iter = fields_tree_.begin();
+             fields_tree_.end() != iter;
+             ++iter)
+        {
             BSONNode n(original.nav(iter->first));
-            
-            if(n.exists()) {
-                if(n.nested()) {
-                    for(BSONNode::childmap_t::const_iterator iter2 = n.to_map().begin();
-                        iter2 != n.to_map().end();
-                        ++iter2) {
-                        char *bson = iter2->second->bson();
-                        std::pair<int, int> delta(bson_to_storage_delta(iter2->second));
-                        iter->second->remove_from_existing(bson + delta.first,
-                                                           iter2->second->size() - delta.second,
-                                                           &key,
-                                                           sizeof(unsigned long long));
-                        delete[] bson;
-                    }
-                } else {
-                    char *bson = n.bson();
-                    std::pair<int, int> delta(bson_to_storage_delta(&n));
+            if (n.exists() && 
+                n.nested() && 
+                _fields_unique.end() != _fields_unique.find(iter->first))
+            {
+                for (BSONNode::childmap_t::const_iterator iter2 = n.to_map().begin();
+                     iter2 != n.to_map().end();
+                     ++iter2)
+                {
+                    char* bson = iter2->second->bson();
+                    std::pair<int, int> delta(bson_to_storage_delta(iter2->second));
                     iter->second->remove_from_existing(bson + delta.first,
-                                                       n.size() - delta.second,
+                                                       iter2->second->size() - delta.second,
                                                        &key,
                                                        sizeof(unsigned long long));
                     delete[] bson;
                 }
             }
+            else if (n.exists())
+            {
+                char* bson = n.bson();
+                std::pair<int, int> delta(bson_to_storage_delta(&n));
+                iter->second->remove_from_existing(bson + delta.first,
+                                                   n.size() - delta.second,
+                                                   &key,
+                                                   sizeof(unsigned long long));
+                delete[] bson;
+            }
         }
-        for(std::map<std::string, TextSearcher *>::const_iterator iter = fields_text_.begin();
-            iter != fields_text_.end();
-            ++iter) {
+        
+        // remove from hash index entries.
+        for (std::map<std::string, Hash_db*>::const_iterator iter = fields_hash_.begin();
+             fields_hash_.end() != iter;
+             ++iter)
+        {
             BSONNode n(original.nav(iter->first));
-            if(n.exists()) {
+            if (n.exists() && 
+                n.nested() && 
+                _fields_unique.end() != _fields_unique.find(iter->first))
+            {
+                for (BSONNode::childmap_t::const_iterator iter2 = n.to_map().begin();
+                     iter2 != n.to_map().end();
+                     ++iter2)
+                {
+                    char* bson = iter2->second->bson();
+                    std::pair<int, int> delta(bson_to_storage_delta(iter2->second));
+                    iter->second->remove(bson + delta.first,
+                                         iter2->second->size() - delta.second);
+                    delete[] bson;
+                }
+            }
+            else if (n.exists())
+            {
+                char* bson = n.bson();
+                std::pair<int, int> delta(bson_to_storage_delta(&n));
+                iter->second->remove(bson + delta.first,
+                                     n.size() - delta.second);
+                delete[] bson;
+            }
+        }
+        
+        // remove from text searches.
+        for (std::map<std::string, TextSearcher *>::const_iterator iter = fields_text_.begin();
+             fields_text_.end() != iter;
+             ++iter)
+        {
+            BSONNode n(original.nav(iter->first));
+            if (n.exists())
+            {
                 iter->second->remove(key, n.to_s());
             }
         }
-        for(std::map<std::string, TagSearcher *>::const_iterator iter = fields_tag_.begin();
-            iter != fields_tag_.end();
-            ++iter) {
+        
+        // remove from the tag searches.
+        for (std::map<std::string, TagSearcher *>::const_iterator iter = fields_tag_.begin();
+             fields_tag_.end() != iter;
+             ++iter)
+        {
             BSONNode n(original.nav(iter->first));
-            if(n.exists()) {
+            if (n.exists())
+            {
                 iter->second->remove(key, n.to_set());
             }
         }
@@ -624,61 +684,110 @@ namespace lj {
     }
     
     Storage &Storage::reindex(const unsigned long long key) {
-        if(!key) return *this;
+        if (!key)
+        {
+            return *this;
+        }
         
-        Log::debug.log("put in indicies.") << Log::end;
-        // Get the original document
+        Log::debug.log("Place [%d] in indicies.") << key << Log::end;
         BSONNode original = at(key);
         
-        // Place in the index.
-        for(std::map<std::string, TreeDB *>::const_iterator iter = fields_tree_.begin();
-            iter != fields_tree_.end();
-            ++iter) {
-            
+        // Insert into tree index.
+        for (std::map<std::string, TreeDB*>::const_iterator iter = fields_tree_.begin();
+             fields_tree_.end() != iter;
+             ++iter)
+        {
             BSONNode n(original.nav(iter->first));
-            if(n.exists()) {
-                if(n.nested()) {
-                    for(BSONNode::childmap_t::const_iterator iter2 = n.to_map().begin();
-                        iter2 != n.to_map().end();
-                        ++iter2) {
-                        char *bson = iter2->second->bson();
-                        std::pair<int, int> delta(bson_to_storage_delta(iter2->second));
-                        iter->second->place_with_existing(bson + delta.first,
-                                                          iter2->second->size() - delta.second,
-                                                          &key,
-                                                          sizeof(unsigned long long));
-                        delete[] bson;
-                    }
-                } else {
-                    char *bson = n.bson();
-                    std::pair<int, int> delta(bson_to_storage_delta(&n));
+            if (n.exists() &&
+                n.nested() &&
+                _fields_unique.end() != _fields_unique.find(iter->first))
+            {
+                for (BSONNode::childmap_t::const_iterator iter2 = n.to_map().begin();
+                     iter2 != n.to_map().end();
+                     ++iter2)
+                {
+                    char* bson = iter2->second->bson();
+                    std::pair<int, int> delta(bson_to_storage_delta(iter2->second));
                     iter->second->place_with_existing(bson + delta.first,
-                                                      n.size() - delta.second,
+                                                      iter2->second->size() - delta.second,
                                                       &key,
                                                       sizeof(unsigned long long));
                     delete[] bson;
                 }
             }
+            else if (n.nested())
+            {
+                char* bson = n.bson();
+                std::pair<int, int> delta(bson_to_storage_delta(&n));
+                iter->second->place_with_existing(bson + delta.first,
+                                                  n.size() - delta.second,
+                                                  &key,
+                                                  sizeof(unsigned long long));
+                delete[] bson;
+            }
         }
         
-        for(std::map<std::string, TextSearcher *>::const_iterator iter = fields_text_.begin();
-            iter != fields_text_.end();
-            ++iter) {
+        // Insert into hash index.
+        for (std::map<std::string, Hash_db*>::const_iterator iter = fields_hash_.begin();
+             fields_hash_.end() != iter;
+             ++iter)
+        {
             BSONNode n(original.nav(iter->first));
-            if(n.exists()) {
+            if (n.exists() &&
+                n.nested() &&
+                _fields_unique.end() != _fields_unique.find(iter->first))
+            {
+                for (BSONNode::childmap_t::const_iterator iter2 = n.to_map().begin();
+                     iter2 != n.to_map().end();
+                     ++iter2)
+                {
+                    char* bson = iter2->second->bson();
+                    std::pair<int, int> delta(bson_to_storage_delta(iter2->second));
+                    iter->second->place(bson + delta.first,
+                                        iter2->second->size() - delta.second,
+                                        &key,
+                                        sizeof(unsigned long long));
+                    delete[] bson;
+                }
+            }
+            else if (n.nested())
+            {
+                char* bson = n.bson();
+                std::pair<int, int> delta(bson_to_storage_delta(&n));
+                iter->second->place(bson + delta.first,
+                                    n.size() - delta.second,
+                                    &key,
+                                    sizeof(unsigned long long));
+                delete[] bson;
+            }
+        }
+        
+        // insert into text searcher
+        for (std::map<std::string, TextSearcher *>::const_iterator iter = fields_text_.begin();
+             fields_text_.end() != iter;
+             ++iter)
+        {
+            BSONNode n(original.nav(iter->first));
+            if (n.exists())
+            {
                 iter->second->index(key, n.to_s());
             }
         }
-        for(std::map<std::string, TagSearcher *>::const_iterator iter = fields_tag_.begin();
-            iter != fields_tag_.end();
-            ++iter) {
+        
+        // insert into tag searcher
+        for (std::map<std::string, TagSearcher *>::const_iterator iter = fields_tag_.begin();
+             fields_tag_.end() != iter;
+             ++iter)
+        {
             BSONNode n(original.nav(iter->first));
-            if(n.exists()) {
+            if (n.exists())
+            {
                 iter->second->index(key, n.to_set());
             }
         }
         return *this;
     }
+    
     void Storage::begin_transaction() {
         db_->start_writes();
         for (std::map<std::string, TreeDB*>::const_iterator iter = fields_tree_.begin();
