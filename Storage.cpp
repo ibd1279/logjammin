@@ -65,18 +65,21 @@ namespace lj {
     // Storage Filter Implementation.
     //=====================================================================
     
-    BSONNode StorageFilter::doc_at(unsigned long long pkey) const {
+    BSONNode StorageFilter::doc_at(unsigned long long pkey) const
+    {
         return _storage->at(pkey);
     }
     
     StorageFilter::StorageFilter(const Storage *storage,
                                  const std::set<unsigned long long> &keys,
-                                 StorageFilterMode mode,
+                                 Set_operation mode,
                                  long long offset,
-                                 long long length) : _storage(storage), _keys(keys), _mode(mode), _offset(offset), _length(length) {
+                                 long long length) : _storage(storage), _keys(keys), _mode(mode), _offset(offset), _length(length)
+    {
     }
     
-    StorageFilter::StorageFilter(const StorageFilter &orig) : _storage(orig._storage), _keys(orig._keys), _mode(orig._mode), _offset(orig._offset), _length(orig._length) {
+    StorageFilter::StorageFilter(const StorageFilter &orig) : _storage(orig._storage), _keys(orig._keys), _mode(orig._mode), _offset(orig._offset), _length(orig._length)
+    {
     }
     
     StorageFilter::~StorageFilter() {
@@ -134,11 +137,15 @@ namespace lj {
         
         switch (_mode)
         {
-            case INTERSECTION:
+            case k_intersection:
                 intersect_keys(storage_keys);
                 break;
-            case UNION:
+            case k_union:
                 union_keys(storage_keys);
+                break;
+            case k_complement:
+                break;
+            case k_symmetric_difference:
                 break;
         }
         return *this;
@@ -148,19 +155,26 @@ namespace lj {
                                          const std::string &terms) {
         Log::debug.log("Searching on [%s] with [%s]") << indx << terms << Log::end;
         std::map<std::string, TextSearcher *>::const_iterator index = _storage->fields_text_.find(indx);
-        if(index == _storage->fields_text_.end())
+        if (_storage->fields_text_.end() == index)
+        {
             return *this;
+        }
         
         TextSearcher *searcher = index->second;
         tokyo::Searcher::set_key_t searcher_values;
         searcher->search(terms, searcher_values);
         
-        switch(_mode) {
-            case INTERSECTION:
+        switch (_mode)
+        {
+            case k_intersection:
                 intersect_keys(searcher_values);
                 break;
-            case UNION:
+            case k_union:
                 union_keys(searcher_values);
+                break;
+            case k_complement:
+                break;
+            case k_symmetric_difference:
                 break;
         }
         return *this;
@@ -170,19 +184,26 @@ namespace lj {
                                          const std::string &word) {
         Log::debug.log("Searching on [%s] with [%s]") << indx << word << Log::end;
         std::map<std::string, TagSearcher *>::const_iterator index = _storage->fields_tag_.find(indx);
-        if(index == _storage->fields_tag_.end())
+        if (_storage->fields_tag_.end() == index)
+        {
             return *this;
+        }
         
         TagSearcher *searcher = index->second;
         tokyo::Searcher::set_key_t searcher_values;
         searcher->search(word, searcher_values);
         
-        switch(_mode) {
-            case INTERSECTION:
+        switch (_mode)
+        {
+            case k_intersection:
                 intersect_keys(searcher_values);
                 break;
-            case UNION:
-                intersect_keys(searcher_values);
+            case k_union:
+                union_keys(searcher_values);
+                break;
+            case k_complement:
+                break;
+            case k_symmetric_difference:
                 break;
         }
         return *this;
@@ -396,14 +417,14 @@ namespace lj {
         {
             std::set<unsigned long long> real_keys;
             dbvalue_to_storagekey(keys, real_keys);
-            return StorageFilter(this, real_keys);
+            return StorageFilter(this, real_keys, StorageFilter::k_intersection);
         }
-        return StorageFilter(this, std::set<unsigned long long>());
+        return StorageFilter(this, std::set<unsigned long long>(), StorageFilter::k_intersection);
     }
     
     StorageFilter Storage::none() const
     {
-        return StorageFilter(this, std::set<unsigned long long>());
+        return StorageFilter(this, std::set<unsigned long long>(), StorageFilter::k_union);
     }
     
     StorageFilter Storage::refine(const std::string &indx,
@@ -430,7 +451,7 @@ namespace lj {
         
         std::set<unsigned long long> storage_keys;
         dbvalue_to_storagekey(db_values, storage_keys);
-        return StorageFilter(this, storage_keys);
+        return StorageFilter(this, storage_keys, StorageFilter::k_intersection);
     }
     
     StorageFilter Storage::search(const std::string &indx,
@@ -446,7 +467,7 @@ namespace lj {
         tokyo::Searcher::set_key_t searcher_values;
         searcher->search(terms, searcher_values);
         
-        return StorageFilter(this, searcher_values);
+        return StorageFilter(this, searcher_values, StorageFilter::k_intersection);
     }
     
     StorageFilter Storage::tagged(const std::string &indx,
@@ -462,7 +483,7 @@ namespace lj {
         tokyo::Searcher::set_key_t searcher_values;
         searcher->search(word, searcher_values);
         
-        return StorageFilter(this, searcher_values);
+        return StorageFilter(this, searcher_values, StorageFilter::k_intersection);
     }
     
     Storage &Storage::place(BSONNode &value)
