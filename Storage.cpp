@@ -277,7 +277,7 @@ namespace lj {
         }
     } // namespace
     
-    Storage::Storage(const std::string &dir) : db_(NULL), fields_tree_(), fields_hash_(), fields_text_(), fields_tag_(), _fields_unique(), directory_(DBDIR)
+    Storage::Storage(const std::string &dir) : db_(NULL), fields_tree_(), fields_hash_(), fields_text_(), fields_tag_(), nested_indexing_(), directory_(DBDIR)
     {
         directory_.append("/").append(dir);
         std::string configfile(directory_ + "/config");
@@ -328,7 +328,7 @@ namespace lj {
              ++iter)
         {
             Log::info.log("Adding unique field [%s].") << iter->second->to_s() << Log::end;
-            _fields_unique.insert(iter->second->to_s());
+            nested_indexing_.insert(iter->second->to_s());
         }
     }
     
@@ -549,7 +549,8 @@ namespace lj {
     
     Storage &Storage::check_unique(const BSONNode &n, const std::string &name, tokyo::DB *index)
     {
-        if (n.nested() && _fields_unique.end() != _fields_unique.find(name))
+        if (n.nested() &&
+            nested_indexing_.end() != nested_indexing_.find(name))
         {
             Log::debug.log("checking children of [%s].") << name << Log::end;
             for (BSONNode::childmap_t::const_iterator iter = n.to_map().begin();
@@ -604,7 +605,7 @@ namespace lj {
             BSONNode n(original.nav(iter->first));
             if (n.exists() && 
                 n.nested() && 
-                _fields_unique.end() != _fields_unique.find(iter->first))
+                nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
                 for (BSONNode::childmap_t::const_iterator iter2 = n.to_map().begin();
                      iter2 != n.to_map().end();
@@ -639,7 +640,7 @@ namespace lj {
             BSONNode n(original.nav(iter->first));
             if (n.exists() && 
                 n.nested() && 
-                _fields_unique.end() != _fields_unique.find(iter->first))
+                nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
                 for (BSONNode::childmap_t::const_iterator iter2 = n.to_map().begin();
                      iter2 != n.to_map().end();
@@ -705,7 +706,7 @@ namespace lj {
             BSONNode n(original.nav(iter->first));
             if (n.exists() &&
                 n.nested() &&
-                _fields_unique.end() != _fields_unique.find(iter->first))
+                nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
                 for (BSONNode::childmap_t::const_iterator iter2 = n.to_map().begin();
                      iter2 != n.to_map().end();
@@ -740,7 +741,7 @@ namespace lj {
             BSONNode n(original.nav(iter->first));
             if (n.exists() &&
                 n.nested() &&
-                _fields_unique.end() != _fields_unique.find(iter->first))
+                nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
                 for (BSONNode::childmap_t::const_iterator iter2 = n.to_map().begin();
                      iter2 != n.to_map().end();

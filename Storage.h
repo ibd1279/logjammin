@@ -185,39 +185,6 @@ namespace lj {
      */
     class Storage {
         friend class StorageFilter;
-    protected:
-        //! Primary database.
-        /*!
-         \par Stores the actual documents, indexed by primary key.
-         */
-        tokyo::TreeDB *db_;
-        
-        //! Fields indexed using a tree db.
-        std::map<std::string, tokyo::TreeDB *> fields_tree_;
-        
-        //! Fields indexed using a hash db.
-        std::map<std::string, tokyo::Hash_db*> fields_hash_;
-        
-        //! Fields indexed using full text searcher.
-        std::map<std::string, tokyo::TextSearcher *> fields_text_;
-        
-        //! Fields indexed using word searcher.
-        std::map<std::string, tokyo::TagSearcher *> fields_tag_;
-        
-        //! Fields that have unique constraints.
-        std::set<std::string> _fields_unique;
-        
-        //! Directory where database files should be stored.
-        std::string directory_;
-        
-        //! Remove a record from the indexed files.
-        virtual Storage &deindex(const unsigned long long key);
-        
-        //! Add a record to the indexed files.
-        virtual Storage &reindex(const unsigned long long key);
-        
-        //! Check that an existing record does not exist for a given value.
-        virtual Storage &check_unique(const BSONNode &n, const std::string &name, tokyo::DB *index);
     public:
         //! Consructor
         Storage(const std::string &dir);
@@ -261,5 +228,38 @@ namespace lj {
         
         //! Rollback a transaction.
         void abort_transaction();
+    private:
+        //! Primary database.
+        /*!
+         \par Stores the actual documents, indexed by primary key.
+         */
+        tokyo::TreeDB *db_;
+        
+        //! Fields indexed using a tree db.
+        std::map<std::string, tokyo::TreeDB *> fields_tree_;
+        
+        //! Fields indexed using a hash db.
+        std::map<std::string, tokyo::Hash_db*> fields_hash_;
+        
+        //! Fields indexed using full text searcher.
+        std::map<std::string, tokyo::TextSearcher *> fields_text_;
+        
+        //! Fields indexed using word searcher.
+        std::map<std::string, tokyo::TagSearcher *> fields_tag_;
+        
+        //! Fields that have unique constraints.
+        std::set<std::string> nested_indexing_;
+        
+        //! Directory where database files should be stored.
+        std::string directory_;
+        
+        //! Remove a record from the indexed files.
+        virtual Storage &deindex(const unsigned long long key);
+        
+        //! Add a record to the indexed files.
+        virtual Storage &reindex(const unsigned long long key);
+        
+        //! Check that an existing record does not exist for a given value.
+        virtual Storage &check_unique(const BSONNode &n, const std::string &name, tokyo::DB *index);
     };
-}; // namespace tokyo
+}; // namespace lj
