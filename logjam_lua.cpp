@@ -302,13 +302,13 @@ namespace logjam {
     }
     
     int LuaStorageFilter::mode_and(lua_State *L) {
-        _filter->mode(lj::StorageFilter::k_intersection);
+        _filter->mode(lj::operation::k_intersection);
         Lunar<LuaStorageFilter>::push(L, this, false);
         return 1;
     }
     
     int LuaStorageFilter::mode_or(lua_State *L) {
-        _filter->mode(lj::StorageFilter::k_union);
+        _filter->mode(lj::operation::k_union);
         Lunar<LuaStorageFilter>::push(L, this, false);
         return 1;
     }
