@@ -34,35 +34,57 @@
 
 #include <string>
 
-namespace lj {
-    //! DB Exception type.
+namespace lj
+{
+    //! Exception base class.
     /*!
+     \par
+     Bubble up Exception type for exceptions in logjam.
      \author Jason Watson
      \version 1.0
      \date July 3, 2009
      */
     class Exception {
-        //! Exception message.
-        std::string _msg;
-		
-		//! Exception label.
-		std::string _label;
-        
     public:
         //! Create a new exception object.
         /*!
-         \param label The type of exception.
+         \param lbl The type of exception.
          \param msg Exception message.
          */
-        Exception(const char *label, const std::string &msg) : _msg(msg), _label(label) {
+        Exception(const std::string& lbl, const std::string& msg) : msg_(msg), label_(lbl)
+        {
         }
-		
+        
+        //! Destructor
+        virtual ~Exception()
+        {
+        }
+        
         //! Convert the exception to a string.
         /*!
          \return String for the exception.
          */
-        std::string to_s() const {
-            return std::string(_label).append(": ").append(_msg);
+        std::string to_string() const
+        {
+            return std::string(label_).append(": ").append(msg_);
         }
+    private:
+        //! Declared to disable copying.
+        /*!
+         \param o Other.
+         */
+        Exception(const Exception& o);
+        
+        //! Declared to disable copying.
+        /*!
+         \param o Other.
+         */
+        Exception& operator=(const Exception& o);
+        
+        //! Exception message.
+        std::string msg_;
+        
+        //! Exception label.
+        std::string label_;
     };
-};
+}; // namespace lj

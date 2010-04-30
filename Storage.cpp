@@ -434,7 +434,7 @@ namespace lj {
             
             reindex(key);
             commit_transaction();
-        } catch(Exception ex) {
+        } catch(Exception* ex) {
             value.nav("__key").value((long long)original_key);
             abort_transaction();
             throw ex;
@@ -455,7 +455,7 @@ namespace lj {
                             sizeof(unsigned long long));
                 commit_transaction();
                 value.nav("__key").value(0LL);
-            } catch(Exception &ex) {
+            } catch(Exception* ex) {
                 abort_transaction();
                 throw ex;
             }
@@ -477,8 +477,8 @@ namespace lj {
                                                         iter->second->size() - delta.second);
                 delete[] bson;
                 if(existing.first) {
-                    throw Exception("StorageError",
-                                    std::string("Unable to place record because of unique constraint [").append(name).append("]."));
+                    throw new Exception("StorageError",
+                                        std::string("Unable to place record because of unique constraint [").append(name).append("]."));
                 }
             }
         } else {
@@ -489,8 +489,8 @@ namespace lj {
                                                     n.size() - delta.second);
             delete[] bson;
             if(existing.first) {
-                throw Exception("StorageError",
-                                std::string("Unable to place record because of unique constraint [").append(name).append("]."));
+                throw new Exception("StorageError",
+                                    std::string("Unable to place record because of unique constraint [").append(name).append("]."));
             }
         }
         return *this;

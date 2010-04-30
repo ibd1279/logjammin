@@ -455,8 +455,8 @@ namespace logjam {
         LuaBSONNode *ptr = Lunar<LuaBSONNode>::check(L, -1);
         try {
             _storage->place(ptr->real_node());
-        } catch(lj::Exception &ex) {
-            luaL_error(L, "Unable to place content. %s", ex.to_s().c_str());
+        } catch(lj::Exception* ex) {
+            luaL_error(L, "Unable to place content. %s", ex->to_string().c_str());
         }
         Lunar<LuaStorage>::push(L, this, false);
         return 1;

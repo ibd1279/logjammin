@@ -636,7 +636,7 @@ namespace lj {
     const BSONNode &BSONNode::child(const std::string &n) const {
         childmap_t::const_iterator iter = _children.find(n);
         if(iter == _children.end())
-            throw Exception("DocumentError", std::string("Unable to find child [").append(n).append("]."));
+            throw new Exception("DocumentError", std::string("Unable to find child [").append(n).append("]."));
         return *(iter->second);
     }
 

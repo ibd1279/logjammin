@@ -135,7 +135,7 @@ namespace tokyo {
                        const void * const val, 
                        const size_t val_len) {
         if(!tcbdbput(db(), key, key_len, val, val_len))
-            throw Exception("DBerror", tcbdberrmsg(tcbdbecode(db())));
+            throw new Exception("DBerror", tcbdberrmsg(tcbdbecode(db())));
     }
     
     void TreeDB::place_with_existing(const void *key,
@@ -143,7 +143,7 @@ namespace tokyo {
                                      const void * const val,
                                      const size_t val_len) {
         if(!tcbdbputdup(db(), key, key_len, val, val_len))
-            throw Exception("DBerror", tcbdberrmsg(tcbdbecode(db())));
+            throw new Exception("DBerror", tcbdberrmsg(tcbdbecode(db())));
     }
     
     void TreeDB::place_together(const void *key,
@@ -163,7 +163,7 @@ namespace tokyo {
                                  const void * const val,
                                  const size_t val_len) {
         if(!tcbdbputkeep(db(), key, key_len, val, val_len))
-            throw Exception("DBerror", tcbdberrmsg(tcbdbecode(db())));
+            throw new Exception("DBerror", tcbdberrmsg(tcbdbecode(db())));
     }
     
     void TreeDB::place_or_append(const void *key, 
@@ -171,17 +171,17 @@ namespace tokyo {
                                  const void * const val,
                                  const size_t val_len) {
         if(!tcbdbputcat(db(), key, key_len, val, val_len))
-            throw Exception("DBerror", tcbdberrmsg(tcbdbecode(db())));
+            throw new Exception("DBerror", tcbdberrmsg(tcbdbecode(db())));
     }
     
     void TreeDB::remove(const void *key, const size_t len) {
         if(!tcbdbout(db(), key, len))
-            throw Exception("DBerror", tcbdberrmsg(tcbdbecode(db())));
+            throw new Exception("DBerror", tcbdberrmsg(tcbdbecode(db())));
     }
     
     void TreeDB::remove_together(const void *key, const size_t len) {
         if(!tcbdbout3(db(), key, len))
-            throw Exception("DBerror", tcbdberrmsg(tcbdbecode(db())));
+            throw new Exception("DBerror", tcbdberrmsg(tcbdbecode(db())));
     }
     
     void TreeDB::remove_from_existing(const void *key,
@@ -217,17 +217,17 @@ namespace tokyo {
     
     void TreeDB::start_writes() {
         if(!tcbdbtranbegin(db()))
-            throw Exception("DB error", tcbdberrmsg(tcbdbecode(db())));
+            throw new Exception("DB error", tcbdberrmsg(tcbdbecode(db())));
     }
     
     void TreeDB::save_writes() {
         if(!tcbdbtrancommit(db()))
-            throw Exception("DB error", tcbdberrmsg(tcbdbecode(db())));
+            throw new Exception("DB error", tcbdberrmsg(tcbdbecode(db())));
     }
     
     void TreeDB::abort_writes() {
         if(!tcbdbtranabort(db()))
-            throw Exception("DB error", tcbdberrmsg(tcbdbecode(db())));
+            throw new Exception("DB error", tcbdberrmsg(tcbdbecode(db())));
     }
     
     DB::value_t TreeDB::max_key() {
@@ -243,7 +243,7 @@ namespace tokyo {
         void *ptr = tcbdbcurkey(cur, &sz);
         tcbdbcurdel(cur);
         if(!ptr || !sz)
-            throw Exception("DB error", tcbdberrmsg(tcbdbecode(db())));
+            throw new Exception("DB error", tcbdberrmsg(tcbdbecode(db())));
         
         return value_t(ptr, sz);
     }
@@ -262,7 +262,7 @@ namespace tokyo {
         tcbdbcurdel(cur);
         
         if(!ptr || !sz)
-            throw Exception("DB error", tcbdberrmsg(tcbdbecode(db())));
+            throw new Exception("DB error", tcbdberrmsg(tcbdbecode(db())));
         
         return value_t(ptr, sz);
     }
@@ -320,12 +320,12 @@ namespace tokyo {
     
     void TextSearcher::index(const key_t key, const value_t &txt) {
         if(!tcqdbput(db(), key, txt.c_str()))
-            throw Exception("TextSearcherError", tcqdberrmsg(tcqdbecode(db())));
+            throw new Exception("TextSearcherError", tcqdberrmsg(tcqdbecode(db())));
     }
     
     void TextSearcher::remove(const key_t key, const value_t &txt) {
         if(!tcqdbout(db(), key, txt.c_str()))
-            throw Exception("TextSearcherError", tcqdberrmsg(tcqdbecode(db())));
+            throw new Exception("TextSearcherError", tcqdberrmsg(tcqdbecode(db())));
     }
     
     bool TextSearcher::search(const std::string &query,
@@ -346,12 +346,12 @@ namespace tokyo {
     
     void TextSearcher::optimize() {
         if(!tcqdboptimize(db()))
-            throw Exception("TextSearcherError", tcqdberrmsg(tcqdbecode(db())));
+            throw new Exception("TextSearcherError", tcqdberrmsg(tcqdbecode(db())));
     }
     
     void TextSearcher::truncate() {
         if(!tcqdbvanish(db()))
-            throw Exception("TextSearcherError", tcqdberrmsg(tcqdbecode(db())));
+            throw new Exception("TextSearcherError", tcqdberrmsg(tcqdbecode(db())));
     }
     
     //=====================================================================
@@ -391,7 +391,7 @@ namespace tokyo {
         }
         if(!tcwdbput(db(), key, l)) {
             tclistdel(l);
-            throw Exception("TagSearcherError", tcwdberrmsg(tcwdbecode(db())));
+            throw new Exception("TagSearcherError", tcwdberrmsg(tcwdbecode(db())));
         }
         tclistdel(l);
     }
@@ -413,7 +413,7 @@ namespace tokyo {
         }
         if(!tcwdbout(db(), key, l)) {
             tclistdel(l);
-            throw Exception("TagSearcherError", tcwdberrmsg(tcwdbecode(db())));
+            throw new Exception("TagSearcherError", tcwdberrmsg(tcwdbecode(db())));
         }
         tclistdel(l);
     }
@@ -434,11 +434,11 @@ namespace tokyo {
     
     void TagSearcher::optimize() {
         if(!tcwdboptimize(db()))
-            throw Exception("TagSearcherError", tcwdberrmsg(tcwdbecode(db())));
+            throw new Exception("TagSearcherError", tcwdberrmsg(tcwdbecode(db())));
     }
     
     void TagSearcher::truncate() {
         if(!tcwdbvanish(db()))
-            throw Exception("TagSearcherError", tcwdberrmsg(tcwdbecode(db())));
+            throw new Exception("TagSearcherError", tcwdberrmsg(tcwdbecode(db())));
     }
 };
