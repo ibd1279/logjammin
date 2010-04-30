@@ -1,6 +1,7 @@
 #pragma once
-/*
+/*!
  \file BSONNode.h
+ \brief Bson_node header file.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -40,21 +41,22 @@
 
 namespace lj {
     //! Enumeration of Document Node Types.
-    enum BSONNodeType {
-        DOUBLE_NODE = 0x01,
-        STRING_NODE = 0x02,
-        DOC_NODE = 0x03,
-        ARRAY_NODE = 0x04,
-        BINARY_NODE = 0x05,
-        BOOL_NODE = 0x08,
-        DATETIME_NODE = 0x09,
-        NULL_NODE = 0x0A,
-        JS_NODE = 0x0D,
-        INT32_NODE = 0x10,
-        TIMESTAMP_NODE = 0x11,
-        INT64_NODE = 0x12,
-        MINKEY_NODE = 0xFF,
-        MAXKEY_NODE = 0x7F
+    enum Bson_node_type
+    {
+        DOUBLE_NODE = 0x01,   //!< Node contains a double value.
+        STRING_NODE = 0x02,   //!< Node contains a string value.
+        DOC_NODE = 0x03,      //!< Node contains a nested document value.
+        ARRAY_NODE = 0x04,    //!< Node contains a nested array value.
+        BINARY_NODE = 0x05,   //!< Node contains a binary value.
+        BOOL_NODE = 0x08,     //!< Node contains a boolean value.
+        DATETIME_NODE = 0x09, //!< Node contains a date/time value.
+        NULL_NODE = 0x0A,     //!< Node contains a null value.
+        JS_NODE = 0x0D,       //!< Node contains a javascript value.
+        INT32_NODE = 0x10,    //!< Node contains a int32 number value.
+        TIMESTAMP_NODE = 0x11,//!< Node contains a timestamp value.
+        INT64_NODE = 0x12,    //!< Node contains a int64 number value.
+        MINKEY_NODE = 0xFF,   //!< Node contains a reserved BSON spec value.
+        MAXKEY_NODE = 0x7F    //!< Node contains a reserved BSON spec value.
     };
     
     class BSONNode;
@@ -71,7 +73,7 @@ namespace lj {
     private:
         childmap_t _children;
         char *_value;
-        BSONNodeType _type;
+        Bson_node_type _type;
     public:
         //=====================================================================
         // DocumentNode ctor/dtor
@@ -81,7 +83,7 @@ namespace lj {
         BSONNode();
         
         //! Create a new document node based on some data.
-        BSONNode(const BSONNodeType t, const char *v);
+        BSONNode(const Bson_node_type t, const char *v);
         
         //! Create a new document node as a copy.
         BSONNode(const BSONNode &o);
@@ -106,7 +108,7 @@ namespace lj {
          \param v Array of data to read the new value from.
          \return Reference to \c this .
          */
-        BSONNode &set_value(const BSONNodeType t, const char *v);
+        BSONNode &set_value(const Bson_node_type t, const char *v);
         //! Set the value of the document node to a string value.
         BSONNode &value(const std::string &v);
         //! Set the value of the document node to a int value.
@@ -230,7 +232,7 @@ namespace lj {
         //---------------------------------------------------------------------
         
         //! Get the type of the document node.
-        BSONNodeType type() const { return _type; }
+        Bson_node_type type() const { return _type; }
         //! Get a string version of the type.
         std::string type_string() const;
         //! Get if the node actually exists.

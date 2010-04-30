@@ -1,5 +1,6 @@
-/*
+/*!
  \file Logger.cpp
+ \brief Logjam Logging implementation.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -51,6 +52,18 @@ lj::Log::End lj::Log::end;
 
 namespace
 {
+    //! Real logging class.
+    /*!
+     \par
+     This class is instantiated by the lj:Log class when a logger is enabled.
+     Where the lj::Log class does nothing with the \c lj::Log::operator<<()
+     calls, this class tries to construct a log message out of them.
+     \warning You should not instantiate this class on your own.
+     \sa lj::Log for static accessible logger objects.
+     \author Jason Watson
+     \version 1.0
+     \date April 16, 2010
+     */
     class Real_logger : virtual public lj::Log {
     public:
         Real_logger(std::ostream *strm,

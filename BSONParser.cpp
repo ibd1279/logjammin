@@ -45,7 +45,7 @@ namespace lj {
             STRING_END,
             DOC_END
         };
-        size_t field_length(BSONNodeType t) {
+        size_t field_length(Bson_node_type t) {
             switch(t) {
                 case INT32_NODE:
                     return 4;
@@ -74,7 +74,7 @@ namespace lj {
         delete[] buffer;
     }
     void StreamingBSONParser::parse(std::istream is) {
-        BSONNodeType t = DOC_NODE;
+        Bson_node_type t = DOC_NODE;
         WhatShouldThisBe looking_at = DOC_SIZE;
         std::list<long long> doc_sizes;
         size_t sz = 0;
@@ -115,7 +115,7 @@ namespace lj {
                         
                         break;
                     case FIELD_TYPE:
-                        t = (BSONNodeType)buffer[curr];
+                        t = static_cast<Bson_node_type>(buffer[curr]);
                         
                         curr++;
                         docsz--;

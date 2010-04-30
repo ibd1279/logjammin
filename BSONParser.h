@@ -55,7 +55,7 @@ namespace lj {
         virtual ~StreamingBSONParser();
         void parse(std::istream is);
         virtual bool start_doc(size_t length) { return true; };
-        virtual bool start_field(BSONNodeType t, std::string name) { return true; };
+        virtual bool start_field(Bson_node_type t, std::string name) { return true; };
         virtual bool bytes(const char *ptr, size_t len) { return true; };
         virtual bool end_field() { return true; };
         virtual bool end_doc() { return true; };

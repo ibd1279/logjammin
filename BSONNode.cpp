@@ -1,4 +1,4 @@
-/*
+/*!
  \file BSONNode.cpp
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
@@ -80,9 +80,9 @@ namespace lj {
                 ptr += name.size() + 1;
                 
                 // child node.
-                node.child(name, BSONNode((BSONNodeType)t, ptr));
+                node.child(name, BSONNode(static_cast<Bson_node_type>(t), ptr));
                 sz = 0;
-                switch((BSONNodeType)t) {
+                switch(static_cast<Bson_node_type>(t)) {
                     case STRING_NODE:
                         memcpy(&sz, ptr, 4);
                         sz += 4;
@@ -117,7 +117,7 @@ namespace lj {
     BSONNode::BSONNode() : _children(), _value(NULL), _type(DOC_NODE) {
     }
     
-    BSONNode::BSONNode(const BSONNodeType t, const char *v) : _children(), _value(NULL), _type(DOC_NODE) {
+    BSONNode::BSONNode(const Bson_node_type t, const char *v) : _children(), _value(NULL), _type(DOC_NODE) {
         set_value(t, v);
     }
     
@@ -139,7 +139,7 @@ namespace lj {
     // BSONNode Instance
     //=====================================================================
     
-    BSONNode &BSONNode::set_value(const BSONNodeType t, const char *v) {
+    BSONNode &BSONNode::set_value(const Bson_node_type t, const char *v) {
         // assume the type may have changed.
         char *old = NULL;
         if(nested()) {
@@ -596,7 +596,7 @@ namespace lj {
                 for(childmap_t::const_iterator iter = _children.begin();
                     iter != _children.end();
                     ++iter) {
-                    BSONNodeType t = iter->second->type();
+                    Bson_node_type t = iter->second->type();
                     memcpy(ptr++, &t, 1);
                     memcpy(ptr, iter->first.c_str(), iter->first.size() + 1);
                     ptr += iter->first.size() + 1;
