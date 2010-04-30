@@ -53,13 +53,6 @@ namespace lj {
                 free(iter->first);
             }
         }
-        std::pair<int, int> bson_to_storage_delta(const BSONNode *ptr) {
-            if(ptr->quotable()) {
-                return std::pair<int, int>(4,5);
-            } else {
-                return std::pair<int, int>(0,0);
-            }
-        }
     };
     
     //=====================================================================
@@ -202,107 +195,116 @@ namespace lj {
         // XXX Add configuration method for hash
         // XXX Add configuration method for text
         // XXX Add configuration method for tags
-    }
+        template<typename T, typename Q>
+        void open_storage_index(const std::string& dir,
+                                const lj::BSONNode::childmap_t& cfg,
+                                int open_flags,
+                                void (*tune_function)(Q*, const void*),
+                                std::map<std::string, T*>& dest)
+        {
+            for (lj::BSONNode::childmap_t::const_iterator iter = cfg.begin();
+                 iter != cfg.end();
+                 ++iter)
+            {
+                if (!(*iter).second->nav("file").exists() ||
+                    !(*iter).second->nav("field").exists())
+                {
+                    Log::error("Unable to open index [%s] because file or field is not set.") << (*iter).first << Log::end; 
+                    continue;
+                }
+                std::string indexfile(dir + "/" + (*iter).second->nav("file").to_s());
+                T* db = new T(indexfile,
+                              open_flags,
+                              tune_function,
+                              (*iter).second);
+                dest.insert(std::pair<std::string, T*>((*iter).second->nav("field").to_s(), db));
+            }
+        }
+        
+        std::pair<int, int> bson_to_storage_delta(const lj::BSONNode* ptr)
+        {
+            if(ptr->quotable())
+            {
+                return std::pair<int, int>(4,5);
+            }
+            else
+            {
+                return std::pair<int, int>(0,0);
+            }
+        }
+    } // namespace
     
-    Storage::Storage(const std::string &dir) : _db(NULL), _fields_tree(), _fields_text(), _fields_tag(), _fields_unique(), _directory(DBDIR) {
-        _directory.append("/").append(dir);
-        std::string configfile(_directory + "/config");
+    Storage::Storage(const std::string &dir) : _db(NULL), _fields_tree(), _fields_text(), _fields_tag(), _fields_unique(), directory_(DBDIR)
+    {
+        directory_.append("/").append(dir);
+        std::string configfile(directory_ + "/config");
         
         Log::info("Loading configuration from [%s].") << configfile << Log::end;
         BSONNode cfg;
         cfg.load(configfile);
         Log::info("Loaded Settings [%s].") << cfg.to_pretty_s() << Log::end;
         
-        std::string dbfile(_directory + "/" + cfg.nav("main/file").to_s());
+        std::string dbfile(directory_ + "/" + cfg.nav("main/file").to_s());
         Log::info("Opening database [%s].") << dbfile << Log::end;
         _db = new TreeDB(dbfile,
                          BDBOREADER | BDBOWRITER | BDBOCREAT,
                          &storage_tree_cfg,
                          &(cfg.nav("main")));
 
-        Log::info("Opening tree indices under [%s].") << _directory << Log::end;
-        for(BSONNode::childmap_t::const_iterator iter = cfg.nav("index/tree").to_map().begin();
-            iter != cfg.nav("index/tree").to_map().end();
-            ++iter) {
-            if(!iter->second->nav("file").exists() || !iter->second->nav("field").exists()) {
-                Log::error("Unable to open tree index [%s] because either file or field is not set.") << iter->first << Log::end; 
-                continue;
-            }
-            std::string indexfile(_directory + "/" + iter->second->nav("file").to_s());
-            Log::info("Opening tree index [%s].") << indexfile << Log::end;
-            TreeDB *tdb = new TreeDB(indexfile,
-                                     BDBOREADER | BDBOWRITER | BDBOCREAT,
-                                     &storage_tree_cfg,
-                                     iter->second);
-            _fields_tree.insert(std::pair<std::string, TreeDB *>(iter->second->nav("field").to_s(), tdb));
-        }
+        Log::info("Opening tree indices under [%s].") << directory_ << Log::end;
+        open_storage_index<TreeDB, TCBDB>(directory_,
+                                          cfg.nav("index/tree").to_map(),
+                                          BDBOREADER | BDBOWRITER | BDBOCREAT,
+                                          &storage_tree_cfg,
+                                          _fields_tree);
         
-        Log::info("Opening text indices under [%s].") << _directory << Log::end;
-        for(BSONNode::childmap_t::const_iterator iter = cfg.nav("index/text").to_map().begin();
-            iter != cfg.nav("index/text").to_map().end();
-            ++iter) {
-            if(!iter->second->nav("file").exists() || !iter->second->nav("field").exists()) {
-                Log::error("Unable to open text index [%s] because either file or field is not set.") << iter->first << Log::end;
-                continue;
-            }
-            std::string indexfile(_directory + "/" + iter->second->nav("file").to_s());
-            Log::info("Opening text index [%s].") << indexfile << Log::end;
-            TextSearcher *ts = new TextSearcher(indexfile,
+        Log::info("Opening text indices under [%s].") << directory_ << Log::end;
+        open_storage_index<TextSearcher, TCQDB>(directory_,
+                                                cfg.nav("index/text").to_map(),
                                                 QDBOREADER | QDBOWRITER | QDBOCREAT,
-                                                NULL,
-                                                iter->second);
-            _fields_text.insert(std::pair<std::string, TextSearcher *>(iter->second->nav("field").to_s(), ts));
-        }
-
-        Log::info("Opening tag indices under [%s].") << _directory << Log::end;
-        for(BSONNode::childmap_t::const_iterator iter = cfg.nav("index/tag").to_map().begin();
-            iter != cfg.nav("index/tag").to_map().end();
-            ++iter) {
-            if(!iter->second->nav("file").exists() || !iter->second->nav("field").exists()) {
-                Log::error("Unable to open tag index [%s] because either file or field is not set.") << iter->first << Log::end;
-                continue;
-            }
-            std::string indexfile(_directory + "/" + iter->second->nav("file").to_s());
-            Log::info("Opening tag index [%s].") << indexfile << Log::end;
-            TagSearcher *ts = new TagSearcher(indexfile,
-                                              WDBOREADER | WDBOWRITER | WDBOCREAT,
-                                              NULL,
-                                              iter->second);
-            _fields_tag.insert(std::pair<std::string, TagSearcher *>(iter->second->nav("field").to_s(), ts));
-        }
+                                                0,
+                                                _fields_text);
         
-        Log::info("Registering unique fields from [%s].") << _directory << Log::end;
-        for(BSONNode::childmap_t::const_iterator iter = cfg.nav("main/unique").to_map().begin();
-            iter != cfg.nav("main/unique").to_map().end();
-            ++iter) {
+        Log::info("Opening tag indices under [%s].") << directory_ << Log::end;
+        open_storage_index<TagSearcher, TCWDB>(directory_,
+                                               cfg.nav("index/tag").to_map(),
+                                               WDBOREADER | WDBOWRITER | WDBOCREAT,
+                                               0,
+                                               _fields_tag);
+        
+        Log::info("Registering unique fields from [%s].") << directory_ << Log::end;
+        for (BSONNode::childmap_t::const_iterator iter = cfg.nav("main/unique").to_map().begin();
+             iter != cfg.nav("main/unique").to_map().end();
+             ++iter)
+        {
             Log::info("Adding unique field [%s].") << iter->second->to_s() << Log::end;
             _fields_unique.insert(iter->second->to_s());
         }
     }
     
     Storage::~Storage() {
-        Log::info("Closing tag indicies under [%s].") << _directory << Log::end;
+        Log::info("Closing tag indicies under [%s].") << directory_ << Log::end;
         for(std::map<std::string, TagSearcher *>::const_iterator iter = _fields_tag.begin();
             iter != _fields_tag.end();
             ++iter) {
             Log::info("Closing tag index for field [%s].") << iter->first << Log::end;
             delete iter->second;
         }
-        Log::info("Closing text indicies under [%s].") << _directory << Log::end;
+        Log::info("Closing text indicies under [%s].") << directory_ << Log::end;
         for(std::map<std::string, TextSearcher *>::const_iterator iter = _fields_text.begin();
             iter != _fields_text.end();
             ++iter) {
             Log::info("Closing text index for field [%s].") << iter->first << Log::end;
             delete iter->second;
         }
-        Log::info("Closing tree indicies under [%s].") << _directory << Log::end;
+        Log::info("Closing tree indicies under [%s].") << directory_ << Log::end;
         for(std::map<std::string, TreeDB *>::const_iterator iter = _fields_tree.begin();
             iter != _fields_tree.end();
             ++iter) {
             Log::info("Closing tree index for field [%s].") << iter->first << Log::end;
             delete iter->second;
         }
-        Log::info("Closing database for field [%s].") << _directory << Log::end;
+        Log::info("Closing database for field [%s].") << directory_ << Log::end;
         delete _db;
     }
     
@@ -342,7 +344,7 @@ namespace lj {
         Log::debug("Filtering on [%s] with [%d][%s].") << indx << ((unsigned long long)val_len) << ((char *)val) << Log::end;
         std::map<std::string, TreeDB *>::const_iterator index = _fields_tree.find(indx);
         if(index == _fields_tree.end()) {
-            Log::warning("Request for unknown tree index [%s] from [%s].") << indx << _directory << Log::end;
+            Log::warning("Request for unknown tree index [%s] from [%s].") << indx << directory_ << Log::end;
             return none();
         }
         
@@ -360,7 +362,7 @@ namespace lj {
         Log::debug("Searching on [%s] with [%s]") << indx << terms << Log::end;
         std::map<std::string, TextSearcher *>::const_iterator index = _fields_text.find(indx);
         if(index == _fields_text.end()) {
-            Log::warning("Request for unknown text index [%s] from [%s].") << indx << _directory << Log::end;
+            Log::warning("Request for unknown text index [%s] from [%s].") << indx << directory_ << Log::end;
             return none();
         }
         
@@ -376,7 +378,7 @@ namespace lj {
         Log::debug("Searching on [%s] with [%s]") << indx << word << Log::end;
         std::map<std::string, TagSearcher *>::const_iterator index = _fields_tag.find(indx);
         if(index == _fields_tag.end()) {
-            Log::warning("Request for unknown tag index [%s] from [%s].") << indx << _directory << Log::end;
+            Log::warning("Request for unknown tag index [%s] from [%s].") << indx << directory_ << Log::end;
             return none();
         }
         

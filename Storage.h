@@ -208,7 +208,7 @@ namespace lj {
         std::set<std::string> _fields_unique;
         
         //! Directory where database files should be stored.
-        std::string _directory;
+        std::string directory_;
         
         //! Remove a record from the indexed files.
         virtual Storage &deindex(const unsigned long long key);
