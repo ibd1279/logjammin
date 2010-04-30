@@ -121,7 +121,7 @@ namespace lj {
         }
         
         //! Filter a set based on the Storage field indicies.
-        StorageFilter &filter(const std::string &indx,
+        StorageFilter &refine(const std::string &indx,
                              const void * const val,
                              const size_t val_len);
         
@@ -190,10 +190,10 @@ namespace lj {
         /*!
          \par Stores the actual documents, indexed by primary key.
          */
-        tokyo::TreeDB *_db;
+        tokyo::TreeDB *db_;
         
         //! Fields indexed using a tree db.
-        std::map<std::string, tokyo::TreeDB *> _fields_tree;
+        std::map<std::string, tokyo::TreeDB *> fields_tree_;
         
         //! Fields indexed using a hash db.
         std::map<std::string, tokyo::Hash_db*> fields_hash_;
@@ -235,7 +235,7 @@ namespace lj {
         virtual StorageFilter none() const;
         
         //! Get a set of keys filtered by the provided value.
-        virtual StorageFilter filter(const std::string &indx,
+        virtual StorageFilter refine(const std::string &indx,
                                      const void * const val,
                                      const size_t val_len) const;
         

@@ -103,15 +103,15 @@ namespace lj {
         return *this;
     }
     
-    StorageFilter &StorageFilter::filter(const std::string &indx,
+    StorageFilter &StorageFilter::refine(const std::string &indx,
                                          const void * const val,
                                          const size_t val_len) {
         Log::debug.log("Filtering on [%s] with [%d][%s].") << indx << ((unsigned long long)val_len) << ((char *)val) << Log::end;
-        std::map<std::string, TreeDB*>::const_iterator tree_index = _storage->_fields_tree.find(indx);
+        std::map<std::string, TreeDB*>::const_iterator tree_index = _storage->fields_tree_.find(indx);
         std::map<std::string, Hash_db*>::const_iterator hash_index = _storage->fields_hash_.find(indx);
         
         tokyo::DB::list_value_t db_values;
-        if (_storage->_fields_tree.end() != tree_index)
+        if (_storage->fields_tree_.end() != tree_index)
         {
             tree_index->second->at_together(val, val_len, db_values);
         }
@@ -272,7 +272,7 @@ namespace lj {
         }
     } // namespace
     
-    Storage::Storage(const std::string &dir) : _db(NULL), _fields_tree(), fields_hash_(), fields_text_(), fields_tag_(), _fields_unique(), directory_(DBDIR)
+    Storage::Storage(const std::string &dir) : db_(NULL), fields_tree_(), fields_hash_(), fields_text_(), fields_tag_(), _fields_unique(), directory_(DBDIR)
     {
         directory_.append("/").append(dir);
         std::string configfile(directory_ + "/config");
@@ -284,7 +284,7 @@ namespace lj {
         
         std::string dbfile(directory_ + "/" + cfg.nav("main/file").to_s());
         Log::info.log("Opening database [%s].") << dbfile << Log::end;
-        _db = new TreeDB(dbfile,
+        db_ = new TreeDB(dbfile,
                          BDBOREADER | BDBOWRITER | BDBOCREAT,
                          &storage_tree_cfg,
                          &(cfg.nav("main")));
@@ -294,7 +294,7 @@ namespace lj {
                                           cfg.nav("index/tree").to_map(),
                                           BDBOREADER | BDBOWRITER | BDBOCREAT,
                                           &storage_tree_cfg,
-                                          _fields_tree);
+                                          fields_tree_);
         
         Log::info.log("Opening hash indices under [%s].") << directory_ << Log::end;
         open_storage_index<Hash_db, TCHDB>(directory_,
@@ -353,36 +353,42 @@ namespace lj {
         }
         
         Log::info.log("Closing tree indicies under [%s].") << directory_ << Log::end;
-        for(std::map<std::string, TreeDB *>::const_iterator iter = _fields_tree.begin();
-            iter != _fields_tree.end();
+        for(std::map<std::string, TreeDB *>::const_iterator iter = fields_tree_.begin();
+            iter != fields_tree_.end();
             ++iter) {
             Log::info.log("Closing tree index for field [%s].") << iter->first << Log::end;
             delete iter->second;
         }
         
         Log::info.log("Closing database for field [%s].") << directory_ << Log::end;
-        delete _db;
+        delete db_;
     }
     
-    BSONNode Storage::at(const unsigned long long key) const {
-        tokyo::DB::value_t p = _db->at(&key, sizeof(unsigned long long));
-        if(!p.first)
+    BSONNode Storage::at(const unsigned long long key) const
+    {
+        tokyo::DB::value_t p = db_->at(&key, sizeof(unsigned long long));
+        if (!p.first)
+        {
             return BSONNode();
+        }
         BSONNode n(DOC_NODE, (char *)p.first);
         free(p.first);
         return n;
     }
     
-    StorageFilter Storage::all() const {
+    StorageFilter Storage::all() const
+    {
         tokyo::DB::list_value_t keys;
-        tokyo::DB::value_t max = _db->max_key(), min = _db->min_key();
-        if(_db->range_keys(min.first,
-                           min.second,
-                           true,
-                           max.first,
-                           max.second,
-                           true,
-                           keys)) {
+        tokyo::DB::value_t max = db_->max_key();
+        tokyo::DB::value_t min = db_->min_key();
+        if (db_->range_keys(min.first,
+                            min.second,
+                            true,
+                            max.first,
+                            max.second,
+                            true,
+                            keys))
+        {
             std::set<unsigned long long> real_keys;
             dbvalue_to_storagekey(keys, real_keys);
             return StorageFilter(this, real_keys);
@@ -395,16 +401,16 @@ namespace lj {
         return StorageFilter(this, std::set<unsigned long long>());
     }
     
-    StorageFilter Storage::filter(const std::string &indx,
+    StorageFilter Storage::refine(const std::string &indx,
                                   const void * const val,
                                   const size_t val_len) const
     {
         Log::debug.log("Filtering on [%s] with [%d][%s].") << indx << val_len << ((char *)val) << Log::end;
-        std::map<std::string, TreeDB*>::const_iterator tree_index = _fields_tree.find(indx);
+        std::map<std::string, TreeDB*>::const_iterator tree_index = fields_tree_.find(indx);
         std::map<std::string, Hash_db*>::const_iterator hash_index = fields_hash_.find(indx);
         
         tokyo::DB::list_value_t db_values;
-        if (_fields_tree.end() != tree_index)
+        if (fields_tree_.end() != tree_index)
         {
             tree_index->second->at_together(val, val_len, db_values);
         }
@@ -467,7 +473,7 @@ namespace lj {
             } else {
                 Log::debug.log("New record. calculating key.") << Log::end;
                 // calculate the next key since this is a new document.
-                unsigned long long *ptr = (unsigned long long *)_db->max_key().first;
+                unsigned long long *ptr = (unsigned long long *)db_->max_key().first;
                 key = (*ptr) + 1;
                 free(ptr);
                 Log::debug.log("New key value is [%d].") << key << Log::end;
@@ -480,8 +486,8 @@ namespace lj {
                 ++iter) {
                 BSONNode n(value.nav(*iter));
                 if(n.exists()) {
-                    std::map<std::string, TreeDB *>::const_iterator index = _fields_tree.find(*iter);
-                    if(index != _fields_tree.end()) {
+                    std::map<std::string, TreeDB *>::const_iterator index = fields_tree_.find(*iter);
+                    if(index != fields_tree_.end()) {
                         check_unique(n, *iter, index->second);
                     }
                 }
@@ -491,7 +497,7 @@ namespace lj {
             // Place in the primary database.
             value.nav("__key").value((long long)key);
             char *bson = value.bson();
-            _db->place(&key,
+            db_->place(&key,
                        sizeof(unsigned long long),
                        bson,
                        value.size());
@@ -516,7 +522,7 @@ namespace lj {
             try {
                 begin_transaction();
                 deindex(key);
-                _db->remove(&key,
+                db_->remove(&key,
                             sizeof(unsigned long long));
                 commit_transaction();
                 value.nav("__key").value(0LL);
@@ -569,8 +575,8 @@ namespace lj {
         BSONNode original = at(key);
         
         // Remove from index entries.
-        for(std::map<std::string, TreeDB *>::const_iterator iter = _fields_tree.begin();
-            iter != _fields_tree.end();
+        for(std::map<std::string, TreeDB *>::const_iterator iter = fields_tree_.begin();
+            iter != fields_tree_.end();
             ++iter) {
             BSONNode n(original.nav(iter->first));
             
@@ -625,8 +631,8 @@ namespace lj {
         BSONNode original = at(key);
         
         // Place in the index.
-        for(std::map<std::string, TreeDB *>::const_iterator iter = _fields_tree.begin();
-            iter != _fields_tree.end();
+        for(std::map<std::string, TreeDB *>::const_iterator iter = fields_tree_.begin();
+            iter != fields_tree_.end();
             ++iter) {
             
             BSONNode n(original.nav(iter->first));
@@ -674,27 +680,49 @@ namespace lj {
         return *this;
     }
     void Storage::begin_transaction() {
-        _db->start_writes();
-        for(std::map<std::string, TreeDB *>::const_iterator iter = _fields_tree.begin();
-            iter != _fields_tree.end();
-            ++iter) {
+        db_->start_writes();
+        for (std::map<std::string, TreeDB*>::const_iterator iter = fields_tree_.begin();
+             fields_tree_.end() != iter;
+             ++iter)
+        {
+            iter->second->start_writes();
+        }
+        for (std::map<std::string, Hash_db*>::const_iterator iter = fields_hash_.begin();
+             fields_hash_.end() != iter;
+             ++iter)
+        {
             iter->second->start_writes();
         }
     }
     void Storage::commit_transaction() {
-        for(std::map<std::string, TreeDB *>::reverse_iterator iter = _fields_tree.rbegin();
-            iter != _fields_tree.rend();
-            ++iter) {
+        for (std::map<std::string, Hash_db*>::reverse_iterator iter = fields_hash_.rbegin();
+             fields_hash_.rend() != iter;
+             ++iter)
+        {
             iter->second->save_writes();
         }
-        _db->save_writes();
+        for (std::map<std::string, TreeDB *>::reverse_iterator iter = fields_tree_.rbegin();
+             fields_tree_.rend() != iter;
+             ++iter)
+        {
+            iter->second->save_writes();
+        }
+        db_->save_writes();
     }
-    void Storage::abort_transaction() {
-        for(std::map<std::string, TreeDB *>::reverse_iterator iter = _fields_tree.rbegin();
-            iter != _fields_tree.rend();
-            ++iter) {
+    void Storage::abort_transaction()
+    {
+        for (std::map<std::string, Hash_db*>::reverse_iterator iter = fields_hash_.rbegin();
+             fields_hash_.rend() != iter;
+             ++iter)
+        {
             iter->second->abort_writes();
         }
-        _db->abort_writes();
+        for (std::map<std::string, TreeDB *>::reverse_iterator iter = fields_tree_.rbegin();
+             fields_tree_.rend() != iter;
+             ++iter)
+        {
+            iter->second->abort_writes();
+        }
+        db_->abort_writes();
     }
 };
