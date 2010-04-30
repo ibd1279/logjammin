@@ -110,7 +110,8 @@ namespace {
 
 
 int main(int argc, char * const argv[]) {
-    lj::Log::debug.disable();
+    lj::Log::debug.enable();
+    lj::Log::info.enable();
     
     lua_State *L = lua_open();
     luaL_openlibs(L);

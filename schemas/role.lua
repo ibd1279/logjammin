@@ -1,7 +1,11 @@
 role_cfg = sc_new("role")
-sc_add_index(role_cfg, "tree", "name", "name", "lex")
-sc_add_unique(role_cfg, "name")
+sc_add_index(role_cfg, "hash", "name", "name", "lex")
+sc_add_index(role_cfg, "tree", "allowed", "allowed", "lex")
+sc_add_index(role_cfg, "text", "allowed", "allowed", "lex")
+sc_add_index(role_cfg, "text", "name", "name", "lex")
 sc_add_index(role_cfg, "tag", "allowed", "allowed", "lex")
+sc_add_index(role_cfg, "tag", "name", "name", "lex")
+sc_add_unique(role_cfg, "allowed")
 sc_save("role", role_cfg)
 
 role_default = BSONNode:new()

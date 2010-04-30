@@ -47,11 +47,16 @@ namespace lj {
     namespace {
         void dbvalue_to_storagekey(const tokyo::DB::list_value_t &ptr,
                                    std::set<unsigned long long> &keys) {
-            for(tokyo::DB::list_value_t::const_iterator iter = ptr.begin();
-                iter != ptr.end();
-                ++iter) {
-                keys.insert(*((unsigned long long *)(iter->first)));
-                free(iter->first);
+            for (tokyo::DB::list_value_t::const_iterator iter = ptr.begin();
+                 ptr.end() != iter;
+                 ++iter)
+            {
+                unsigned long long *x = static_cast<unsigned long long *>(iter->first);
+                if (x)
+                {
+                    keys.insert(*x);
+                    free(iter->first);
+                }
             }
         }
     };
@@ -715,7 +720,7 @@ namespace lj {
                     delete[] bson;
                 }
             }
-            else if (n.nested())
+            else if (n.exists())
             {
                 char* bson = n.bson();
                 std::pair<int, int> delta(bson_to_storage_delta(&n));
@@ -750,7 +755,7 @@ namespace lj {
                     delete[] bson;
                 }
             }
-            else if (n.nested())
+            else if (n.exists())
             {
                 char* bson = n.bson();
                 std::pair<int, int> delta(bson_to_storage_delta(&n));
