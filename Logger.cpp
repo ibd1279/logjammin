@@ -32,155 +32,243 @@
  */
 
 #include "Logger.h"
+#include <cstdarg>
 #include <cstdio>
-#include <iostream>
 #include <list>
+#include <memory>
+#include <iostream>
 #include <sstream>
 
-lj::Log lj::Log::emergency(&std::cerr, lj::Log::EMERGENCY);
-lj::Log lj::Log::alert(&std::cerr, lj::Log::ALERT);
-lj::Log lj::Log::critical(&std::cerr, lj::Log::CRITICAL);
-lj::Log lj::Log::error(&std::cerr, lj::Log::ERROR);
-lj::Log lj::Log::warning(&std::cerr, lj::Log::WARNING);
-lj::Log lj::Log::notice(&std::cerr, lj::Log::DEBUG);
-lj::Log lj::Log::info(&std::cerr, lj::Log::INFO);
-lj::Log lj::Log::debug(&std::cerr, lj::Log::DEBUG);
+lj::Log lj::Log::emergency(lj::Log::level_emergency, &std::cerr);
+lj::Log lj::Log::alert(lj::Log::level_alert, &std::cerr);
+lj::Log lj::Log::critical(lj::Log::level_critical, &std::cerr);
+lj::Log lj::Log::error(lj::Log::level_error, &std::cerr);
+lj::Log lj::Log::warning(lj::Log::level_warning, &std::cerr);
+lj::Log lj::Log::notice(lj::Log::level_notice, &std::cerr);
+lj::Log lj::Log::info(lj::Log::level_info, &std::cerr);
+lj::Log lj::Log::debug(lj::Log::level_debug, &std::cerr);
 lj::Log::End lj::Log::end;
 
-namespace lj {
-    namespace {
-        class RealLogger : public Log {
-            std::list<std::string> _parts;
-            std::ostringstream _buffer;
-        public:
-            RealLogger(std::ostream *strm, event_level level, const std::string &msg) : Log(strm, level), _parts(), _buffer() {
-                std::string tmp;
-                for(std::string::const_iterator iter = msg.begin();
-                    iter != msg.end();
-                    ++iter) {
-                    if(*iter == '%') {
-                        _parts.push_back(tmp);
-                        tmp.clear();
-                        tmp.push_back((*iter++));
-                        if(iter == msg.end())
-                            break;
+namespace
+{
+    class Real_logger : virtual public lj::Log {
+    public:
+        Real_logger(std::ostream *strm,
+                    Event_level level,
+                    const std::string &msg) : lj::Log(level, strm), parts_(), buffer_()
+        {
+            std::string tmp;
+            for (std::string::const_iterator iter = msg.begin();
+                 iter != msg.end();
+                 ++iter)
+            {
+                if (*iter == '%')
+                {
+                    parts_.push_back(tmp);
+                    tmp.clear();
+                    tmp.push_back((*iter++));
+                    if(iter == msg.end())
+                    {
+                        break;
                     }
-                    tmp.push_back(*iter);
                 }
-                if(tmp.size() > 0)
-                    _parts.push_back(tmp);
-                _buffer << "[" << lvl_txt() << "] ";
-                if(_parts.size() < 2) {
-                    _parts.clear();
-                    _buffer << tmp;
-                } else {
-                    _buffer << _parts.front();
-                    _parts.pop_front();
-                }
+                tmp.push_back(*iter);
             }
-            virtual Log &operator<<(const std::string &msg) {
-                if(_parts.size() > 0) {
-                    char *buffer = new char[msg.size() + _parts.front().size()];
-                    sprintf(buffer, _parts.front().c_str(), msg.c_str());
-                    _buffer << buffer;
-                    _parts.pop_front();
-                    delete[] buffer;
-                } else {
-                    _buffer << msg;
-                }
-                return *this;
+            if (tmp.size() > 0)
+            {
+                parts_.push_back(tmp);
             }
-            virtual Log &operator<<(const char *msg) {
-                if(_parts.size() > 0) {
-                    char *buffer = new char[strlen(msg) + _parts.front().size()];
-                    sprintf(buffer, _parts.front().c_str(), msg);
-                    _buffer << buffer;
-                    _parts.pop_front();
-                    delete[] buffer;
-                } else {
-                    _buffer << msg;
-                }
-                return *this;
+            buffer_ << "[" << level_text(level_) << "] ";
+            if (parts_.size() < 2)
+            {
+                parts_.clear();
+                buffer_ << tmp;
             }
-            void write_number(long long msg) {
-                if(_parts.size() > 0) {
-                    char *buffer = new char[64 + _parts.front().size()];
-                    sprintf(buffer, _parts.front().c_str(), msg);
-                    _buffer << buffer;
-                    _parts.pop_front();
-                    delete[] buffer;
-                } else {
-                    _buffer << msg;
-                }
+            else
+            {
+                buffer_ << parts_.front();
+                parts_.pop_front();
             }
-            Log &operator<<(long long msg) {
-                write_number(msg);
-                return *this;
+        }
+        
+        virtual Log &operator<<(const std::string &msg)
+        {
+            if (parts_.size() > 0)
+            {
+                char *buffer = new char[msg.size() + parts_.front().size()];
+                sprintf(buffer, parts_.front().c_str(), msg.c_str());
+                buffer_ << buffer;
+                parts_.pop_front();
+                delete[] buffer;
             }
-            Log &operator<<(unsigned long long msg) {
-                write_number(static_cast<long long>(msg));
-                return *this;
+            else
+            {
+                buffer_ << msg;
             }
-            Log &operator<<(long msg) {
-                write_number(msg);
-                return *this;
+            return *this;
+        }
+        
+        virtual Log &operator<<(const char *msg)
+        {
+            if (parts_.size() > 0)
+            {
+                char *buffer = new char[strlen(msg) + parts_.front().size()];
+                sprintf(buffer, parts_.front().c_str(), msg);
+                buffer_ << buffer;
+                parts_.pop_front();
+                delete[] buffer;
             }
-            Log &operator<<(unsigned long msg) {
-                write_number(static_cast<long long>(msg));
-                return *this;
+            else
+            {
+                buffer_ << msg;
             }
-            Log &operator<<(int msg) { 
-                write_number(msg);
-                return *this;
+            return *this;
+        }
+        
+        void write_number(long long msg)
+        {
+            if (parts_.size() > 0)
+            {
+                char *buffer = new char[64 + parts_.front().size()];
+                sprintf(buffer, parts_.front().c_str(), msg);
+                buffer_ << buffer;
+                parts_.pop_front();
+                delete[] buffer;
+            } else {
+                buffer_ << msg;
             }
-            Log &operator<<(unsigned int msg) { 
-                write_number(static_cast<long long>(msg));
-                return *this;
+        }
+        Log &operator<<(long long msg)
+        {
+            write_number(msg);
+            return *this;
+        }
+        Log &operator<<(unsigned long long msg)
+        {
+            write_number(static_cast<long long>(msg));
+            return *this;
+        }
+        Log &operator<<(long msg)
+        {
+            write_number(msg);
+            return *this;
+        }
+        Log &operator<<(unsigned long msg)
+        {
+            write_number(static_cast<long long>(msg));
+            return *this;
+        }
+        Log &operator<<(int msg)
+        {
+            write_number(msg);
+            return *this;
+        }
+        Log &operator<<(unsigned int msg)
+        {
+            write_number(static_cast<long long>(msg));
+            return *this;
+        }
+        Log &operator<<(short msg)
+        {
+            write_number(msg);
+            return *this;
+        }
+        Log &operator<<(unsigned short msg)
+        {
+            write_number(static_cast<long long>(msg));
+            return *this;
+        }
+        Log &operator<<(char msg)
+        {
+            write_number(msg);
+            return *this;
+        }
+        Log &operator<<(unsigned char msg)
+        {
+            write_number(static_cast<long long>(msg));
+            return *this;
+        }
+        Log &operator<<(bool msg)
+        { 
+            if (parts_.size() > 0)
+            {
+                char *buffer = new char[6 + parts_.front().size()];
+                sprintf(buffer, parts_.front().c_str(), msg ? "true" : "false");
+                buffer_ << buffer;
+                parts_.pop_front();
+                delete[] buffer;
             }
-            Log &operator<<(short msg) { 
-                write_number(msg);
-                return *this;
+            else
+            {
+                buffer_ << msg;
             }
-            Log &operator<<(unsigned short msg) { 
-                write_number(static_cast<long long>(msg));
-                return *this;
+            return *this;
+        }
+        virtual void operator<<(const Log::End &msg)
+        {
+            for(std::list<std::string>::const_iterator iter = parts_.begin();
+                iter != parts_.end();
+                ++iter)
+            {
+                buffer_ << "..." << (*iter);
             }
-            Log &operator<<(char msg) { 
-                write_number(msg);
-                return *this;
-            }
-            Log &operator<<(unsigned char msg) { 
-                write_number(static_cast<long long>(msg));
-                return *this;
-            }
-            Log &operator<<(bool msg) { 
-                if(_parts.size() > 0) {
-                    char *buffer = new char[6 + _parts.front().size()];
-                    sprintf(buffer, _parts.front().c_str(), msg ? "true" : "false");
-                    _buffer << buffer;
-                    _parts.pop_front();
-                    delete[] buffer;
-                } else {
-                    _buffer << msg;
-                }
-                return *this;
-            }
-            virtual void operator<<(const Log::End &msg) {
-                for(std::list<std::string>::const_iterator iter = _parts.begin();
-                    iter != _parts.end();
-                    ++iter) {
-                    _buffer << "..." << (*iter);
-                }
-                (*_strm) << _buffer.str() << std::endl;
-                delete this;
-            }
-        };
+            (*stream_) << buffer_.str() << std::endl;
+            delete this;
+        }
+    private:
+        std::list<std::string> parts_;
+        std::ostringstream buffer_;
     };
-
-    Log &Log::operator()(const std::string &m) {
-        if(_enabled) {
-            return *(new RealLogger(_strm, _level, m));
+}; // namespace
+    
+namespace lj
+{    
+    std::string Log::level_text(const Event_level level)
+    {
+        switch(level)
+        {
+            case level_emergency:
+                return std::string("EMERGENCY");
+            case level_alert:
+                return std::string("ALERT");
+            case level_critical:
+                return std::string("CRITICAL");
+            case level_error:
+                return std::string("ERROR");
+            case level_warning:
+                return std::string("WARNING");
+            case level_notice:
+                return std::string("NOTICE");
+            case level_info:
+                return std::string("INFORMATION");
+            default:
+                return std::string("DEBUG");
+        }
+    }
+    
+    void Log::operator()(const std::string &fmt, ...)
+    {
+        if (enabled_)
+        {
+            va_list vl;
+            va_start(vl, fmt);
+            char *ptr = new char[(fmt.size() * 2) + 64];
+            vsprintf(ptr, fmt.c_str(), vl);
+            va_end(vl);
+            
+            Real_logger* logger = new Real_logger(stream_, level_, std::string(ptr));
+            (*logger) << end;
+            
+            delete[] ptr;
+        }
+    }
+    
+    Log &Log::log(const std::string &fmt)
+    {
+        if(enabled_)
+        {
+            return *(new Real_logger(stream_, level_, fmt));
         }
         else return *this;
     }
-};
+}; //namespace lj
