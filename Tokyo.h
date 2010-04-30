@@ -1,6 +1,7 @@
 #pragma once
-/*
+/*!
  \file Tokyo.h
+ \brief Tokyo Cabinet / Tokyo Dystopia C++ wrapper
  \author Jason Watson
  Copyright (c) 2009, Jason Watson
  All rights reserved.
@@ -75,33 +76,11 @@ namespace tokyo {
         virtual value_t at(const void *key,
                            const size_t len) = 0;
         
-        //! Read all values together at a key.
-        /*!
-         \par
-         The pointers returned are allocated with "malloc" and must be
-         released with "free".
-         \exception Exception Thrown on any error performing the action.
-         */
-        virtual bool at_together(const void *key,
-                                 const size_t len,
-                                 list_value_t &results) = 0;
-
         //! Place a value at a key.
         virtual void place(const void *key,
                            const size_t key_len,
                            const void * const val,
                            const size_t val_len) = 0;
-        
-        //! Place a value after any existing records at a specific key.
-        virtual void place_with_existing(const void *key,
-                                         const size_t key_len,
-                                         const void * const val,
-                                         const size_t val_len) = 0;
-        
-        //! Place a list of values together at a specific key.
-        virtual void place_together(const void *key,
-                                    const size_t key_len,
-                                    const list_value_t &vals) = 0;
         
         //! Place a value at a specific key only if no record exists.
         virtual void place_if_absent(const void *key, 
@@ -118,17 +97,7 @@ namespace tokyo {
         //! Remove the first record matching at a specific key.
         virtual void remove(const void *key,
                             const size_t len) = 0;
-        
-        //! Remove all records together at a specific key.
-        virtual void remove_together(const void *key,
-                                     const size_t len) = 0;
-        
-        //! Remove the provided record from the existing records.
-        virtual void remove_from_existing(const void *key,
-                                          const size_t len,
-                                          const void * const val, 
-                                          const size_t val_len) = 0;
-        
+                
         //! Start the transaction.
         virtual void start_writes() = 0;
         
@@ -173,7 +142,72 @@ namespace tokyo {
         virtual bool search(const std::string &query,
                             set_key_t &results) = 0;
     };
-
+    
+    class Hash_db : public DB {
+    public:
+        //! Hash_db constructor
+        /*!
+         \par
+         Create a new hash database object.
+         \param filename The name of the file to open.
+         \param mode The mode to open the file with.
+         \param db_tune_func The function to use for tuning the database.
+         \param ptr Additional argument to the \c db_tune_func.
+         */
+        Hash_db(const std::string& filename,
+                const int mode,
+                void (*db_tune_func)(TCHDB*, const void*),
+                const void* ptr);
+                
+        //! Hash_db Destructor
+        virtual ~Hash_db();
+        
+        virtual value_t at(const void* key,
+                           const size_t len);
+        virtual void place(const void* key,
+                           const size_t key_len,
+                           const void* const val, 
+                           const size_t val_len);
+        virtual void place_if_absent(const void* key, 
+                                     const size_t key_len, 
+                                     const void* const val,
+                                     const size_t val_len);
+        virtual void place_or_append(const void* key, 
+                                     const size_t key_len, 
+                                     const void* const val,
+                                     const size_t val_len);
+        virtual void remove(const void* key,
+                            const size_t len);        
+        virtual void start_writes();
+        virtual void save_writes();
+        virtual void abort_writes();
+        
+    protected:
+        //! Get the database handle.
+        /*!
+         \return The pointer to the database object.
+         */
+        inline TCHDB* db()
+        {
+            return db_;
+        }
+    private:
+        //! Hiding to prevent use.
+        /*!
+         \param o Other.
+         */
+        Hash_db(const Hash_db& o);
+        
+        //! Hiding to prevent use.
+        /*!
+         \param o Other.
+         */
+        Hash_db& operator=(const Hash_db& o);
+        
+        //! Tokyo Hash Database handle.
+        TCHDB *db_;
+    };
+    
     //! Tree DB Class.
     /*!
      \author Jason Watson
@@ -182,11 +216,11 @@ namespace tokyo {
      */
     class TreeDB : public DB {
     private:
-        //! The Tree datastructure.
+        //! Tokyo Tree Database handle.
         TCBDB *_db;
         
     protected:
-        //! Get the underlying Database object.
+        //! Get the database handle.
         /*!
          \return The pointer to the database object.
          */
@@ -206,17 +240,30 @@ namespace tokyo {
         
         virtual value_t at(const void *key,
                            const size_t len);
+
+        //! Read all values together at a key.
+        /*!
+         \par
+         The pointers returned are allocated with "malloc" and must be
+         released with "free".
+         \exception Exception Thrown on any error performing the action.
+         */
         virtual bool at_together(const void *key,
                                  const size_t len,
                                  list_value_t &results);
+        
         virtual void place(const void *key,
                            const size_t key_len,
                            const void * const val, 
-                           const size_t val_len);        
+                           const size_t val_len);
+        
+        //! Place a value after any existing records at a specific key.
         virtual void place_with_existing(const void *key,
                                          const size_t key_len,
                                          const void * const val,
                                          const size_t val_len);
+        
+        //! Place a list of values together at a specific key.
         virtual void place_together(const void *key,
                                     const size_t key_len,
                                     const list_value_t &vals);
@@ -228,10 +275,15 @@ namespace tokyo {
                                      const size_t key_len, 
                                      const void * const val,
                                      const size_t val_len);
+        
         virtual void remove(const void *key,
-                            const size_t len);        
+                            const size_t len);
+        
+        //! Remove all records together at a specific key.
         virtual void remove_together(const void *key,
                                      const size_t len);
+        
+        //! Remove the provided record from the existing records.
         virtual void remove_from_existing(const void *key,
                                           const size_t len,
                                           const void * const val,

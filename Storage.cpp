@@ -103,20 +103,26 @@ namespace lj {
     }
     
     StorageFilter &StorageFilter::filter(const std::string &indx,
-                                        const void * const val,
-                                        const size_t val_len) {
+                                         const void * const val,
+                                         const size_t val_len) {
         Log::debug.log("Filtering on [%s] with [%d][%s].") << indx << ((unsigned long long)val_len) << ((char *)val) << Log::end;
-        std::map<std::string, TreeDB *>::const_iterator index = _storage->_fields_tree.find(indx);
-        if(index == _storage->_fields_tree.end())
-            return *this;
+        std::map<std::string, TreeDB *>::const_iterator tree_index = _storage->_fields_tree.find(indx);
         
-        tokyo::DB *db = index->second;
         tokyo::DB::list_value_t db_values;
+        if (tree_index != _storage->_fields_tree.end())
+        {
+            tree_index->second->at_together(val, val_len, db_values);
+        }
+        else
+        {
+            return *this;
+        }
+        
         std::set<unsigned long long> storage_keys;
-        db->at_together(val, val_len, db_values);
         dbvalue_to_storagekey(db_values, storage_keys);
         
-        switch(_mode) {
+        switch (_mode)
+        {
             case INTERSECTION:
                 intersect_keys(storage_keys);
                 break;
@@ -128,7 +134,7 @@ namespace lj {
     }
     
     StorageFilter &StorageFilter::search(const std::string &indx,
-                                        const std::string &terms) {
+                                         const std::string &terms) {
         Log::debug.log("Searching on [%s] with [%s]") << indx << terms << Log::end;
         std::map<std::string, TextSearcher *>::const_iterator index = _storage->_fields_text.find(indx);
         if(index == _storage->_fields_text.end())
@@ -150,7 +156,7 @@ namespace lj {
     }
     
     StorageFilter &StorageFilter::tagged(const std::string &indx,
-                                        const std::string &word) {
+                                         const std::string &word) {
         Log::debug.log("Searching on [%s] with [%s]") << indx << word << Log::end;
         std::map<std::string, TagSearcher *>::const_iterator index = _storage->_fields_tag.find(indx);
         if(index == _storage->_fields_tag.end())
@@ -250,7 +256,7 @@ namespace lj {
                          BDBOREADER | BDBOWRITER | BDBOCREAT,
                          &storage_tree_cfg,
                          &(cfg.nav("main")));
-
+        
         Log::info.log("Opening tree indices under [%s].") << directory_ << Log::end;
         open_storage_index<TreeDB, TCBDB>(directory_,
                                           cfg.nav("index/tree").to_map(),
@@ -340,19 +346,22 @@ namespace lj {
     
     StorageFilter Storage::filter(const std::string &indx,
                                   const void * const val,
-                                  const size_t val_len) const {
+                                  const size_t val_len) const
+    {
         Log::debug.log("Filtering on [%s] with [%d][%s].") << indx << ((unsigned long long)val_len) << ((char *)val) << Log::end;
-        std::map<std::string, TreeDB *>::const_iterator index = _fields_tree.find(indx);
-        if(index == _fields_tree.end()) {
-            Log::warning.log("Request for unknown tree index [%s] from [%s].") << indx << directory_ << Log::end;
+        std::map<std::string, TreeDB *>::const_iterator tree_index = _fields_tree.find(indx);
+        
+        tokyo::DB::list_value_t db_values;
+        if (tree_index != _fields_tree.end())
+        {
+            tree_index->second->at_together(val, val_len, db_values);
+        }
+        else
+        {
             return none();
         }
         
-        Log::debug.log("Index found, returning results.") << Log::end;
-        tokyo::DB *db = index->second;
-        tokyo::DB::list_value_t db_values;
         std::set<unsigned long long> storage_keys;
-        db->at_together(val, val_len, db_values);
         dbvalue_to_storagekey(db_values, storage_keys);
         return StorageFilter(this, storage_keys);
     }
@@ -508,7 +517,7 @@ namespace lj {
             iter != _fields_tree.end();
             ++iter) {
             BSONNode n(original.nav(iter->first));
-
+            
             if(n.exists()) {
                 if(n.nested()) {
                     for(BSONNode::childmap_t::const_iterator iter2 = n.to_map().begin();

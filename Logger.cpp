@@ -64,7 +64,7 @@ namespace
      \version 1.0
      \date April 16, 2010
      */
-    class Real_logger : virtual public lj::Log {
+    class Real_logger : public lj::Log {
     public:
         Real_logger(std::ostream *strm,
                     Event_level level,

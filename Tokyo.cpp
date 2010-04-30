@@ -36,24 +36,135 @@
 
 using lj::Exception;
 
-namespace tokyo {
-    namespace {
-        bool arrays_equal(const void * const a,
-                          size_t a_len,
-                          const void * const b,
-                          size_t b_len) {
-            if(a_len != b_len) return false;
-            for(unsigned int h = 0; h < b_len; ++h)
-                if(((const char * const)a)[h] ^ ((const char * const)b)[h])
-                    return false;
-            return true;
+namespace
+{
+    bool arrays_equal(const void * const a,
+                      size_t a_len,
+                      const void * const b,
+                      size_t b_len)
+    {
+        if (a_len != b_len)
+        {
+            return false;
         }
-    };
-    
-    DB::DB() {
+        for (unsigned int h = 0; h < b_len; ++h)
+        {
+            if (((const char * const)a)[h] ^ ((const char * const)b)[h])
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+};
+
+namespace tokyo
+{    
+    DB::DB()
+    {
     }
     
-    DB::~DB() {
+    DB::~DB()
+    {
+    }
+    
+    //=====================================================================
+    // Hash_db Implementation
+    //=====================================================================
+    Hash_db::Hash_db(const std::string& filename,
+                     const int mode,
+                     void (*db_tune_func)(TCHDB*, const void*),
+                     const void* ptr)
+    {
+        db_ = tchdbnew();
+        if (db_tune_func)
+        {
+            (*db_tune_func)(db(), ptr);
+        }
+        tchdbopen(db(), filename.c_str(), mode);
+    }
+    
+    Hash_db::~Hash_db()
+    {
+        tchdbclose(db_);
+        tchdbdel(db_);
+        db_ = 0;
+    }
+    
+    DB::value_t Hash_db::at(const void* key, const size_t len)
+    {
+        int sz = 0;
+        void* ptr = tchdbget(db(), key, len, &sz);
+        if (!ptr || !sz)
+        {
+            ptr = 0;
+        }
+        return value_t(ptr, sz);
+    }
+    
+    void Hash_db::place(const void* key,
+                        const size_t key_len,
+                        const void* const val, 
+                        const size_t val_len)
+    {
+        if (!tchdbput(db(), key, key_len, val, val_len))
+        {
+            throw new Exception("TokyoHash", tchdberrmsg(tchdbecode(db())));
+        }
+    }
+    
+    void Hash_db::place_if_absent(const void* key, 
+                                  const size_t key_len, 
+                                  const void* const val,
+                                  const size_t val_len)
+    {
+        if (!tchdbputkeep(db(), key, key_len, val, val_len))
+        {
+            throw new Exception("TokyoHash", tchdberrmsg(tchdbecode(db())));
+        }
+    }
+    
+    void Hash_db::place_or_append(const void*key, 
+                                  const size_t key_len, 
+                                  const void* const val,
+                                  const size_t val_len)
+    {
+        if (!tchdbputcat(db(), key, key_len, val, val_len))
+        {
+            throw new Exception("TokyoHash", tchdberrmsg(tchdbecode(db())));
+        }
+    }
+    
+    void Hash_db::remove(const void* key, const size_t len)
+    {
+        if (!tchdbout(db(), key, len))
+        {
+            throw new Exception("TokyoHash", tchdberrmsg(tchdbecode(db())));
+        }
+    }
+    
+    void Hash_db::start_writes()
+    {
+        if (!tchdbtranbegin(db()))
+        {
+            throw new Exception("TokyoHash", tchdberrmsg(tchdbecode(db())));
+        }
+    }
+    
+    void Hash_db::save_writes()
+    {
+        if (!tchdbtrancommit(db()))
+        {
+            throw new Exception("TokyoHash", tchdberrmsg(tchdbecode(db())));
+        }
+    }
+    
+    void Hash_db::abort_writes()
+    {
+        if (!tchdbtranabort(db()))
+        {
+            throw new Exception("TokyoHash", tchdberrmsg(tchdbecode(db())));
+        }
     }
     
     //=====================================================================
