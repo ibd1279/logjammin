@@ -192,17 +192,17 @@ namespace lj {
          */
         tokyo::TreeDB *_db;
         
-        //! Fields using a tree index.
-        /*!
-         \par used for range selected values.
-         */
+        //! Fields indexed using a tree db.
         std::map<std::string, tokyo::TreeDB *> _fields_tree;
         
+        //! Fields indexed using a hash db.
+        std::map<std::string, tokyo::Hash_db*> fields_hash_;
+        
         //! Fields indexed using full text searcher.
-        std::map<std::string, tokyo::TextSearcher *> _fields_text;
+        std::map<std::string, tokyo::TextSearcher *> fields_text_;
         
         //! Fields indexed using word searcher.
-        std::map<std::string, tokyo::TagSearcher *> _fields_tag;
+        std::map<std::string, tokyo::TagSearcher *> fields_tag_;
         
         //! Fields that have unique constraints.
         std::set<std::string> _fields_unique;

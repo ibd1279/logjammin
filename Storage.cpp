@@ -37,6 +37,7 @@
 #include "Exception.h"
 #include "Logger.h"
 
+using tokyo::Hash_db;
 using tokyo::TreeDB;
 using tokyo::TextSearcher;
 using tokyo::TagSearcher;
@@ -106,12 +107,17 @@ namespace lj {
                                          const void * const val,
                                          const size_t val_len) {
         Log::debug.log("Filtering on [%s] with [%d][%s].") << indx << ((unsigned long long)val_len) << ((char *)val) << Log::end;
-        std::map<std::string, TreeDB *>::const_iterator tree_index = _storage->_fields_tree.find(indx);
+        std::map<std::string, TreeDB*>::const_iterator tree_index = _storage->_fields_tree.find(indx);
+        std::map<std::string, Hash_db*>::const_iterator hash_index = _storage->fields_hash_.find(indx);
         
         tokyo::DB::list_value_t db_values;
-        if (tree_index != _storage->_fields_tree.end())
+        if (_storage->_fields_tree.end() != tree_index)
         {
             tree_index->second->at_together(val, val_len, db_values);
+        }
+        else if (_storage->fields_hash_.end() != hash_index)
+        {
+            db_values.push_back(hash_index->second->at(val, val_len));
         }
         else
         {
@@ -136,8 +142,8 @@ namespace lj {
     StorageFilter &StorageFilter::search(const std::string &indx,
                                          const std::string &terms) {
         Log::debug.log("Searching on [%s] with [%s]") << indx << terms << Log::end;
-        std::map<std::string, TextSearcher *>::const_iterator index = _storage->_fields_text.find(indx);
-        if(index == _storage->_fields_text.end())
+        std::map<std::string, TextSearcher *>::const_iterator index = _storage->fields_text_.find(indx);
+        if(index == _storage->fields_text_.end())
             return *this;
         
         TextSearcher *searcher = index->second;
@@ -158,8 +164,8 @@ namespace lj {
     StorageFilter &StorageFilter::tagged(const std::string &indx,
                                          const std::string &word) {
         Log::debug.log("Searching on [%s] with [%s]") << indx << word << Log::end;
-        std::map<std::string, TagSearcher *>::const_iterator index = _storage->_fields_tag.find(indx);
-        if(index == _storage->_fields_tag.end())
+        std::map<std::string, TagSearcher *>::const_iterator index = _storage->fields_tag_.find(indx);
+        if(index == _storage->fields_tag_.end())
             return *this;
         
         TagSearcher *searcher = index->second;
@@ -181,16 +187,23 @@ namespace lj {
     // Storage Implementation.
     //=====================================================================
     
-    namespace {
-        void storage_tree_cfg(TCBDB *db, const void *ptr) {
-            const BSONNode *bn = static_cast<const BSONNode *>(ptr);
-            if(bn->nav("compare").to_s().compare("lex") == 0) {
+    namespace
+    {
+        void storage_tree_cfg(TCBDB* db, const void* ptr)
+        {
+            const BSONNode* bn = static_cast<const BSONNode*>(ptr);
+            if (bn->nav("compare").to_s().compare("lex") == 0)
+            {
                 tcbdbsetcmpfunc(db, tcbdbcmplexical, NULL);
                 Log::info.log("Using lexical for compares") << Log::end;
-            } else if(bn->nav("compare").to_s().compare("int32") == 0) {
+            }
+            else if (bn->nav("compare").to_s().compare("int32") == 0)
+            {
                 tcbdbsetcmpfunc(db, tcbdbcmpint32, NULL);
                 Log::info.log("Using int32 for compares") << Log::end;
-            } else {
+            }
+            else
+            {
                 tcbdbsetcmpfunc(db, tcbdbcmpint64, NULL);
                 Log::info.log("Using int64 for compares") << Log::end;
             }
@@ -198,9 +211,28 @@ namespace lj {
             // XXX config other things like compression type, tree hight, etc.
         }
         
-        // XXX Add configuration method for hash
-        // XXX Add configuration method for text
+        void storage_hash_cfg(TCHDB* db, const void* ptr)
+        {
+            //const BSONNode *bn = static_cast<const BSONNode *>(ptr);
+            
+            // XXX config other things like compression type.
+        }
+        
+        void storage_text_cfg(TCQDB* db, const void* ptr)
+        {
+            //const BSONNode *bn = static_cast<const BSONNode *>(ptr);
+            
+            // XXX config other things like compression type.
+        }
+        
         // XXX Add configuration method for tags
+        void storage_tag_cfg(TCWDB* db, const void* ptr)
+        {
+            //const BSONNode *bn = static_cast<const BSONNode *>(ptr);
+            
+            // XXX config other things like compression type.
+        }
+        
         template<typename T, typename Q>
         void open_storage_index(const std::string& dir,
                                 const lj::BSONNode::childmap_t& cfg,
@@ -240,7 +272,7 @@ namespace lj {
         }
     } // namespace
     
-    Storage::Storage(const std::string &dir) : _db(NULL), _fields_tree(), _fields_text(), _fields_tag(), _fields_unique(), directory_(DBDIR)
+    Storage::Storage(const std::string &dir) : _db(NULL), _fields_tree(), fields_hash_(), fields_text_(), fields_tag_(), _fields_unique(), directory_(DBDIR)
     {
         directory_.append("/").append(dir);
         std::string configfile(directory_ + "/config");
@@ -264,19 +296,26 @@ namespace lj {
                                           &storage_tree_cfg,
                                           _fields_tree);
         
+        Log::info.log("Opening hash indices under [%s].") << directory_ << Log::end;
+        open_storage_index<Hash_db, TCHDB>(directory_,
+                                           cfg.nav("index/hash").to_map(),
+                                           HDBOREADER | HDBOWRITER | HDBOCREAT,
+                                           &storage_hash_cfg,
+                                           fields_hash_);
+        
         Log::info.log("Opening text indices under [%s].") << directory_ << Log::end;
         open_storage_index<TextSearcher, TCQDB>(directory_,
                                                 cfg.nav("index/text").to_map(),
                                                 QDBOREADER | QDBOWRITER | QDBOCREAT,
-                                                0,
-                                                _fields_text);
+                                                &storage_text_cfg,
+                                                fields_text_);
         
         Log::info.log("Opening tag indices under [%s].") << directory_ << Log::end;
         open_storage_index<TagSearcher, TCWDB>(directory_,
                                                cfg.nav("index/tag").to_map(),
                                                WDBOREADER | WDBOWRITER | WDBOCREAT,
-                                               0,
-                                               _fields_tag);
+                                               &storage_tag_cfg,
+                                               fields_tag_);
         
         Log::info.log("Registering unique fields from [%s].") << directory_ << Log::end;
         for (BSONNode::childmap_t::const_iterator iter = cfg.nav("main/unique").to_map().begin();
@@ -290,19 +329,29 @@ namespace lj {
     
     Storage::~Storage() {
         Log::info.log("Closing tag indicies under [%s].") << directory_ << Log::end;
-        for(std::map<std::string, TagSearcher *>::const_iterator iter = _fields_tag.begin();
-            iter != _fields_tag.end();
+        for(std::map<std::string, TagSearcher *>::const_iterator iter = fields_tag_.begin();
+            iter != fields_tag_.end();
             ++iter) {
             Log::info.log("Closing tag index for field [%s].") << iter->first << Log::end;
             delete iter->second;
         }
         Log::info.log("Closing text indicies under [%s].") << directory_ << Log::end;
-        for(std::map<std::string, TextSearcher *>::const_iterator iter = _fields_text.begin();
-            iter != _fields_text.end();
+        for(std::map<std::string, TextSearcher *>::const_iterator iter = fields_text_.begin();
+            iter != fields_text_.end();
             ++iter) {
             Log::info.log("Closing text index for field [%s].") << iter->first << Log::end;
             delete iter->second;
         }
+        
+        Log::info.log("Closing hash indicies under [%s].") << directory_ << Log::end;
+        for (std::map<std::string, Hash_db*>::const_iterator iter = fields_hash_.begin();
+             fields_hash_.end() != iter;
+             ++iter)
+        {
+            Log::info.log("Closing hash index for field [%s].") << iter->first << Log::end;
+            delete iter->second;
+        }
+        
         Log::info.log("Closing tree indicies under [%s].") << directory_ << Log::end;
         for(std::map<std::string, TreeDB *>::const_iterator iter = _fields_tree.begin();
             iter != _fields_tree.end();
@@ -310,6 +359,7 @@ namespace lj {
             Log::info.log("Closing tree index for field [%s].") << iter->first << Log::end;
             delete iter->second;
         }
+        
         Log::info.log("Closing database for field [%s].") << directory_ << Log::end;
         delete _db;
     }
@@ -340,7 +390,8 @@ namespace lj {
         return StorageFilter(this, std::set<unsigned long long>());
     }
     
-    StorageFilter Storage::none() const {
+    StorageFilter Storage::none() const
+    {
         return StorageFilter(this, std::set<unsigned long long>());
     }
     
@@ -348,13 +399,18 @@ namespace lj {
                                   const void * const val,
                                   const size_t val_len) const
     {
-        Log::debug.log("Filtering on [%s] with [%d][%s].") << indx << ((unsigned long long)val_len) << ((char *)val) << Log::end;
-        std::map<std::string, TreeDB *>::const_iterator tree_index = _fields_tree.find(indx);
+        Log::debug.log("Filtering on [%s] with [%d][%s].") << indx << val_len << ((char *)val) << Log::end;
+        std::map<std::string, TreeDB*>::const_iterator tree_index = _fields_tree.find(indx);
+        std::map<std::string, Hash_db*>::const_iterator hash_index = fields_hash_.find(indx);
         
         tokyo::DB::list_value_t db_values;
-        if (tree_index != _fields_tree.end())
+        if (_fields_tree.end() != tree_index)
         {
             tree_index->second->at_together(val, val_len, db_values);
+        }
+        else if (fields_hash_.end() != hash_index)
+        {
+            db_values.push_back(hash_index->second->at(val, val_len));
         }
         else
         {
@@ -369,8 +425,8 @@ namespace lj {
     StorageFilter Storage::search(const std::string &indx,
                                   const std::string &terms) const {
         Log::debug.log("Searching on [%s] with [%s]") << indx << terms << Log::end;
-        std::map<std::string, TextSearcher *>::const_iterator index = _fields_text.find(indx);
-        if(index == _fields_text.end()) {
+        std::map<std::string, TextSearcher *>::const_iterator index = fields_text_.find(indx);
+        if(index == fields_text_.end()) {
             Log::warning.log("Request for unknown text index [%s] from [%s].") << indx << directory_ << Log::end;
             return none();
         }
@@ -385,8 +441,8 @@ namespace lj {
     StorageFilter Storage::tagged(const std::string &indx,
                                   const std::string &word) const {
         Log::debug.log("Searching on [%s] with [%s]") << indx << word << Log::end;
-        std::map<std::string, TagSearcher *>::const_iterator index = _fields_tag.find(indx);
-        if(index == _fields_tag.end()) {
+        std::map<std::string, TagSearcher *>::const_iterator index = fields_tag_.find(indx);
+        if(index == fields_tag_.end()) {
             Log::warning.log("Request for unknown tag index [%s] from [%s].") << indx << directory_ << Log::end;
             return none();
         }
@@ -542,16 +598,16 @@ namespace lj {
                 }
             }
         }
-        for(std::map<std::string, TextSearcher *>::const_iterator iter = _fields_text.begin();
-            iter != _fields_text.end();
+        for(std::map<std::string, TextSearcher *>::const_iterator iter = fields_text_.begin();
+            iter != fields_text_.end();
             ++iter) {
             BSONNode n(original.nav(iter->first));
             if(n.exists()) {
                 iter->second->remove(key, n.to_s());
             }
         }
-        for(std::map<std::string, TagSearcher *>::const_iterator iter = _fields_tag.begin();
-            iter != _fields_tag.end();
+        for(std::map<std::string, TagSearcher *>::const_iterator iter = fields_tag_.begin();
+            iter != fields_tag_.end();
             ++iter) {
             BSONNode n(original.nav(iter->first));
             if(n.exists()) {
@@ -599,16 +655,16 @@ namespace lj {
             }
         }
         
-        for(std::map<std::string, TextSearcher *>::const_iterator iter = _fields_text.begin();
-            iter != _fields_text.end();
+        for(std::map<std::string, TextSearcher *>::const_iterator iter = fields_text_.begin();
+            iter != fields_text_.end();
             ++iter) {
             BSONNode n(original.nav(iter->first));
             if(n.exists()) {
                 iter->second->index(key, n.to_s());
             }
         }
-        for(std::map<std::string, TagSearcher *>::const_iterator iter = _fields_tag.begin();
-            iter != _fields_tag.end();
+        for(std::map<std::string, TagSearcher *>::const_iterator iter = fields_tag_.begin();
+            iter != fields_tag_.end();
             ++iter) {
             BSONNode n(original.nav(iter->first));
             if(n.exists()) {
