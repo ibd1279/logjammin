@@ -1,7 +1,7 @@
 #pragma once
 /*
  \file Storage.h
- \brief Storage and StorageFilter header.
+ \brief Storage and Record_set header.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -79,7 +79,7 @@ namespace lj
      \date April 19, 2010
      \sa lj::Storage
      */
-    class StorageFilter {
+    class Record_set {
     public:
         //! Create a new Record_set from an STL set.
         /*!
@@ -89,7 +89,7 @@ namespace lj
          \param key_set The keys.
          \param op The default operation to perform.
          */
-        StorageFilter(const Storage* storage,
+        Record_set(const Storage* storage,
                       const std::set<unsigned long long>& keys,
                       const set::Operation op);
         
@@ -101,7 +101,7 @@ namespace lj
          \param key_set The keys.
          \param op The default operation to perform.
          */
-        StorageFilter(const Storage* storage,
+        Record_set(const Storage* storage,
                       std::set<unsigned long long>* keys,
                       const set::Operation op);
         
@@ -109,10 +109,10 @@ namespace lj
         /*!
          \param orig The original Record_set.
          */
-        StorageFilter(const StorageFilter& orig);
+        Record_set(const Record_set& orig);
         
         //! Destructor.
-        ~StorageFilter();
+        ~Record_set();
         
         //! Set the Record_set operation.
         /*!
@@ -122,7 +122,7 @@ namespace lj
          \param op The new default operation to perform.
          \return The modified Record_set object.
          */
-        inline StorageFilter &set_operation(const set::Operation op)
+        inline Record_set &set_operation(const set::Operation op)
         {
             op_ = op;
             return *this;
@@ -145,7 +145,7 @@ namespace lj
          \param keys The keys to add.
          \return The modified Record_set object.
          */
-        inline StorageFilter &include_keys(const std::set<unsigned long long>& keys)
+        inline Record_set &include_keys(const std::set<unsigned long long>& keys)
         {
             keys_->insert(keys.begin(), keys.end());
             return *this;
@@ -156,7 +156,7 @@ namespace lj
          \param key The key to add.
          \return The modified Record_set object.
          */
-        inline StorageFilter& include_key(const unsigned long long key)
+        inline Record_set& include_key(const unsigned long long key)
         {
             keys_->insert(key);
             return *this;
@@ -167,14 +167,14 @@ namespace lj
          \param keys The keys to exclude.
          \return The modified Record_set object.
          */
-        StorageFilter& exclude_keys(const std::set<unsigned long long> &keys);
+        Record_set& exclude_keys(const std::set<unsigned long long> &keys);
         
         //! Remove a key from the Record_set.
         /*!
          \param key The key to remove.
          \return The modified Record_set object.
          */
-        inline StorageFilter& exclude_key(const unsigned long long key)
+        inline Record_set& exclude_key(const unsigned long long key)
         {
             keys_->erase(key);
             return *this;
@@ -194,7 +194,7 @@ namespace lj
          \param len The length of the value.
          \return A Record_set.
          */
-        StorageFilter equal(const std::string& indx,
+        Record_set equal(const std::string& indx,
                             const void* const val,
                             const size_t len) const;
         
@@ -211,7 +211,7 @@ namespace lj
          \param len The length of the value.
          \return A Record_set.
          */
-        StorageFilter greater(const std::string& indx,
+        Record_set greater(const std::string& indx,
                               const void* const val,
                               const size_t len) const;
         
@@ -228,7 +228,7 @@ namespace lj
          \param len The length of the value.
          \return A Record_set.
          */
-        StorageFilter lesser(const std::string& indx,
+        Record_set lesser(const std::string& indx,
                              const void* const val,
                              const size_t len) const;
         
@@ -244,7 +244,7 @@ namespace lj
          \param term The value to search for.
          \return A Record_set.
          */
-        StorageFilter contains(const std::string& indx,
+        Record_set contains(const std::string& indx,
                                const std::string& term) const;
         
         //! Perform operation against this Record_set and another new Record_set.
@@ -259,7 +259,7 @@ namespace lj
          \param word The value to search for.
          \return A Record_set.
          */
-        StorageFilter tagged(const std::string& indx,
+        Record_set tagged(const std::string& indx,
                              const std::string& word) const;
         
         //! Record_set size.
@@ -366,33 +366,87 @@ namespace lj
      \sa lj::Record_set
      */
     class Storage {
-        friend class StorageFilter;
+        friend class Record_set;
     public:
-        //! Consructor
+        //! Open up a Storage engine.
+        /*!
+         \par
+         The settings information for this storage engine is loaded from
+         \c DBDIR \c + \c "/" \c + \c dir. The settings file can be created by
+         executing the logjam shell command. The following is an example of a
+         storage engine configuration:
+         \code
+         role_cfg = sc_new("role")
+         sc_add_index(role_cfg, "hash", "name", "name", "lex")
+         sc_add_index(role_cfg, "tree", "allowed", "allowed", "lex")
+         sc_add_index(role_cfg, "text", "allowed", "allowed", "lex")
+         sc_add_index(role_cfg, "text", "name", "name", "lex")
+         sc_add_index(role_cfg, "tag", "allowed", "allowed", "lex")
+         sc_add_index(role_cfg, "tag", "name", "name", "lex")
+         sc_add_unique(role_cfg, "allowed")
+         sc_save("role", role_cfg)         
+         \endcode
+         \param dir The document repository name.
+         */
         Storage(const std::string &dir);
         
         //! Destructor
         ~Storage();
         
-        //! Get the document stored for the key.
-        inline StorageFilter at(const unsigned long long key) const
+        //! Get a single document Record_set.
+        /*!
+         \par
+         This is a helper method for:
+         \code
+         none().include_key(key);
+         \endcode.
+         \param key The key to populate the Record_set with.
+         \return A new Record_set object.
+         */
+        inline Record_set at(const unsigned long long key) const
         {
             return none().include_key(key);
         }
         
-        //! Get a set of all keys.
-        StorageFilter all() const;
+        //! Get a Record_set containing all keys.
+        /*!
+         \par
+         This method may pose a memory problem on large document stores.
+         \par
+         The default operation for the all Record_set is \c lj::set::k_intersection.
+         \return All keys.
+         */
+        Record_set all() const;
         
-        //! Get a set of no keys.
-        inline StorageFilter none() const
+        //! Get an empty Record_set.
+        /*!
+         \par
+         The default operation for the none Record_set is \c lj::set::k_union.
+         \return No keys.
+         */
+        inline Record_set none() const
         {
-            return StorageFilter(this, new std::set<unsigned long long>(), set::k_union);
+            return Record_set(this, new std::set<unsigned long long>(), set::k_union);
         }
         
-        //! place a document in storage.
+        //! Store a document
+        /*!
+         \par
+         Store a document.  If they document already has a key, it will
+         replace the old document at that key.  If the document has a key of
+         zero, it will be treated as a new document.
+         \param value The document to place in storage.
+         \return This storage object.
+         */
         Storage& place(BSONNode &value);
         
-        //! remove a document from storage.
+        //! Remove a document
+        /*!
+         \par
+         Document is deindexed and removed from the storage system.
+         \param value The document to remove.
+         \return This storage object.
+         */
         Storage& remove(BSONNode &value);
         
         //! Begin a transaction.

@@ -75,22 +75,22 @@ namespace logjam {
         inline lj::BSONNode &real_node() { return *_node; }
     };
     
-    //! Lua StorageFilter wrapper.
+    //! Lua Record_set wrapper.
     /*!
      \par
-     Known as "StorageFilter" in lua.
+     Known as "Record_set" in lua.
      \author Jason Watson
      \version 1.0
      \date April 27, 2010
      */
     class LuaStorageFilter {
     private:
-        lj::StorageFilter *_filter;
+        lj::Record_set *_filter;
     public:
         static const char LUNAR_CLASS_NAME[];
         static Lunar<LuaStorageFilter>::RegType LUNAR_METHODS[];
         LuaStorageFilter(lua_State *L);
-        LuaStorageFilter(lj::StorageFilter *filter);
+        LuaStorageFilter(lj::Record_set *filter);
         ~LuaStorageFilter();
         int mode_and(lua_State *L);
         int mode_or(lua_State *L);
@@ -99,7 +99,7 @@ namespace logjam {
         int tagged(lua_State *L);
         int records(lua_State *L);
         int first(lua_State *L);
-        inline lj::StorageFilter &real_filter() { return *_filter; }
+        inline lj::Record_set &real_filter() { return *_filter; }
     };
 
     //! Lua Storage wrapper.

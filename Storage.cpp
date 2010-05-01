@@ -127,28 +127,28 @@ namespace lj {
     };
     
     //=====================================================================
-    // Storage Filter Implementation.
+    // Record_set Implementation.
     //=====================================================================
     
-    StorageFilter::StorageFilter(const Storage* storage,
+    Record_set::Record_set(const Storage* storage,
                                  const std::set<unsigned long long>& keys,
                                  const set::Operation op) : storage_(storage), keys_(0), op_(op)
     {
         keys_ = new std::set<unsigned long long>(keys);
     }
     
-    StorageFilter::StorageFilter(const Storage* storage,
+    Record_set::Record_set(const Storage* storage,
                                  std::set<unsigned long long>* keys,
                                  const set::Operation op) : storage_(storage), keys_(keys), op_(op)
     {
     }
     
-    StorageFilter::StorageFilter(const StorageFilter& orig) : storage_(orig.storage_), keys_(0), op_(orig.op_)
+    Record_set::Record_set(const Record_set& orig) : storage_(orig.storage_), keys_(0), op_(orig.op_)
     {
         keys_ = new std::set<unsigned long long>(*orig.keys_);
     }
     
-    StorageFilter::~StorageFilter()
+    Record_set::~Record_set()
     {
         storage_ = NULL;
         if (keys_)
@@ -157,7 +157,7 @@ namespace lj {
         }
     }
     
-    StorageFilter &StorageFilter::exclude_keys(const std::set<unsigned long long>& keys)
+    Record_set &Record_set::exclude_keys(const std::set<unsigned long long>& keys)
     {
         for (std::set<unsigned long long>::const_iterator iter = keys.begin();
              keys.end() != iter;
@@ -168,7 +168,7 @@ namespace lj {
         return *this;
     }
     
-    StorageFilter StorageFilter::equal(const std::string& indx,
+    Record_set Record_set::equal(const std::string& indx,
                                        const void * const val,
                                        const size_t len) const
     {
@@ -194,10 +194,10 @@ namespace lj {
         dbvalue_to_storagekey(db_values, storage_keys);
         std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, storage_keys);
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
-        return StorageFilter(storage_, output, op_);
+        return Record_set(storage_, output, op_);
     }
     
-    StorageFilter StorageFilter::greater(const std::string &indx,
+    Record_set Record_set::greater(const std::string &indx,
                                          const void * const val,
                                          const size_t len) const
     {
@@ -225,10 +225,10 @@ namespace lj {
         dbvalue_to_storagekey(db_values, storage_keys);
         std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, storage_keys);
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
-        return StorageFilter(storage_, output, op_);
+        return Record_set(storage_, output, op_);
     }    
     
-    StorageFilter StorageFilter::lesser(const std::string &indx,
+    Record_set Record_set::lesser(const std::string &indx,
                                         const void * const val,
                                         const size_t len) const
     {
@@ -256,10 +256,10 @@ namespace lj {
         dbvalue_to_storagekey(db_values, storage_keys);
         std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, storage_keys);
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
-        return StorageFilter(storage_, output, op_);
+        return Record_set(storage_, output, op_);
     }    
     
-    StorageFilter StorageFilter::contains(const std::string& indx,
+    Record_set Record_set::contains(const std::string& indx,
                                           const std::string& term) const
     {
         Log::debug.log("Contains on [%s] with [%s]") << indx << term << Log::end;
@@ -277,10 +277,10 @@ namespace lj {
         
         std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, searcher_values);
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
-        return StorageFilter(storage_, output, op_);
+        return Record_set(storage_, output, op_);
     }
     
-    StorageFilter StorageFilter::tagged(const std::string& indx,
+    Record_set Record_set::tagged(const std::string& indx,
                                          const std::string& word) const
     {
         Log::debug.log("Tagged on [%s] with [%s]") << indx << word << Log::end;
@@ -298,10 +298,10 @@ namespace lj {
         
         std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, searcher_values);
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
-        return StorageFilter(storage_, output, op_);
+        return Record_set(storage_, output, op_);
     }
     
-    BSONNode StorageFilter::doc_at(unsigned long long pkey) const
+    BSONNode Record_set::doc_at(unsigned long long pkey) const
     {
         tokyo::DB::value_t p = storage_->db_->at(&pkey, sizeof(unsigned long long));
         if (!p.first)
@@ -457,7 +457,8 @@ namespace lj {
         }
     }
     
-    Storage::~Storage() {
+    Storage::~Storage()
+    {
         if (fields_tag_.size())
         {
             Log::info.log("Closing tag indicies under [%s].") << directory_ << Log::end;
@@ -509,7 +510,7 @@ namespace lj {
         delete db_;
     }
     
-    StorageFilter Storage::all() const
+    Record_set Storage::all() const
     {
         tokyo::DB::list_value_t keys;
         tokyo::DB::value_t max = db_->max_key();
@@ -524,9 +525,9 @@ namespace lj {
         {
             std::set<unsigned long long> real_keys;
             dbvalue_to_storagekey(keys, real_keys);
-            return StorageFilter(this, real_keys, lj::set::k_intersection);
+            return Record_set(this, real_keys, lj::set::k_intersection);
         }
-        return StorageFilter(this, std::set<unsigned long long>(), lj::set::k_intersection);
+        return Record_set(this, std::set<unsigned long long>(), lj::set::k_intersection);
     }
         
     Storage &Storage::place(BSONNode &value)
@@ -754,7 +755,8 @@ namespace lj {
         return *this;
     }
     
-    Storage &Storage::reindex(const unsigned long long key) {
+    Storage &Storage::reindex(const unsigned long long key)
+    {
         if (!key)
         {
             return *this;
@@ -860,7 +862,8 @@ namespace lj {
         return *this;
     }
     
-    void Storage::begin_transaction() {
+    void Storage::begin_transaction()
+    {
         db_->start_writes();
         for (std::map<std::string, TreeDB*>::const_iterator iter = fields_tree_.begin();
              fields_tree_.end() != iter;
@@ -875,7 +878,8 @@ namespace lj {
             iter->second->start_writes();
         }
     }
-    void Storage::commit_transaction() {
+    void Storage::commit_transaction()
+    {
         for (std::map<std::string, Hash_db*>::reverse_iterator iter = fields_hash_.rbegin();
              fields_hash_.rend() != iter;
              ++iter)
