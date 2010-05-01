@@ -58,78 +58,13 @@ namespace lj
             k_complement,          //!< Similar to a "NOT".
             k_symmetric_difference //!< Similar to a "XOR"
         };
-        
-        //! Perform an operation on two sets.
-        /*!
-         \par
-         The provided \c op is performed on the two sets and the result is returned
-         as a pointer to a third set. The operation is performed such that \c a
-         \c op \c b . So keep in mind the commutative properties of the operation
-         you are performing.
-         \param op The operation to perform.
-         \param a The first set.
-         \param b The second set.
-         \return A newly created set.
-         */
-        template<typename T, typename Q>
-        const T *operate(const Operation op,
-                         const T& a,
-                         const T& b)
-        {
-            const T* small = (a.size() < b.size()) ? &a : &b;
-            const T* big = (a.size() < b.size()) ? &b : &a;
-            T* rs = new std::set<T>();
-            Q inserted_at = rs->begin();
-            switch (op)
-            {
-                case k_intersection:
-                    for (Q iter = small->begin();
-                         small->end() != iter;
-                         ++iter)
-                    {
-                        if (big->end() != big->find(*iter))
-                        {
-                            inserted_at = rs->insert(inserted_at, *iter);
-                        }
-                    }
-                    break;
-                case k_union:
-                    rs->insert(big->begin(), big->end());
-                    rs->insert(small->begin(), small->end());
-                    break;
-                case k_symmetric_difference:
-                    for (Q iter = b.begin();
-                         b.end() != iter;
-                         ++iter)
-                    {
-                        if (a.end() == a.find(*iter))
-                        {
-                            inserted_at = rs->insert(inserted_at, *iter);
-                        }
-                    }
-                    inserted_at = rs->begin();
-                    // fall through.
-                case k_complement:
-                    for (Q iter = a.begin();
-                         a.end() != iter;
-                         ++iter)
-                    {
-                        if (b.end() == b.find(*iter))
-                        {
-                            inserted_at = rs->insert(inserted_at, *iter);
-                        }
-                    }
-                    break;
-            }
-            return rs;
-        }
     }; // set
     
-        
-    //! Filter used in Storage queries.
+    
+    //! Abstract collection of documents.
     /*!
      \par
-     The storage filter is really an abstract representation of a set of
+     The Record_set is really an abstract representation of a set of
      documents. The refine, search, and tagged methods are used to modify
      the set of documents to match a certain set of criteria. The following
      examples shows a usage to get a list of all users with the first name
@@ -144,100 +79,254 @@ namespace lj
      \date April 19, 2010
      */
     class StorageFilter {
-    public:        
-        typedef std::set<unsigned long long> Set_type;
+    public:
+        //! Create a new Record_set from an STL set.
+        /*!
+         \par
+         The key set is copied into the Record_set
+         \param storage The storage root.
+         \param key_set The keys.
+         \param op The default operation to perform.
+         */
+        StorageFilter(const Storage* storage,
+                      const std::set<unsigned long long>& keys,
+                      const set::Operation op);
         
-        //! Create a new Storage Filter.
-        StorageFilter(const Storage *storage,
-                      const std::set<unsigned long long> &keys,
-                      set::Operation mode,
-                      long long offset = -1,
-                      long long length = -1);
+        //! Create a new Record_set from an STL set pointer.
+        /*!
+         \par
+         The pointer will be managed by the Record_set.
+         \param storage The storage root.
+         \param key_set The keys.
+         \param op The default operation to perform.
+         */
+        StorageFilter(const Storage* storage,
+                      std::set<unsigned long long>* keys,
+                      const set::Operation op);
         
-        //! Create a new StorageFilter as a copy of an existing StorageFilter.
-        StorageFilter(const StorageFilter &orig);
+        //! Create a new Record_set as a copy of an existing Record_set.
+        /*!
+         \param orig The original Record_set.
+         */
+        StorageFilter(const StorageFilter& orig);
         
         //! Destructor.
         ~StorageFilter();
         
-        //! Set the storage filtering mode.  Default mode is INTERSECTION.
-        StorageFilter &mode(const set::Operation mode) { _mode = mode; return *this; };
-        
-        //! Check if the filtered set contains a key.
-        bool contains(unsigned long long key) const;
-        
-        //! Add keys to the filtered set.
-        StorageFilter &union_keys(const std::set<unsigned long long> &keys);
-        
-        //! Add a key to the filtered set.
-        StorageFilter &union_key(unsigned long long key)
+        //! Set the Record_set operation.
+        /*!
+         \par
+         The operation provided is used for creating the response object from
+         the refine, search, and tagged methods.
+         \param op The new default operation to perform.
+         \return The modified Record_set object.
+         */
+        inline StorageFilter &set_operation(const set::Operation op)
         {
-            std::set<unsigned long long> tmp;
-            tmp.insert(key);
-            return union_keys(tmp);
+            op_ = op;
+            return *this;
         }
         
-        //! Eliminate filtered set keys.
-        StorageFilter &intersect_keys(const std::set<unsigned long long> &keys);
-        
-        //! Reduce filtered set to a 1 or 0 keys.
-        StorageFilter &intersect_key(unsigned long long key)
+        //! Check if the Record_set contains a key.
+        /*!
+         \param key The key to test for.
+         \return True if the key is included. False otherwise.
+         */
+        inline bool is_included(const unsigned long long key) const
         {
-            std::set<unsigned long long> tmp;
-            tmp.insert(key);
-            return intersect_keys(tmp);
+            return keys_->end() != keys_->find(key);
         }
         
-        //! Filter a set based on the Storage field indicies.
-        StorageFilter &refine(const std::string &indx,
-                             const void * const val,
-                             const size_t val_len);
+        //! Add keys to the Record_set.
+        /*!
+         \par
+         Keys are copied from the input set.
+         \param keys The keys to add.
+         \return The modified Record_set object.
+         */
+        inline StorageFilter &include_keys(const std::set<unsigned long long>& keys)
+        {
+            keys_->insert(keys.begin(), keys.end());
+            return *this;
+        }
         
-        //! Filter a set based on the Storage text indicies.
-        StorageFilter &search(const std::string &indx,
-                             const std::string &terms);
+        //! Add a key to the Record_set.
+        /*!
+         \param key The key to add.
+         \return The modified Record_set object.
+         */
+        inline StorageFilter& include_key(const unsigned long long key)
+        {
+            keys_->insert(key);
+            return *this;
+        }
         
-        //! Filter a set based on the Storage word indicies.
-        StorageFilter &tagged(const std::string &indx,
-                             const std::string &word);
+        //! Remove keys from the Record_set.
+        /*!
+         \param keys The keys to exclude.
+         \return The modified Record_set object.
+         */
+        StorageFilter& exclude_keys(const std::set<unsigned long long> &keys);
         
-        //! How many keys are in the set.
-        unsigned long long size() { return _keys.size(); }
+        //! Remove a key from the Record_set.
+        /*!
+         \param key The key to remove.
+         \return The modified Record_set object.
+         */
+        inline StorageFilter& exclude_key(const unsigned long long key)
+        {
+            keys_->erase(key);
+            return *this;
+        }
         
-        //! Get the list of items contained by the filter.
+        //! Perform operation against this Record_set and another new Record_set.
+        /*!
+         \par
+         Searches \c indx for the value \c val. The results from the index are
+         operated with the current Record_set.
+         \par
+         If a Hash_db exists for \c indx, it will be used.  If it does not exist,
+         a Tree_db will be used. If neither index exists, a copy of the current
+         Record_set is returned.
+         \param indx The index to search against.
+         \param val The value to search for.
+         \param len The length of the value.
+         \return A Record_set.
+         */
+        StorageFilter equal(const std::string& indx,
+                            const void* const val,
+                            const size_t len) const;
+        
+        //! Perform operation against this Record_set and another new Record_set.
+        /*!
+         \par
+         Searches \c indx for documents with values greater than \c val.
+         The results from the index are operated with the current Record_set.
+         \par
+         If a Tree_db exists for \c indx, it will be used. If an index does
+         not exist, a copy of the current Record_set is returned.
+         \param indx The index to search against.
+         \param val The value to search for.
+         \param len The length of the value.
+         \return A Record_set.
+         */
+        StorageFilter greater(const std::string& indx,
+                              const void* const val,
+                              const size_t len) const;
+        
+        //! Perform operation against this Record_set and another new Record_set.
+        /*!
+         \par
+         Searches \c indx for documents with values lesser than \c val.
+         The results from the index are operated with the current Record_set.
+         \par
+         If a Tree_db exists for \c indx, it will be used. If an index does
+         not exist, a copy of the current Record_set is returned.
+         \param indx The index to search against.
+         \param val The value to search for.
+         \param len The length of the value.
+         \return A Record_set.
+         */
+        StorageFilter lesser(const std::string& indx,
+                             const void* const val,
+                             const size_t len) const;
+        
+        //! Perform operation against this Record_set and another new Record_set.
+        /*!
+         \par
+         Searches \c indx for documents with values containing \c term.
+         The results from the index are operated with the current Record_set.
+         \par
+         If a Text_searcher exists for \c indx, it will be used. If an index
+         does not exist, a copy of the current Record_set is returned.
+         \param indx The index to search against.
+         \param term The value to search for.
+         \return A Record_set.
+         */
+        StorageFilter contains(const std::string& indx,
+                               const std::string& term) const;
+        
+        //! Perform operation against this Record_set and another new Record_set.
+        /*!
+         \par
+         Searches \c indx for documents with values containing \c word.
+         The results from the index are operated with the current Record_set.
+         \par
+         If a Word_searcher exists for \c indx, it will be used. If an index
+         does not exist, a copy of the current Record_set is returned.
+         \param indx The index to search against.
+         \param word The value to search for.
+         \return A Record_set.
+         */
+        StorageFilter tagged(const std::string& indx,
+                             const std::string& word) const;
+        
+        //! Record_set size.
+        /*!
+         \return The number of documents currently in the set.
+         */
+        inline unsigned long long size() const
+        {
+            return keys_->size();
+        }
+        
+        //! Get the documents in this Record_set.
+        /*!
+         \par
+         Get a list of items, as type \c D and return them in \c records.
+         \param records The list to place items into.
+         \return True when records have been added.
+         */
         template<typename D>
-        bool items(std::list<D> &results,
-                   const long long start = -1,
-                   const long long end = -1) const {
-            for(std::set<unsigned long long>::const_iterator iter = _keys.begin();
-                iter != _keys.end();
-                ++iter) {
+        bool items(std::list<D>& records) const
+        {
+            for (std::set<unsigned long long>::const_iterator iter = keys_->begin();
+                 keys_->end() != iter;
+                 ++iter)
+            {
                 D obj;
                 obj.assign(doc_at(*iter));
-                results.push_back(obj);
+                records.push_back(obj);
             }
-            return true;
+            return size();
         }
         
+        //! Get the documents in this Record_set as pointers.
+        /*!
+         \par
+         Get a list of items, as type \c D* and return them in \c records.
+         \param records The list to place items into.
+         \return True when records have been added.
+         */
         template<typename D>
-        bool items(std::list<D *> &results,
-                   const long long start = -1,
-                   const long long end = -1) const {
-            for(std::set<unsigned long long>::const_iterator iter = _keys.begin();
-                iter != _keys.end();
-                ++iter) {
-                D *obj = new D();
+        bool items(std::list<D*>& records) const
+        {
+            for (std::set<unsigned long long>::const_iterator iter = keys_->begin();
+                 keys_->end() != iter;
+                 ++iter)
+            {
+                D* obj = new D();
                 obj->assign(doc_at(*iter));
-                results.push_back(obj);
+                records.push_back(obj);
             }
-            return true;
+            return size();
         }
         
+        //! Get the first document in the Record_set.
+        /*!
+         \par
+         Because the STL set backing the Record_set is ordered, the first
+         document will always be the lowest key document in the set.
+         \param record Record to populate.
+         \return True when the record has been modified.
+         */
         template<typename D>
-        bool first(D &result) const {
-            for(std::set<unsigned long long>::const_iterator iter = _keys.begin();
-                iter != _keys.end();
-                ++iter) {
+        bool first(D &result) const
+        {
+            for (std::set<unsigned long long>::const_iterator iter = keys_->begin();
+                 keys_->end() != iter;
+                 ++iter)
+            {
                 result.assign(doc_at(*iter));
                 return true;
             }
@@ -245,19 +334,13 @@ namespace lj
         }
     private:
         //! Storage pointer.  All filtering is done with this storage engine.
-        const Storage *_storage;
+        const Storage *storage_;
         
         //! Set of keys represented by this filter.
-        std::set<unsigned long long> _keys;
+        std::set<unsigned long long>* keys_;
         
         //! Mode for performing key evaluations.
-        set::Operation _mode;
-        
-        //! XXX Not Yet Used - Where to start returning results.
-        long long _offset;
-        
-        //! XXX Not Yet Used - How many results to return.
-        long long _length;
+        set::Operation op_;
         
         //! Internal method to hide some logic for the template code below.
         BSONNode doc_at(unsigned long long pkey) const;

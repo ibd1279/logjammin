@@ -302,13 +302,13 @@ namespace logjam {
     }
     
     int LuaStorageFilter::mode_and(lua_State *L) {
-        _filter->mode(lj::set::k_intersection);
+        _filter->set_operation(lj::set::k_intersection);
         Lunar<LuaStorageFilter>::push(L, this, false);
         return 1;
     }
     
     int LuaStorageFilter::mode_or(lua_State *L) {
-        _filter->mode(lj::set::k_union);
+        _filter->set_operation(lj::set::k_union);
         Lunar<LuaStorageFilter>::push(L, this, false);
         return 1;
     }
@@ -317,16 +317,16 @@ namespace logjam {
         std::string field(lua_to_string(L, -2));
         if(lua_isstring(L, -1)) {
             std::string val(lua_to_string(L, -1));
-            lj::StorageFilter *ptr = new lj::StorageFilter(_filter->refine(field, val.c_str(), val.size()));
+            lj::StorageFilter *ptr = new lj::StorageFilter(_filter->equal(field, val.c_str(), val.size()));
             Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
         } else {
             LuaBSONNode *n = Lunar<LuaBSONNode>::check(L, -1);
             char *bson = n->real_node().bson();
             lj::StorageFilter *ptr = NULL;
             if(n->real_node().quotable()) {
-                ptr = new lj::StorageFilter(_filter->refine(field, bson + 4, n->real_node().size() - 5));
+                ptr = new lj::StorageFilter(_filter->equal(field, bson + 4, n->real_node().size() - 5));
             } else {
-                ptr = new lj::StorageFilter(_filter->refine(field, bson, n->real_node().size()));
+                ptr = new lj::StorageFilter(_filter->equal(field, bson, n->real_node().size()));
             }
             delete[] bson;
             Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
@@ -337,7 +337,7 @@ namespace logjam {
     int LuaStorageFilter::search(lua_State *L) {
         std::string field(lua_to_string(L, -2));
         std::string val(lua_to_string(L, -1));
-        lj::StorageFilter *ptr = new lj::StorageFilter(_filter->search(field, val));
+        lj::StorageFilter *ptr = new lj::StorageFilter(_filter->contains(field, val));
         Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
         return 1;
     }

@@ -59,73 +59,131 @@ namespace lj {
                 }
             }
         }
+        
+        //! Perform an operation on two sets.
+        /*!
+         \par
+         The provided \c op is performed on the two sets and the result is returned
+         as a pointer to a third set. The operation is performed such that \c a
+         \c op \c b . So keep in mind the commutative properties of the operation
+         you are performing.
+         \param op The operation to perform.
+         \param a The first set.
+         \param b The second set.
+         \return A newly created set.
+         */
+        template<typename T, typename Q>
+        T *operate_on_sets(const set::Operation op,
+                                 const T& a,
+                                 const T& b)
+        {
+            const T* small = (a.size() < b.size()) ? &a : &b;
+            const T* big = (a.size() < b.size()) ? &b : &a;
+            T* rs = new T();
+            Q inserted_at = rs->begin();
+            switch (op)
+            {
+                case set::k_intersection:
+                    for (Q iter = small->begin();
+                         small->end() != iter;
+                         ++iter)
+                    {
+                        if (big->end() != big->find(*iter))
+                        {
+                            inserted_at = rs->insert(inserted_at, *iter);
+                        }
+                    }
+                    break;
+                case set::k_union:
+                    rs->insert(big->begin(), big->end());
+                    rs->insert(small->begin(), small->end());
+                    break;
+                case set::k_symmetric_difference:
+                    for (Q iter = b.begin();
+                         b.end() != iter;
+                         ++iter)
+                    {
+                        if (a.end() == a.find(*iter))
+                        {
+                            inserted_at = rs->insert(inserted_at, *iter);
+                        }
+                    }
+                    inserted_at = rs->begin();
+                    // fall through.
+                case set::k_complement:
+                    for (Q iter = a.begin();
+                         a.end() != iter;
+                         ++iter)
+                    {
+                        if (b.end() == b.find(*iter))
+                        {
+                            inserted_at = rs->insert(inserted_at, *iter);
+                        }
+                    }
+                    break;
+            }
+            return rs;
+        }
     };
     
     //=====================================================================
     // Storage Filter Implementation.
     //=====================================================================
     
-    BSONNode StorageFilter::doc_at(unsigned long long pkey) const
+    StorageFilter::StorageFilter(const Storage* storage,
+                                 const std::set<unsigned long long>& keys,
+                                 const set::Operation op) : storage_(storage), keys_(0), op_(op)
     {
-        return _storage->at(pkey);
+        keys_ = new std::set<unsigned long long>(keys);
     }
     
-    StorageFilter::StorageFilter(const Storage *storage,
-                                 const std::set<unsigned long long> &keys,
-                                 set::Operation mode,
-                                 long long offset,
-                                 long long length) : _storage(storage), _keys(keys), _mode(mode), _offset(offset), _length(length)
-    {
-    }
-    
-    StorageFilter::StorageFilter(const StorageFilter &orig) : _storage(orig._storage), _keys(orig._keys), _mode(orig._mode), _offset(orig._offset), _length(orig._length)
+    StorageFilter::StorageFilter(const Storage* storage,
+                                 std::set<unsigned long long>* keys,
+                                 const set::Operation op) : storage_(storage), keys_(keys), op_(op)
     {
     }
     
-    StorageFilter::~StorageFilter() {
-        _storage = NULL;
+    StorageFilter::StorageFilter(const StorageFilter& orig) : storage_(orig.storage_), keys_(0), op_(orig.op_)
+    {
+        keys_ = new std::set<unsigned long long>(*orig.keys_);
     }
     
-    bool StorageFilter::contains(unsigned long long key) const {
-        return _keys.find(key) != _keys.end();
+    StorageFilter::~StorageFilter()
+    {
+        storage_ = NULL;
+        if (keys_)
+        {
+            delete keys_;
+        }
     }
     
-    StorageFilter &StorageFilter::union_keys(const std::set<unsigned long long> &keys) {
-        for(std::set<unsigned long long>::const_iterator iter = keys.begin();
-            iter != keys.end();
-            ++iter) {
-            _keys.insert(*iter);
+    StorageFilter &StorageFilter::exclude_keys(const std::set<unsigned long long>& keys)
+    {
+        for (std::set<unsigned long long>::const_iterator iter = keys.begin();
+             keys.end() != iter;
+             ++iter)
+        {
+            keys_->erase(*iter);
         }
         return *this;
     }
     
-    StorageFilter &StorageFilter::intersect_keys(const std::set<unsigned long long> &keys) {
-        std::set<unsigned long long>::iterator iter = _keys.begin();
-        while(iter != _keys.end()) {
-            if(keys.find(*iter) == keys.end()) {
-                _keys.erase(iter++);
-            } else {
-                ++iter;
-            }
-        }
-        return *this;
-    }
-    
-    StorageFilter &StorageFilter::refine(const std::string &indx,
-                                         const void * const val,
-                                         const size_t val_len) {
-        Log::debug.log("Filtering on [%s] with [%d][%s].") << indx << ((unsigned long long)val_len) << ((char *)val) << Log::end;
-        std::map<std::string, TreeDB*>::const_iterator tree_index = _storage->fields_tree_.find(indx);
-        std::map<std::string, Hash_db*>::const_iterator hash_index = _storage->fields_hash_.find(indx);
+    StorageFilter StorageFilter::equal(const std::string& indx,
+                                       const void * const val,
+                                       const size_t len) const
+    {
+        Log::debug.log("Equal on [%s] with [%d][%s].") << indx << len << ((char *)val) << Log::end;
+        std::map<std::string, TreeDB*>::const_iterator tree_index = storage_->fields_tree_.find(indx);
+        std::map<std::string, Hash_db*>::const_iterator hash_index = storage_->fields_hash_.find(indx);
         
         tokyo::DB::list_value_t db_values;
-        if (_storage->fields_tree_.end() != tree_index)
+        if (storage_->fields_hash_.end() != hash_index)
         {
-            tree_index->second->at_together(val, val_len, db_values);
+            db_values.push_back(hash_index->second->at(val, len));
         }
-        else if (_storage->fields_hash_.end() != hash_index)
+        else if (storage_->fields_tree_.end() != tree_index)
         {
-            db_values.push_back(hash_index->second->at(val, val_len));
+            tree_index->second->at_together(val, len, db_values);
         }
         else
         {
@@ -134,79 +192,118 @@ namespace lj {
         
         std::set<unsigned long long> storage_keys;
         dbvalue_to_storagekey(db_values, storage_keys);
-        
-        switch (_mode)
-        {
-            case lj::set::k_intersection:
-                intersect_keys(storage_keys);
-                break;
-            case lj::set::k_union:
-                union_keys(storage_keys);
-                break;
-            case lj::set::k_complement:
-                break;
-            case lj::set::k_symmetric_difference:
-                break;
-        }
-        return *this;
+        std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, storage_keys);
+        Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
+        return StorageFilter(storage_, output, op_);
     }
     
-    StorageFilter &StorageFilter::search(const std::string &indx,
-                                         const std::string &terms) {
-        Log::debug.log("Searching on [%s] with [%s]") << indx << terms << Log::end;
-        std::map<std::string, TextSearcher *>::const_iterator index = _storage->fields_text_.find(indx);
-        if (_storage->fields_text_.end() == index)
+    StorageFilter StorageFilter::greater(const std::string &indx,
+                                         const void * const val,
+                                         const size_t len) const
+    {
+        Log::debug.log("Greater on [%s] with [%d][%s].") << indx << len << ((char *)val) << Log::end;
+        std::map<std::string, TreeDB*>::const_iterator tree_index = storage_->fields_tree_.find(indx);
+        
+        tokyo::DB::list_value_t db_values;
+        if (storage_->fields_tree_.end() != tree_index)
+        {
+            tokyo::DB::value_t max = tree_index->second->max_key();
+            tree_index->second->at_range(val,
+                                         len,
+                                         false,
+                                         max.first,
+                                         max.second,
+                                         true,
+                                         db_values);
+        }
+        else
         {
             return *this;
         }
         
-        TextSearcher *searcher = index->second;
-        tokyo::Searcher::set_key_t searcher_values;
-        searcher->search(terms, searcher_values);
-        
-        switch (_mode)
-        {
-            case set::k_intersection:
-                intersect_keys(searcher_values);
-                break;
-            case set::k_union:
-                union_keys(searcher_values);
-                break;
-            case set::k_complement:
-                break;
-            case set::k_symmetric_difference:
-                break;
-        }
-        return *this;
-    }
+        std::set<unsigned long long> storage_keys;
+        dbvalue_to_storagekey(db_values, storage_keys);
+        std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, storage_keys);
+        Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
+        return StorageFilter(storage_, output, op_);
+    }    
     
-    StorageFilter &StorageFilter::tagged(const std::string &indx,
-                                         const std::string &word) {
-        Log::debug.log("Searching on [%s] with [%s]") << indx << word << Log::end;
-        std::map<std::string, TagSearcher *>::const_iterator index = _storage->fields_tag_.find(indx);
-        if (_storage->fields_tag_.end() == index)
+    StorageFilter StorageFilter::lesser(const std::string &indx,
+                                        const void * const val,
+                                        const size_t len) const
+    {
+        Log::debug.log("Lesser on [%s] with [%d][%s].") << indx << len << ((char *)val) << Log::end;
+        std::map<std::string, TreeDB*>::const_iterator tree_index = storage_->fields_tree_.find(indx);
+        
+        tokyo::DB::list_value_t db_values;
+        if (storage_->fields_tree_.end() != tree_index)
+        {
+            tokyo::DB::value_t min = tree_index->second->min_key();
+            tree_index->second->at_range(min.first,
+                                         min.second,
+                                         true,
+                                         val,
+                                         len,
+                                         false,
+                                         db_values);
+        }
+        else
         {
             return *this;
         }
         
-        TagSearcher *searcher = index->second;
-        tokyo::Searcher::set_key_t searcher_values;
-        searcher->search(word, searcher_values);
+        std::set<unsigned long long> storage_keys;
+        dbvalue_to_storagekey(db_values, storage_keys);
+        std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, storage_keys);
+        Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
+        return StorageFilter(storage_, output, op_);
+    }    
+    
+    StorageFilter StorageFilter::contains(const std::string& indx,
+                                          const std::string& term) const
+    {
+        Log::debug.log("Contains on [%s] with [%s]") << indx << term << Log::end;
+        std::map<std::string, TextSearcher *>::const_iterator index = storage_->fields_text_.find(indx);
         
-        switch (_mode)
+        tokyo::Searcher::set_key_t searcher_values;
+        if (storage_->fields_text_.end() != index)
         {
-            case set::k_intersection:
-                intersect_keys(searcher_values);
-                break;
-            case set::k_union:
-                union_keys(searcher_values);
-                break;
-            case set::k_complement:
-                break;
-            case set::k_symmetric_difference:
-                break;
+            index->second->search(term, searcher_values);
         }
-        return *this;
+        else
+        {
+            return *this;
+        }
+        
+        std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, searcher_values);
+        Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
+        return StorageFilter(storage_, output, op_);
+    }
+    
+    StorageFilter StorageFilter::tagged(const std::string& indx,
+                                         const std::string& word) const
+    {
+        Log::debug.log("Tagged on [%s] with [%s]") << indx << word << Log::end;
+        std::map<std::string, TagSearcher *>::const_iterator index = storage_->fields_tag_.find(indx);
+        
+        tokyo::Searcher::set_key_t searcher_values;
+        if (storage_->fields_tag_.end() != index)
+        {
+            index->second->search(word, searcher_values);
+        }
+        else
+        {
+            return *this;
+        }
+        
+        std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, searcher_values);
+        Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
+        return StorageFilter(storage_, output, op_);
+    }
+    
+    BSONNode StorageFilter::doc_at(unsigned long long pkey) const
+    {
+        return storage_->at(pkey);
     }
     
     //=====================================================================
