@@ -376,15 +376,13 @@ namespace logjam {
     }
     
     //=====================================================================
-    // Storage Filter Lua integration Methods.
+    // Storage Lua integration Methods.
     //=====================================================================
     const char LuaStorage::LUNAR_CLASS_NAME[] = "Storage";
     Lunar<LuaStorage>::RegType LuaStorage::LUNAR_METHODS[] = {
     LUNAR_MEMBER_METHOD(LuaStorage, all),
     LUNAR_MEMBER_METHOD(LuaStorage, none),
-    LUNAR_MEMBER_METHOD(LuaStorage, filter),
-    LUNAR_MEMBER_METHOD(LuaStorage, search),
-    LUNAR_MEMBER_METHOD(LuaStorage, tagged),
+    LUNAR_MEMBER_METHOD(LuaStorage, at),
     LUNAR_MEMBER_METHOD(LuaStorage, place),
     LUNAR_MEMBER_METHOD(LuaStorage, remove),
     {0, 0}
@@ -412,45 +410,13 @@ namespace logjam {
         return 1;
     }
     
-    // XXX make more intelligent about the value types.
-    int LuaStorage::filter(lua_State *L) {
-        std::string field(lua_to_string(L, -2));
-        if(lua_isstring(L, -1)) {
-            std::string val(lua_to_string(L, -1));
-            lj::StorageFilter *ptr = new lj::StorageFilter(_storage->refine(field, val.c_str(), val.size()));
-            Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
-        } else {
-            LuaBSONNode *n = Lunar<LuaBSONNode>::check(L, -1);
-            char *bson = n->real_node().bson();
-            lj::StorageFilter *ptr = NULL;
-            if(n->real_node().quotable()) {
-                ptr = new lj::StorageFilter(_storage->refine(field, bson + 4, n->real_node().size() - 5));
-            } else {
-                ptr = new lj::StorageFilter(_storage->refine(field, bson, n->real_node().size()));
-            }
-            Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
-        }
-        return 1;
-    }
-    
-    // XXX make more intelligent about the value types.
-    int LuaStorage::search(lua_State *L) {
-        std::string field(lua_to_string(L, -2));
-        std::string val(lua_to_string(L, -1));
-        lj::StorageFilter *ptr = new lj::StorageFilter(_storage->tagged(field, val));
+    int LuaStorage::at(lua_State* L)
+    {
+        lj::StorageFilter* ptr = new lj::StorageFilter(_storage->at(luaL_checkint(L, -1)));
         Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
         return 1;
     }
-    
-    // XXX make more intelligent about the value types.
-    int LuaStorage::tagged(lua_State *L) {
-        std::string field(lua_to_string(L, -2));
-        std::string val(lua_to_string(L, -1));
-        lj::StorageFilter *ptr = new lj::StorageFilter(_storage->tagged(field, val));
-        Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
-        return 1;
-    }
-    
+        
     int LuaStorage::place(lua_State *L) {
         LuaBSONNode *ptr = Lunar<LuaBSONNode>::check(L, -1);
         try {

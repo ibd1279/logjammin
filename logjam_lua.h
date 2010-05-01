@@ -120,9 +120,7 @@ namespace logjam {
         ~LuaStorage();
         int all(lua_State *L);
         int none(lua_State *L);
-        int filter(lua_State *L);
-        int search(lua_State *L);
-        int tagged(lua_State *L);
+        int at(lua_State *L);
         int place(lua_State *L);
         int remove(lua_State *L);
         inline lj::Storage &real_storage() { return *_storage; }

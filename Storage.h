@@ -77,6 +77,7 @@ namespace lj
      \author Jason Watson
      \version 1.0
      \date April 19, 2010
+     \sa lj::Storage
      */
     class StorageFilter {
     public:
@@ -342,15 +343,27 @@ namespace lj
         //! Mode for performing key evaluations.
         set::Operation op_;
         
-        //! Internal method to hide some logic for the template code below.
+        //! Internal method to hide some logic for the template code above.
         BSONNode doc_at(unsigned long long pkey) const;
     };
     
     //! Storage Engine based on tokyo cabinet database libraries.
     /*!
+     \par
+     The storage engine represents a collection of indicies and a main document
+     store.  When documents are placed into the storage engine, it indexes the
+     document based upon a configuration.  Those configured indicies can be
+     used to discover a document through the Record_set class.
+     \par
+     The Storage class loads configuration information from the DBDIR macro.
+     The value of this macro can be set during build configuration:
+     \code
+     ./waf configure --dbdir=
+     \endcode.
      \author Jason Watson
      \version 1.0
      \date April 19, 2010
+     \sa lj::Record_set
      */
     class Storage {
         friend class StorageFilter;
@@ -359,35 +372,28 @@ namespace lj
         Storage(const std::string &dir);
         
         //! Destructor
-        virtual ~Storage();
+        ~Storage();
         
         //! Get the document stored for the key.
-        virtual BSONNode at(const unsigned long long key) const;
+        inline StorageFilter at(const unsigned long long key) const
+        {
+            return none().include_key(key);
+        }
         
         //! Get a set of all keys.
-        virtual StorageFilter all() const;
+        StorageFilter all() const;
         
         //! Get a set of no keys.
-        virtual StorageFilter none() const;
-        
-        //! Get a set of keys filtered by the provided value.
-        virtual StorageFilter refine(const std::string &indx,
-                                     const void * const val,
-                                     const size_t val_len) const;
-        
-        //! Get a set of keys filtered by the full text search.
-        virtual StorageFilter search(const std::string &indx,
-                                     const std::string &terms) const;
-        
-        //! Get a set of keys filtered by the word search.
-        virtual StorageFilter tagged(const std::string &indx,
-                                     const std::string &word) const;
+        inline StorageFilter none() const
+        {
+            return StorageFilter(this, new std::set<unsigned long long>(), set::k_union);
+        }
         
         //! place a document in storage.
-        virtual Storage &place(BSONNode &value);
+        Storage& place(BSONNode &value);
         
         //! remove a document from storage.
-        virtual Storage &remove(BSONNode &value);
+        Storage& remove(BSONNode &value);
         
         //! Begin a transaction.
         void begin_transaction();
@@ -423,13 +429,13 @@ namespace lj
         std::string directory_;
         
         //! Remove a record from the indexed files.
-        virtual Storage &deindex(const unsigned long long key);
+        Storage &deindex(const unsigned long long key);
         
         //! Add a record to the indexed files.
-        virtual Storage &reindex(const unsigned long long key);
+        Storage &reindex(const unsigned long long key);
         
         //! Check that an existing record does not exist for a given value.
-        virtual Storage &check_unique(const BSONNode &n, const std::string &name, tokyo::DB *index);
+        Storage &check_unique(const BSONNode &n, const std::string &name, tokyo::DB *index);
         
         //! Hidden copy constructor
         /*!

@@ -303,7 +303,14 @@ namespace lj {
     
     BSONNode StorageFilter::doc_at(unsigned long long pkey) const
     {
-        return storage_->at(pkey);
+        tokyo::DB::value_t p = storage_->db_->at(&pkey, sizeof(unsigned long long));
+        if (!p.first)
+        {
+            return BSONNode();
+        }
+        BSONNode n(DOC_NODE, static_cast<char *>(p.first));
+        free(p.first);
+        return n;
     }
     
     //=====================================================================
@@ -451,52 +458,55 @@ namespace lj {
     }
     
     Storage::~Storage() {
-        Log::info.log("Closing tag indicies under [%s].") << directory_ << Log::end;
-        for(std::map<std::string, TagSearcher *>::const_iterator iter = fields_tag_.begin();
-            iter != fields_tag_.end();
-            ++iter) {
-            Log::info.log("Closing tag index for field [%s].") << iter->first << Log::end;
-            delete iter->second;
-        }
-        Log::info.log("Closing text indicies under [%s].") << directory_ << Log::end;
-        for(std::map<std::string, TextSearcher *>::const_iterator iter = fields_text_.begin();
-            iter != fields_text_.end();
-            ++iter) {
-            Log::info.log("Closing text index for field [%s].") << iter->first << Log::end;
-            delete iter->second;
-        }
-        
-        Log::info.log("Closing hash indicies under [%s].") << directory_ << Log::end;
-        for (std::map<std::string, Hash_db*>::const_iterator iter = fields_hash_.begin();
-             fields_hash_.end() != iter;
-             ++iter)
+        if (fields_tag_.size())
         {
-            Log::info.log("Closing hash index for field [%s].") << iter->first << Log::end;
-            delete iter->second;
+            Log::info.log("Closing tag indicies under [%s].") << directory_ << Log::end;
+            for (std::map<std::string, TagSearcher *>::const_iterator iter = fields_tag_.begin();
+                 fields_tag_.end() != iter;
+                 ++iter)
+            {
+                Log::info.log("Closing tag index for field [%s].") << iter->first << Log::end;
+                delete iter->second;
+            }
         }
         
-        Log::info.log("Closing tree indicies under [%s].") << directory_ << Log::end;
-        for(std::map<std::string, TreeDB *>::const_iterator iter = fields_tree_.begin();
-            iter != fields_tree_.end();
-            ++iter) {
-            Log::info.log("Closing tree index for field [%s].") << iter->first << Log::end;
-            delete iter->second;
+        if (fields_text_.size())
+        {
+            Log::info.log("Closing text indicies under [%s].") << directory_ << Log::end;
+            for (std::map<std::string, TextSearcher *>::const_iterator iter = fields_text_.begin();
+                 fields_text_.end() != iter;
+                 ++iter)
+            {
+                Log::info.log("Closing text index for field [%s].") << iter->first << Log::end;
+                delete iter->second;
+            }
+        }
+
+        if (fields_hash_.size())
+        {
+            Log::info.log("Closing hash indicies under [%s].") << directory_ << Log::end;
+            for (std::map<std::string, Hash_db*>::const_iterator iter = fields_hash_.begin();
+                 fields_hash_.end() != iter;
+                 ++iter)
+            {
+                Log::info.log("Closing hash index for field [%s].") << iter->first << Log::end;
+                delete iter->second;
+            }
+        }
+        
+        if (fields_tree_.size())
+        {
+            Log::info.log("Closing tree indicies under [%s].") << directory_ << Log::end;
+            for(std::map<std::string, TreeDB *>::const_iterator iter = fields_tree_.begin();
+                iter != fields_tree_.end();
+                ++iter) {
+                Log::info.log("Closing tree index for field [%s].") << iter->first << Log::end;
+                delete iter->second;
+            }
         }
         
         Log::info.log("Closing database for field [%s].") << directory_ << Log::end;
         delete db_;
-    }
-    
-    BSONNode Storage::at(const unsigned long long key) const
-    {
-        tokyo::DB::value_t p = db_->at(&key, sizeof(unsigned long long));
-        if (!p.first)
-        {
-            return BSONNode();
-        }
-        BSONNode n(DOC_NODE, (char *)p.first);
-        free(p.first);
-        return n;
     }
     
     StorageFilter Storage::all() const
@@ -518,71 +528,7 @@ namespace lj {
         }
         return StorageFilter(this, std::set<unsigned long long>(), lj::set::k_intersection);
     }
-    
-    StorageFilter Storage::none() const
-    {
-        return StorageFilter(this, std::set<unsigned long long>(), lj::set::k_union);
-    }
-    
-    StorageFilter Storage::refine(const std::string &indx,
-                                  const void * const val,
-                                  const size_t val_len) const
-    {
-        Log::debug.log("Filtering on [%s] with [%d][%s].") << indx << val_len << ((char *)val) << Log::end;
-        std::map<std::string, TreeDB*>::const_iterator tree_index = fields_tree_.find(indx);
-        std::map<std::string, Hash_db*>::const_iterator hash_index = fields_hash_.find(indx);
         
-        tokyo::DB::list_value_t db_values;
-        if (fields_tree_.end() != tree_index)
-        {
-            tree_index->second->at_together(val, val_len, db_values);
-        }
-        else if (fields_hash_.end() != hash_index)
-        {
-            db_values.push_back(hash_index->second->at(val, val_len));
-        }
-        else
-        {
-            return none();
-        }
-        
-        std::set<unsigned long long> storage_keys;
-        dbvalue_to_storagekey(db_values, storage_keys);
-        return StorageFilter(this, storage_keys, lj::set::k_intersection);
-    }
-    
-    StorageFilter Storage::search(const std::string &indx,
-                                  const std::string &terms) const {
-        Log::debug.log("Searching on [%s] with [%s]") << indx << terms << Log::end;
-        std::map<std::string, TextSearcher *>::const_iterator index = fields_text_.find(indx);
-        if(index == fields_text_.end()) {
-            Log::warning.log("Request for unknown text index [%s] from [%s].") << indx << directory_ << Log::end;
-            return none();
-        }
-        
-        TextSearcher *searcher = index->second;
-        tokyo::Searcher::set_key_t searcher_values;
-        searcher->search(terms, searcher_values);
-        
-        return StorageFilter(this, searcher_values, lj::set::k_intersection);
-    }
-    
-    StorageFilter Storage::tagged(const std::string &indx,
-                                  const std::string &word) const {
-        Log::debug.log("Searching on [%s] with [%s]") << indx << word << Log::end;
-        std::map<std::string, TagSearcher *>::const_iterator index = fields_tag_.find(indx);
-        if(index == fields_tag_.end()) {
-            Log::warning.log("Request for unknown tag index [%s] from [%s].") << indx << directory_ << Log::end;
-            return none();
-        }
-        
-        TagSearcher *searcher = index->second;
-        tokyo::Searcher::set_key_t searcher_values;
-        searcher->search(word, searcher_values);
-        
-        return StorageFilter(this, searcher_values, lj::set::k_intersection);
-    }
-    
     Storage &Storage::place(BSONNode &value)
     {
         unsigned long long key = value.nav("__key").to_l();
@@ -713,7 +659,8 @@ namespace lj {
         }
         
         Log::debug.log("Remove [%d] from indicies.") << key << Log::end;
-        BSONNode original = at(key);
+        BSONNode original;
+        at(key).first<BSONNode>(original);
         
         // Remove from tree index entries.
         for (std::map<std::string, TreeDB *>::const_iterator iter = fields_tree_.begin();
@@ -814,7 +761,8 @@ namespace lj {
         }
         
         Log::debug.log("Place [%d] in indicies.") << key << Log::end;
-        BSONNode original = at(key);
+        BSONNode original;
+        at(key).first(original);
         
         // Insert into tree index.
         for (std::map<std::string, TreeDB*>::const_iterator iter = fields_tree_.begin();
