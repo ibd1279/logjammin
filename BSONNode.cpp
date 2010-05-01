@@ -83,23 +83,23 @@ namespace lj {
                 node.child(name, BSONNode(static_cast<Bson_node_type>(t), ptr));
                 sz = 0;
                 switch(static_cast<Bson_node_type>(t)) {
-                    case STRING_NODE:
+                    case k_bson_string:
                         memcpy(&sz, ptr, 4);
                         sz += 4;
                         break;
-                    case INT32_NODE:
+                    case k_bson_int32:
                         sz = 4;
                         break;
-                    case DOUBLE_NODE:
-                    case INT64_NODE:
-                    case TIMESTAMP_NODE:
+                    case k_bson_double:
+                    case k_bson_int64:
+                    case k_bson_timestamp:
                         sz = 8;
                         break;
-                    case BOOL_NODE:
+                    case k_bson_boolean:
                         sz = 1;
                         break;
-                    case DOC_NODE:
-                    case ARRAY_NODE:
+                    case k_bson_document:
+                    case k_bson_array:
                         memcpy(&sz, ptr, 4);
                         break;
                     default:
@@ -114,10 +114,10 @@ namespace lj {
     // BSONNode ctor/dtor
     //=====================================================================
     
-    BSONNode::BSONNode() : _children(), _value(NULL), _type(DOC_NODE) {
+    BSONNode::BSONNode() : _children(), _value(NULL), _type(k_bson_document) {
     }
     
-    BSONNode::BSONNode(const Bson_node_type t, const char *v) : _children(), _value(NULL), _type(DOC_NODE) {
+    BSONNode::BSONNode(const Bson_node_type t, const char *v) : _children(), _value(NULL), _type(k_bson_document) {
         set_value(t, v);
     }
     
@@ -160,30 +160,30 @@ namespace lj {
         if(v) {
             long long sz = 0;
             switch(_type) {
-                case STRING_NODE:
+                case k_bson_string:
                     memcpy(&sz, v, 4);
                     _value = new char[sz + 4];
                     memcpy(_value, v, sz + 4);
                     break;
-                case INT32_NODE:
+                case k_bson_int32:
                     _value = new char[4];
                     memcpy(_value, v, 4);
                     break;
-                case DOUBLE_NODE:
-                case INT64_NODE:
-                case TIMESTAMP_NODE:
+                case k_bson_double:
+                case k_bson_int64:
+                case k_bson_timestamp:
                     _value = new char[8];
                     memcpy(_value, v, 8);
                     break;
-                case BOOL_NODE:
+                case k_bson_boolean:
                     _value = new char[1];
                     memcpy(_value, v, 1);
                     break;
-                case NULL_NODE:
+                case k_bson_null:
                     _value = NULL;
                     break;
-                case DOC_NODE:
-                case ARRAY_NODE:
+                case k_bson_document:
+                case k_bson_array:
                     memcpy(&sz, v, 4);
                     subdocument(*this, v);
                     break;
@@ -204,7 +204,7 @@ namespace lj {
         char *ptr = new char[sz + 4];;
         memcpy(ptr, &sz, 4);
         memcpy(ptr + 4, v.c_str(), sz);
-        set_value(STRING_NODE, ptr);
+        set_value(k_bson_string, ptr);
         delete[] ptr;
         return *this;
     }
@@ -212,36 +212,36 @@ namespace lj {
     BSONNode &BSONNode::value(const int v) {
         char ptr[4];
         memcpy(ptr, &v, 4);
-        set_value(INT32_NODE, ptr);
+        set_value(k_bson_int32, ptr);
         return *this;
     }
     
     BSONNode &BSONNode::value(const long long v) {
         char ptr[8];
         memcpy(ptr, &v, 8);
-        set_value(INT64_NODE, ptr);
+        set_value(k_bson_int64, ptr);
         return *this;
     }
     
     BSONNode &BSONNode::value(const double v) {
         char ptr[8];
         memcpy(ptr, &v, 8);
-        set_value(DOUBLE_NODE, ptr);
+        set_value(k_bson_double, ptr);
         return *this;
     }
     BSONNode &BSONNode::value(const bool v) {
         char ptr[1];
         memcpy(ptr, &v, 1);
-        set_value(BOOL_NODE, ptr);
+        set_value(k_bson_boolean, ptr);
         return *this;
     }
     BSONNode &BSONNode::nullify() {
-        set_value(NULL_NODE, NULL);
+        set_value(k_bson_null, NULL);
         return *this;
     }
 
     BSONNode &BSONNode::destroy() {
-        set_value(DOC_NODE, NULL);
+        set_value(k_bson_document, NULL);
         return *this;
     }
     
@@ -277,29 +277,29 @@ namespace lj {
         double d = 0.0;
         std::ostringstream buf;
         switch(type()) {
-            case STRING_NODE:
+            case k_bson_string:
                 memcpy(&l, _value, 4);
                 buf << "(4-" << l << ")" << "(" << l << ")" << (_value + 4);
                 return buf.str();
-            case INT32_NODE:
+            case k_bson_int32:
                 memcpy(&l, _value, 4);
                 buf << "(4)" << l;
                 return buf.str();
-            case DOUBLE_NODE:
+            case k_bson_double:
                 memcpy(&d, _value, 8);
                 buf << "(8)" << d;
                 return buf.str();
-            case INT64_NODE:
-            case TIMESTAMP_NODE:
+            case k_bson_int64:
+            case k_bson_timestamp:
                 memcpy(&l, _value, 8);
                 buf << "(8)" << l;
                 return buf.str();
-            case BOOL_NODE:
+            case k_bson_boolean:
                 memcpy(&l, _value, 1);
                 buf << "(1)" << ((bool)l);
                 return buf.str();
-            case DOC_NODE:
-            case ARRAY_NODE:
+            case k_bson_document:
+            case k_bson_array:
                 if(!_children.size())
                     return "{(4-0)(1-0)}";
                 buf << "{(4-" << size() << ")";
@@ -327,30 +327,30 @@ namespace lj {
         double d = 0.0;
         std::ostringstream buf;
         switch(type()) {
-            case STRING_NODE:
+            case k_bson_string:
                 memcpy(&l, _value, 4);
                 return std::string(_value + 4);
-            case INT32_NODE:
+            case k_bson_int32:
                 memcpy(&l, _value, 4);
                 buf << l;
                 return buf.str();
-            case DOUBLE_NODE:
+            case k_bson_double:
                 memcpy(&d, _value, 8);
                 buf << d;
                 return buf.str();
-            case INT64_NODE:
-            case TIMESTAMP_NODE:
+            case k_bson_int64:
+            case k_bson_timestamp:
                 memcpy(&l, _value, 8);
                 buf << l;
                 return buf.str();
-            case BOOL_NODE:
+            case k_bson_boolean:
                 memcpy(&l, _value, 1);
                 buf << ((bool)l);
                 return buf.str();
-            case NULL_NODE:
+            case k_bson_null:
                 return std::string("null");
-            case DOC_NODE:
-            case ARRAY_NODE:
+            case k_bson_document:
+            case k_bson_array:
                 if(!_children.size())
                     return "{}";
                 buf << "{";
@@ -360,10 +360,10 @@ namespace lj {
                     if(!iter->second->exists())
                         continue;
                     buf << "\"" << escape(iter->first) << "\":";
-                    if(iter->second->type() == STRING_NODE)
+                    if(iter->second->type() == k_bson_string)
                         buf << "\"";
                     buf << iter->second->to_s();
-                    if(iter->second->type() == STRING_NODE)
+                    if(iter->second->type() == k_bson_string)
                         buf << "\"";
                     buf << ",";
                 }
@@ -380,30 +380,30 @@ namespace lj {
         std::ostringstream buf;
         std::string indent;
         switch(type()) {
-            case STRING_NODE:
+            case k_bson_string:
                 memcpy(&l, _value, 4);
                 return std::string(_value + 4);
-            case INT32_NODE:
+            case k_bson_int32:
                 memcpy(&l, _value, 4);
                 buf << l;
                 return buf.str();
-            case DOUBLE_NODE:
+            case k_bson_double:
                 memcpy(&d, _value, 8);
                 buf << d;
                 return buf.str();
-            case INT64_NODE:
-            case TIMESTAMP_NODE:
+            case k_bson_int64:
+            case k_bson_timestamp:
                 memcpy(&l, _value, 8);
                 buf << l;
                 return buf.str();
-            case BOOL_NODE:
+            case k_bson_boolean:
                 memcpy(&l, _value, 1);
                 buf << ((bool)l);
                 return buf.str();
-            case NULL_NODE:
+            case k_bson_null:
                 return std::string("null");
-            case DOC_NODE:
-            case ARRAY_NODE:
+            case k_bson_document:
+            case k_bson_array:
                 if(!_children.size())
                     return "{}";
                 buf << "{\n";
@@ -415,10 +415,10 @@ namespace lj {
                     if(!iter->second->exists())
                         continue;
                     buf << indent << "  \"" << escape(iter->first) << "\":";
-                    if(iter->second->type() == STRING_NODE)
+                    if(iter->second->type() == k_bson_string)
                         buf << "\"";
                     buf << iter->second->to_pretty_s(lvl + 1);
-                    if(iter->second->type() == STRING_NODE)
+                    if(iter->second->type() == k_bson_string)
                         buf << "\"";
                     buf << ",\n";
                 }
@@ -432,8 +432,8 @@ namespace lj {
     std::set<std::string> BSONNode::to_set() const {
         std::set<std::string> f;
         switch(type()) {
-            case DOC_NODE:
-            case ARRAY_NODE:
+            case k_bson_document:
+            case k_bson_array:
                 for(childmap_t::const_iterator iter = _children.begin();
                     iter != _children.end();
                     ++iter) {
@@ -452,8 +452,8 @@ namespace lj {
     std::list<std::string> BSONNode::to_list() const {
         std::list<std::string> f;
         switch(type()) {
-            case DOC_NODE:
-            case ARRAY_NODE:
+            case k_bson_document:
+            case k_bson_array:
                 for(childmap_t::const_iterator iter = _children.begin();
                     iter != _children.end();
                     ++iter) {
@@ -473,19 +473,19 @@ namespace lj {
         long l = 0;
         double d = 0.0;
         switch(type()) {
-            case STRING_NODE:
+            case k_bson_string:
                 return atoi(_value + 4);
-            case INT32_NODE:
+            case k_bson_int32:
                 memcpy(&l, _value, 4);
                 return (int)l;
-            case DOUBLE_NODE:
+            case k_bson_double:
                 memcpy(&d, _value, 8);
                 return (int)d;
-            case INT64_NODE:
-            case TIMESTAMP_NODE:
+            case k_bson_int64:
+            case k_bson_timestamp:
                 memcpy(&l, _value, 8);
                 return (int)l;
-            case BOOL_NODE:
+            case k_bson_boolean:
                 memcpy(&l, _value, 1);
                 return (int)l;
             default:
@@ -498,19 +498,19 @@ namespace lj {
         long l = 0;
         double d = 0.0;
         switch(type()) {
-            case STRING_NODE:
+            case k_bson_string:
                 return atol(_value + 4);
-            case INT32_NODE:
+            case k_bson_int32:
                 memcpy(&l, _value, 4);
                 return l;
-            case DOUBLE_NODE:
+            case k_bson_double:
                 memcpy(&d, _value, 8);
                 return (long long)d;
-            case INT64_NODE:
-            case TIMESTAMP_NODE:
+            case k_bson_int64:
+            case k_bson_timestamp:
                 memcpy(&l, _value, 8);
                 return l;
-            case BOOL_NODE:
+            case k_bson_boolean:
                 memcpy(&l, _value, 1);
                 return l;
             default:
@@ -524,7 +524,7 @@ namespace lj {
         double d = 0.0;
         char *s = _value + 4;
         switch(type()) {
-            case STRING_NODE:
+            case k_bson_string:
                 if(!_value) return false;
                 if(!s[0]) return false;
                 if(s[0] == '0' && !s[1]) return false;
@@ -535,17 +535,17 @@ namespace lj {
                    toupper(s[2]) == 'U' &&
                    toupper(s[3]) == 'E')
                     return true;
-            case INT32_NODE:
+            case k_bson_int32:
                 memcpy(&l, _value, 4);
                 return l;
-            case DOUBLE_NODE:
+            case k_bson_double:
                 memcpy(&d, _value, 8);
                 return (long)d;
-            case INT64_NODE:
-            case TIMESTAMP_NODE:
+            case k_bson_int64:
+            case k_bson_timestamp:
                 memcpy(&l, _value, 8);
                 return l;
-            case BOOL_NODE:
+            case k_bson_boolean:
                 memcpy(&l, _value, 1);
                 return l;
             default:
@@ -558,19 +558,19 @@ namespace lj {
         long l = 0;
         double d = 0.0;
         switch(type()) {
-            case STRING_NODE:
+            case k_bson_string:
                 return atof(_value + 4);
-            case INT32_NODE:
+            case k_bson_int32:
                 memcpy(&l, _value, 4);
                 return (double)l;
-            case DOUBLE_NODE:
+            case k_bson_double:
                 memcpy(&d, _value, 8);
                 return d;
-            case INT64_NODE:
-            case TIMESTAMP_NODE:
+            case k_bson_int64:
+            case k_bson_timestamp:
                 memcpy(&l, _value, 8);
                 return (double)l;
-            case BOOL_NODE:
+            case k_bson_boolean:
                 memcpy(&l, _value, 1);
                 return (double)l;
             default:
@@ -588,8 +588,8 @@ namespace lj {
     size_t BSONNode::copy_to_bson(char *ptr) const {
         size_t sz = size();
         switch(type()) {
-            case DOC_NODE:
-            case ARRAY_NODE:
+            case k_bson_document:
+            case k_bson_array:
                 sz = size();
                 memcpy(ptr, &sz, 4);
                 ptr += 4;
@@ -689,23 +689,23 @@ namespace lj {
     
     std::string BSONNode::type_string() const {
         switch(_type) {
-            case STRING_NODE:
+            case k_bson_string:
                 return "string";
-            case INT32_NODE:
+            case k_bson_int32:
                 return "int32";
-            case DOUBLE_NODE:
+            case k_bson_double:
                 return "double";
-            case INT64_NODE:
+            case k_bson_int64:
                 return "int64";
-            case TIMESTAMP_NODE:
+            case k_bson_timestamp:
                 return "timestamp";
-            case BOOL_NODE:
+            case k_bson_boolean:
                 return "bool";
-            case NULL_NODE:
+            case k_bson_null:
                 return "null";
-            case DOC_NODE:
+            case k_bson_document:
                 return "document";
-            case ARRAY_NODE:
+            case k_bson_array:
                 return "array";
             default:
                 break;
@@ -718,36 +718,36 @@ namespace lj {
     }
     
     bool BSONNode::nested() const {
-        return (_type == DOC_NODE || _type == ARRAY_NODE);
+        return (_type == k_bson_document || _type == k_bson_array);
     }
     
     bool BSONNode::quotable() const {
-        return (_type == STRING_NODE);
+        return (_type == k_bson_string);
     }
     
     size_t BSONNode::size() const {
         long sz = 0;
         switch(_type) {
-            case STRING_NODE:
+            case k_bson_string:
                 memcpy(&sz, _value, 4);
                 sz += 4;
                 break;
-            case INT32_NODE:
+            case k_bson_int32:
                 sz = 4;
                 break;
-            case DOUBLE_NODE:
-            case INT64_NODE:
-            case TIMESTAMP_NODE:
+            case k_bson_double:
+            case k_bson_int64:
+            case k_bson_timestamp:
                 sz = 8;
                 break;
-            case BOOL_NODE:
+            case k_bson_boolean:
                 sz = 1;
                 break;
-            case NULL_NODE:
+            case k_bson_null:
                 sz = 0;
                 break;
-            case DOC_NODE:
-            case ARRAY_NODE:
+            case k_bson_document:
+            case k_bson_array:
                 sz += 5;
                 for(std::map<std::string, BSONNode *>::const_iterator iter = _children.begin();
                     iter != _children.end();
@@ -777,7 +777,7 @@ namespace lj {
         char *ptr = new char[sz];
         memcpy(ptr, &sz, 4);
         f.read(ptr + 4, sz - 4);
-        set_value(DOC_NODE, ptr);
+        set_value(k_bson_document, ptr);
         f.close();
         delete[] ptr;
         return *this;

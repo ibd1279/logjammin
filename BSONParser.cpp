@@ -47,20 +47,20 @@ namespace lj {
         };
         size_t field_length(Bson_node_type t) {
             switch(t) {
-                case INT32_NODE:
+                case k_bson_int32:
                     return 4;
-                case INT64_NODE:
-                case TIMESTAMP_NODE:
-                case DOUBLE_NODE:
+                case k_bson_int64:
+                case k_bson_timestamp:
+                case k_bson_double:
                     return 8;
-                case STRING_NODE:
+                case k_bson_string:
                     return 5;
-                case DOC_NODE:
-                case ARRAY_NODE:
+                case k_bson_document:
+                case k_bson_array:
                     return 5;
-                case BOOL_NODE:
+                case k_bson_boolean:
                     return 1;
-                case NULL_NODE:
+                case k_bson_null:
                     return 0;
                 default:
                     return -1;
@@ -74,7 +74,7 @@ namespace lj {
         delete[] buffer;
     }
     void StreamingBSONParser::parse(std::istream is) {
-        Bson_node_type t = DOC_NODE;
+        Bson_node_type t = k_bson_document;
         WhatShouldThisBe looking_at = DOC_SIZE;
         std::list<long long> doc_sizes;
         size_t sz = 0;
@@ -147,31 +147,31 @@ namespace lj {
                         break;
                     case FIELD_VALUE:
                         switch(t) {
-                            case BOOL_NODE:
+                            case k_bson_boolean:
                                 bytes(buffer + curr, 1);
                                 curr++;
                                 docsz--;
                                 looking_at = FIELD_TYPE;
                                 break;
-                            case INT32_NODE:
+                            case k_bson_int32:
                                 bytes(buffer + curr, 4);
                                 curr += 4;
                                 docsz -= 4;
                                 looking_at = FIELD_TYPE;
                                 break;
-                            case TIMESTAMP_NODE:
-                            case DOUBLE_NODE:
-                            case INT64_NODE:
+                            case k_bson_timestamp:
+                            case k_bson_double:
+                            case k_bson_int64:
                                 bytes(buffer + curr, 8);
                                 curr += 8;
                                 docsz -= 8;
                                 looking_at = FIELD_TYPE;
                                 break;
-                            case NULL_NODE:
+                            case k_bson_null:
                                 bytes(buffer, 0);
                                 looking_at = FIELD_TYPE;
                                 break;
-                            case STRING_NODE:
+                            case k_bson_string:
                                 tmp = 0;
                                 memcpy(&tmp, buffer + curr, 4);
                                 bytes(buffer + curr, 4);
@@ -184,8 +184,8 @@ namespace lj {
 
                                 looking_at = STRING_END;
                                 break;
-                            case DOC_NODE:
-                            case ARRAY_NODE:
+                            case k_bson_document:
+                            case k_bson_array:
                                 tmp = 0;
                                 memcpy(&tmp, buffer + curr, 4);
                                 bytes(buffer + curr, 4);

@@ -345,6 +345,12 @@ namespace lj
         
         //! Internal method to hide some logic for the template code above.
         BSONNode doc_at(unsigned long long pkey) const;
+        
+        //! Hidden assignment operator.
+        /*!
+         \param o Copy from object.
+         */
+        Record_set& operator=(const Record_set& o);
     };
     
     //! Storage Engine based on tokyo cabinet database libraries.

@@ -232,20 +232,20 @@ namespace logjam {
     
     int LuaBSONNode::get(lua_State *L) {
         switch(_node->type()) {
-            case lj::INT32_NODE:
-            case lj::INT64_NODE:
-            case lj::TIMESTAMP_NODE:
+            case lj::k_bson_int32:
+            case lj::k_bson_int64:
+            case lj::k_bson_timestamp:
                 lua_pushinteger(L, _node->to_l());
                 break;
-            case lj::DOC_NODE:
-            case lj::ARRAY_NODE:
-            case lj::STRING_NODE:
+            case lj::k_bson_document:
+            case lj::k_bson_array:
+            case lj::k_bson_string:
                 lua_pushstring(L, _node->to_s().c_str());
                 break;
-            case lj::DOUBLE_NODE:
+            case lj::k_bson_double:
                 lua_pushnumber(L, _node->to_d());
                 break;
-            case lj::BOOL_NODE:
+            case lj::k_bson_boolean:
                 lua_pushboolean(L, _node->to_b());
                 break;
             default:

@@ -308,7 +308,7 @@ namespace lj {
         {
             return BSONNode();
         }
-        BSONNode n(DOC_NODE, static_cast<char *>(p.first));
+        BSONNode n(k_bson_document, static_cast<char *>(p.first));
         free(p.first);
         return n;
     }

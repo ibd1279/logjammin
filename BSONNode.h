@@ -43,23 +43,21 @@ namespace lj {
     //! Enumeration of Document Node Types.
     enum Bson_node_type
     {
-        DOUBLE_NODE = 0x01,   //!< Node contains a double value.
-        STRING_NODE = 0x02,   //!< Node contains a string value.
-        DOC_NODE = 0x03,      //!< Node contains a nested document value.
-        ARRAY_NODE = 0x04,    //!< Node contains a nested array value.
-        BINARY_NODE = 0x05,   //!< Node contains a binary value.
-        BOOL_NODE = 0x08,     //!< Node contains a boolean value.
-        DATETIME_NODE = 0x09, //!< Node contains a date/time value.
-        NULL_NODE = 0x0A,     //!< Node contains a null value.
-        JS_NODE = 0x0D,       //!< Node contains a javascript value.
-        INT32_NODE = 0x10,    //!< Node contains a int32 number value.
-        TIMESTAMP_NODE = 0x11,//!< Node contains a timestamp value.
-        INT64_NODE = 0x12,    //!< Node contains a int64 number value.
-        MINKEY_NODE = 0xFF,   //!< Node contains a reserved BSON spec value.
-        MAXKEY_NODE = 0x7F    //!< Node contains a reserved BSON spec value.
+        k_bson_double = 0x01,    //!< Node contains a double value.
+        k_bson_string = 0x02,    //!< Node contains a string value.
+        k_bson_document = 0x03,  //!< Node contains a nested document value.
+        k_bson_array = 0x04,     //!< Node contains a nested array value.
+        k_bson_binary = 0x05,    //!< Node contains a binary value.
+        k_bson_boolean = 0x08,   //!< Node contains a boolean value.
+        k_bson_datetime = 0x09,  //!< Node contains a date/time value.
+        k_bson_null = 0x0A,      //!< Node contains a null value.
+        k_bson_javascript = 0x0D, //!< Node contains a javascript value.
+        k_bson_int32 = 0x10,     //!< Node contains a int32 number value.
+        k_bson_timestamp = 0x11, //!< Node contains a timestamp value.
+        k_bson_int64 = 0x12,     //!< Node contains a int64 number value.
+        k_bson_minkey = 0xFF,    //!< Node contains a reserved BSON spec value.
+        k_bson_maxkey = 0x7F     //!< Node contains a reserved BSON spec value.
     };
-    
-    class BSONNode;
     
     //! Node in a BSON document.
     /*!
