@@ -45,85 +45,86 @@ namespace lj
     class Storage;
     
     /*!
-     \namespace lj::operation
+     \namespace lj::set
      \brief Contains enumeration for Set operations.
      */
-    namespace operation
+    namespace set
     {
         //! Set operation.
-        enum Set
+        enum Operation
         {
             k_intersection,        //!< Similar to an "AND".
             k_union,               //!< Similar to an "OR".
             k_complement,          //!< Similar to a "NOT".
             k_symmetric_difference //!< Similar to a "XOR"
         };
-    }; // operation
-    
-    //! Perform an operation on two sets.
-    /*!
-     \par
-     The provided \c op is performed on the two sets and the result is returned
-     as a pointer to a third set. The operation is performed such that \c a
-     \c op \c b . So keep in mind the commutative properties of the operation
-     you are performing.
-     \param op The operation to perform.
-     \param a The first set.
-     \param b The second set.
-     \return A newly created set.
-     */
-    template<typename T, typename Q>
-    const T *set_operation(const operation::Set op,
-                               const T& a,
-                               const T& b)
-    {
-        const T* small = (a.size() < b.size()) ? &a : &b;
-        const T* big = (a.size() < b.size()) ? &b : &a;
-        T* rs = new std::set<T>();
-        Q inserted_at = rs->begin();
-        switch (op)
+        
+        //! Perform an operation on two sets.
+        /*!
+         \par
+         The provided \c op is performed on the two sets and the result is returned
+         as a pointer to a third set. The operation is performed such that \c a
+         \c op \c b . So keep in mind the commutative properties of the operation
+         you are performing.
+         \param op The operation to perform.
+         \param a The first set.
+         \param b The second set.
+         \return A newly created set.
+         */
+        template<typename T, typename Q>
+        const T *operate(const Operation op,
+                         const T& a,
+                         const T& b)
         {
-            case operation::k_intersection:
-                for (Q iter = small->begin();
-                     small->end() != iter;
-                     ++iter)
-                {
-                    if (big->end() != big->find(*iter))
+            const T* small = (a.size() < b.size()) ? &a : &b;
+            const T* big = (a.size() < b.size()) ? &b : &a;
+            T* rs = new std::set<T>();
+            Q inserted_at = rs->begin();
+            switch (op)
+            {
+                case k_intersection:
+                    for (Q iter = small->begin();
+                         small->end() != iter;
+                         ++iter)
                     {
-                        inserted_at = rs->insert(inserted_at, *iter);
+                        if (big->end() != big->find(*iter))
+                        {
+                            inserted_at = rs->insert(inserted_at, *iter);
+                        }
                     }
-                }
-                break;
-            case operation::k_union:
-                rs->insert(big->begin(), big->end());
-                rs->insert(small->begin(), small->end());
-                break;
-            case operation::k_symmetric_difference:
-                for (Q iter = b.begin();
-                     b.end() != iter;
-                     ++iter)
-                {
-                    if (a.end() == a.find(*iter))
+                    break;
+                case k_union:
+                    rs->insert(big->begin(), big->end());
+                    rs->insert(small->begin(), small->end());
+                    break;
+                case k_symmetric_difference:
+                    for (Q iter = b.begin();
+                         b.end() != iter;
+                         ++iter)
                     {
-                        inserted_at = rs->insert(inserted_at, *iter);
+                        if (a.end() == a.find(*iter))
+                        {
+                            inserted_at = rs->insert(inserted_at, *iter);
+                        }
                     }
-                }
-                inserted_at = rs->begin();
-                // fall through.
-            case operation::k_complement:
-                for (Q iter = a.begin();
-                     a.end() != iter;
-                     ++iter)
-                {
-                    if (b.end() == b.find(*iter))
+                    inserted_at = rs->begin();
+                    // fall through.
+                case k_complement:
+                    for (Q iter = a.begin();
+                         a.end() != iter;
+                         ++iter)
                     {
-                        inserted_at = rs->insert(inserted_at, *iter);
+                        if (b.end() == b.find(*iter))
+                        {
+                            inserted_at = rs->insert(inserted_at, *iter);
+                        }
                     }
-                }
-                break;
+                    break;
+            }
+            return rs;
         }
-        return rs;
-    }
+    }; // set
+    
         
     //! Filter used in Storage queries.
     /*!
@@ -146,25 +147,10 @@ namespace lj
     public:        
         typedef std::set<unsigned long long> Set_type;
         
-        //! Perform an operation between two Record_set objects.
-        /*!
-         \par
-         Perform the provided \c op on the two provided sets and return a third
-         set representing the result. This method is used to perform set
-         algebration operations against the different Record_set objects.
-         \param op The operation to perform.
-         \param a The first set.
-         \param b The second set.
-         \return a new set containing the operation result.
-         */
-        static StorageFilter operate(const operation::Set op,
-                                     const StorageFilter& a,
-                                     const StorageFilter& b);
-        
         //! Create a new Storage Filter.
         StorageFilter(const Storage *storage,
                       const std::set<unsigned long long> &keys,
-                      operation::Set mode,
+                      set::Operation mode,
                       long long offset = -1,
                       long long length = -1);
         
@@ -175,7 +161,7 @@ namespace lj
         ~StorageFilter();
         
         //! Set the storage filtering mode.  Default mode is INTERSECTION.
-        StorageFilter &mode(const operation::Set mode) { _mode = mode; return *this; };
+        StorageFilter &mode(const set::Operation mode) { _mode = mode; return *this; };
         
         //! Check if the filtered set contains a key.
         bool contains(unsigned long long key) const;
@@ -265,7 +251,7 @@ namespace lj
         std::set<unsigned long long> _keys;
         
         //! Mode for performing key evaluations.
-        operation::Set _mode;
+        set::Operation _mode;
         
         //! XXX Not Yet Used - Where to start returning results.
         long long _offset;
