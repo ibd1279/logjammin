@@ -33,7 +33,7 @@
  */
 
 #include "lunar.h"
-#include "BSONNode.h"
+#include "Bson.h"
 #include "Storage.h"
 
 namespace logjam {

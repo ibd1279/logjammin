@@ -36,7 +36,7 @@
 #include <map>
 #include <string>
 #include "Exception.h"
-#include "BSONNode.h"
+#include "Bson.h"
 
 namespace lj {
 

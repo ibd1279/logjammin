@@ -32,7 +32,7 @@
  */
 
 #include "build/default/config.h"
-#include "BSONNode.h"
+#include "Bson.h"
 #include "Exception.h"
 #include <cstring>
 #include <sstream>

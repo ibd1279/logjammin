@@ -52,7 +52,7 @@ def build(ctx):
         features = ['cxx', 'cprogram'],
         source = ['Tokyo.cpp',
                 'Logger.cpp',
-                'BSONNode.cpp',
+                'Bson.cpp',
                 'BSONParser.cpp',
                 'Storage.cpp',
                 'logjam_lua.cpp',
