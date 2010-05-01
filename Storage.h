@@ -344,7 +344,7 @@ namespace lj
         set::Operation op_;
         
         //! Internal method to hide some logic for the template code above.
-        BSONNode doc_at(unsigned long long pkey) const;
+        Bson doc_at(unsigned long long pkey) const;
         
         //! Hidden assignment operator.
         /*!
@@ -444,7 +444,7 @@ namespace lj
          \param value The document to place in storage.
          \return This storage object.
          */
-        Storage& place(BSONNode &value);
+        Storage& place(Bson &value);
         
         //! Remove a document
         /*!
@@ -453,7 +453,7 @@ namespace lj
          \param value The document to remove.
          \return This storage object.
          */
-        Storage& remove(BSONNode &value);
+        Storage& remove(Bson &value);
         
         //! Begin a transaction.
         void begin_transaction();
@@ -495,7 +495,7 @@ namespace lj
         Storage &reindex(const unsigned long long key);
         
         //! Check that an existing record does not exist for a given value.
-        Storage &check_unique(const BSONNode &n, const std::string &name, tokyo::DB *index);
+        Storage &check_unique(const Bson &n, const std::string &name, tokyo::DB *index);
         
         //! Hidden copy constructor
         /*!

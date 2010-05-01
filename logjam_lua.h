@@ -44,10 +44,10 @@ namespace logjam {
     int storage_config_add_index(lua_State *L);
     int storage_config_add_unique(lua_State *L);
     
-    //! Lua BSONNode wrapper.
+    //! Lua Bson wrapper.
     /*!
      \par
-     Known as "BSONNode" in lua.
+     Known as "Bson" in lua.
      \par
      TODO This should be modified to override the __index method on the meta
      table to get children. get() should probably be replaced with type
@@ -58,13 +58,13 @@ namespace logjam {
      */
     class LuaBSONNode {
     private:
-        lj::BSONNode *_node;
+        lj::Bson *_node;
         bool _gc;
     public:
         static const char LUNAR_CLASS_NAME[];
         static Lunar<LuaBSONNode>::RegType LUNAR_METHODS[];
         LuaBSONNode(lua_State *L);
-        LuaBSONNode(lj::BSONNode *ptr, bool gc);
+        LuaBSONNode(lj::Bson *ptr, bool gc);
         ~LuaBSONNode();
         int nav(lua_State *L);
         int set(lua_State *L);
@@ -72,7 +72,7 @@ namespace logjam {
         int save(lua_State *L);
         int load(lua_State *L);
         int __tostring(lua_State *L);
-        inline lj::BSONNode &real_node() { return *_node; }
+        inline lj::Bson &real_node() { return *_node; }
     };
     
     //! Lua Record_set wrapper.

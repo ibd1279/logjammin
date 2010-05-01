@@ -301,14 +301,14 @@ namespace lj {
         return Record_set(storage_, output, op_);
     }
     
-    BSONNode Record_set::doc_at(unsigned long long pkey) const
+    Bson Record_set::doc_at(unsigned long long pkey) const
     {
         tokyo::DB::value_t p = storage_->db_->at(&pkey, sizeof(unsigned long long));
         if (!p.first)
         {
-            return BSONNode();
+            return Bson();
         }
-        BSONNode n(k_bson_document, static_cast<char *>(p.first));
+        Bson n(k_bson_document, static_cast<char *>(p.first));
         free(p.first);
         return n;
     }
@@ -321,7 +321,7 @@ namespace lj {
     {
         void storage_tree_cfg(TCBDB* db, const void* ptr)
         {
-            const BSONNode* bn = static_cast<const BSONNode*>(ptr);
+            const Bson* bn = static_cast<const Bson*>(ptr);
             if (bn->nav("compare").to_s().compare("lex") == 0)
             {
                 tcbdbsetcmpfunc(db, tcbdbcmplexical, NULL);
@@ -343,14 +343,14 @@ namespace lj {
         
         void storage_hash_cfg(TCHDB* db, const void* ptr)
         {
-            //const BSONNode *bn = static_cast<const BSONNode *>(ptr);
+            //const Bson *bn = static_cast<const Bson *>(ptr);
             
             // XXX config other things like compression type.
         }
         
         void storage_text_cfg(TCQDB* db, const void* ptr)
         {
-            //const BSONNode *bn = static_cast<const BSONNode *>(ptr);
+            //const Bson *bn = static_cast<const Bson *>(ptr);
             
             // XXX config other things like compression type.
         }
@@ -358,19 +358,19 @@ namespace lj {
         // XXX Add configuration method for tags
         void storage_tag_cfg(TCWDB* db, const void* ptr)
         {
-            //const BSONNode *bn = static_cast<const BSONNode *>(ptr);
+            //const Bson *bn = static_cast<const Bson *>(ptr);
             
             // XXX config other things like compression type.
         }
         
         template<typename T, typename Q>
         void open_storage_index(const std::string& dir,
-                                const lj::BSONNode::childmap_t& cfg,
+                                const lj::Bson::childmap_t& cfg,
                                 int open_flags,
                                 void (*tune_function)(Q*, const void*),
                                 std::map<std::string, T*>& dest)
         {
-            for (lj::BSONNode::childmap_t::const_iterator iter = cfg.begin();
+            for (lj::Bson::childmap_t::const_iterator iter = cfg.begin();
                  iter != cfg.end();
                  ++iter)
             {
@@ -389,7 +389,7 @@ namespace lj {
             }
         }
         
-        std::pair<int, int> bson_to_storage_delta(const lj::BSONNode* ptr)
+        std::pair<int, int> bson_to_storage_delta(const lj::Bson* ptr)
         {
             if(ptr->quotable())
             {
@@ -408,7 +408,7 @@ namespace lj {
         std::string configfile(directory_ + "/config");
         
         Log::info.log("Loading configuration from [%s].") << configfile << Log::end;
-        BSONNode cfg;
+        Bson cfg;
         cfg.load(configfile);
         Log::info.log("Loaded Settings [%s].") << cfg.to_pretty_s() << Log::end;
         
@@ -448,7 +448,7 @@ namespace lj {
                                                fields_tag_);
         
         Log::info.log("Registering unique fields from [%s].") << directory_ << Log::end;
-        for (BSONNode::childmap_t::const_iterator iter = cfg.nav("main/unique").to_map().begin();
+        for (Bson::childmap_t::const_iterator iter = cfg.nav("main/unique").to_map().begin();
              iter != cfg.nav("main/unique").to_map().end();
              ++iter)
         {
@@ -530,7 +530,7 @@ namespace lj {
         return Record_set(this, std::set<unsigned long long>(), lj::set::k_intersection);
     }
         
-    Storage &Storage::place(BSONNode &value)
+    Storage &Storage::place(Bson &value)
     {
         unsigned long long key = value.nav("__key").to_l();
         unsigned long long original_key = value.nav("__key").to_l();
@@ -559,7 +559,7 @@ namespace lj {
                  fields_hash_.end() != iter;
                  ++iter)
             {
-                BSONNode n(value.nav(iter->first));
+                Bson n(value.nav(iter->first));
                 if (n.exists())
                 {
                     check_unique(n, iter->first, iter->second);
@@ -587,7 +587,7 @@ namespace lj {
         return *this;
     }
     
-    Storage &Storage::remove(BSONNode &value)
+    Storage &Storage::remove(Bson &value)
     {
         unsigned long long key = value.nav("__key").to_l();
         
@@ -612,13 +612,13 @@ namespace lj {
         return *this;
     }
     
-    Storage &Storage::check_unique(const BSONNode &n, const std::string &name, tokyo::DB *index)
+    Storage &Storage::check_unique(const Bson &n, const std::string &name, tokyo::DB *index)
     {
         if (n.nested() &&
             nested_indexing_.end() != nested_indexing_.find(name))
         {
             Log::debug.log("checking children of [%s].") << name << Log::end;
-            for (BSONNode::childmap_t::const_iterator iter = n.to_map().begin();
+            for (Bson::childmap_t::const_iterator iter = n.to_map().begin();
                  iter != n.to_map().end();
                  ++iter)
             {
@@ -660,20 +660,20 @@ namespace lj {
         }
         
         Log::debug.log("Remove [%d] from indicies.") << key << Log::end;
-        BSONNode original;
-        at(key).first<BSONNode>(original);
+        Bson original;
+        at(key).first<Bson>(original);
         
         // Remove from tree index entries.
         for (std::map<std::string, TreeDB *>::const_iterator iter = fields_tree_.begin();
              fields_tree_.end() != iter;
              ++iter)
         {
-            BSONNode n(original.nav(iter->first));
+            Bson n(original.nav(iter->first));
             if (n.exists() && 
                 n.nested() && 
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
-                for (BSONNode::childmap_t::const_iterator iter2 = n.to_map().begin();
+                for (Bson::childmap_t::const_iterator iter2 = n.to_map().begin();
                      iter2 != n.to_map().end();
                      ++iter2)
                 {
@@ -703,12 +703,12 @@ namespace lj {
              fields_hash_.end() != iter;
              ++iter)
         {
-            BSONNode n(original.nav(iter->first));
+            Bson n(original.nav(iter->first));
             if (n.exists() && 
                 n.nested() && 
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
-                for (BSONNode::childmap_t::const_iterator iter2 = n.to_map().begin();
+                for (Bson::childmap_t::const_iterator iter2 = n.to_map().begin();
                      iter2 != n.to_map().end();
                      ++iter2)
                 {
@@ -734,7 +734,7 @@ namespace lj {
              fields_text_.end() != iter;
              ++iter)
         {
-            BSONNode n(original.nav(iter->first));
+            Bson n(original.nav(iter->first));
             if (n.exists())
             {
                 iter->second->remove(key, n.to_s());
@@ -746,7 +746,7 @@ namespace lj {
              fields_tag_.end() != iter;
              ++iter)
         {
-            BSONNode n(original.nav(iter->first));
+            Bson n(original.nav(iter->first));
             if (n.exists())
             {
                 iter->second->remove(key, n.to_set());
@@ -763,7 +763,7 @@ namespace lj {
         }
         
         Log::debug.log("Place [%d] in indicies.") << key << Log::end;
-        BSONNode original;
+        Bson original;
         at(key).first(original);
         
         // Insert into tree index.
@@ -771,12 +771,12 @@ namespace lj {
              fields_tree_.end() != iter;
              ++iter)
         {
-            BSONNode n(original.nav(iter->first));
+            Bson n(original.nav(iter->first));
             if (n.exists() &&
                 n.nested() &&
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
-                for (BSONNode::childmap_t::const_iterator iter2 = n.to_map().begin();
+                for (Bson::childmap_t::const_iterator iter2 = n.to_map().begin();
                      iter2 != n.to_map().end();
                      ++iter2)
                 {
@@ -806,12 +806,12 @@ namespace lj {
              fields_hash_.end() != iter;
              ++iter)
         {
-            BSONNode n(original.nav(iter->first));
+            Bson n(original.nav(iter->first));
             if (n.exists() &&
                 n.nested() &&
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
-                for (BSONNode::childmap_t::const_iterator iter2 = n.to_map().begin();
+                for (Bson::childmap_t::const_iterator iter2 = n.to_map().begin();
                      iter2 != n.to_map().end();
                      ++iter2)
                 {
@@ -841,7 +841,7 @@ namespace lj {
              fields_text_.end() != iter;
              ++iter)
         {
-            BSONNode n(original.nav(iter->first));
+            Bson n(original.nav(iter->first));
             if (n.exists())
             {
                 iter->second->index(key, n.to_s());
@@ -853,7 +853,7 @@ namespace lj {
              fields_tag_.end() != iter;
              ++iter)
         {
-            BSONNode n(original.nav(iter->first));
+            Bson n(original.nav(iter->first));
             if (n.exists())
             {
                 iter->second->index(key, n.to_set());

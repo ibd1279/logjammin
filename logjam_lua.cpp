@@ -75,7 +75,7 @@ namespace logjam {
     
     int storage_config_new(lua_State *L) {
         std::string dbname(lua_to_string(L, -1));
-        lj::BSONNode *ptr = new lj::BSONNode();
+        lj::Bson *ptr = new lj::Bson();
         ptr->nav("main/compare").value(std::string("int64"));
         ptr->nav("main/file").value(std::string("db_") + dbname + ".tcb");
         ptr->nav("main/mode/0").value("create");
@@ -118,7 +118,7 @@ namespace logjam {
         else
             dbfile.append("/").append(dbname);
         dbfile.append("/config");
-        lj::BSONNode *ptr = new lj::BSONNode();
+        lj::Bson *ptr = new lj::Bson();
         ptr->load(dbfile);
         Lunar<LuaBSONNode>::push(L, new LuaBSONNode(ptr, true), true);
         return 1;
@@ -148,23 +148,23 @@ namespace logjam {
         std::set<std::string> allowed(ptr->real_node().nav("main/unique").to_set());
         allowed.insert(field);
         
-        lj::BSONNode n;
+        lj::Bson n;
         int h = 0;
         for(std::set<std::string>::const_iterator iter = allowed.begin();
             iter != allowed.end();
             ++iter) {
             std::ostringstream buf;
             buf << h++;
-            n.child(buf.str(), lj::BSONNode().value(*iter));
+            n.child(buf.str(), lj::Bson().value(*iter));
         }
         ptr->real_node().nav("main/unique").assign(n);
         return 0;
     }
     
     //=====================================================================
-    // BSONNode Lua integration Fields
+    // Bson Lua integration Fields
     //=====================================================================
-    const char LuaBSONNode::LUNAR_CLASS_NAME[] = "BSONNode";
+    const char LuaBSONNode::LUNAR_CLASS_NAME[] = "Bson";
     Lunar<LuaBSONNode>::RegType LuaBSONNode::LUNAR_METHODS[] = {
     LUNAR_MEMBER_METHOD(LuaBSONNode, nav),
     LUNAR_MEMBER_METHOD(LuaBSONNode, set),
@@ -176,9 +176,9 @@ namespace logjam {
     };
 
     //=====================================================================
-    // BSONNode Lua integration Methods.
+    // Bson Lua integration Methods.
     //=====================================================================
-    LuaBSONNode::LuaBSONNode(lj::BSONNode *ptr, bool gc) : _node(ptr), _gc(gc) {
+    LuaBSONNode::LuaBSONNode(lj::Bson *ptr, bool gc) : _node(ptr), _gc(gc) {
     }
     
     LuaBSONNode::~LuaBSONNode() {
@@ -189,9 +189,9 @@ namespace logjam {
     LuaBSONNode::LuaBSONNode(lua_State *L) : _node(NULL), _gc(true) {
         if(lua_gettop(L) > 0) {
             LuaBSONNode *ptr = Lunar<LuaBSONNode>::check(L, -1);
-            _node = new lj::BSONNode(*ptr->_node);
+            _node = new lj::Bson(*ptr->_node);
         } else {
-            _node = new lj::BSONNode();
+            _node = new lj::Bson();
         }
     }
 
@@ -351,11 +351,11 @@ namespace logjam {
     }
     
     int LuaStorageFilter::records(lua_State *L) {
-        std::list<lj::BSONNode *> d;
+        std::list<lj::Bson *> d;
         int h = 0;
-        _filter->items<lj::BSONNode>(d);
+        _filter->items<lj::Bson>(d);
         lua_newtable(L);
-        for(std::list<lj::BSONNode *>::const_iterator iter = d.begin();
+        for(std::list<lj::Bson *>::const_iterator iter = d.begin();
             iter != d.end();
             ++iter) {
             Lunar<LuaBSONNode>::push(L, new LuaBSONNode(*iter, true), true);
@@ -369,7 +369,7 @@ namespace logjam {
             lua_pushnil(L);
             return 1;
         }
-        lj::BSONNode *d = new lj::BSONNode();
+        lj::Bson *d = new lj::Bson();
         _filter->first(*d);
         Lunar<LuaBSONNode>::push(L, new LuaBSONNode(d, true), true);
         return 1;

@@ -1,5 +1,5 @@
 /*!
- \file BSONNode.cpp
+ \file Bson.cpp
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -55,7 +55,7 @@ namespace lj {
             return r;
         }
         
-        void subdocument(BSONNode &node, const char *value) {
+        void subdocument(Bson &node, const char *value) {
             // treat it as a char * for pointer math reasons.
             const char *ptr = value;
             
@@ -80,7 +80,7 @@ namespace lj {
                 ptr += name.size() + 1;
                 
                 // child node.
-                node.child(name, BSONNode(static_cast<Bson_node_type>(t), ptr));
+                node.child(name, Bson(static_cast<Bson_node_type>(t), ptr));
                 sz = 0;
                 switch(static_cast<Bson_node_type>(t)) {
                     case k_bson_string:
@@ -111,21 +111,21 @@ namespace lj {
     };
     
     //=====================================================================
-    // BSONNode ctor/dtor
+    // Bson ctor/dtor
     //=====================================================================
     
-    BSONNode::BSONNode() : _children(), _value(NULL), _type(k_bson_document) {
+    Bson::Bson() : _children(), _value(NULL), _type(k_bson_document) {
     }
     
-    BSONNode::BSONNode(const Bson_node_type t, const char *v) : _children(), _value(NULL), _type(k_bson_document) {
+    Bson::Bson(const Bson_node_type t, const char *v) : _children(), _value(NULL), _type(k_bson_document) {
         set_value(t, v);
     }
     
-    BSONNode::BSONNode(const BSONNode &o) : _children(), _value(NULL), _type(o._type) {
+    Bson::Bson(const Bson &o) : _children(), _value(NULL), _type(o._type) {
         assign(o);
     }
     
-    BSONNode::~BSONNode() {
+    Bson::~Bson() {
         if(_value)
             delete[] _value;
         for(childmap_t::const_iterator iter = _children.begin();
@@ -136,10 +136,10 @@ namespace lj {
     }
     
     //=====================================================================
-    // BSONNode Instance
+    // Bson Instance
     //=====================================================================
     
-    BSONNode &BSONNode::set_value(const Bson_node_type t, const char *v) {
+    Bson &Bson::set_value(const Bson_node_type t, const char *v) {
         // assume the type may have changed.
         char *old = NULL;
         if(nested()) {
@@ -199,7 +199,7 @@ namespace lj {
         return *this;
     }
     
-    BSONNode &BSONNode::value(const std::string &v) {
+    Bson &Bson::value(const std::string &v) {
         long sz = v.size() + 1;
         char *ptr = new char[sz + 4];;
         memcpy(ptr, &sz, 4);
@@ -209,50 +209,50 @@ namespace lj {
         return *this;
     }
     
-    BSONNode &BSONNode::value(const int v) {
+    Bson &Bson::value(const int v) {
         char ptr[4];
         memcpy(ptr, &v, 4);
         set_value(k_bson_int32, ptr);
         return *this;
     }
     
-    BSONNode &BSONNode::value(const long long v) {
+    Bson &Bson::value(const long long v) {
         char ptr[8];
         memcpy(ptr, &v, 8);
         set_value(k_bson_int64, ptr);
         return *this;
     }
     
-    BSONNode &BSONNode::value(const double v) {
+    Bson &Bson::value(const double v) {
         char ptr[8];
         memcpy(ptr, &v, 8);
         set_value(k_bson_double, ptr);
         return *this;
     }
-    BSONNode &BSONNode::value(const bool v) {
+    Bson &Bson::value(const bool v) {
         char ptr[1];
         memcpy(ptr, &v, 1);
         set_value(k_bson_boolean, ptr);
         return *this;
     }
-    BSONNode &BSONNode::nullify() {
+    Bson &Bson::nullify() {
         set_value(k_bson_null, NULL);
         return *this;
     }
 
-    BSONNode &BSONNode::destroy() {
+    Bson &Bson::destroy() {
         set_value(k_bson_document, NULL);
         return *this;
     }
     
-    BSONNode &BSONNode::assign(const BSONNode &o) {
+    Bson &Bson::assign(const Bson &o) {
         destroy();
         if(o.nested()) {
-            for(std::map<std::string, BSONNode *>::const_iterator iter = o._children.begin();
+            for(std::map<std::string, Bson *>::const_iterator iter = o._children.begin();
                 iter != o._children.end();
                 ++iter) {
-                BSONNode *ptr = new BSONNode(*(iter->second));
-                _children.insert(std::pair<std::string, BSONNode *>(iter->first, ptr));
+                Bson *ptr = new Bson(*(iter->second));
+                _children.insert(std::pair<std::string, Bson *>(iter->first, ptr));
             }
         } else {
             set_value(o._type, o._value);
@@ -260,19 +260,19 @@ namespace lj {
         return *this;
     }
     
-    BSONNode &BSONNode::child(const std::string &n, const BSONNode &c) {
+    Bson &Bson::child(const std::string &n, const Bson &c) {
         childmap_t::iterator iter = _children.find(n);
-        BSONNode *ptr = new BSONNode(c);
+        Bson *ptr = new Bson(c);
         if(iter != _children.end()) {
             delete iter->second;
             _children.erase(iter);
         }
         
-        _children.insert(std::pair<std::string, BSONNode *>(n, ptr));
+        _children.insert(std::pair<std::string, Bson *>(n, ptr));
         return *ptr;
     }
     
-    std::string BSONNode::to_dbg_s() const {
+    std::string Bson::to_dbg_s() const {
         long long l = 0;
         double d = 0.0;
         std::ostringstream buf;
@@ -322,7 +322,7 @@ namespace lj {
         return std::string();
     }
 
-    std::string BSONNode::to_s() const {
+    std::string Bson::to_s() const {
         long long l = 0;
         double d = 0.0;
         std::ostringstream buf;
@@ -374,7 +374,7 @@ namespace lj {
         return std::string();
     }
     
-    std::string BSONNode::to_pretty_s(int lvl) const {
+    std::string Bson::to_pretty_s(int lvl) const {
         long long l = 0;
         double d = 0.0;
         std::ostringstream buf;
@@ -429,7 +429,7 @@ namespace lj {
         return std::string();
     }
     
-    std::set<std::string> BSONNode::to_set() const {
+    std::set<std::string> Bson::to_set() const {
         std::set<std::string> f;
         switch(type()) {
             case k_bson_document:
@@ -449,7 +449,7 @@ namespace lj {
         return f;
     }
     
-    std::list<std::string> BSONNode::to_list() const {
+    std::list<std::string> Bson::to_list() const {
         std::list<std::string> f;
         switch(type()) {
             case k_bson_document:
@@ -469,7 +469,7 @@ namespace lj {
         return f;
     }
     
-    int BSONNode::to_i() const {
+    int Bson::to_i() const {
         long l = 0;
         double d = 0.0;
         switch(type()) {
@@ -494,7 +494,7 @@ namespace lj {
         return 0;
     }
     
-    long long BSONNode::to_l() const {
+    long long Bson::to_l() const {
         long l = 0;
         double d = 0.0;
         switch(type()) {
@@ -519,7 +519,7 @@ namespace lj {
         return 0;
     }
     
-    bool BSONNode::to_b() const  {
+    bool Bson::to_b() const  {
         long l = 0;
         double d = 0.0;
         char *s = _value + 4;
@@ -554,7 +554,7 @@ namespace lj {
         return false;
     }
     
-    double BSONNode::to_d() const {
+    double Bson::to_d() const {
         long l = 0;
         double d = 0.0;
         switch(type()) {
@@ -579,13 +579,13 @@ namespace lj {
         return 0.0;
     }
     
-    char *BSONNode::bson() const {
+    char *Bson::bson() const {
         char *ptr = new char[size()];
         copy_to_bson(ptr);
         return ptr;
     }
     
-    size_t BSONNode::copy_to_bson(char *ptr) const {
+    size_t Bson::copy_to_bson(char *ptr) const {
         size_t sz = size();
         switch(type()) {
             case k_bson_document:
@@ -611,7 +611,7 @@ namespace lj {
         return sz;
     }
     
-    std::set<std::string> BSONNode::children() const {
+    std::set<std::string> Bson::children() const {
         std::set<std::string> f;
         if(nested()) {
             for(childmap_t::const_iterator iter = _children.begin();
@@ -624,16 +624,16 @@ namespace lj {
         return f;
     }
     
-    BSONNode &BSONNode::child(const std::string &n) {
+    Bson &Bson::child(const std::string &n) {
         childmap_t::iterator iter = _children.find(n);
         if(iter != _children.end())
             return *(iter->second);
-        BSONNode *ptr = new BSONNode();
-        _children.insert(std::pair<std::string, BSONNode *>(n, ptr));
+        Bson *ptr = new Bson();
+        _children.insert(std::pair<std::string, Bson *>(n, ptr));
         return *ptr;
     }
     
-    const BSONNode &BSONNode::child(const std::string &n) const {
+    const Bson &Bson::child(const std::string &n) const {
         childmap_t::const_iterator iter = _children.find(n);
         if(iter == _children.end())
             throw new Exception("DocumentError", std::string("Unable to find child [").append(n).append("]."));
@@ -659,14 +659,14 @@ namespace lj {
             if(current.size() > 0)
                 parts.push_back(current);
         }
-        const BSONNode &navigate_document(const BSONNode &n, std::list<std::string> &p) {
+        const Bson &navigate_document(const Bson &n, std::list<std::string> &p) {
             if(p.size() < 1)
                 return n;
             std::string front = p.front();
             p.pop_front();
             return navigate_document(n.child(front), p);
         }
-        BSONNode &navigate_document(BSONNode &n, std::list<std::string> &p) {
+        Bson &navigate_document(Bson &n, std::list<std::string> &p) {
             if(p.size() < 1)
                 return n;
             std::string front = p.front();
@@ -675,19 +675,19 @@ namespace lj {
         }
     };
     
-    BSONNode &BSONNode::nav(const std::string &p) {
+    Bson &Bson::nav(const std::string &p) {
         std::list<std::string> parts;
         split_path(p, parts);
         return navigate_document(*this, parts);
     }
     
-    const BSONNode &BSONNode::nav(const std::string &p) const {
+    const Bson &Bson::nav(const std::string &p) const {
         std::list<std::string> parts;
         split_path(p, parts);
         return navigate_document(*this, parts);
     }
     
-    std::string BSONNode::type_string() const {
+    std::string Bson::type_string() const {
         switch(_type) {
             case k_bson_string:
                 return "string";
@@ -713,19 +713,19 @@ namespace lj {
         return "unknown";
     }
     
-    bool BSONNode::exists() const {
+    bool Bson::exists() const {
         return _children.size() ? true : (_value ? true : false);
     }
     
-    bool BSONNode::nested() const {
+    bool Bson::nested() const {
         return (_type == k_bson_document || _type == k_bson_array);
     }
     
-    bool BSONNode::quotable() const {
+    bool Bson::quotable() const {
         return (_type == k_bson_string);
     }
     
-    size_t BSONNode::size() const {
+    size_t Bson::size() const {
         long sz = 0;
         switch(_type) {
             case k_bson_string:
@@ -749,7 +749,7 @@ namespace lj {
             case k_bson_document:
             case k_bson_array:
                 sz += 5;
-                for(std::map<std::string, BSONNode *>::const_iterator iter = _children.begin();
+                for(std::map<std::string, Bson *>::const_iterator iter = _children.begin();
                     iter != _children.end();
                     ++iter) {
                     sz += iter->second->size() + iter->first.size() + 2;
@@ -761,7 +761,7 @@ namespace lj {
         return sz;
     }
     
-    const BSONNode &BSONNode::save(const std::string &fn) const {
+    const Bson &Bson::save(const std::string &fn) const {
         std::ofstream f(fn.c_str());
         char *ptr = bson();
         f.write(ptr, size());
@@ -770,7 +770,7 @@ namespace lj {
         return *this;
     }
     
-    BSONNode &BSONNode::load(const std::string &fn) {
+    Bson &Bson::load(const std::string &fn) {
         std::ifstream f(fn.c_str());
         size_t sz = 0;
         f.read((char *)&sz, 4);

@@ -1,7 +1,7 @@
 #pragma once
 /*!
- \file BSONNode.h
- \brief Bson_node header file.
+ \file Bson.h
+ \brief Bson header file.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -65,9 +65,9 @@ namespace lj {
      \version 1.0
      \date April 19, 2010
      */
-    class BSONNode {
+    class Bson {
     public:
-        typedef std::map<std::string, BSONNode *> childmap_t;
+        typedef std::map<std::string, Bson *> childmap_t;
     private:
         childmap_t _children;
         char *_value;
@@ -78,23 +78,23 @@ namespace lj {
         //=====================================================================
         
         //! Create a new document Node.
-        BSONNode();
+        Bson();
         
         //! Create a new document node based on some data.
-        BSONNode(const Bson_node_type t, const char *v);
+        Bson(const Bson_node_type t, const char *v);
         
         //! Create a new document node as a copy.
-        BSONNode(const BSONNode &o);
+        Bson(const Bson &o);
         
         //! Destructor.
-        ~BSONNode();
+        ~Bson();
         
         //=====================================================================
-        // BSONNode Instance
+        // Bson Instance
         //=====================================================================            
         
         //---------------------------------------------------------------------
-        // BSONNode value setters.
+        // Bson value setters.
         //---------------------------------------------------------------------
         
         //! Set the value of the document node based on a bson string.
@@ -106,31 +106,31 @@ namespace lj {
          \param v Array of data to read the new value from.
          \return Reference to \c this .
          */
-        BSONNode &set_value(const Bson_node_type t, const char *v);
+        Bson &set_value(const Bson_node_type t, const char *v);
         //! Set the value of the document node to a string value.
-        BSONNode &value(const std::string &v);
+        Bson &value(const std::string &v);
         //! Set the value of the document node to a int value.
-        BSONNode &value(const int v);
+        Bson &value(const int v);
         //! Set the value of the document node to a long long value.
-        BSONNode &value(const long long v);
+        Bson &value(const long long v);
         //! Set the value of the document node to a double value.
-        BSONNode &value(const double v);
+        Bson &value(const double v);
         //! Set the value of the document node to a boolean value.
-        BSONNode &value(const bool v);
+        Bson &value(const bool v);
         //! Set the value of the document node to null.
         /*!
          \par
          Nullified nodes exist, but do not contain a value.
          \return Reference to \c this .
          */
-        BSONNode &nullify();
+        Bson &nullify();
         //! Set the value of the document node to not exist.
         /*!
          \par
          Destroyed values no longer exist, and have no value.
          \return Reference to \c this .
          */
-        BSONNode &destroy();
+        Bson &destroy();
         //! set or create a child of this node.
         /*!
          \par
@@ -140,12 +140,12 @@ namespace lj {
          \param c The child to copy from.
          \return Reference to \c this .
          */
-        BSONNode &child(const std::string &n, const BSONNode &c);
-        BSONNode &assign(const BSONNode &o);
-        BSONNode &operator=(const BSONNode &o) { return assign(o); };
+        Bson &child(const std::string &n, const Bson &c);
+        Bson &assign(const Bson &o);
+        Bson &operator=(const Bson &o) { return assign(o); };
 
         //---------------------------------------------------------------------
-        // BSONNode value getters.
+        // Bson value getters.
         //---------------------------------------------------------------------
         
         //! get the value of the document node as a debug string.
@@ -210,7 +210,7 @@ namespace lj {
          \param n The name of the child to get.
          \return Reference to the child.
          */
-        BSONNode &child(const std::string &n);
+        Bson &child(const std::string &n);
         //! get a specific child of this node.
         /*!
          \par
@@ -219,11 +219,11 @@ namespace lj {
          \return Reference to the child.
          \throws Exception if the child does not exist.
          */
-        const BSONNode &child(const std::string &n) const;
+        const Bson &child(const std::string &n) const;
         //! navigate to a specific child.
-        BSONNode &nav(const std::string &p);
+        Bson &nav(const std::string &p);
         //! navigate to a specific child.
-        const BSONNode &nav(const std::string &p) const;
+        const Bson &nav(const std::string &p) const;
         
         //---------------------------------------------------------------------
         // DocumentNode inspectors.
@@ -247,8 +247,8 @@ namespace lj {
         //---------------------------------------------------------------------
         
         //! Save this document node to disk.
-        const BSONNode &save(const std::string &fn) const;
+        const Bson &save(const std::string &fn) const;
         //! Load this document node from disk.
-        BSONNode &load(const std::string &fn);
+        Bson &load(const std::string &fn);
     };
 };
