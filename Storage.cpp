@@ -365,13 +365,13 @@ namespace lj {
         
         template<typename T, typename Q>
         void open_storage_index(const std::string& dir,
-                                const lj::Bson::childmap_t& cfg,
+                                const std::map<std::string, Bson*>& cfg,
                                 int open_flags,
                                 void (*tune_function)(Q*, const void*),
                                 std::map<std::string, T*>& dest)
         {
-            for (lj::Bson::childmap_t::const_iterator iter = cfg.begin();
-                 iter != cfg.end();
+            for (std::map<std::string, Bson*>::const_iterator iter = cfg.begin();
+                 cfg.end() != iter;
                  ++iter)
             {
                 if (!(*iter).second->nav("file").exists() ||
@@ -448,7 +448,7 @@ namespace lj {
                                                fields_tag_);
         
         Log::info.log("Registering unique fields from [%s].") << directory_ << Log::end;
-        for (Bson::childmap_t::const_iterator iter = cfg.nav("main/unique").to_map().begin();
+        for (std::map<std::string, Bson*>::const_iterator iter = cfg.nav("main/unique").to_map().begin();
              iter != cfg.nav("main/unique").to_map().end();
              ++iter)
         {
@@ -612,14 +612,14 @@ namespace lj {
         return *this;
     }
     
-    Storage &Storage::check_unique(const Bson &n, const std::string &name, tokyo::DB *index)
+    Storage &Storage::check_unique(const Bson& n, const std::string& name, tokyo::DB* index)
     {
         if (n.nested() &&
             nested_indexing_.end() != nested_indexing_.find(name))
         {
             Log::debug.log("checking children of [%s].") << name << Log::end;
-            for (Bson::childmap_t::const_iterator iter = n.to_map().begin();
-                 iter != n.to_map().end();
+            for (std::map<std::string, Bson*>::const_iterator iter = n.to_map().begin();
+                 n.to_map().end() != iter;
                  ++iter)
             {
                 char* bson = iter->second->bson();
@@ -673,8 +673,8 @@ namespace lj {
                 n.nested() && 
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
-                for (Bson::childmap_t::const_iterator iter2 = n.to_map().begin();
-                     iter2 != n.to_map().end();
+                for (std::map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
+                     n.to_map().end() != iter2;
                      ++iter2)
                 {
                     char* bson = iter2->second->bson();
@@ -708,8 +708,8 @@ namespace lj {
                 n.nested() && 
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
-                for (Bson::childmap_t::const_iterator iter2 = n.to_map().begin();
-                     iter2 != n.to_map().end();
+                for (std::map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
+                     n.to_map().end() != iter2;
                      ++iter2)
                 {
                     char* bson = iter2->second->bson();
@@ -776,8 +776,8 @@ namespace lj {
                 n.nested() &&
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
-                for (Bson::childmap_t::const_iterator iter2 = n.to_map().begin();
-                     iter2 != n.to_map().end();
+                for (std::map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
+                     n.to_map().end() != iter2;
                      ++iter2)
                 {
                     char* bson = iter2->second->bson();
@@ -811,8 +811,8 @@ namespace lj {
                 n.nested() &&
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
-                for (Bson::childmap_t::const_iterator iter2 = n.to_map().begin();
-                     iter2 != n.to_map().end();
+                for (std::map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
+                     n.to_map().end() != iter2;
                      ++iter2)
                 {
                     char* bson = iter2->second->bson();

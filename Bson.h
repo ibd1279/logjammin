@@ -37,6 +37,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <vector>
 #include "Exception.h"
 
 namespace lj {
@@ -59,19 +60,18 @@ namespace lj {
         k_bson_maxkey = 0x7F     //!< Node contains a reserved BSON spec value.
     };
     
-    //! Node in a BSON document.
+    //! Bson document element.
     /*!
      \author Jason Watson
      \version 1.0
      \date April 19, 2010
      */
     class Bson {
-    public:
-        typedef std::map<std::string, Bson *> childmap_t;
     private:
-        childmap_t _children;
-        char *_value;
-        Bson_node_type _type;
+        std::map<std::string, Bson*> child_map_;
+        std::vector<std::pair<std::string, Bson *> > child_array_;
+        char* value_;
+        Bson_node_type type_;
     public:
         //=====================================================================
         // DocumentNode ctor/dtor
@@ -81,7 +81,7 @@ namespace lj {
         Bson();
         
         //! Create a new document node based on some data.
-        Bson(const Bson_node_type t, const char *v);
+        Bson(const Bson_node_type t, const char* v);
         
         //! Create a new document node as a copy.
         Bson(const Bson &o);
@@ -106,17 +106,17 @@ namespace lj {
          \param v Array of data to read the new value from.
          \return Reference to \c this .
          */
-        Bson &set_value(const Bson_node_type t, const char *v);
+        Bson& set_value(const Bson_node_type t, const char* v);
         //! Set the value of the document node to a string value.
-        Bson &value(const std::string &v);
+        Bson& value(const std::string& v);
         //! Set the value of the document node to a int value.
-        Bson &value(const int v);
+        Bson& value(const int v);
         //! Set the value of the document node to a long long value.
-        Bson &value(const long long v);
+        Bson& value(const long long v);
         //! Set the value of the document node to a double value.
-        Bson &value(const double v);
+        Bson& value(const double v);
         //! Set the value of the document node to a boolean value.
-        Bson &value(const bool v);
+        Bson& value(const bool v);
         //! Set the value of the document node to null.
         /*!
          \par
@@ -140,9 +140,9 @@ namespace lj {
          \param c The child to copy from.
          \return Reference to \c this .
          */
-        Bson &child(const std::string &n, const Bson &c);
-        Bson &assign(const Bson &o);
-        Bson &operator=(const Bson &o) { return assign(o); };
+        Bson& child(const std::string& n, const Bson& c);
+        Bson& assign(const Bson& o);
+        Bson& operator=(const Bson& o) { return assign(o); };
 
         //---------------------------------------------------------------------
         // Bson value getters.
@@ -187,7 +187,7 @@ namespace lj {
          \c to_s(), but will appear in \c to_dbg_s() .
          \return A byte array contain the bson document.
          */
-        char *bson() const;
+        char* bson() const;
     private:
         //! copy the value of this object into a bson byte array.
         size_t copy_to_bson(char *) const;
@@ -200,9 +200,7 @@ namespace lj {
         //! get the keys of all the children of this node.
         std::set<std::string> children() const;
         //! Get the children of this node.
-        const childmap_t &to_map() const { return _children; };
-        //! get the children of this node.
-        childmap_t &to_map() { return _children; };
+        const std::map<std::string, Bson*>& to_map() const { return child_map_; };
         //! get a specific child of this node.
         /*!
          \par
@@ -210,7 +208,7 @@ namespace lj {
          \param n The name of the child to get.
          \return Reference to the child.
          */
-        Bson &child(const std::string &n);
+        Bson& child(const std::string& n);
         //! get a specific child of this node.
         /*!
          \par
@@ -219,18 +217,18 @@ namespace lj {
          \return Reference to the child.
          \throws Exception if the child does not exist.
          */
-        const Bson &child(const std::string &n) const;
+        const Bson& child(const std::string& n) const;
         //! navigate to a specific child.
-        Bson &nav(const std::string &p);
+        Bson& nav(const std::string& p);
         //! navigate to a specific child.
-        const Bson &nav(const std::string &p) const;
+        const Bson& nav(const std::string& p) const;
         
         //---------------------------------------------------------------------
         // DocumentNode inspectors.
         //---------------------------------------------------------------------
         
         //! Get the type of the document node.
-        Bson_node_type type() const { return _type; }
+        Bson_node_type type() const { return type_; }
         //! Get a string version of the type.
         std::string type_string() const;
         //! Get if the node actually exists.
@@ -247,8 +245,8 @@ namespace lj {
         //---------------------------------------------------------------------
         
         //! Save this document node to disk.
-        const Bson &save(const std::string &fn) const;
+        const Bson& save(const std::string& fn) const;
         //! Load this document node from disk.
-        Bson &load(const std::string &fn);
+        Bson& load(const std::string& fn);
     };
 };
