@@ -60,6 +60,40 @@ namespace lj {
         k_bson_maxkey = 0x7F     //!< Node contains a reserved BSON spec value.
     };
     
+    //! Get a string version of the type.
+    const std::string& bson_type_string(const Bson_node_type t);
+    
+    size_t bson_type_min_size(const Bson_node_type t);
+    
+    inline bool bson_type_is_nested(const Bson_node_type t)
+    {
+        return (t == k_bson_document ||
+                t == k_bson_array);
+    }
+    
+    inline bool bson_type_is_quotable(const Bson_node_type t)
+    {
+        return (t == k_bson_string);
+    }
+    
+    inline bool bson_type_is_number(const Bson_node_type t)
+    {
+        return (t == k_bson_int32 ||
+                t == k_bson_int64 ||
+                t == k_bson_timestamp ||
+                t == k_bson_double);
+    }
+    
+    inline bool bson_type_is_native(const Bson_node_type t)
+    {
+        return (t == k_bson_int32 ||
+                t == k_bson_int64 ||
+                t == k_bson_timestamp ||
+                t == k_bson_double ||
+                t == k_bson_boolean ||
+                t == k_bson_null);
+    }
+        
     //! Bson document element.
     /*!
      \author Jason Watson
@@ -67,11 +101,6 @@ namespace lj {
      \date April 19, 2010
      */
     class Bson {
-    private:
-        std::map<std::string, Bson*> child_map_;
-        std::vector<std::pair<std::string, Bson *> > child_array_;
-        char* value_;
-        Bson_node_type type_;
     public:
         //=====================================================================
         // DocumentNode ctor/dtor
@@ -106,31 +135,31 @@ namespace lj {
          \param v Array of data to read the new value from.
          \return Reference to \c this .
          */
-        Bson& set_value(const Bson_node_type t, const char* v);
+        void set_value(const Bson_node_type t, const char* v);
         //! Set the value of the document node to a string value.
-        Bson& value(const std::string& v);
+        void set_string(const std::string& v);
         //! Set the value of the document node to a int value.
-        Bson& value(const int v);
+        void set_int32(int32_t v);
         //! Set the value of the document node to a long long value.
-        Bson& value(const long long v);
+        void set_int64(int64_t v);
         //! Set the value of the document node to a double value.
-        Bson& value(const double v);
+        void set_double(double v);
         //! Set the value of the document node to a boolean value.
-        Bson& value(const bool v);
+        void set_boolean(bool v);
         //! Set the value of the document node to null.
         /*!
          \par
          Nullified nodes exist, but do not contain a value.
          \return Reference to \c this .
          */
-        Bson &nullify();
+        void nullify();
         //! Set the value of the document node to not exist.
         /*!
          \par
          Destroyed values no longer exist, and have no value.
          \return Reference to \c this .
          */
-        Bson &destroy();
+        void destroy();
         //! set or create a child of this node.
         /*!
          \par
@@ -188,10 +217,6 @@ namespace lj {
          \return A byte array contain the bson document.
          */
         char* bson() const;
-    private:
-        //! copy the value of this object into a bson byte array.
-        size_t copy_to_bson(char *) const;
-    public:
         
         //---------------------------------------------------------------------
         // DocumentNode child getters.
@@ -229,14 +254,8 @@ namespace lj {
         
         //! Get the type of the document node.
         Bson_node_type type() const { return type_; }
-        //! Get a string version of the type.
-        std::string type_string() const;
         //! Get if the node actually exists.
         bool exists() const;
-        //! Get if the node is a nested node type.
-        bool nested() const;
-        //! Get if the node is a string type.
-        bool quotable() const;
         //! Get the size of the node.
         size_t size() const;
         
@@ -248,5 +267,12 @@ namespace lj {
         const Bson& save(const std::string& fn) const;
         //! Load this document node from disk.
         Bson& load(const std::string& fn);
+    private:
+        std::map<std::string, Bson*> child_map_;
+        std::vector<std::pair<std::string, Bson *> > child_array_;
+        char* value_;
+        Bson_node_type type_;
+        //! copy the value of this object into a bson byte array.
+        size_t copy_to_bson(char *) const;
     };
-};
+}; // namespace lj

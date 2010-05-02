@@ -391,7 +391,7 @@ namespace lj {
         
         std::pair<int, int> bson_to_storage_delta(const lj::Bson* ptr)
         {
-            if(ptr->quotable())
+            if(bson_type_is_quotable(ptr->type()))
             {
                 return std::pair<int, int>(4,5);
             }
@@ -506,7 +506,7 @@ namespace lj {
             }
         }
         
-        Log::info.log("Closing database for field [%s].") << directory_ << Log::end;
+        Log::info.log("Closing database for [%s].") << directory_ << Log::end;
         delete db_;
     }
     
@@ -567,7 +567,7 @@ namespace lj {
             }
             
             Log::debug.log("Place in DB.") << Log::end;
-            value.nav("__key").value(static_cast<long long>(key));
+            value.nav("__key").set_int64(static_cast<long long>(key));
             char* bson = value.bson();
             db_->place(&key,
                        sizeof(unsigned long long),
@@ -580,7 +580,7 @@ namespace lj {
         }
         catch(Exception* ex)
         {
-            value.nav("__key").value(static_cast<long long>(original_key));
+            value.nav("__key").set_int64(static_cast<long long>(original_key));
             abort_transaction();
             throw ex;
         }
@@ -601,7 +601,7 @@ namespace lj {
                 deindex(key);
                 db_->remove(&key, sizeof(unsigned long long));
                 commit_transaction();
-                value.nav("__key").value(0LL);
+                value.nav("__key").set_int64(0LL);
             }
             catch (Exception* ex)
             {
@@ -614,7 +614,7 @@ namespace lj {
     
     Storage &Storage::check_unique(const Bson& n, const std::string& name, tokyo::DB* index)
     {
-        if (n.nested() &&
+        if (bson_type_is_nested(n.type()) &&
             nested_indexing_.end() != nested_indexing_.find(name))
         {
             Log::debug.log("checking children of [%s].") << name << Log::end;
@@ -670,7 +670,7 @@ namespace lj {
         {
             Bson n(original.nav(iter->first));
             if (n.exists() && 
-                n.nested() && 
+                bson_type_is_nested(n.type()) && 
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
                 for (std::map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
@@ -704,8 +704,8 @@ namespace lj {
              ++iter)
         {
             Bson n(original.nav(iter->first));
-            if (n.exists() && 
-                n.nested() && 
+            if (n.exists() &&
+                bson_type_is_nested(n.type()) && 
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
                 for (std::map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
@@ -773,7 +773,7 @@ namespace lj {
         {
             Bson n(original.nav(iter->first));
             if (n.exists() &&
-                n.nested() &&
+                bson_type_is_nested(n.type()) &&
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
                 for (std::map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
@@ -808,7 +808,7 @@ namespace lj {
         {
             Bson n(original.nav(iter->first));
             if (n.exists() &&
-                n.nested() &&
+                bson_type_is_nested(n.type()) &&
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
                 for (std::map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
