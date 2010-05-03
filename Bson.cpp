@@ -80,32 +80,9 @@ namespace lj {
                 ptr += name.size() + 1;
                 
                 // child node.
-                node.child(name, Bson(static_cast<Bson_node_type>(t), ptr));
-                sz = 0;
-                switch(static_cast<Bson_node_type>(t)) {
-                    case k_bson_string:
-                        memcpy(&sz, ptr, 4);
-                        sz += 4;
-                        break;
-                    case k_bson_int32:
-                        sz = 4;
-                        break;
-                    case k_bson_double:
-                    case k_bson_int64:
-                    case k_bson_timestamp:
-                        sz = 8;
-                        break;
-                    case k_bson_boolean:
-                        sz = 1;
-                        break;
-                    case k_bson_document:
-                    case k_bson_array:
-                        memcpy(&sz, ptr, 4);
-                        break;
-                    default:
-                        break;
-                }
-                ptr += sz;
+                Bson* new_child = new Bson(static_cast<Bson_node_type>(t), ptr);
+                node.set_child(name, new_child);
+                ptr += new_child->size();
             }
         }
         
@@ -189,7 +166,7 @@ namespace lj {
     
     Bson::Bson(const Bson &o) : child_map_(), child_array_(), value_(0), type_(o.type_)
     {
-        assign(o);
+        copy_from(o);
     }
     
     Bson::~Bson()
@@ -198,17 +175,19 @@ namespace lj {
         {
             delete[] value_;
         }
-        for (std::map<std::string, Bson*>::const_iterator iter = child_map_.begin();
-             child_map_.end() != iter;
+        for (std::map<std::string, Bson*>::const_iterator iter = to_map().begin();
+             to_map().end() != iter;
              ++iter)
         {
             delete iter->second;
         }
+        for (std::vector<Bson*>::const_iterator iter = to_vector().begin();
+             to_vector().end() != iter;
+             ++iter)
+        {
+            delete (*iter);
+        }
     }
-    
-    //=====================================================================
-    // Bson Instance
-    //=====================================================================
     
     void Bson::set_value(const Bson_node_type t, const char* v)
     {
@@ -216,11 +195,17 @@ namespace lj {
         char* old = NULL;
         if (bson_type_is_nested(type()))
         {
-            for (std::map<std::string, Bson*>::const_iterator iter = child_map_.begin();
-                 child_map_.end() != iter;
+            for (std::map<std::string, Bson*>::const_iterator iter = to_map().begin();
+                 to_map().end() != iter;
                  ++iter)
             {
                 delete iter->second;
+            }
+            for (std::vector<Bson*>::const_iterator iter = to_vector().begin();
+                 to_vector().end() != iter;
+                 ++iter)
+            {
+                delete (*iter);
             }
             child_map_.clear();
             child_array_.clear();
@@ -262,6 +247,9 @@ namespace lj {
                     value_ = NULL;
                     break;
                 case k_bson_document:
+                    memcpy(&sz, v, 4);
+                    subdocument(*this, v);
+                    break;
                 case k_bson_array:
                     memcpy(&sz, v, 4);
                     subdocument(*this, v);
@@ -278,38 +266,6 @@ namespace lj {
         }
     }
     
-    void Bson::set_string(const std::string &v)
-    {
-        long sz = v.size() + 1;
-        char *ptr = new char[sz + 4];;
-        memcpy(ptr, &sz, 4);
-        memcpy(ptr + 4, v.c_str(), sz);
-        set_value(k_bson_string, ptr);
-        delete[] ptr;
-    }
-    
-    void Bson::set_int32(int32_t v)
-    {
-        char *ptr = reinterpret_cast<char *>(&v);
-        set_value(k_bson_int32, ptr);
-    }
-    
-    void Bson::set_int64(int64_t v)
-    {
-        char *ptr = reinterpret_cast<char *>(&v);
-        set_value(k_bson_int64, ptr);
-    }
-    
-    void Bson::set_double(double v)
-    {
-        char *ptr = reinterpret_cast<char *>(&v);
-        set_value(k_bson_double, ptr);
-    }
-    void Bson::set_boolean(bool v)
-    {
-        char *ptr = reinterpret_cast<char *>(&v);
-        set_value(k_bson_boolean, ptr);
-    }
     void Bson::nullify()
     {
         set_value(k_bson_null, NULL);
@@ -320,7 +276,7 @@ namespace lj {
         set_value(k_bson_document, NULL);
     }
     
-    Bson& Bson::assign(const Bson& o)
+    Bson& Bson::copy_from(const Bson& o)
     {
         destroy();
         if (bson_type_is_nested(o.type()))
@@ -340,457 +296,6 @@ namespace lj {
         return *this;
     }
     
-    Bson& Bson::child(const std::string& n, const Bson& c)
-    {
-        std::map<std::string, Bson*>::iterator iter = child_map_.find(n);
-        Bson* ptr = new Bson(c);
-        if (child_map_.end() != iter)
-        {
-            delete iter->second;
-            child_map_.erase(iter);
-        }
-        child_map_.insert(std::pair<std::string, Bson *>(n, ptr));
-        return *ptr;
-    }
-    
-    std::string Bson::to_dbg_s() const
-    {
-        long long l = 0;
-        double d = 0.0;
-        std::ostringstream buf;
-        switch (type())
-        {
-            case k_bson_string:
-                memcpy(&l, value_, 4);
-                buf << "(4-" << l << ")" << "(" << l << ")" << (value_ + 4);
-                return buf.str();
-            case k_bson_int32:
-                memcpy(&l, value_, 4);
-                buf << "(4)" << l;
-                return buf.str();
-            case k_bson_double:
-                memcpy(&d, value_, 8);
-                buf << "(8)" << d;
-                return buf.str();
-            case k_bson_int64:
-            case k_bson_timestamp:
-                memcpy(&l, value_, 8);
-                buf << "(8)" << l;
-                return buf.str();
-            case k_bson_boolean:
-                memcpy(&l, value_, 1);
-                buf << "(1)" << ((bool)l);
-                return buf.str();
-            case k_bson_document:
-            case k_bson_array:
-                if (!child_map_.size())
-                {
-                    return "{(4-0)(1-0)}";
-                }
-                buf << "{(4-" << size() << ")";
-                for (std::map<std::string, Bson*>::const_iterator iter = child_map_.begin();
-                     child_map_.end() != iter;
-                     ++iter)
-                {
-                    buf << "(1-" << bson_type_string(iter->second->type()) << ")";
-                    buf << "\"(" << iter->first.size() + 1 << ")" << escape(iter->first) << "\":";
-                    if (bson_type_is_quotable(iter->second->type()))
-                    {
-                        buf << "\"";
-                    }
-                    buf << iter->second->to_s();
-                    if (bson_type_is_quotable(iter->second->type()))
-                    {
-                        buf << "\"";
-                    }
-                    buf << ",";
-                }
-                return buf.str().erase(buf.str().size() - 1).append("(1-0)}");
-            default:
-                break;
-        }
-        return std::string();
-    }
-
-    std::string Bson::to_s() const
-    {
-        long long l = 0;
-        double d = 0.0;
-        std::ostringstream buf;
-        switch (type())
-        {
-            case k_bson_string:
-                memcpy(&l, value_, 4);
-                return std::string(value_ + 4);
-            case k_bson_int32:
-                memcpy(&l, value_, 4);
-                buf << l;
-                return buf.str();
-            case k_bson_double:
-                memcpy(&d, value_, 8);
-                buf << d;
-                return buf.str();
-            case k_bson_int64:
-            case k_bson_timestamp:
-                memcpy(&l, value_, 8);
-                buf << l;
-                return buf.str();
-            case k_bson_boolean:
-                memcpy(&l, value_, 1);
-                buf << ((bool)l);
-                return buf.str();
-            case k_bson_null:
-                return std::string("null");
-            case k_bson_document:
-            case k_bson_array:
-                if (!child_map_.size())
-                {
-                    return "{}";
-                }
-                buf << "{";
-                for (std::map<std::string, Bson*>::const_iterator iter = child_map_.begin();
-                     child_map_.end() != iter;
-                     ++iter)
-                {
-                    if (!iter->second->exists())
-                    {
-                        continue;
-                    }
-                    buf << "\"" << escape(iter->first) << "\":";
-                    if (bson_type_is_quotable(iter->second->type()))
-                    {
-                        buf << "\"";
-                    }
-                    buf << iter->second->to_s();
-                    if (bson_type_is_quotable(iter->second->type()))
-                    {
-                        buf << "\"";
-                    }
-                    buf << ",";
-                }
-                return buf.str().erase(buf.str().size() - 1).append("}");
-            default:
-                break;
-        }
-        return std::string();
-    }
-    
-    std::string Bson::to_pretty_s(int lvl) const
-    {
-        long long l = 0;
-        double d = 0.0;
-        std::ostringstream buf;
-        std::string indent;
-        switch (type())
-        {
-            case k_bson_string:
-                memcpy(&l, value_, 4);
-                return std::string(value_ + 4);
-            case k_bson_int32:
-                memcpy(&l, value_, 4);
-                buf << l;
-                return buf.str();
-            case k_bson_double:
-                memcpy(&d, value_, 8);
-                buf << d;
-                return buf.str();
-            case k_bson_int64:
-            case k_bson_timestamp:
-                memcpy(&l, value_, 8);
-                buf << l;
-                return buf.str();
-            case k_bson_boolean:
-                memcpy(&l, value_, 1);
-                buf << ((bool)l);
-                return buf.str();
-            case k_bson_null:
-                return std::string("null");
-            case k_bson_document:
-            case k_bson_array:
-                if (!child_map_.size())
-                {
-                    return "{}";
-                }
-                buf << "{\n";
-                for (int h = 0; h < lvl; ++h)
-                {
-                    indent.append("  ");
-                }
-                for (std::map<std::string, Bson*>::const_iterator iter = child_map_.begin();
-                     child_map_.end() != iter;
-                     ++iter)
-                {
-                    if (!iter->second->exists())
-                    {
-                        continue;
-                    }
-                    buf << indent << "  \"" << escape(iter->first) << "\":";
-                    if (bson_type_is_quotable(iter->second->type()))
-                    {
-                        buf << "\"";
-                    }
-                    buf << iter->second->to_pretty_s(lvl + 1);
-                    if (bson_type_is_quotable(iter->second->type()))
-                    {
-                        buf << "\"";
-                    }
-                    buf << ",\n";
-                }
-                return buf.str().erase(buf.str().size() - 2).append("\n").append(indent).append("}");
-            default:
-                break;
-        }
-        return std::string();
-    }
-    
-    std::set<std::string> Bson::to_set() const
-    {
-        std::set<std::string> f;
-        switch (type())
-        {
-            case k_bson_document:
-            case k_bson_array:
-                for (std::map<std::string, Bson*>::const_iterator iter = child_map_.begin();
-                     child_map_.end() != iter;
-                     ++iter)
-                {
-                    if(iter->second->exists()) 
-                    {
-                        f.insert(iter->second->to_s());
-                    }
-                }
-                break;
-            default:
-                if (exists())
-                {
-                    f.insert(to_s());
-                }
-                break;
-        }
-        return f;
-    }
-    
-    std::list<std::string> Bson::to_list() const
-    {
-        std::list<std::string> f;
-        switch (type())
-        {
-            case k_bson_document:
-            case k_bson_array:
-                for(std::map<std::string, Bson*>::const_iterator iter = child_map_.begin();
-                    child_map_.end() != iter;
-                    ++iter)
-                {
-                    if(iter->second->exists())
-                    {
-                        f.push_back(iter->second->to_s());
-                    }
-                }
-                break;
-            default:
-                if (exists())
-                {
-                    f.push_back(to_s());
-                }
-                break;
-        }
-        return f;
-    }
-    
-    int Bson::to_i() const
-    {
-        long l = 0;
-        double d = 0.0;
-        switch (type())
-        {
-            case k_bson_string:
-                return atoi(value_ + 4);
-            case k_bson_int32:
-                memcpy(&l, value_, 4);
-                return (int)l;
-            case k_bson_double:
-                memcpy(&d, value_, 8);
-                return (int)d;
-            case k_bson_int64:
-            case k_bson_timestamp:
-                memcpy(&l, value_, 8);
-                return (int)l;
-            case k_bson_boolean:
-                memcpy(&l, value_, 1);
-                return (int)l;
-            default:
-                break;
-        }
-        return 0;
-    }
-    
-    long long Bson::to_l() const
-    {
-        long l = 0;
-        double d = 0.0;
-        switch (type())
-        {
-            case k_bson_string:
-                return atol(value_ + 4);
-            case k_bson_int32:
-                memcpy(&l, value_, 4);
-                return l;
-            case k_bson_double:
-                memcpy(&d, value_, 8);
-                return (long long)d;
-            case k_bson_int64:
-            case k_bson_timestamp:
-                memcpy(&l, value_, 8);
-                return l;
-            case k_bson_boolean:
-                memcpy(&l, value_, 1);
-                return l;
-            default:
-                break;
-        }
-        return 0;
-    }
-    
-    bool Bson::to_b() const
-    {
-        long l = 0;
-        double d = 0.0;
-        char* s = value_ + 4;
-        switch (type())
-        {
-            case k_bson_string:
-                if(!value_) return false;
-                if(!s[0]) return false;
-                if(s[0] == '0' && !s[1]) return false;
-                if(s[0] == '1' && !s[1]) return true;
-                if(strlen(s) == 4 &&
-                   toupper(s[0]) == 'T' &&
-                   toupper(s[1]) == 'R' &&
-                   toupper(s[2]) == 'U' &&
-                   toupper(s[3]) == 'E')
-                    return true;
-            case k_bson_int32:
-                memcpy(&l, value_, 4);
-                return l;
-            case k_bson_double:
-                memcpy(&d, value_, 8);
-                return (long)d;
-            case k_bson_int64:
-            case k_bson_timestamp:
-                memcpy(&l, value_, 8);
-                return l;
-            case k_bson_boolean:
-                memcpy(&l, value_, 1);
-                return l;
-            default:
-                break;
-        }
-        return false;
-    }
-    
-    double Bson::to_d() const
-    {
-        long l = 0;
-        double d = 0.0;
-        switch (type())
-        {
-            case k_bson_string:
-                return atof(value_ + 4);
-            case k_bson_int32:
-                memcpy(&l, value_, 4);
-                return (double)l;
-            case k_bson_double:
-                memcpy(&d, value_, 8);
-                return d;
-            case k_bson_int64:
-            case k_bson_timestamp:
-                memcpy(&l, value_, 8);
-                return (double)l;
-            case k_bson_boolean:
-                memcpy(&l, value_, 1);
-                return (double)l;
-            default:
-                break;
-        }
-        return 0.0;
-    }
-    
-    char* Bson::bson() const
-    {
-        char *ptr = new char[size()];
-        copy_to_bson(ptr);
-        return ptr;
-    }
-    
-    size_t Bson::copy_to_bson(char* ptr) const
-    {
-        size_t sz = size();
-        switch (type())
-        {
-            case k_bson_document:
-            case k_bson_array:
-                sz = size();
-                memcpy(ptr, &sz, 4);
-                ptr += 4;
-                for (std::map<std::string, Bson*>::const_iterator iter = child_map_.begin();
-                     child_map_.end() != iter;
-                     ++iter)
-                {
-                    Bson_node_type t = iter->second->type();
-                    memcpy(ptr++, &t, 1);
-                    memcpy(ptr, iter->first.c_str(), iter->first.size() + 1);
-                    ptr += iter->first.size() + 1;
-                    ptr += iter->second->copy_to_bson(ptr);
-                }
-                *ptr = 0;
-                break;
-            default:
-                memcpy(ptr, value_, sz);
-                break;
-        }
-        return sz;
-    }
-    
-    std::set<std::string> Bson::children() const
-    {
-        std::set<std::string> f;
-        if (bson_type_is_nested(type()))
-        {
-            for (std::map<std::string, Bson*>::const_iterator iter = child_map_.begin();
-                 child_map_.end() != iter;
-                 ++iter)
-            {
-                if (iter->second->exists())
-                {
-                    f.insert(iter->first);
-                }
-            }
-        }
-        return f;
-    }
-    
-    Bson &Bson::child(const std::string& n)
-    {
-        std::map<std::string, Bson*>::iterator iter = child_map_.find(n);
-        if (child_map_.end() != iter)
-        {
-            return *(iter->second);
-        }
-        Bson *ptr = new Bson();
-        child_map_.insert(std::pair<std::string, Bson *>(n, ptr));
-        return *ptr;
-    }
-    
-    const Bson &Bson::child(const std::string& n) const
-    {
-        std::map<std::string, Bson*>::const_iterator iter = child_map_.find(n);
-        if (child_map_.end() == iter)
-        {
-            throw new Exception("DocumentError", std::string("Unable to find child [").append(n).append("]."));
-        }
-        return *(iter->second);
-    }
-
     namespace {
         void split_path(const std::string& path, std::list<std::string>& parts)
         {
@@ -820,50 +325,102 @@ namespace lj {
                 parts.push_back(current);
             }
         }
-        const Bson& navigate_document(const Bson& n, std::list<std::string>& p)
-        {
-            if (p.size() < 1)
-            {
-                return n;
-            }
-            std::string front = p.front();
-            p.pop_front();
-            return navigate_document(n.child(front), p);
-        }
-        Bson& navigate_document(Bson& n, std::list<std::string>& p)
-        {
-            if (p.size() < 1)
-            {
-                return n;
-            }
-            std::string front = p.front();
-            p.pop_front();
-            return navigate_document(n.child(front), p);
-        }
     };
     
-    Bson& Bson::nav(const std::string& p)
+    Bson* Bson::path(const std::string& p)
     {
         std::list<std::string> parts;
         split_path(p, parts);
-        return navigate_document(*this, parts);
+        Bson *n = this;
+        while (0 < parts.size())
+        {
+            std::map<std::string, Bson*>::iterator iter = n->child_map_.find(parts.front());
+            if (n->child_map_.end() == iter)
+            {
+                iter = n->child_map_.insert(std::pair<std::string, Bson*>(parts.front(), new Bson())).first;
+            }
+            n = iter->second;
+            parts.pop_front();
+        }
+        return n;
     }
     
-    const Bson& Bson::nav(const std::string& p) const
+    const Bson* Bson::path(const std::string& p) const
     {
         std::list<std::string> parts;
         split_path(p, parts);
-        return navigate_document(*this, parts);
+        const Bson *n = this;
+        while (0 < parts.size())
+        {
+            std::map<std::string, Bson*>::const_iterator iter = n->child_map_.find(parts.front());
+            if (n->child_map_.end() == iter)
+            {
+                return 0;
+            }
+            n = iter->second;
+            parts.pop_front();
+        }
+        return n;
+    }
+    
+    void Bson::set_child(const std::string& p, Bson* c)
+    {
+        std::list<std::string> parts;
+        split_path(p, parts);
+        if (!parts.size()) 
+        {
+            // No child name or path, so abort.
+            return;
+        }
+        std::string child_name = parts.back();
+        parts.pop_back();
+        
+        // navigate the structure.
+        Bson *n = this;
+        std::map<std::string, Bson*>::iterator iter;
+        while (parts.size())
+        {
+            std::map<std::string, Bson*>::iterator iter = n->child_map_.find(parts.front());
+            if (n->child_map_.end() == iter)
+            {
+                iter = n->child_map_.insert(std::pair<std::string, Bson*>(parts.front(), new Bson())).first;
+            }
+            n = iter->second;
+            parts.pop_front();
+        }
+        
+        // remove any existing value just in case.
+        iter = n->child_map_.find(child_name);
+        if (n->child_map_.end() != iter)
+        {
+            if(iter->second == c)
+            {
+                //already here, do nothing.
+                return;
+            }
+            delete c;
+            n->child_map_.erase(iter);
+        }
+        
+        // Add the child.
+        n->child_map_.insert(std::pair<std::string, Bson*>(child_name, c));
     }
     
     bool Bson::exists() const
     {
-        return child_map_.size() ? true : (value_ ? true : false);
+        if (bson_type_is_nested(type()))
+        {
+            return (type() == k_bson_document ? child_map_.size() : child_array_.size());
+        }
+        else
+        {
+            return (value_ ? true : (type() == k_bson_null ? true : false));
+        }
     }
     
     size_t Bson::size() const
     {
-        long sz = 0;
+        long sz = 0, h = 0;
         switch (type())
         {
             case k_bson_string:
@@ -885,42 +442,570 @@ namespace lj {
                 sz = 0;
                 break;
             case k_bson_document:
-            case k_bson_array:
                 sz += 5;
-                for (std::map<std::string, Bson *>::const_iterator iter = child_map_.begin();
-                     child_map_.end() != iter;
+                for (std::map<std::string, Bson *>::const_iterator iter = to_map().begin();
+                     to_map().end() != iter;
                      ++iter)
                 {
                     sz += iter->second->size() + iter->first.size() + 2;
+                }
+                break;
+            case k_bson_array:
+                sz += 5;
+                for (std::vector<Bson*>::const_iterator iter = to_vector().begin();
+                     to_vector().end() != iter;
+                     ++iter, ++h)
+                {
+                    std::ostringstream oss;
+                    oss << h;
+                    sz += oss.str().size() + (*iter)->size() + 2;
                 }
                 break;
             default:
                 break;
         }
         return sz;
+    }    
+        
+    size_t Bson::copy_to_bson(char* ptr) const
+    {
+        size_t sz = size();
+        long h;
+        switch (type())
+        {
+            case k_bson_document:
+                memcpy(ptr, &sz, 4);
+                ptr += 4;
+                for (std::map<std::string, Bson*>::const_iterator iter = child_map_.begin();
+                     child_map_.end() != iter;
+                     ++iter)
+                {
+                    Bson_node_type t = iter->second->type();
+                    memcpy(ptr++, &t, 1);
+                    memcpy(ptr, iter->first.c_str(), iter->first.size() + 1);
+                    ptr += iter->first.size() + 1;
+                    ptr += iter->second->copy_to_bson(ptr);
+                }
+                *ptr = 0;
+                break;
+            case k_bson_array:
+                memcpy(ptr, &sz, 4);
+                ptr += 4;
+                h = 0;
+                for (std::vector<Bson*>::const_iterator iter = child_array_.begin();
+                     child_array_.end() != iter;
+                     ++iter, ++h)
+                {
+                    Bson_node_type t = (*iter)->type();
+                    memcpy(ptr++, &t, 1);
+                    std::ostringstream oss;
+                    oss << h;
+                    memcpy(ptr, oss.str().c_str(), oss.str().size() + 1);
+                    ptr += oss.str().size() + 1;
+                    ptr += (*iter)->copy_to_bson(ptr);
+                }
+                *ptr = 0;
+                break;
+            default:
+                memcpy(ptr, value_, sz);
+                break;
+        }
+        return sz;
     }
     
-    const Bson& Bson::save(const std::string& fn) const
+    Bson* bson_new_string(const std::string& str)
     {
-        std::ofstream f(fn.c_str());
-        char *ptr = bson();
-        f.write(ptr, size());
+        long sz = str.size() + 1;
+        char *ptr = new char[sz + 4];;
+        memcpy(ptr, &sz, 4);
+        memcpy(ptr + 4, str.c_str(), sz);
+        Bson* new_bson = new Bson(k_bson_string, ptr);
+        delete[] ptr;
+        return new_bson;
+    }
+    
+    Bson* bson_new_boolean(const bool val)
+    {
+        return new Bson(k_bson_boolean, reinterpret_cast<const char *> (&val));
+    }
+    
+    Bson* bson_new_int64(const int64_t val)
+    {
+        return new Bson(k_bson_int64, reinterpret_cast<const char *> (&val));
+    }
+    
+    std::string bson_as_debug_string(const Bson& b)
+    {
+        long long l = 0;
+        double d = 0.0;
+        long h;
+        const char* v = b.to_value();
+        if (!bson_type_is_nested(b.type()) && !v)
+        {
+            return std::string();
+        }
+        
+        std::ostringstream buf;
+        switch (b.type())
+        {
+            case k_bson_string:
+                memcpy(&l, v, 4);
+                buf << "(4-" << l << ")" << "(" << l << ")" << (v + 4);
+                return buf.str();
+            case k_bson_int32:
+                memcpy(&l, v, 4);
+                buf << "(4)" << l;
+                return buf.str();
+            case k_bson_double:
+                memcpy(&d, v, 8);
+                buf << "(8)" << d;
+                return buf.str();
+            case k_bson_int64:
+            case k_bson_timestamp:
+                memcpy(&l, v, 8);
+                buf << "(8)" << l;
+                return buf.str();
+            case k_bson_boolean:
+                memcpy(&l, v, 1);
+                buf << "(1)" << ((bool)l);
+                return buf.str();
+            case k_bson_document:
+                if (!b.to_map().size())
+                {
+                    return "{(4-0)(1-0)}";
+                }
+                buf << "{(4-" << b.size() << ")";
+                for (std::map<std::string, Bson*>::const_iterator iter = b.to_map().begin();
+                     b.to_map().end() != iter;
+                     ++iter)
+                {
+                    buf << "(1-" << bson_type_string(iter->second->type()) << ")";
+                    buf << "\"(" << iter->first.size() + 1 << ")" << escape(iter->first) << "\":";
+                    if (bson_type_is_quotable(iter->second->type()))
+                    {
+                        buf << "\"";
+                    }
+                    buf << bson_as_debug_string(*iter->second);
+                    if (bson_type_is_quotable(iter->second->type()))
+                    {
+                        buf << "\"";
+                    }
+                    buf << ",";
+                }
+                return buf.str().erase(buf.str().size() - 1).append("(1-0)}");
+            case k_bson_array:
+                if (!b.to_vector().size())
+                {
+                    return "{(4-0)(1-0)}";
+                }
+                buf << "{(4-" << b.size() << ")";
+                h = 0;
+                for (std::vector<Bson*>::const_iterator iter = b.to_vector().begin();
+                     b.to_vector().end() != iter;
+                     ++iter, ++h)
+                {
+                    std::ostringstream oss;
+                    oss << h;
+                    buf << "(1-" << bson_type_string((*iter)->type()) << ")";
+                    buf << "\"(" << oss.str().size() + 1 << ")" << h << "\":";
+                    if (bson_type_is_quotable((*iter)->type()))
+                    {
+                        buf << "\"";
+                    }
+                    buf << bson_as_debug_string(*(*iter));
+                    if (bson_type_is_quotable((*iter)->type()))
+                    {
+                        buf << "\"";
+                    }
+                    buf << ",";
+                }
+                return buf.str().erase(buf.str().size() - 1).append("(1-0)}");
+            default:
+                break;
+        }
+        return std::string();
+    }
+    
+    std::string bson_as_string(const Bson& b)
+    {
+        long long l = 0;
+        double d = 0.0;
+        const char* v = b.to_value();
+        if (!bson_type_is_nested(b.type()) && !v)
+        {
+            return std::string();
+        }
+        
+        std::ostringstream buf;
+        switch (b.type())
+        {
+            case k_bson_string:
+                memcpy(&l, v, 4);
+                return std::string(v + 4);
+            case k_bson_int32:
+                memcpy(&l, v, 4);
+                buf << l;
+                return buf.str();
+            case k_bson_double:
+                memcpy(&d, v, 8);
+                buf << d;
+                return buf.str();
+            case k_bson_int64:
+            case k_bson_timestamp:
+                memcpy(&l, v, 8);
+                buf << l;
+                return buf.str();
+            case k_bson_boolean:
+                memcpy(&l, v, 1);
+                buf << ((bool)l);
+                return buf.str();
+            case k_bson_null:
+                return std::string("null");
+            case k_bson_document:
+                if (!b.to_map().size())
+                {
+                    return "{}";
+                }
+                buf << "{";
+                for (std::map<std::string, Bson*>::const_iterator iter = b.to_map().begin();
+                     b.to_map().end() != iter;
+                     ++iter)
+                {
+                    if (!iter->second->exists())
+                    {
+                        continue;
+                    }
+                    buf << "\"" << escape(iter->first) << "\":";
+                    if (bson_type_is_quotable(iter->second->type()))
+                    {
+                        buf << "\"";
+                    }
+                    buf << bson_as_string(*iter->second);
+                    if (bson_type_is_quotable(iter->second->type()))
+                    {
+                        buf << "\"";
+                    }
+                    buf << ",";
+                }
+                return buf.str().erase(buf.str().size() - 1).append("}");
+            case k_bson_array:
+                if (!b.to_vector().size())
+                {
+                    return "[]";
+                }
+                buf << "[";
+                for (std::vector<Bson*>::const_iterator iter = b.to_vector().begin();
+                     b.to_vector().end() != iter;
+                     ++iter)
+                {
+                    if (!(*iter)->exists())
+                    {
+                        continue;
+                    }
+                    if (bson_type_is_quotable((*iter)->type()))
+                    {
+                        buf << "\"";
+                    }
+                    buf << bson_as_string(*(*iter));
+                    if (bson_type_is_quotable((*iter)->type()))
+                    {
+                        buf << "\"";
+                    }
+                    buf << ",";
+                }
+                return buf.str().erase(buf.str().size() - 1).append("]");
+            default:
+                break;
+        }
+        return std::string();
+    }
+    
+    std::string bson_as_pretty_string(const Bson& b, int lvl)
+    {
+        long long l = 0;
+        double d = 0.0;
+        const char* v = b.to_value();
+        if (!bson_type_is_nested(b.type()) && !v)
+        {
+            return std::string();
+        }
+        
+        std::ostringstream buf;
+        std::string indent;
+        for (int h = 0; h < lvl; ++h)
+        {
+            indent.append("  ");
+        }                
+        
+        switch (b.type())
+        {
+            case k_bson_string:
+                memcpy(&l, v, 4);
+                return std::string(v + 4);
+            case k_bson_int32:
+                memcpy(&l, v, 4);
+                buf << l;
+                return buf.str();
+            case k_bson_double:
+                memcpy(&d, v, 8);
+                buf << d;
+                return buf.str();
+            case k_bson_int64:
+            case k_bson_timestamp:
+                memcpy(&l, v, 8);
+                buf << l;
+                return buf.str();
+            case k_bson_boolean:
+                memcpy(&l, v, 1);
+                buf << ((bool)l);
+                return buf.str();
+            case k_bson_null:
+                return std::string("null");
+            case k_bson_document:
+                if (!b.to_map().size())
+                {
+                    return "{}";
+                }
+                buf << "{\n";
+                for (std::map<std::string, Bson*>::const_iterator iter = b.to_map().begin();
+                     b.to_map().end() != iter;
+                     ++iter)
+                {
+                    if (!iter->second->exists())
+                    {
+                        continue;
+                    }
+                    buf << indent << "  \"" << escape(iter->first) << "\":";
+                    if (bson_type_is_quotable(iter->second->type()))
+                    {
+                        buf << "\"";
+                    }
+                    buf << bson_as_pretty_string(*iter->second, lvl + 1);
+                    if (bson_type_is_quotable(iter->second->type()))
+                    {
+                        buf << "\"";
+                    }
+                    buf << ",\n";
+                }
+                return buf.str().erase(buf.str().size() - 2).append("\n").append(indent).append("}");
+            case k_bson_array:
+                if (!b.to_vector().size())
+                {
+                    return "[]";
+                }
+                buf << "[";
+                for (std::vector<Bson*>::const_iterator iter = b.to_vector().begin();
+                     b.to_vector().end() != iter;
+                     ++iter)
+                {
+                    if (!(*iter)->exists())
+                    {
+                        continue;
+                    }
+                    if (bson_type_is_quotable((*iter)->type()))
+                    {
+                        buf << "\"";
+                    }
+                    buf << indent << "  " << bson_as_pretty_string(*(*iter), lvl + 1);
+                    if (bson_type_is_quotable((*iter)->type()))
+                    {
+                        buf << "\"";
+                    }
+                    buf << ",\n";
+                }
+                return buf.str().erase(buf.str().size() - 2).append("\n").append(indent).append("]");
+            default:
+                break;
+        }
+        return std::string();
+    }
+    
+    std::set<std::string> bson_as_key_set(const Bson& b)
+    {
+        std::set<std::string> key_set;
+        std::set<std::string>::iterator set_iter = key_set.begin();
+        if (k_bson_document == b.type())
+        {
+            for (std::map<std::string, Bson*>::const_iterator iter = b.to_map().begin();
+                 b.to_map().end() != iter;
+                 ++iter)
+            {
+                set_iter = key_set.insert(set_iter, iter->first);
+            }
+        }
+        return key_set;
+    }
+    
+    std::set<std::string> bson_as_value_string_set(const Bson& b)
+    {
+        std::set<std::string> value_set;
+        if (k_bson_document == b.type())
+        {
+            for (std::map<std::string, Bson*>::const_iterator iter = b.to_map().begin();
+                 b.to_map().end() != iter;
+                 ++iter)
+            {
+                value_set.insert(bson_as_string(*iter->second));
+            }
+        }
+        else if (k_bson_array == b.type())
+        {
+            for (std::vector<Bson*>::const_iterator iter = b.to_vector().begin();
+                 b.to_vector().end() != iter;
+                 ++iter)
+            {
+                value_set.insert(bson_as_string(*(*iter)));
+            }
+        }
+        else
+        {
+            value_set.insert(bson_as_string(b));
+        }
+        return value_set;
+    }
+    
+    int32_t bson_as_int32(const Bson& b)
+    {
+        long l = 0;
+        double d = 0.0;
+        const char* v = b.to_value();
+        switch (b.type())
+        {
+            case k_bson_string:
+                return atoi(v + 4);
+            case k_bson_int32:
+                memcpy(&l, v, 4);
+                return (int)l;
+            case k_bson_double:
+                memcpy(&d, v, 8);
+                return (int)d;
+            case k_bson_int64:
+            case k_bson_timestamp:
+                memcpy(&l, v, 8);
+                return (int)l;
+            case k_bson_boolean:
+                memcpy(&l, v, 1);
+                return (int)l;
+            default:
+                break;
+        }
+        return 0;
+    }
+    
+    int64_t bson_as_int64(const Bson& b)
+    {
+        long l = 0;
+        double d = 0.0;
+        const char* v = b.to_value();
+        switch (b.type())
+        {
+            case k_bson_string:
+                return atol(v + 4);
+            case k_bson_int32:
+                memcpy(&l, v, 4);
+                return l;
+            case k_bson_double:
+                memcpy(&d, v, 8);
+                return (long long)d;
+            case k_bson_int64:
+            case k_bson_timestamp:
+                memcpy(&l, v, 8);
+                return l;
+            case k_bson_boolean:
+                memcpy(&l, v, 1);
+                return l;
+            default:
+                break;
+        }
+        return 0;
+    }
+    
+    bool bson_as_boolean(const Bson& b)
+    {
+        long l = 0;
+        double d = 0.0;
+        const char* v = b.to_value();
+        const char* s = v + 4;
+        switch (b.type())
+        {
+            case k_bson_string:
+                if(!v) return false;
+                if(!s[0]) return false;
+                if(s[0] == '0' && !s[1]) return false;
+                if(s[0] == '1' && !s[1]) return true;
+                if(strlen(s) == 4 &&
+                   toupper(s[0]) == 'T' &&
+                   toupper(s[1]) == 'R' &&
+                   toupper(s[2]) == 'U' &&
+                   toupper(s[3]) == 'E')
+                    return true;
+            case k_bson_int32:
+                memcpy(&l, v, 4);
+                return l;
+            case k_bson_double:
+                memcpy(&d, v, 8);
+                return (long)d;
+            case k_bson_int64:
+            case k_bson_timestamp:
+                memcpy(&l, v, 8);
+                return l;
+            case k_bson_boolean:
+                memcpy(&l, v, 1);
+                return l;
+            default:
+                break;
+        }
+        return false;
+    }
+    
+    double bson_as_double(const Bson& b)
+    {
+        long l = 0;
+        double d = 0.0;
+        const char* v = b.to_value();
+        switch (b.type())
+        {
+            case k_bson_string:
+                return atof(v + 4);
+            case k_bson_int32:
+                memcpy(&l, v, 4);
+                return (double)l;
+            case k_bson_double:
+                memcpy(&d, v, 8);
+                return d;
+            case k_bson_int64:
+            case k_bson_timestamp:
+                memcpy(&l, v, 8);
+                return (double)l;
+            case k_bson_boolean:
+                memcpy(&l, v, 1);
+                return (double)l;
+            default:
+                break;
+        }
+        return 0.0;
+    }
+    
+    void bson_save(const Bson& b, const std::string& path)
+    {
+        std::ofstream f(path.c_str());
+        char *ptr = b.to_binary();
+        f.write(ptr, b.size());
         f.close();
         delete[] ptr;
-        return *this;
     }
     
-    Bson& Bson::load(const std::string& fn)
+    Bson* bson_load(const std::string& path)
     {
-        std::ifstream f(fn.c_str());
+        std::ifstream f(path.c_str());
         size_t sz = 0;
         f.read((char *)&sz, 4);
         char *ptr = new char[sz];
         memcpy(ptr, &sz, 4);
         f.read(ptr + 4, sz - 4);
-        set_value(k_bson_document, ptr);
+        Bson* doc = new Bson(k_bson_document, ptr);
         f.close();
         delete[] ptr;
-        return *this;
+        return doc;
     }
-};
+}; // namespace lj

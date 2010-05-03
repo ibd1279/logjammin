@@ -76,12 +76,12 @@ namespace logjam {
     int storage_config_new(lua_State *L) {
         std::string dbname(lua_to_string(L, -1));
         lj::Bson *ptr = new lj::Bson();
-        ptr->nav("main/compare").set_string(std::string("int64"));
-        ptr->nav("main/file").set_string(std::string("db_") + dbname + ".tcb");
-        ptr->nav("main/mode/0").set_string("create");
-        ptr->nav("main/mode/1").set_string("read");
-        ptr->nav("main/mode/2").set_string("write");
-        ptr->nav("main/type").set_string("tree");
+        ptr->set_child("main/compare", lj::bson_new_string("int64"));
+        ptr->set_child("main/file", lj::bson_new_string(std::string("db_") + dbname + ".tcb"));
+        ptr->set_child("main/mode/0", lj::bson_new_string("create"));
+        ptr->set_child("main/mode/1", lj::bson_new_string("read"));
+        ptr->set_child("main/mode/2", lj::bson_new_string("write"));
+        ptr->set_child("main/type", lj::bson_new_string("tree"));
         ptr->nav("main/unique");
         ptr->nav("index/tree");
         ptr->nav("index/text");
@@ -106,7 +106,7 @@ namespace logjam {
         }
         
         dbfile.append("/config");
-        ptr->real_node().save(dbfile);
+        lj::bson_save(ptr->real_node(), dbfile);
         return 0;
     }
     
@@ -118,8 +118,7 @@ namespace logjam {
         else
             dbfile.append("/").append(dbname);
         dbfile.append("/config");
-        lj::Bson *ptr = new lj::Bson();
-        ptr->load(dbfile);
+        lj::Bson *ptr = lj::bson_load(dbfile);
         Lunar<LuaBSONNode>::push(L, new LuaBSONNode(ptr, true), true);
         return 1;
     }
@@ -130,14 +129,14 @@ namespace logjam {
         std::string indxname(lua_to_string(L, -3));
         std::string indxtype(lua_to_string(L, -4));
         LuaBSONNode *ptr = Lunar<LuaBSONNode>::check(L, -5);
-        ptr->real_node().nav(std::string("index/") + indxtype + "/" + indxname + "/compare").set_string(indxcomp);
-        ptr->real_node().nav(std::string("index/") + indxtype + "/" + indxname + "/file").set_string(std::string("index.") + indxname + "." + indxtype + ".tc");
-        ptr->real_node().nav(std::string("index/") + indxtype + "/" + indxname + "/mode/0").set_string("create");
-        ptr->real_node().nav(std::string("index/") + indxtype + "/" + indxname + "/mode/1").set_string("read");
-        ptr->real_node().nav(std::string("index/") + indxtype + "/" + indxname + "/mode/2").set_string("write");
-        ptr->real_node().nav(std::string("index/") + indxtype + "/" + indxname + "/type").set_string(indxtype);
-        ptr->real_node().nav(std::string("index/") + indxtype + "/" + indxname + "/field").set_string(indxfield);
-        ptr->real_node().nav(std::string("index/") + indxtype + "/" + indxname + "/children").set_boolean(false);
+        ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/compare", lj::bson_new_string(indxcomp));
+        ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/file", lj::bson_new_string(std::string("index.") + indxname + "." + indxtype + ".tc"));
+        ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/mode/0", lj::bson_new_string("create"));
+        ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/mode/1", lj::bson_new_string("read"));
+        ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/mode/2", lj::bson_new_string("write"));
+        ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/type", lj::bson_new_string(indxtype));
+        ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/field", lj::bson_new_string(indxfield));
+        ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/children", lj::bson_new_boolean(false));
         return 0;
     }
     
@@ -145,21 +144,19 @@ namespace logjam {
         std::string field(lua_to_string(L, -1));
         LuaBSONNode *ptr = Lunar<LuaBSONNode>::check(L, -2);
         
-        std::set<std::string> allowed(ptr->real_node().nav("main/unique").to_set());
+        std::set<std::string> allowed(lj::bson_as_value_string_set(ptr->real_node().nav("main/unique")));
         allowed.insert(field);
         
-        lj::Bson n;
+        lj::Bson* n = ptr->real_node().path("main/unique");
+        n->destroy();
         int h = 0;
         for(std::set<std::string>::const_iterator iter = allowed.begin();
             iter != allowed.end();
             ++iter) {
             std::ostringstream buf;
             buf << h++;
-            lj::Bson tmp;
-            tmp.set_string(*iter);
-            n.child(buf.str(), tmp);
+            n->set_child(buf.str(), lj::bson_new_string(*iter));
         }
-        ptr->real_node().nav("main/unique").assign(n);
         return 0;
     }
     
@@ -207,18 +204,25 @@ namespace logjam {
     }
     
     int LuaBSONNode::set(lua_State *L) {
+        lj::Bson* ptr;
         switch(lua_type(L, -1)) {
             case LUA_TSTRING:
-                _node->set_string(lua_to_string(L, -1));
+                ptr = lj::bson_new_string(lua_to_string(L, -1));
+                _node->copy_from(*ptr);
+                delete ptr;
                 break;
             case LUA_TNUMBER:
-                _node->set_int32(luaL_checkint(L, -1));
+                ptr = lj::bson_new_int64(luaL_checkint(L, -1));
+                _node->copy_from(*ptr);
+                delete ptr;
                 break;
             case LUA_TNIL:
                 _node->nullify();
                 break;
             case LUA_TBOOLEAN:
-                _node->set_boolean(static_cast<bool>(lua_toboolean(L, -1)));
+                ptr = lj::bson_new_boolean(lua_toboolean(L, -1));
+                _node->copy_from(*ptr);
+                delete ptr;
                 break;
             case LUA_TTABLE:
             case LUA_TFUNCTION:
@@ -237,18 +241,18 @@ namespace logjam {
             case lj::k_bson_int32:
             case lj::k_bson_int64:
             case lj::k_bson_timestamp:
-                lua_pushinteger(L, _node->to_l());
+                lua_pushinteger(L, lj::bson_as_int64(*_node));
                 break;
             case lj::k_bson_document:
             case lj::k_bson_array:
             case lj::k_bson_string:
-                lua_pushstring(L, _node->to_s().c_str());
+                lua_pushstring(L, lj::bson_as_string(*_node).c_str());
                 break;
             case lj::k_bson_double:
-                lua_pushnumber(L, _node->to_d());
+                lua_pushnumber(L, lj::bson_as_double(*_node));
                 break;
             case lj::k_bson_boolean:
-                lua_pushboolean(L, _node->to_b());
+                lua_pushboolean(L, lj::bson_as_boolean(*_node));
                 break;
             default:
                 lua_pushnil(L);
@@ -259,18 +263,20 @@ namespace logjam {
     
     int LuaBSONNode::save(lua_State *L) {
         std::string fn(lua_to_string(L, -1));
-        _node->save(fn);
+        lj::bson_save(*_node, fn);
         return 0;
     }
     
     int LuaBSONNode::load(lua_State *L) {
         std::string fn(lua_to_string(L, -1));
-        _node->load(fn);
+        if(_gc)
+            delete _node;
+        _node = lj::bson_load(fn);
         return 0;
     }
     
     int LuaBSONNode::__tostring(lua_State *L) {
-        lua_pushstring(L, _node->to_s().c_str());
+        lua_pushstring(L, bson_as_pretty_string(*_node).c_str());
         return 1;
     }
     
@@ -323,7 +329,7 @@ namespace logjam {
             Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
         } else {
             LuaBSONNode *n = Lunar<LuaBSONNode>::check(L, -1);
-            char *bson = n->real_node().bson();
+            char *bson = n->real_node().to_binary();
             lj::Record_set *ptr = NULL;
             if(lj::bson_type_is_quotable(n->real_node().type())) {
                 ptr = new lj::Record_set(_filter->equal(field, bson + 4, n->real_node().size() - 5));

@@ -7,6 +7,7 @@ sc_add_index(role_cfg, "tag", "allowed", "allowed", "lex")
 sc_add_index(role_cfg, "tag", "name", "name", "lex")
 sc_add_unique(role_cfg, "allowed")
 sc_save("role", role_cfg)
+print(role_cfg)
 
 role_default = Bson:new()
 role_default:nav("name"):set("default")

@@ -322,12 +322,12 @@ namespace lj {
         void storage_tree_cfg(TCBDB* db, const void* ptr)
         {
             const Bson* bn = static_cast<const Bson*>(ptr);
-            if (bn->nav("compare").to_s().compare("lex") == 0)
+            if (lj::bson_as_string(bn->nav("compare")).compare("lex") == 0)
             {
                 tcbdbsetcmpfunc(db, tcbdbcmplexical, NULL);
                 Log::info.log("Using lexical for compares") << Log::end;
             }
-            else if (bn->nav("compare").to_s().compare("int32") == 0)
+            else if (lj::bson_as_string(bn->nav("compare")).compare("int32") == 0)
             {
                 tcbdbsetcmpfunc(db, tcbdbcmpint32, NULL);
                 Log::info.log("Using int32 for compares") << Log::end;
@@ -380,12 +380,13 @@ namespace lj {
                     Log::error.log("Unable to open index [%s] because file or field is not set.") << (*iter).first << Log::end; 
                     continue;
                 }
-                std::string indexfile(dir + "/" + (*iter).second->nav("file").to_s());
+                std::string indexfile(dir + "/" + bson_as_string((*iter).second->nav("file")));
                 T* db = new T(indexfile,
                               open_flags,
                               tune_function,
                               (*iter).second);
-                dest.insert(std::pair<std::string, T*>((*iter).second->nav("field").to_s(), db));
+                std::string field = bson_as_string((*iter).second->nav("field"));
+                dest.insert(std::pair<std::string, T*>(field, db));
             }
         }
         
@@ -408,52 +409,52 @@ namespace lj {
         std::string configfile(directory_ + "/config");
         
         Log::info.log("Loading configuration from [%s].") << configfile << Log::end;
-        Bson cfg;
-        cfg.load(configfile);
-        Log::info.log("Loaded Settings [%s].") << cfg.to_pretty_s() << Log::end;
+        Bson* cfg = bson_load(configfile);
+        Log::info.log("Loaded Settings [%s].") << lj::bson_as_pretty_string(*cfg) << Log::end;
         
-        std::string dbfile(directory_ + "/" + cfg.nav("main/file").to_s());
+        std::string dbfile(directory_ + "/" + lj::bson_as_string(cfg->nav("main/file")));
         Log::info.log("Opening database [%s].") << dbfile << Log::end;
         db_ = new TreeDB(dbfile,
                          BDBOREADER | BDBOWRITER | BDBOCREAT,
                          &storage_tree_cfg,
-                         &(cfg.nav("main")));
+                         cfg->path("main"));
         
         Log::info.log("Opening tree indices under [%s].") << directory_ << Log::end;
         open_storage_index<TreeDB, TCBDB>(directory_,
-                                          cfg.nav("index/tree").to_map(),
+                                          cfg->nav("index/tree").to_map(),
                                           BDBOREADER | BDBOWRITER | BDBOCREAT,
                                           &storage_tree_cfg,
                                           fields_tree_);
         
         Log::info.log("Opening hash indices under [%s].") << directory_ << Log::end;
         open_storage_index<Hash_db, TCHDB>(directory_,
-                                           cfg.nav("index/hash").to_map(),
+                                           cfg->nav("index/hash").to_map(),
                                            HDBOREADER | HDBOWRITER | HDBOCREAT,
                                            &storage_hash_cfg,
                                            fields_hash_);
         
         Log::info.log("Opening text indices under [%s].") << directory_ << Log::end;
         open_storage_index<TextSearcher, TCQDB>(directory_,
-                                                cfg.nav("index/text").to_map(),
+                                                cfg->nav("index/text").to_map(),
                                                 QDBOREADER | QDBOWRITER | QDBOCREAT,
                                                 &storage_text_cfg,
                                                 fields_text_);
         
         Log::info.log("Opening tag indices under [%s].") << directory_ << Log::end;
         open_storage_index<TagSearcher, TCWDB>(directory_,
-                                               cfg.nav("index/tag").to_map(),
+                                               cfg->nav("index/tag").to_map(),
                                                WDBOREADER | WDBOWRITER | WDBOCREAT,
                                                &storage_tag_cfg,
                                                fields_tag_);
         
         Log::info.log("Registering unique fields from [%s].") << directory_ << Log::end;
-        for (std::map<std::string, Bson*>::const_iterator iter = cfg.nav("main/unique").to_map().begin();
-             iter != cfg.nav("main/unique").to_map().end();
+        Bson *uniques = cfg->path("main/unique");
+        for (std::map<std::string, Bson*>::const_iterator iter = uniques->to_map().begin();
+             iter != uniques->to_map().end();
              ++iter)
         {
-            Log::info.log("Adding unique field [%s].") << iter->second->to_s() << Log::end;
-            nested_indexing_.insert(iter->second->to_s());
+            Log::info.log("Adding unique field [%s].") << lj::bson_as_string(*iter->second) << Log::end;
+            nested_indexing_.insert(lj::bson_as_string(*iter->second));
         }
     }
     
@@ -532,10 +533,10 @@ namespace lj {
         
     Storage &Storage::place(Bson &value)
     {
-        unsigned long long key = value.nav("__key").to_l();
-        unsigned long long original_key = value.nav("__key").to_l();
+        unsigned long long key = lj::bson_as_int64(value.nav("__key"));
+        unsigned long long original_key = lj::bson_as_int64(value.nav("__key"));
         
-        Log::debug.log("Placing [%llu] [%s]") << key << value.to_pretty_s() << Log::end;
+        Log::debug.log("Placing [%llu] [%s]") << key << lj::bson_as_pretty_string(value) << Log::end;
         try
         {
             begin_transaction();
@@ -567,8 +568,8 @@ namespace lj {
             }
             
             Log::debug.log("Place in DB.") << Log::end;
-            value.nav("__key").set_int64(static_cast<long long>(key));
-            char* bson = value.bson();
+            value.nav("__key").set_value(lj::k_bson_int64, reinterpret_cast<char*>(&key));
+            char* bson = value.to_binary();
             db_->place(&key,
                        sizeof(unsigned long long),
                        bson,
@@ -580,7 +581,7 @@ namespace lj {
         }
         catch(Exception* ex)
         {
-            value.nav("__key").set_int64(static_cast<long long>(original_key));
+            value.nav("__key").set_value(lj::k_bson_int64, reinterpret_cast<char *>(&original_key));
             abort_transaction();
             throw ex;
         }
@@ -589,9 +590,9 @@ namespace lj {
     
     Storage &Storage::remove(Bson &value)
     {
-        unsigned long long key = value.nav("__key").to_l();
+        unsigned long long key = bson_as_int64(value.nav("__key"));
         
-        Log::debug.log("Removing [%llu] [%s]") << key << value.to_pretty_s() << Log::end;
+        Log::debug.log("Removing [%llu] [%s]") << key << bson_as_pretty_string(value) << Log::end;
         
         if (key)
         {
@@ -601,7 +602,7 @@ namespace lj {
                 deindex(key);
                 db_->remove(&key, sizeof(unsigned long long));
                 commit_transaction();
-                value.nav("__key").set_int64(0LL);
+                value.nav("__key").destroy();
             }
             catch (Exception* ex)
             {
@@ -614,15 +615,16 @@ namespace lj {
     
     Storage &Storage::check_unique(const Bson& n, const std::string& name, tokyo::DB* index)
     {
-        if (bson_type_is_nested(n.type()) &&
+        if (k_bson_document == n.type() &&
             nested_indexing_.end() != nested_indexing_.find(name))
         {
             Log::debug.log("checking children of [%s].") << name << Log::end;
+            
             for (std::map<std::string, Bson*>::const_iterator iter = n.to_map().begin();
                  n.to_map().end() != iter;
                  ++iter)
             {
-                char* bson = iter->second->bson();
+                char* bson = iter->second->to_binary();
                 std::pair<int, int> delta(bson_to_storage_delta(iter->second));
                 tokyo::DB::value_t existing = index->at(bson + delta.first,
                                                         iter->second->size() - delta.second);
@@ -634,10 +636,11 @@ namespace lj {
                 }
             }
         }
+        // XXX add the array type support here.
         else
         {
             Log::debug.log("Checking value of [%s].") << name << Log::end;
-            char *bson = n.bson();
+            char *bson = n.to_binary();
             std::pair<int, int> delta(bson_to_storage_delta(&n));
             tokyo::DB::value_t existing = index->at(bson + delta.first,
                                                     n.size() - delta.second);
@@ -670,14 +673,14 @@ namespace lj {
         {
             Bson n(original.nav(iter->first));
             if (n.exists() && 
-                bson_type_is_nested(n.type()) && 
+                k_bson_document == n.type() && 
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
                 for (std::map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
                      n.to_map().end() != iter2;
                      ++iter2)
                 {
-                    char* bson = iter2->second->bson();
+                    char* bson = iter2->second->to_binary();
                     std::pair<int, int> delta(bson_to_storage_delta(iter2->second));
                     iter->second->remove_from_existing(bson + delta.first,
                                                        iter2->second->size() - delta.second,
@@ -686,9 +689,10 @@ namespace lj {
                     delete[] bson;
                 }
             }
+            // XXX add the array type support here.
             else if (n.exists())
             {
-                char* bson = n.bson();
+                char* bson = n.to_binary();
                 std::pair<int, int> delta(bson_to_storage_delta(&n));
                 iter->second->remove_from_existing(bson + delta.first,
                                                    n.size() - delta.second,
@@ -705,23 +709,24 @@ namespace lj {
         {
             Bson n(original.nav(iter->first));
             if (n.exists() &&
-                bson_type_is_nested(n.type()) && 
+                k_bson_document == n.type() && 
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
                 for (std::map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
                      n.to_map().end() != iter2;
                      ++iter2)
                 {
-                    char* bson = iter2->second->bson();
+                    char* bson = iter2->second->to_binary();
                     std::pair<int, int> delta(bson_to_storage_delta(iter2->second));
                     iter->second->remove(bson + delta.first,
                                          iter2->second->size() - delta.second);
                     delete[] bson;
                 }
             }
+            // XXX add the array type support here.
             else if (n.exists())
             {
-                char* bson = n.bson();
+                char* bson = n.to_binary();
                 std::pair<int, int> delta(bson_to_storage_delta(&n));
                 iter->second->remove(bson + delta.first,
                                      n.size() - delta.second);
@@ -737,7 +742,7 @@ namespace lj {
             Bson n(original.nav(iter->first));
             if (n.exists())
             {
-                iter->second->remove(key, n.to_s());
+                iter->second->remove(key, bson_as_string(n));
             }
         }
         
@@ -749,7 +754,7 @@ namespace lj {
             Bson n(original.nav(iter->first));
             if (n.exists())
             {
-                iter->second->remove(key, n.to_set());
+                iter->second->remove(key, bson_as_value_string_set(n));
             }
         }
         return *this;
@@ -773,14 +778,14 @@ namespace lj {
         {
             Bson n(original.nav(iter->first));
             if (n.exists() &&
-                bson_type_is_nested(n.type()) &&
+                k_bson_document == n.type() &&
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
                 for (std::map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
                      n.to_map().end() != iter2;
                      ++iter2)
                 {
-                    char* bson = iter2->second->bson();
+                    char* bson = iter2->second->to_binary();
                     std::pair<int, int> delta(bson_to_storage_delta(iter2->second));
                     iter->second->place_with_existing(bson + delta.first,
                                                       iter2->second->size() - delta.second,
@@ -789,9 +794,10 @@ namespace lj {
                     delete[] bson;
                 }
             }
+            // XXX add the array type support here.
             else if (n.exists())
             {
-                char* bson = n.bson();
+                char* bson = n.to_binary();
                 std::pair<int, int> delta(bson_to_storage_delta(&n));
                 iter->second->place_with_existing(bson + delta.first,
                                                   n.size() - delta.second,
@@ -808,14 +814,14 @@ namespace lj {
         {
             Bson n(original.nav(iter->first));
             if (n.exists() &&
-                bson_type_is_nested(n.type()) &&
+                k_bson_document == n.type() &&
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
                 for (std::map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
                      n.to_map().end() != iter2;
                      ++iter2)
                 {
-                    char* bson = iter2->second->bson();
+                    char* bson = iter2->second->to_binary();
                     std::pair<int, int> delta(bson_to_storage_delta(iter2->second));
                     iter->second->place(bson + delta.first,
                                         iter2->second->size() - delta.second,
@@ -824,9 +830,10 @@ namespace lj {
                     delete[] bson;
                 }
             }
+            // XXX add the array type support here.
             else if (n.exists())
             {
-                char* bson = n.bson();
+                char* bson = n.to_binary();
                 std::pair<int, int> delta(bson_to_storage_delta(&n));
                 iter->second->place(bson + delta.first,
                                     n.size() - delta.second,
@@ -844,7 +851,7 @@ namespace lj {
             Bson n(original.nav(iter->first));
             if (n.exists())
             {
-                iter->second->index(key, n.to_s());
+                iter->second->index(key, bson_as_string(n));
             }
         }
         
@@ -856,7 +863,7 @@ namespace lj {
             Bson n(original.nav(iter->first));
             if (n.exists())
             {
-                iter->second->index(key, n.to_set());
+                iter->second->index(key, bson_as_value_string_set(n));
             }
         }
         return *this;

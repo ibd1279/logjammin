@@ -286,7 +286,7 @@ namespace lj
                  ++iter)
             {
                 D obj;
-                obj.assign(doc_at(*iter));
+                obj.copy_from(doc_at(*iter));
                 records.push_back(obj);
             }
             return size();
@@ -307,7 +307,7 @@ namespace lj
                  ++iter)
             {
                 D* obj = new D();
-                obj->assign(doc_at(*iter));
+                obj->copy_from(doc_at(*iter));
                 records.push_back(obj);
             }
             return size();
@@ -328,7 +328,7 @@ namespace lj
                  keys_->end() != iter;
                  ++iter)
             {
-                result.assign(doc_at(*iter));
+                result.copy_from(doc_at(*iter));
                 return true;
             }
             return false;

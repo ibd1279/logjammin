@@ -61,21 +61,45 @@ namespace lj {
     };
     
     //! Get a string version of the type.
+    /*!
+     \param t The type to convert into a string.
+     \return String name for the type.
+     */
     const std::string& bson_type_string(const Bson_node_type t);
     
+    //! Get the minimum number of bytes required for a type.
+    /*!
+     \param t The type to get the required bytes for.
+     \return The minimum size of the type.
+     */
     size_t bson_type_min_size(const Bson_node_type t);
     
+    //! Test if a type is a nested type (Array, or document).
+    /*!
+     \param t The type to test.
+     \return True if the type is a nested object, false otherwise.
+     */
     inline bool bson_type_is_nested(const Bson_node_type t)
     {
         return (t == k_bson_document ||
                 t == k_bson_array);
     }
     
+    //! Test if a type is quotablable (string types).
+    /*!
+     \param t The type to test.
+     \return True if the type is a quotable object, false otherwise.
+     */
     inline bool bson_type_is_quotable(const Bson_node_type t)
     {
         return (t == k_bson_string);
     }
     
+    //! Test if a type is a numerical type (integers and floats).
+    /*!
+     \param t The type to test.
+     \return True if the type is a number type, false otherwise.
+     */
     inline bool bson_type_is_number(const Bson_node_type t)
     {
         return (t == k_bson_int32 ||
@@ -84,6 +108,11 @@ namespace lj {
                 t == k_bson_double);
     }
     
+    //! Test if a type is a native c++ type (integers, floats, booleans, null).
+    /*!
+     \param t The type to test.
+     \return True if the type is a native type, false otherwise.
+     */
     inline bool bson_type_is_native(const Bson_node_type t)
     {
         return (t == k_bson_int32 ||
@@ -94,38 +123,72 @@ namespace lj {
                 t == k_bson_null);
     }
         
-    //! Bson document element.
+    //! Bson value.
     /*!
+     \par
+     Represets a Bson value, including documents and arrays. The following
+     examples show different ways to set a value at some path.
+     \code
+     Bson *string_node = bson_new_string("test"); // using helper methods.
+     Bson *int_node = new bson_new_int(k_bson_int32, 123) // using constructor.
+     Bson root_node; // default constructor.
+     Bson some_node;
+     
+     // Copy the value from another node.
+     some_node.copy_from(*string_node); // copy_from method
+     some_node = *int_node; // assignment operator.
+     
+     // Access a specific path.
+     other_node = root_node.child("some"); // child method.
+     other_node = root_node.nav("some/path"); // nav method.
+     other_node = *root_node.path("some/path"); // path method.
+     other_node = root_node["some/path"]; // array index operator.
+     
+     // Set a child node at a path.
+     root_node["some/path/int"] = *int_node; // index operator
+     root_node.set_child("some/path/int", int_node); // set_child method.
+     root_node["some/path/string"] << *string_node; // shift left operator.
+     root_node.push_child("some/path/string", string_node); // push_child method.
+     \endcode
      \author Jason Watson
      \version 1.0
      \date April 19, 2010
      */
     class Bson {
     public:
-        //=====================================================================
-        // DocumentNode ctor/dtor
-        //=====================================================================
-        
         //! Create a new document Node.
+        /*!
+         \par
+         Creates a blank, empty document that considers itself non-existant.
+         Used to create document/array nodes.
+         */
         Bson();
         
         //! Create a new document node based on some data.
+        /*!
+         \par
+         Create a new bson value based on the provided values. Used to create
+         value nodes.
+         \par
+         Data from \c v is copied to internal objects.
+         \param t The type of node being created.
+         \param v The value to associate with this node.
+         \sa Bson::set_value()
+         */
         Bson(const Bson_node_type t, const char* v);
         
-        //! Create a new document node as a copy.
+        //! Create a new document node as a copy of an existing Bson.
+        /*!
+         \par
+         \c Bson \c a(b) is identical to calling \c Bson \c a(); \c a.copy_from(b).
+         \param o The original Bson object.
+         \sa Bson::copy_from()
+         */
         Bson(const Bson &o);
         
         //! Destructor.
         ~Bson();
-        
-        //=====================================================================
-        // Bson Instance
-        //=====================================================================            
-        
-        //---------------------------------------------------------------------
-        // Bson value setters.
-        //---------------------------------------------------------------------
-        
+                
         //! Set the value of the document node based on a bson string.
         /*!
          \par
@@ -136,16 +199,7 @@ namespace lj {
          \return Reference to \c this .
          */
         void set_value(const Bson_node_type t, const char* v);
-        //! Set the value of the document node to a string value.
-        void set_string(const std::string& v);
-        //! Set the value of the document node to a int value.
-        void set_int32(int32_t v);
-        //! Set the value of the document node to a long long value.
-        void set_int64(int64_t v);
-        //! Set the value of the document node to a double value.
-        void set_double(double v);
-        //! Set the value of the document node to a boolean value.
-        void set_boolean(bool v);
+        
         //! Set the value of the document node to null.
         /*!
          \par
@@ -153,6 +207,7 @@ namespace lj {
          \return Reference to \c this .
          */
         void nullify();
+        
         //! Set the value of the document node to not exist.
         /*!
          \par
@@ -160,51 +215,145 @@ namespace lj {
          \return Reference to \c this .
          */
         void destroy();
-        //! set or create a child of this node.
-        /*!
-         \par
-         Destroy (and \c delete) the previous child \c n , and replace it with a
-         copy of \c c .
-         \param n The name of the child to replace.
-         \param c The child to copy from.
-         \return Reference to \c this .
-         */
-        Bson& child(const std::string& n, const Bson& c);
-        Bson& assign(const Bson& o);
-        Bson& operator=(const Bson& o) { return assign(o); };
-
-        //---------------------------------------------------------------------
-        // Bson value getters.
-        //---------------------------------------------------------------------
         
-        //! get the value of the document node as a debug string.
+        //! Destroy the current value and copy values from another Bson.
+        /*!
+         \param o The original Bson object.
+         */
+        Bson& copy_from(const Bson& o);
+
+        //! Destroy the current value and copy values from another Bson.
         /*!
          \par
-         The debug string is a representation of the DocumentNode in BSON,
-         format.  Rather than being a byte array, the results are output in
-         a psudeo-JSON looking format, with lengths and byte counts included
-         in the display.
-         \par
-         This is really only useful for debugging output.
-         \return A string describing how this DocumentNode should look in BSON.
+         \c a \c = \c b is identical to calling \c a.copy_from(b).
+         \param o The original Bson object.
+         \sa Bson::copy_from()
          */
-        std::string to_dbg_s() const;
-        //! get the value of the document node as a string.
-        std::string to_s() const;
-        //! get the value of the document node as a pretty string.
-        std::string to_pretty_s(int lvl = 0) const;
-        //! get the value of the children of a document node as a set of strings.
-        std::set<std::string> to_set() const;
-        //! get the value of the children of a document node as a list of strings.
-        std::list<std::string> to_list() const;
-        //! get the value of the document node as an int.
-        int to_i() const;
-        //! get the value of the document node as a long long.
-        long long to_l() const;
-        //! get the value of the document node as a boolean.
-        bool to_b() const;
-        //! get the value of the document node as a double.
-        double to_d() const;
+        void operator=(const Bson& o)
+        {
+            copy_from(o);
+        }
+        
+        //! Get a pointer to a specific Bson object in the document.
+        /*!
+         \par
+         The intermediate objects in the path are created if they do not exist.
+         \param p The path to follow.
+         \return Pointer to that object.
+         */
+        Bson* path(const std::string& p);
+        
+        //! Get a pointer to a specific Bson object in the document.
+        /*!
+         \par
+         Null is returned if the intermediate objects in the path do not exist.
+         \param p The path to follow.
+         \return Pointer to that object, null if it cannot be navigated to.
+         */
+        const Bson* path(const std::string& p) const;
+        
+        //! Get a specific Bson object at a path.
+        /*!
+         \par 
+         Reference version of \c path(p).
+         \sa path(const std::string)
+         \param p The path to follow.
+         \return Reference to the object at that node.
+         */
+        inline Bson& nav(const std::string& p)
+        {
+            return *path(p);
+        }
+        
+        //! Get a specific Bson object at a path.
+        /*!
+         \par 
+         Reference version of \c path(p).
+         \sa path(const std::string)const
+         \param p The path to follow.
+         \return Reference to the object at that node.
+         \throw Exception if the node cannot be navigated to.
+         */
+        inline const Bson& nav(const std::string& p) const
+        {
+            const Bson* ptr = path(p);
+            if (!ptr)
+            {
+                throw new Exception("Bson", "Unable to navigate to path.");
+            }
+            return *ptr;
+        }
+        
+        //! Get a specific Bson object at a path.
+        /*!
+         \par 
+         Syntatical sugar for \c nav(p).
+         \sa nav(const std::string)
+         \param p The path to follow.
+         \return Reference to the object at that node.
+         */
+        inline Bson& operator[](const std::string& p)
+        {
+            return nav(p);
+        }
+        
+        //! Get a specific Bson object at a path.
+        /*!
+         \par 
+         Syntatical sugar for \c nav(p).
+         \sa nav(const std::string)const
+         \param p The path to follow.
+         \return Reference to the object at that node.
+         \throw Exception if the node cannot be navigated to.
+         */
+        inline const Bson& operator[](const std::string& p) const
+        {
+            return nav(p);
+        }
+        
+        //! Set a child at a specific path.
+        void set_child(const std::string& p, Bson* c);
+        
+        //! Push a child at a specific path.
+        inline void push_child(const std::string& p, Bson* c)
+        {
+            path(p)->child_array_.push_back(c);
+        }
+        
+        //! Push a child onto this Bson object.
+        inline Bson& operator<<(const Bson& o)
+        {
+            child_array_.push_back(new Bson(o));
+            return *this;
+        }
+        
+        //! Get the map backing document type.
+        /*!
+         \return A map of children. An empty map for non-document types.
+         */
+        inline const std::map<std::string, Bson*>& to_map() const
+        {
+            return child_map_;
+        }
+        
+        //! Get the list backing array type.
+        /*!
+         \return A list of children. An empty list for non-array types.
+         */
+        inline const std::vector<Bson*>& to_vector() const
+        {
+            return child_array_;
+        }
+        
+        //! Get the value of this object.
+        /*!
+         \return The value of this node. NULL for document and array types.
+         */
+        inline const char* to_value() const
+        {
+            return value_;
+        }
+        
         //! get the value of the document node as a bson string.
         /*!
          \par
@@ -216,63 +365,58 @@ namespace lj {
          \c to_s(), but will appear in \c to_dbg_s() .
          \return A byte array contain the bson document.
          */
-        char* bson() const;
-        
-        //---------------------------------------------------------------------
-        // DocumentNode child getters.
-        //---------------------------------------------------------------------
-        
-        //! get the keys of all the children of this node.
-        std::set<std::string> children() const;
-        //! Get the children of this node.
-        const std::map<std::string, Bson*>& to_map() const { return child_map_; };
-        //! get a specific child of this node.
-        /*!
-         \par
-         Creates the child if it does not exist.
-         \param n The name of the child to get.
-         \return Reference to the child.
-         */
-        Bson& child(const std::string& n);
-        //! get a specific child of this node.
-        /*!
-         \par
-         Throws an exception if the child does not exist.
-         \param n The name of the child to get.
-         \return Reference to the child.
-         \throws Exception if the child does not exist.
-         */
-        const Bson& child(const std::string& n) const;
-        //! navigate to a specific child.
-        Bson& nav(const std::string& p);
-        //! navigate to a specific child.
-        const Bson& nav(const std::string& p) const;
-        
-        //---------------------------------------------------------------------
-        // DocumentNode inspectors.
-        //---------------------------------------------------------------------
-        
+        inline char* to_binary() const
+        {
+            char *ptr = new char[size()];
+            copy_to_bson(ptr);
+            return ptr;
+        }
+
         //! Get the type of the document node.
-        Bson_node_type type() const { return type_; }
-        //! Get if the node actually exists.
+        Bson_node_type type() const
+        {
+            return type_;
+        }
+        
+        //! Get if the Bson object contains anything.
         bool exists() const;
+        
         //! Get the size of the node.
         size_t size() const;
         
-        //---------------------------------------------------------------------
-        // File System Helpers
-        //---------------------------------------------------------------------
-        
-        //! Save this document node to disk.
-        const Bson& save(const std::string& fn) const;
-        //! Load this document node from disk.
-        Bson& load(const std::string& fn);
     private:
         std::map<std::string, Bson*> child_map_;
-        std::vector<std::pair<std::string, Bson *> > child_array_;
+        std::vector<Bson*> child_array_;
         char* value_;
         Bson_node_type type_;
         //! copy the value of this object into a bson byte array.
         size_t copy_to_bson(char *) const;
     };
+    
+    
+    Bson* bson_new_string(const std::string& str);
+    Bson* bson_new_boolean(const bool val);
+    Bson* bson_new_int64(const int64_t val);
+    //! get the value of the document node as a debug string.
+    /*!
+     \par
+     The debug string is a representation of the DocumentNode in BSON,
+     format.  Rather than being a byte array, the results are output in
+     a psudeo-JSON looking format, with lengths and byte counts included
+     in the display.
+     \par
+     This is really only useful for debugging output.
+     \return A string describing how this DocumentNode should look in BSON.
+     */
+    std::string bson_as_debug_string(const Bson& b);
+    std::string bson_as_string(const Bson& b);
+    std::string bson_as_pretty_string(const Bson& b, int lvl = 0);
+    std::set<std::string> bson_as_key_set(const Bson& b);
+    std::set<std::string> bson_as_value_string_set(const Bson& b);
+    int32_t bson_as_int32(const Bson& b);
+    int64_t bson_as_int64(const Bson& b);
+    bool bson_as_boolean(const Bson& b);
+    double bson_as_double(const Bson& b);
+    void bson_save(const Bson& b, const std::string& path);
+    Bson* bson_load(const std::string& path);
 }; // namespace lj
