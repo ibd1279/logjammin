@@ -365,12 +365,12 @@ namespace lj {
         
         template<typename T, typename Q>
         void open_storage_index(const std::string& dir,
-                                const std::map<std::string, Bson*>& cfg,
+                                const Linked_map<std::string, Bson*>& cfg,
                                 int open_flags,
                                 void (*tune_function)(Q*, const void*),
                                 std::map<std::string, T*>& dest)
         {
-            for (std::map<std::string, Bson*>::const_iterator iter = cfg.begin();
+            for (Linked_map<std::string, Bson*>::const_iterator iter = cfg.begin();
                  cfg.end() != iter;
                  ++iter)
             {
@@ -449,7 +449,7 @@ namespace lj {
         
         Log::info.log("Registering unique fields from [%s].") << directory_ << Log::end;
         Bson *uniques = cfg->path("main/unique");
-        for (std::map<std::string, Bson*>::const_iterator iter = uniques->to_map().begin();
+        for (Linked_map<std::string, Bson*>::const_iterator iter = uniques->to_map().begin();
              iter != uniques->to_map().end();
              ++iter)
         {
@@ -620,7 +620,7 @@ namespace lj {
         {
             Log::debug.log("checking children of [%s].") << name << Log::end;
             
-            for (std::map<std::string, Bson*>::const_iterator iter = n.to_map().begin();
+            for (Linked_map<std::string, Bson*>::const_iterator iter = n.to_map().begin();
                  n.to_map().end() != iter;
                  ++iter)
             {
@@ -676,7 +676,7 @@ namespace lj {
                 k_bson_document == n.type() && 
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
-                for (std::map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
+                for (Linked_map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
                      n.to_map().end() != iter2;
                      ++iter2)
                 {
@@ -712,7 +712,7 @@ namespace lj {
                 k_bson_document == n.type() && 
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
-                for (std::map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
+                for (Linked_map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
                      n.to_map().end() != iter2;
                      ++iter2)
                 {
@@ -781,7 +781,7 @@ namespace lj {
                 k_bson_document == n.type() &&
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
-                for (std::map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
+                for (Linked_map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
                      n.to_map().end() != iter2;
                      ++iter2)
                 {
@@ -817,7 +817,7 @@ namespace lj {
                 k_bson_document == n.type() &&
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
-                for (std::map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
+                for (Linked_map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
                      n.to_map().end() != iter2;
                      ++iter2)
                 {

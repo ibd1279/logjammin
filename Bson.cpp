@@ -155,16 +155,16 @@ namespace lj {
     // Bson ctor/dtor
     //=====================================================================
     
-    Bson::Bson() : child_map_(), child_array_(), value_(0), type_(k_bson_document)
+    Bson::Bson() : child_map_(), last_child_(0), value_(0), type_(k_bson_document)
     {
     }
     
-    Bson::Bson(const Bson_node_type t, const char *v) : child_map_(), child_array_(), value_(0), type_(k_bson_document)
+    Bson::Bson(const Bson_node_type t, const char *v) : child_map_(), last_child_(0), value_(0), type_(k_bson_document)
     {
         set_value(t, v);
     }
     
-    Bson::Bson(const Bson &o) : child_map_(), child_array_(), value_(0), type_(o.type_)
+    Bson::Bson(const Bson &o) : child_map_(), last_child_(o.last_child_), value_(0), type_(o.type_)
     {
         copy_from(o);
     }
@@ -175,17 +175,11 @@ namespace lj {
         {
             delete[] value_;
         }
-        for (std::map<std::string, Bson*>::const_iterator iter = to_map().begin();
-             to_map().end() != iter;
+        for (Linked_map<std::string, Bson*>::iterator iter = child_map_.begin();
+             child_map_.end() != iter;
              ++iter)
         {
             delete iter->second;
-        }
-        for (std::vector<Bson*>::const_iterator iter = to_vector().begin();
-             to_vector().end() != iter;
-             ++iter)
-        {
-            delete (*iter);
         }
     }
     
@@ -195,20 +189,13 @@ namespace lj {
         char* old = NULL;
         if (bson_type_is_nested(type()))
         {
-            for (std::map<std::string, Bson*>::const_iterator iter = to_map().begin();
-                 to_map().end() != iter;
+            for (Linked_map<std::string, Bson*>::iterator iter = child_map_.begin();
+                 child_map_.end() != iter;
                  ++iter)
             {
                 delete iter->second;
             }
-            for (std::vector<Bson*>::const_iterator iter = to_vector().begin();
-                 to_vector().end() != iter;
-                 ++iter)
-            {
-                delete (*iter);
-            }
             child_map_.clear();
-            child_array_.clear();
             value_ = NULL;
         }
         else
@@ -281,7 +268,7 @@ namespace lj {
         destroy();
         if (bson_type_is_nested(o.type()))
         {
-            for (std::map<std::string, Bson *>::const_iterator iter = o.child_map_.begin();
+            for (Linked_map<std::string, Bson *>::const_iterator iter = o.child_map_.begin();
                  o.child_map_.end() != iter;
                  ++iter)
             {
@@ -334,7 +321,7 @@ namespace lj {
         Bson *n = this;
         while (0 < parts.size())
         {
-            std::map<std::string, Bson*>::iterator iter = n->child_map_.find(parts.front());
+            Linked_map<std::string, Bson*>::iterator iter = n->child_map_.find(parts.front());
             if (n->child_map_.end() == iter)
             {
                 iter = n->child_map_.insert(std::pair<std::string, Bson*>(parts.front(), new Bson())).first;
@@ -352,7 +339,7 @@ namespace lj {
         const Bson *n = this;
         while (0 < parts.size())
         {
-            std::map<std::string, Bson*>::const_iterator iter = n->child_map_.find(parts.front());
+            Linked_map<std::string, Bson*>::const_iterator iter = n->child_map_.find(parts.front());
             if (n->child_map_.end() == iter)
             {
                 return 0;
@@ -367,6 +354,7 @@ namespace lj {
     {
         std::list<std::string> parts;
         split_path(p, parts);
+
         if (!parts.size()) 
         {
             // No child name or path, so abort.
@@ -377,10 +365,9 @@ namespace lj {
         
         // navigate the structure.
         Bson *n = this;
-        std::map<std::string, Bson*>::iterator iter;
         while (parts.size())
         {
-            std::map<std::string, Bson*>::iterator iter = n->child_map_.find(parts.front());
+            Linked_map<std::string, Bson*>::iterator iter = n->child_map_.find(parts.front());
             if (n->child_map_.end() == iter)
             {
                 iter = n->child_map_.insert(std::pair<std::string, Bson*>(parts.front(), new Bson())).first;
@@ -390,7 +377,7 @@ namespace lj {
         }
         
         // remove any existing value just in case.
-        iter = n->child_map_.find(child_name);
+        Linked_map<std::string, Bson*>::iterator iter = n->child_map_.find(child_name);
         if (n->child_map_.end() != iter)
         {
             if(iter->second == c)
@@ -398,7 +385,7 @@ namespace lj {
                 //already here, do nothing.
                 return;
             }
-            delete c;
+            delete iter->second;
             n->child_map_.erase(iter);
         }
         
@@ -406,11 +393,29 @@ namespace lj {
         n->child_map_.insert(std::pair<std::string, Bson*>(child_name, c));
     }
     
+    //! Push a child at a specific path.
+    void Bson::push_child(const std::string& p, Bson* c)
+    {
+        std::ostringstream oss;
+        oss << last_child_++;
+        std::string tmp = oss.str();
+        path(p)->child_map_.insert(std::pair<std::string, Bson*>(oss.str(), c));
+    }
+    
+    //! Push a child onto this Bson object.
+    Bson& Bson::operator<<(const Bson& o)
+    {
+        std::ostringstream oss;
+        oss << last_child_;
+        child_map_.insert(std::pair<std::string, Bson*>(oss.str(), new Bson(o)));
+        return *this;
+    }
+        
     bool Bson::exists() const
     {
         if (bson_type_is_nested(type()))
         {
-            return (type() == k_bson_document ? child_map_.size() : child_array_.size());
+            return (0 < child_map_.size() ? child_map_.size() : 0);
         }
         else
         {
@@ -420,7 +425,7 @@ namespace lj {
     
     size_t Bson::size() const
     {
-        long sz = 0, h = 0;
+        long sz = 0;
         switch (type())
         {
             case k_bson_string:
@@ -442,23 +447,13 @@ namespace lj {
                 sz = 0;
                 break;
             case k_bson_document:
+            case k_bson_array:
                 sz += 5;
-                for (std::map<std::string, Bson *>::const_iterator iter = to_map().begin();
+                for (Linked_map<std::string, Bson *>::const_iterator iter = to_map().begin();
                      to_map().end() != iter;
                      ++iter)
                 {
                     sz += iter->second->size() + iter->first.size() + 2;
-                }
-                break;
-            case k_bson_array:
-                sz += 5;
-                for (std::vector<Bson*>::const_iterator iter = to_vector().begin();
-                     to_vector().end() != iter;
-                     ++iter, ++h)
-                {
-                    std::ostringstream oss;
-                    oss << h;
-                    sz += oss.str().size() + (*iter)->size() + 2;
                 }
                 break;
             default:
@@ -470,13 +465,12 @@ namespace lj {
     size_t Bson::copy_to_bson(char* ptr) const
     {
         size_t sz = size();
-        long h;
         switch (type())
         {
             case k_bson_document:
                 memcpy(ptr, &sz, 4);
                 ptr += 4;
-                for (std::map<std::string, Bson*>::const_iterator iter = child_map_.begin();
+                for (Linked_map<std::string, Bson*>::const_iterator iter = child_map_.begin();
                      child_map_.end() != iter;
                      ++iter)
                 {
@@ -485,24 +479,6 @@ namespace lj {
                     memcpy(ptr, iter->first.c_str(), iter->first.size() + 1);
                     ptr += iter->first.size() + 1;
                     ptr += iter->second->copy_to_bson(ptr);
-                }
-                *ptr = 0;
-                break;
-            case k_bson_array:
-                memcpy(ptr, &sz, 4);
-                ptr += 4;
-                h = 0;
-                for (std::vector<Bson*>::const_iterator iter = child_array_.begin();
-                     child_array_.end() != iter;
-                     ++iter, ++h)
-                {
-                    Bson_node_type t = (*iter)->type();
-                    memcpy(ptr++, &t, 1);
-                    std::ostringstream oss;
-                    oss << h;
-                    memcpy(ptr, oss.str().c_str(), oss.str().size() + 1);
-                    ptr += oss.str().size() + 1;
-                    ptr += (*iter)->copy_to_bson(ptr);
                 }
                 *ptr = 0;
                 break;
@@ -538,7 +514,6 @@ namespace lj {
     {
         long long l = 0;
         double d = 0.0;
-        long h;
         const char* v = b.to_value();
         if (!bson_type_is_nested(b.type()) && !v)
         {
@@ -570,12 +545,13 @@ namespace lj {
                 buf << "(1)" << ((bool)l);
                 return buf.str();
             case k_bson_document:
+            case k_bson_array:
                 if (!b.to_map().size())
                 {
                     return "{(4-0)(1-0)}";
                 }
                 buf << "{(4-" << b.size() << ")";
-                for (std::map<std::string, Bson*>::const_iterator iter = b.to_map().begin();
+                for (Linked_map<std::string, Bson*>::const_iterator iter = b.to_map().begin();
                      b.to_map().end() != iter;
                      ++iter)
                 {
@@ -587,33 +563,6 @@ namespace lj {
                     }
                     buf << bson_as_debug_string(*iter->second);
                     if (bson_type_is_quotable(iter->second->type()))
-                    {
-                        buf << "\"";
-                    }
-                    buf << ",";
-                }
-                return buf.str().erase(buf.str().size() - 1).append("(1-0)}");
-            case k_bson_array:
-                if (!b.to_vector().size())
-                {
-                    return "{(4-0)(1-0)}";
-                }
-                buf << "{(4-" << b.size() << ")";
-                h = 0;
-                for (std::vector<Bson*>::const_iterator iter = b.to_vector().begin();
-                     b.to_vector().end() != iter;
-                     ++iter, ++h)
-                {
-                    std::ostringstream oss;
-                    oss << h;
-                    buf << "(1-" << bson_type_string((*iter)->type()) << ")";
-                    buf << "\"(" << oss.str().size() + 1 << ")" << h << "\":";
-                    if (bson_type_is_quotable((*iter)->type()))
-                    {
-                        buf << "\"";
-                    }
-                    buf << bson_as_debug_string(*(*iter));
-                    if (bson_type_is_quotable((*iter)->type()))
                     {
                         buf << "\"";
                     }
@@ -667,7 +616,7 @@ namespace lj {
                     return "{}";
                 }
                 buf << "{";
-                for (std::map<std::string, Bson*>::const_iterator iter = b.to_map().begin();
+                for (Linked_map<std::string, Bson*>::const_iterator iter = b.to_map().begin();
                      b.to_map().end() != iter;
                      ++iter)
                 {
@@ -689,25 +638,25 @@ namespace lj {
                 }
                 return buf.str().erase(buf.str().size() - 1).append("}");
             case k_bson_array:
-                if (!b.to_vector().size())
+                if (!b.to_map().size())
                 {
                     return "[]";
                 }
                 buf << "[";
-                for (std::vector<Bson*>::const_iterator iter = b.to_vector().begin();
-                     b.to_vector().end() != iter;
+                for (Linked_map<std::string, Bson*>::const_iterator iter = b.to_map().begin();
+                     b.to_map().end() != iter;
                      ++iter)
                 {
-                    if (!(*iter)->exists())
+                    if (!iter->second->exists())
                     {
                         continue;
                     }
-                    if (bson_type_is_quotable((*iter)->type()))
+                    if (bson_type_is_quotable(iter->second->type()))
                     {
                         buf << "\"";
                     }
-                    buf << bson_as_string(*(*iter));
-                    if (bson_type_is_quotable((*iter)->type()))
+                    buf << bson_as_string(*iter->second);
+                    if (bson_type_is_quotable(iter->second->type()))
                     {
                         buf << "\"";
                     }
@@ -767,7 +716,7 @@ namespace lj {
                     return "{}";
                 }
                 buf << "{\n";
-                for (std::map<std::string, Bson*>::const_iterator iter = b.to_map().begin();
+                for (Linked_map<std::string, Bson*>::const_iterator iter = b.to_map().begin();
                      b.to_map().end() != iter;
                      ++iter)
                 {
@@ -789,25 +738,25 @@ namespace lj {
                 }
                 return buf.str().erase(buf.str().size() - 2).append("\n").append(indent).append("}");
             case k_bson_array:
-                if (!b.to_vector().size())
+                if (!b.to_map().size())
                 {
                     return "[]";
                 }
                 buf << "[";
-                for (std::vector<Bson*>::const_iterator iter = b.to_vector().begin();
-                     b.to_vector().end() != iter;
+                for (Linked_map<std::string, Bson*>::const_iterator iter = b.to_map().begin();
+                     b.to_map().end() != iter;
                      ++iter)
                 {
-                    if (!(*iter)->exists())
+                    if (!iter->second->exists())
                     {
                         continue;
                     }
-                    if (bson_type_is_quotable((*iter)->type()))
+                    if (bson_type_is_quotable(iter->second->type()))
                     {
                         buf << "\"";
                     }
-                    buf << indent << "  " << bson_as_pretty_string(*(*iter), lvl + 1);
-                    if (bson_type_is_quotable((*iter)->type()))
+                    buf << indent << "  " << bson_as_pretty_string(*iter->second, lvl + 1);
+                    if (bson_type_is_quotable(iter->second->type()))
                     {
                         buf << "\"";
                     }
@@ -826,7 +775,7 @@ namespace lj {
         std::set<std::string>::iterator set_iter = key_set.begin();
         if (k_bson_document == b.type())
         {
-            for (std::map<std::string, Bson*>::const_iterator iter = b.to_map().begin();
+            for (Linked_map<std::string, Bson*>::const_iterator iter = b.to_map().begin();
                  b.to_map().end() != iter;
                  ++iter)
             {
@@ -839,22 +788,13 @@ namespace lj {
     std::set<std::string> bson_as_value_string_set(const Bson& b)
     {
         std::set<std::string> value_set;
-        if (k_bson_document == b.type())
+        if (bson_type_is_nested(b.type()))
         {
-            for (std::map<std::string, Bson*>::const_iterator iter = b.to_map().begin();
+            for (Linked_map<std::string, Bson*>::const_iterator iter = b.to_map().begin();
                  b.to_map().end() != iter;
                  ++iter)
             {
                 value_set.insert(bson_as_string(*iter->second));
-            }
-        }
-        else if (k_bson_array == b.type())
-        {
-            for (std::vector<Bson*>::const_iterator iter = b.to_vector().begin();
-                 b.to_vector().end() != iter;
-                 ++iter)
-            {
-                value_set.insert(bson_as_string(*(*iter)));
             }
         }
         else

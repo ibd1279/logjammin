@@ -148,6 +148,7 @@ namespace logjam {
         allowed.insert(field);
         
         lj::Bson* n = ptr->real_node().path("main/unique");
+        std::cerr << "testing" << n << std::endl;
         n->destroy();
         int h = 0;
         for(std::set<std::string>::const_iterator iter = allowed.begin();

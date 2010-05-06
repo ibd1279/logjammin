@@ -38,6 +38,8 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <sstream>
+#include "LinkedMap.h"
 #include "Exception.h"
 
 namespace lj {
@@ -315,36 +317,20 @@ namespace lj {
         void set_child(const std::string& p, Bson* c);
         
         //! Push a child at a specific path.
-        inline void push_child(const std::string& p, Bson* c)
-        {
-            path(p)->child_array_.push_back(c);
-        }
-        
+        void push_child(const std::string& p, Bson* c);
+
         //! Push a child onto this Bson object.
-        inline Bson& operator<<(const Bson& o)
-        {
-            child_array_.push_back(new Bson(o));
-            return *this;
-        }
+        Bson& operator<<(const Bson& o);
         
         //! Get the map backing document type.
         /*!
          \return A map of children. An empty map for non-document types.
          */
-        inline const std::map<std::string, Bson*>& to_map() const
+        inline const Linked_map<std::string, Bson*>& to_map() const
         {
             return child_map_;
         }
-        
-        //! Get the list backing array type.
-        /*!
-         \return A list of children. An empty list for non-array types.
-         */
-        inline const std::vector<Bson*>& to_vector() const
-        {
-            return child_array_;
-        }
-        
+                
         //! Get the value of this object.
         /*!
          \return The value of this node. NULL for document and array types.
@@ -385,8 +371,8 @@ namespace lj {
         size_t size() const;
         
     private:
-        std::map<std::string, Bson*> child_map_;
-        std::vector<Bson*> child_array_;
+        Linked_map<std::string, Bson*> child_map_;
+        int last_child_;
         char* value_;
         Bson_node_type type_;
         //! copy the value of this object into a bson byte array.

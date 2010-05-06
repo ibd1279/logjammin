@@ -36,7 +36,6 @@
 		222421D9118C920000A8A0B1 /* Bson.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Bson.cpp; sourceTree = "<group>"; };
 		222421DA118C920000A8A0B1 /* Bson.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Bson.h; sourceTree = "<group>"; };
 		222422BE118F8ABA00A8A0B1 /* LinkedMap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LinkedMap.h; sourceTree = "<group>"; };
-		222422BF118F8ABA00A8A0B1 /* LinkedMap.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LinkedMap.cpp; sourceTree = "<group>"; };
 		222B665C101E46F300F45B04 /* libcrypto.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcrypto.dylib; path = usr/lib/libcrypto.dylib; sourceTree = SDKROOT; };
 		223517341114E14000871FBF /* Release.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Release.h; sourceTree = "<group>"; };
 		223517351114E14000871FBF /* Release.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Release.cpp; sourceTree = "<group>"; };
@@ -149,6 +148,7 @@
 		2236837211825B97002FD990 /* lj */ = {
 			isa = PBXGroup;
 			children = (
+				222422BE118F8ABA00A8A0B1 /* LinkedMap.h */,
 				22E9C9A8117C894700557ADA /* Exception.h */,
 				2236823611815E2E002FD990 /* Logger.h */,
 				2236823711815E2E002FD990 /* Logger.cpp */,
@@ -158,8 +158,6 @@
 				2236838A118270B8002FD990 /* BSONParser.cpp */,
 				22E9C96B117BF18B00557ADA /* Storage.h */,
 				22E9C96C117BF18B00557ADA /* Storage.cpp */,
-				222422BE118F8ABA00A8A0B1 /* LinkedMap.h */,
-				222422BF118F8ABA00A8A0B1 /* LinkedMap.cpp */,
 			);
 			name = lj;
 			sourceTree = "<group>";

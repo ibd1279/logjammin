@@ -13,7 +13,7 @@
 #include <map>
 
 namespace lj
-{    
+{
     template<typename K, typename V>
     class Linked_map
     {
@@ -26,10 +26,13 @@ namespace lj
         typedef const value_type* const_pointer;
         typedef value_type& reference;
         typedef const value_type& const_reference;
+        
+        class Linked_map_const_iterator;
  
         class Linked_map_iterator : public std::iterator<std::forward_iterator_tag, typename Linked_map::value_type>
         {
             friend class Linked_map;
+            friend class Linked_map_const_iterator;
         public:
             typedef typename Linked_map<K, V>::pointer pointer;
             typedef typename Linked_map<K, V>::const_pointer const_pointer;
@@ -97,12 +100,7 @@ namespace lj
             Linked_map_iterator operator++(int)
             {
                 Linked_map_iterator i(*this);
-                if (!next_) {
-                    val_ = 0;
-                    prev_ = 0;
-                    next_ = 0;
-                }
-                else
+                if (next_)
                 {
                     val_ = next_->val_;
                     prev_ = next_->prev_;
@@ -112,12 +110,7 @@ namespace lj
             }
             Linked_map_iterator& operator++()
             {
-                if (!next_) {
-                    val_ = 0;
-                    prev_ = 0;
-                    next_ = 0;
-                }
-                else
+                if (next_)
                 {
                     val_ = next_->val_;
                     prev_ = next_->prev_;
@@ -127,11 +120,118 @@ namespace lj
             }
         private:
             value_type* val_;
-            Linked_map_iterator prev_;
-            Linked_map_iterator next_;
+            Linked_map_iterator* prev_;
+            Linked_map_iterator* next_;
+        };
+
+        class Linked_map_const_iterator : public std::iterator<std::forward_iterator_tag, typename Linked_map::value_type>
+        {
+            friend class Linked_map;
+        public:
+            typedef typename Linked_map<K, V>::pointer pointer;
+            typedef typename Linked_map<K, V>::const_pointer const_pointer;
+            typedef typename Linked_map<K, V>::reference reference;
+            typedef typename Linked_map<K, V>::const_reference const_reference;
+            
+            Linked_map_const_iterator(value_type* v, Linked_map_iterator* prev, Linked_map_iterator* next) : val_(v), prev_(prev), next_(next)
+            {
+            }
+            
+            Linked_map_const_iterator(const Linked_map_iterator& o) : val_(o.val_), prev_(o.prev_), next_(o.next_)
+            {
+            }
+
+            Linked_map_const_iterator(const Linked_map_const_iterator& o) : val_(o.val_), prev_(o.prev_), next_(o.next_)
+            {
+            }
+            
+            operator reference()
+            {
+                return *val_;
+            }
+            
+            operator const_reference() const
+            {
+                return *val_;
+            }
+            
+            Linked_map_const_iterator& operator=(const Linked_map_const_iterator& o)
+            {
+                val_ = o.val_;
+                prev_ = o.prev_;
+                next_ = o.next_;
+                return *this;
+            }
+            
+            Linked_map_const_iterator& operator=(const Linked_map_iterator& o)
+            {
+                val_ = o.val_;
+                prev_ = o.prev_;
+                next_ = o.next_;
+                return *this;
+            }
+            
+            bool operator==(const Linked_map_const_iterator& o) const
+            {
+                return (prev_ == o.prev_ &&
+                        next_ == o.next_);
+            }
+            
+            bool operator!=(const Linked_map_const_iterator& o) const
+            {
+                return (prev_ != o.prev_ ||
+                        next_ != o.next_);
+            }
+            
+            const_reference operator*()
+            {
+                return *val_;
+            }
+            
+            const_reference operator*() const
+            {
+                return *val_;
+            }
+            
+            const_pointer operator->()
+            {
+                return val_;
+            }
+            
+            const_pointer operator->() const
+            {
+                return val_;
+            }
+            
+            Linked_map_const_iterator operator++(int)
+            {
+                Linked_map_const_iterator i(*this);
+                if (next_)
+                {
+                    val_ = next_->val_;
+                    prev_ = next_->prev_;
+                    next_ = next_->next_;
+                }
+                return i;
+            }
+            Linked_map_const_iterator& operator++()
+            {
+                if (next_)
+                {
+                    val_ = next_->val_;
+                    prev_ = next_->prev_;
+                    next_ = next_->next_;
+                }
+                return *this;
+            }
+        private:
+            value_type* val_;
+            Linked_map_iterator* prev_;
+            Linked_map_iterator* next_;
         };
         
         typedef Linked_map_iterator iterator;
+        typedef Linked_map_const_iterator const_iterator;
         
         Linked_map() : h_(0), t_(0), m_()
         {
@@ -140,44 +240,100 @@ namespace lj
             h_->next_ = t_;
         }
         
-        iterator& begin()
+        Linked_map(const Linked_map<K, V>& o) : h_(0), t_(0), m_()
+        {
+            h_ = new iterator(0, 0, 0);
+            t_ = new iterator(0, h_, 0);
+            h_->next_ = t_;
+            
+            for (iterator i = o.begin();
+                 o.end() != i;
+                 ++i)
+            {
+                insert(*i);
+            }
+        }
+        
+        Linked_map<K, V>& operator=(const Linked_map<K, V>& o)
+        {
+            clear();
+            
+            for (iterator i = o.begin();
+                 o.end() != i;
+                 ++i)
+            {
+                insert(*i);
+            }
+        }
+        
+        iterator begin()
         {
             return *h_->next_;
         }
         
-        iterator& end()
+        iterator end()
         {
             return *t_;
         }
         
-        iterator find(K key)
+        const_iterator begin() const
         {
-            if (m_.end() == m_.find(key))
+            return *h_->next_;
+        }
+        
+        const_iterator end() const
+        {
+            return *t_;
+        }
+        
+        iterator find(K key) const
+        {
+            typename std::map<K, iterator*>::const_iterator iter = m_.find(key);
+            if (m_.end() == iter)
             {
                 return *t_;
             }
-            return *m_.find(key)->second;
+            return *iter->second;
         }
         
-        bool insert(value_type& v)
+        typedef typename std::map<K, iterator*>::iterator internal_map_iterator;
+        
+        std::pair<iterator, bool> insert(const_reference v)
         {
             iterator* w = new iterator(new value_type(v),
                                        t_->prev_,
                                        t_);
-            if(!m_.insert(std::pair<K, iterator*>(v)).second)
+            std::pair<typename std::map<K, iterator*>::iterator, bool> i = m_.insert(std::pair<K, iterator*>(v.first, w));
+            if(!i.second)
             {
                 delete w->val_;
                 delete w;
-                return false;
+                return std::pair<iterator, bool>(*i.first->second, false);
             }
             else
             {
                 t_->prev_->next_ = w;
                 t_->prev_ = w;
-                return true;
+                return std::pair<iterator, bool>(*w, true);
             }
         }
-        
+                
+        void clear()
+        {
+            iterator *current = h_;
+            while(current->next_ != t_)
+            {
+                current = current->next_;
+                delete current->val_;
+                delete current;
+            }
+            m_.clear();
+            h_->next_ = t_;
+            t_->prev_ = h_;
+            h_->prev_ = 0;
+            t_->next_ = 0;
+        }
+
         void erase(K key)
         {
             if (m_.end() != m_.find(key))
@@ -193,11 +349,20 @@ namespace lj
                 {
                     wn->prev_ = wp;
                 }
-                delete w->key_;
-                delete w->item_;
+                delete w->val_;
                 delete w;
                 m_.erase(m_.find(key));
             }
+        }
+        
+        void erase(iterator& w)
+        {
+            erase(w.val_->first);
+        }
+        
+        size_t size() const
+        {
+            return m_.size();
         }
         
     private:
