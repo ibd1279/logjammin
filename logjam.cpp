@@ -39,6 +39,7 @@
 #include "logjam_lua.h"
 #include "Logger.h"
 #include "Exception.h"
+#include "LinkedMap.h"
 extern "C" {
 #include "lualib.h"
 }
