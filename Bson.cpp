@@ -396,17 +396,22 @@ namespace lj {
     //! Push a child at a specific path.
     void Bson::push_child(const std::string& p, Bson* c)
     {
+        Bson* ptr = path(p);
+        if(k_bson_array != ptr->type())
+        {
+            ptr->set_value(k_bson_array, 0);
+        }
         std::ostringstream oss;
-        oss << last_child_++;
+        oss << ptr->last_child_++;
         std::string tmp = oss.str();
-        path(p)->child_map_.insert(std::pair<std::string, Bson*>(oss.str(), c));
+        ptr->child_map_.insert(std::pair<std::string, Bson*>(oss.str(), c));
     }
     
     //! Push a child onto this Bson object.
     Bson& Bson::operator<<(const Bson& o)
     {
         std::ostringstream oss;
-        oss << last_child_;
+        oss << last_child_++;
         child_map_.insert(std::pair<std::string, Bson*>(oss.str(), new Bson(o)));
         return *this;
     }
@@ -468,6 +473,7 @@ namespace lj {
         switch (type())
         {
             case k_bson_document:
+            case k_bson_array:
                 memcpy(ptr, &sz, 4);
                 ptr += 4;
                 for (Linked_map<std::string, Bson*>::const_iterator iter = child_map_.begin();
@@ -508,6 +514,11 @@ namespace lj {
     Bson* bson_new_int64(const int64_t val)
     {
         return new Bson(k_bson_int64, reinterpret_cast<const char *> (&val));
+    }
+    
+    Bson* bson_new_null()
+    {
+        return new Bson(k_bson_null, 0);
     }
     
     std::string bson_as_debug_string(const Bson& b)
@@ -742,7 +753,7 @@ namespace lj {
                 {
                     return "[]";
                 }
-                buf << "[";
+                buf << "[\n";
                 for (Linked_map<std::string, Bson*>::const_iterator iter = b.to_map().begin();
                      b.to_map().end() != iter;
                      ++iter)
@@ -751,11 +762,12 @@ namespace lj {
                     {
                         continue;
                     }
+                    buf << indent << "  ";
                     if (bson_type_is_quotable(iter->second->type()))
                     {
                         buf << "\"";
                     }
-                    buf << indent << "  " << bson_as_pretty_string(*iter->second, lvl + 1);
+                    buf << bson_as_pretty_string(*iter->second, lvl + 1);
                     if (bson_type_is_quotable(iter->second->type()))
                     {
                         buf << "\"";

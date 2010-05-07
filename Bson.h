@@ -383,6 +383,7 @@ namespace lj {
     Bson* bson_new_string(const std::string& str);
     Bson* bson_new_boolean(const bool val);
     Bson* bson_new_int64(const int64_t val);
+    Bson* bson_new_null();
     //! get the value of the document node as a debug string.
     /*!
      \par

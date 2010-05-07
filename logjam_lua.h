@@ -68,6 +68,7 @@ namespace logjam {
         ~LuaBSONNode();
         int nav(lua_State *L);
         int set(lua_State *L);
+        int push(lua_State *L);
         int get(lua_State *L);
         int save(lua_State *L);
         int load(lua_State *L);

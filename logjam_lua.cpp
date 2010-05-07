@@ -78,9 +78,9 @@ namespace logjam {
         lj::Bson *ptr = new lj::Bson();
         ptr->set_child("main/compare", lj::bson_new_string("int64"));
         ptr->set_child("main/file", lj::bson_new_string(std::string("db_") + dbname + ".tcb"));
-        ptr->set_child("main/mode/0", lj::bson_new_string("create"));
-        ptr->set_child("main/mode/1", lj::bson_new_string("read"));
-        ptr->set_child("main/mode/2", lj::bson_new_string("write"));
+        ptr->push_child("main/mode", lj::bson_new_string("create"));
+        ptr->push_child("main/mode", lj::bson_new_string("read"));
+        ptr->push_child("main/mode", lj::bson_new_string("write"));
         ptr->set_child("main/type", lj::bson_new_string("tree"));
         ptr->nav("main/unique");
         ptr->nav("index/tree");
@@ -131,9 +131,9 @@ namespace logjam {
         LuaBSONNode *ptr = Lunar<LuaBSONNode>::check(L, -5);
         ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/compare", lj::bson_new_string(indxcomp));
         ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/file", lj::bson_new_string(std::string("index.") + indxname + "." + indxtype + ".tc"));
-        ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/mode/0", lj::bson_new_string("create"));
-        ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/mode/1", lj::bson_new_string("read"));
-        ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/mode/2", lj::bson_new_string("write"));
+        ptr->real_node().push_child(std::string("index/") + indxtype + "/" + indxname + "/mode", lj::bson_new_string("create"));
+        ptr->real_node().push_child(std::string("index/") + indxtype + "/" + indxname + "/mode", lj::bson_new_string("read"));
+        ptr->real_node().push_child(std::string("index/") + indxtype + "/" + indxname + "/mode", lj::bson_new_string("write"));
         ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/type", lj::bson_new_string(indxtype));
         ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/field", lj::bson_new_string(indxfield));
         ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/children", lj::bson_new_boolean(false));
@@ -168,6 +168,7 @@ namespace logjam {
     Lunar<LuaBSONNode>::RegType LuaBSONNode::LUNAR_METHODS[] = {
     LUNAR_MEMBER_METHOD(LuaBSONNode, nav),
     LUNAR_MEMBER_METHOD(LuaBSONNode, set),
+    LUNAR_MEMBER_METHOD(LuaBSONNode, push),
     LUNAR_MEMBER_METHOD(LuaBSONNode, get),
     LUNAR_MEMBER_METHOD(LuaBSONNode, load),
     LUNAR_MEMBER_METHOD(LuaBSONNode, save),
@@ -224,6 +225,38 @@ namespace logjam {
                 ptr = lj::bson_new_boolean(lua_toboolean(L, -1));
                 _node->copy_from(*ptr);
                 delete ptr;
+                break;
+            case LUA_TTABLE:
+            case LUA_TFUNCTION:
+            case LUA_TTHREAD:
+            case LUA_TUSERDATA:
+            case LUA_TLIGHTUSERDATA:
+            case LUA_TNONE:
+            default:
+                break;
+        }
+        return 0;
+    }
+    
+    int LuaBSONNode::push(lua_State *L)
+    {
+        lj::Bson* ptr;
+        switch(lua_type(L, -1)) {
+            case LUA_TSTRING:
+                ptr = lj::bson_new_string(lua_to_string(L, -1));
+                _node->push_child("", ptr);
+                break;
+            case LUA_TNUMBER:
+                ptr = lj::bson_new_int64(luaL_checkint(L, -1));
+                _node->push_child("", ptr);
+                break;
+            case LUA_TNIL:
+                ptr = lj::bson_new_null();
+                _node->push_child("", ptr);
+                break;
+            case LUA_TBOOLEAN:
+                ptr = lj::bson_new_boolean(lua_toboolean(L, -1));
+                _node->push_child("", ptr);
                 break;
             case LUA_TTABLE:
             case LUA_TFUNCTION:
