@@ -55,7 +55,7 @@ namespace lj {
             return r;
         }
         
-        void subdocument(Bson &node, const char *value) {
+        void subdocument(Bson_node_type parent_t, Bson& node, const char* value) {
             // treat it as a char * for pointer math reasons.
             const char *ptr = value;
             
@@ -81,7 +81,15 @@ namespace lj {
                 
                 // child node.
                 Bson* new_child = new Bson(static_cast<Bson_node_type>(t), ptr);
-                node.set_child(name, new_child);
+                if (k_bson_document == parent_t)
+                {
+                    node.set_child(name, new_child);
+                }
+                else if(k_bson_array == parent_t)
+                {
+                    node.push_child("", new_child);
+                }
+                
                 ptr += new_child->size();
             }
         }
@@ -234,12 +242,8 @@ namespace lj {
                     value_ = NULL;
                     break;
                 case k_bson_document:
-                    memcpy(&sz, v, 4);
-                    subdocument(*this, v);
-                    break;
                 case k_bson_array:
-                    memcpy(&sz, v, 4);
-                    subdocument(*this, v);
+                    subdocument(type_, *this, v);
                     break;
                 default:
                     break;
