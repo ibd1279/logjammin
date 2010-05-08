@@ -58,8 +58,8 @@ namespace logjam {
         lua_setglobal(L, "sc_load");
         lua_pushcfunction(L, &storage_config_add_index);
         lua_setglobal(L, "sc_add_index");
-        lua_pushcfunction(L, &storage_config_add_unique);
-        lua_setglobal(L, "sc_add_unique");
+        lua_pushcfunction(L, &storage_config_add_nested_field);
+        lua_setglobal(L, "sc_add_nested");
     }
     
     //=====================================================================
@@ -140,15 +140,14 @@ namespace logjam {
         return 0;
     }
     
-    int storage_config_add_unique(lua_State *L) {
+    int storage_config_add_nested_field(lua_State *L) {
         std::string field(lua_to_string(L, -1));
         LuaBSONNode *ptr = Lunar<LuaBSONNode>::check(L, -2);
         
-        std::set<std::string> allowed(lj::bson_as_value_string_set(ptr->real_node().nav("main/unique")));
+        std::set<std::string> allowed(lj::bson_as_value_string_set(ptr->real_node().nav("main/nested")));
         allowed.insert(field);
         
-        lj::Bson* n = ptr->real_node().path("main/unique");
-        std::cerr << "testing" << n << std::endl;
+        lj::Bson* n = ptr->real_node().path("main/nested");
         n->destroy();
         int h = 0;
         for(std::set<std::string>::const_iterator iter = allowed.begin();

@@ -447,13 +447,13 @@ namespace lj {
                                                &storage_tag_cfg,
                                                fields_tag_);
         
-        Log::info.log("Registering unique fields from [%s].") << directory_ << Log::end;
-        Bson *uniques = cfg->path("main/unique");
-        for (Linked_map<std::string, Bson*>::const_iterator iter = uniques->to_map().begin();
-             iter != uniques->to_map().end();
+        Log::info.log("Registering nested indexing from [%s].") << directory_ << Log::end;
+        Bson *nested_fields = cfg->path("main/nested");
+        for (Linked_map<std::string, Bson*>::const_iterator iter = nested_fields->to_map().begin();
+             nested_fields->to_map().end() != iter;
              ++iter)
         {
-            Log::info.log("Adding unique field [%s].") << lj::bson_as_string(*iter->second) << Log::end;
+            Log::info.log("Adding nested field [%s].") << lj::bson_as_string(*iter->second) << Log::end;
             nested_indexing_.insert(lj::bson_as_string(*iter->second));
         }
     }
