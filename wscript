@@ -14,6 +14,7 @@ def configure(ctx):
     #Set the DB directory.
     ctx.env.DBDIR = Options.options.dbdir
     ctx.define('DBDIR', Options.options.dbdir)
+    ctx.env.vnum = '0.1.0'
 
     #Set the compiler 
     ctx.check_tool('compiler_cxx')
@@ -47,6 +48,18 @@ def make_data_dir(ctx):
 
 def build(ctx):
     ctx.add_post_fun(make_data_dir)
+
+    logjamd = ctx(
+        features = ['cxx', 'cprogram']
+        ,source = ['Logger.cpp' ,'logjamd.cpp']
+        ,target = 'logjamd'
+        ,vnum = ctx.env.vnum
+        ,includes = ['.' ,'/usr/include']
+        ,cxxflags = ['-O0', '-Wall', '-g']
+        ,libpath = []
+        ,linkflags = ['-g']
+        ,uselib = []
+    )
 
     logjam = ctx(
         features = ['cxx', 'cprogram'],

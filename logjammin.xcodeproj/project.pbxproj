@@ -53,6 +53,7 @@
 		2267589A1185C8870097ADE1 /* logjammin.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = logjammin.cpp; sourceTree = "<group>"; };
 		226758A21185CCE50097ADE1 /* logjam_lua.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = logjam_lua.cpp; sourceTree = "<group>"; };
 		226758A31185CCE50097ADE1 /* logjam_lua.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = logjam_lua.h; sourceTree = "<group>"; };
+		226BD3951194FA3C0096490A /* logjamd.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = logjamd.cpp; sourceTree = "<group>"; };
 		2271D918101288A000749D9A /* BacklogController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BacklogController.h; sourceTree = "<group>"; };
 		2271D919101288A000749D9A /* BacklogController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BacklogController.cpp; sourceTree = "<group>"; };
 		227A47051018186B0013EACE /* libcurl.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcurl.dylib; path = /usr/lib/libcurl.dylib; sourceTree = "<absolute>"; };
@@ -94,6 +95,7 @@
 			isa = PBXGroup;
 			children = (
 				2236839411827230002FD990 /* logjam */,
+				226BD3941194FA0F0096490A /* logjamd */,
 				226758991185C85F0097ADE1 /* logjammin */,
 				22A77218118547C200E48208 /* global namespace */,
 				2236837211825B97002FD990 /* lj */,
@@ -187,6 +189,14 @@
 				2267589A1185C8870097ADE1 /* logjammin.cpp */,
 			);
 			name = logjammin;
+			sourceTree = "<group>";
+		};
+		226BD3941194FA0F0096490A /* logjamd */ = {
+			isa = PBXGroup;
+			children = (
+				226BD3951194FA3C0096490A /* logjamd.cpp */,
+			);
+			name = logjamd;
 			sourceTree = "<group>";
 		};
 		22A77218118547C200E48208 /* global namespace */ = {
