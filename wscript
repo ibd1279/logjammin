@@ -53,14 +53,18 @@ def build(ctx):
         features = ['cxx', 'cprogram']
         ,source = ['Logger.cpp'
                 ,'logjamd.cpp'
-		,'Sockets.cpp'
-		,'Bson.cpp'
+                ,'Sockets.cpp'
+                ,'Bson.cpp'
                 ,'logjamd_net.cpp']
         ,target = 'logjamd'
         ,vnum = ctx.env.vnum
-        ,includes = ['.' ,'/usr/include']
+        ,includes = ['.'
+                ,'/usr/local/include/'
+                ,'/opt/local/include/'
+                ,'/usr/include']
         ,cxxflags = ['-O0', '-Wall', '-g']
-        ,libpath = []
+        ,lib = ['lua']
+        ,libpath = ['/usr/local/lib/', '/opt/local/lib/', '/usr/lib']
         ,linkflags = ['-g']
         ,uselib = []
     )

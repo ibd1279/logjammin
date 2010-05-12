@@ -65,6 +65,9 @@ namespace lj
         
         //! Perform a select operaation on all open sockets.
         void select();
+        
+        //! Connect to a remote host.
+        void connect(const std::string& ip, int port, Socket_dispatch* dispatch);
     private:
         //! Hidden copy constructor.
         /*!

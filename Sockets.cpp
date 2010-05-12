@@ -53,6 +53,26 @@ namespace
         
         return &(((struct sockaddr_in6*)sa)->sin6_addr);
     }
+    
+    struct addrinfo* get_address_info(const char* ip, int port)
+    {
+        struct addrinfo hints; 
+        memset(&hints, 0, sizeof(struct addrinfo));
+        hints.ai_family = AF_UNSPEC;
+        hints.ai_socktype = SOCK_STREAM;
+        hints.ai_flags = AI_PASSIVE;
+        
+        struct addrinfo *info;
+        int status;
+        std::ostringstream port_str;
+        port_str << port;
+        if ((status = ::getaddrinfo(ip, port_str.str().c_str(), &hints, &info)))
+        {
+            throw new lj::Exception("Unable to get address info",
+                                gai_strerror(status));
+        }
+        return info;
+    }
 };
 
 namespace lj
@@ -67,22 +87,7 @@ namespace lj
     
     void Socket_selector::bind_port(int port, Socket_dispatch* dispatch)
     {
-        struct addrinfo hints; 
-        memset(&hints, 0, sizeof(struct addrinfo));
-        hints.ai_family = AF_UNSPEC;
-        hints.ai_socktype = SOCK_STREAM;
-        hints.ai_flags = AI_PASSIVE;
-        
-        struct addrinfo *info;
-        int status;
-        std::ostringstream port_str;
-        port_str << port;
-        if ((status = ::getaddrinfo(NULL, port_str.str().c_str(), &hints, &info)))
-        {
-            throw new Exception("Unable to get address info",
-                                gai_strerror(status));
-        }
-        
+        struct addrinfo *info = get_address_info(NULL, port);
         int sock;
         struct addrinfo* iter;
         for (iter = info; iter; iter = iter->ai_next)
@@ -129,6 +134,45 @@ namespace lj
         dispatch->set_socket(sock);
         dispatch->set_mode(Socket_dispatch::k_listen);
         ud_.insert(std::pair<int, Socket_dispatch*>(sock, dispatch));
+    }
+    
+    void Socket_selector::connect(const std::string& ip, int port, Socket_dispatch* dispatch)
+    {
+        struct addrinfo *info = get_address_info(ip.c_str(), port);
+        
+        int sock;
+        struct addrinfo* iter;
+        for (iter = info; iter; iter = iter->ai_next)
+        {
+            if (-1 == (sock = ::socket(iter->ai_family, iter->ai_socktype, iter->ai_protocol)))
+            {
+                sock = NULL;
+                Log::warning.log("Unable to open socket: [%d][%s].") << errno << strerror(errno) << Log::end;
+                continue;
+            }
+            
+            if (-1 == ::connect(sock, iter->ai_addr, iter->ai_addrlen))
+            {
+                ::close(sock);
+                sock = NULL;
+                Log::emergency.log("Unable to bind: [%d][%s].") << errno << strerror(errno) << Log::end;
+                continue;
+            }
+            
+            break;
+        }
+        
+        if (!iter)
+        {
+            throw new Exception("Unable to connect.",
+                                "");
+        }
+        
+        freeaddrinfo(info);
+        
+        dispatch->set_socket(sock);
+        dispatch->set_mode(Socket_dispatch::k_communicate);
+        ud_.insert(std::pair<int, Socket_dispatch*>(sock, dispatch));        
     }
     
     int Socket_selector::populate_sets(fd_set* rs, fd_set* ws)

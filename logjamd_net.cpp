@@ -32,21 +32,35 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+extern "C" {
+#include "lualib.h"
+}
 #include <sstream>
 #include <list>
 #include "Bson.h"
 #include "Logger.h"
 #include "logjamd_net.h"
 
-
 namespace logjamd
 {
-    Service_dispatch::Service_dispatch() : is_w_(false), s_(0), m_(k_listen), ip_(), in_(0), in_offset_(0), in_sz_(4), in_post_length_(false), sz_(0), out_(0)
+    Service_dispatch::Service_dispatch() : is_w_(false), s_(0), m_(k_listen), ip_(), in_(0), in_offset_(0), in_sz_(4), in_post_length_(false), out_(0), out_offset_(0), out_sz_(0), lua_(0)
     {
         in_ = new char[4];
+        lua_ = lua_open();
+        luaL_openlibs(lua_);
     }
     Service_dispatch::~Service_dispatch()
     {
+        if (in_)
+        {
+            delete[] in_;
+        }
+        
+        if (lua_)
+        {
+            lua_close(lua_);
+        }
+        
         if (out_)
         {
             delete[] out_;
@@ -96,7 +110,10 @@ namespace logjamd
         {
             lj::Bson b;
             b.set_value(lj::k_bson_document, in_);
-            lj::Log::info.log("%s") << bson_as_pretty_string(b, 0) << lj::Log::end;
+            
+            // XXX one doc at a time mode. needs to be modified to batch.
+            logic(b);
+            
             delete[] in_;
             in_ = new char[4];
             in_offset_ = 0;
@@ -111,23 +128,44 @@ namespace logjamd
     }
     const char* Service_dispatch::write(int* sz)
     {
-        *sz = sz_;
-        return out_;
+        *sz = out_sz_ - out_offset_;
+        return out_ + out_offset_;
     }
     void Service_dispatch::written(int sz)
     {
-        sz_ -= sz;
-        if (sz_)
+        out_offset_ += sz;
+        if (out_offset_ == out_sz_)
         {
-            memmove(out_, out_ + sz, sz_);
-        }
-        else
-        {
+            delete[] out_;
+            out_sz_ = 0;
+            out_offset_ = 0;
+            out_ = 0;
             is_w_ = false;
         }
     }
     void Service_dispatch::close()
     {
         ::close(s_);
+    }
+    
+    void Service_dispatch::logic(lj::Bson& b)
+    {
+        std::string cmd = lj::bson_as_string(b.nav("cmd"));
+        
+        b.set_child("is_ok", lj::bson_new_boolean(true));
+        int error = luaL_loadbuffer(lua_,
+                                    cmd.c_str(),
+                                    cmd.size(),
+                                    ip_.c_str()) || lua_pcall(lua_, 0, 0, 0);
+        if (error)
+        {
+            const char* error_string = lua_tostring(lua_, -1);
+            lj::Log::warning.log("Lua error: %s") << error_string << lj::Log::end;
+            b.set_child("error", lj::bson_new_string(error_string));
+            lua_pop(lua_, 1);
+            b.set_child("is_ok", lj::bson_new_boolean(false));
+        }
+        
+        lj::Log::info.log("doc: %s") << bson_as_pretty_string(b, 0) << lj::Log::end;
     }
 }; // namespace logjamd

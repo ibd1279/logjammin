@@ -34,6 +34,8 @@
 
 #include "Sockets.h"
 #include <string>
+#include "Bson.h"
+#include "lunar.h"
 
 namespace logjamd
 {    
@@ -67,6 +69,7 @@ namespace logjamd
         virtual void written(int sz);
         virtual void close();
     private:
+        void logic(lj::Bson& b);
         bool is_w_;
         int s_;
         lj::Socket_dispatch::Socket_mode m_;
@@ -75,7 +78,9 @@ namespace logjamd
         int in_offset_;
         int in_sz_;
         bool in_post_length_;
-        int sz_;
         char* out_;
+        int out_offset_;
+        int out_sz_;
+        lua_State* lua_;
     };
 };
