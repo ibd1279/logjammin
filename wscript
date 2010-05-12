@@ -53,6 +53,7 @@ def build(ctx):
         features = ['cxx', 'cprogram']
         ,source = ['Logger.cpp'
                 ,'logjamd.cpp'
+		,'Sockets.cpp'
                 ,'logjamd_net.cpp']
         ,target = 'logjamd'
         ,vnum = ctx.env.vnum
