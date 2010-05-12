@@ -210,13 +210,14 @@ namespace lj
                         int nbytes = recv(iter->first, buff, 1024, 0);
                         if (0 < nbytes)
                         {
+                            Log::info.log("Reading %d.") << nbytes << Log::end;
                             iter->second->read(buff, nbytes);
                         }
                         else
                         {
                             if (0 == nbytes)
                             {
-                                Log::warning.log("Broken connection.") << Log::end;
+                                Log::info.log("Broken connection.") << Log::end;
                             }
                             else
                             {

@@ -114,6 +114,7 @@ int main(int argc, char * const argv[]) {
     lj::Log::debug.disable();
     lj::Log::info.disable();
     
+    /*
     lua_State *L = lua_open();
     luaL_openlibs(L);
     logjam::register_logjam_functions(L);
@@ -126,4 +127,5 @@ int main(int argc, char * const argv[]) {
     
     lua_close(L);
     return 0;
+     */
 }

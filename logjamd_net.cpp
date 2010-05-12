@@ -34,12 +34,16 @@
 
 #include <sstream>
 #include <list>
+#include "Bson.h"
+#include "Logger.h"
 #include "logjamd_net.h"
+
 
 namespace logjamd
 {
-    Service_dispatch::Service_dispatch() : is_w_(false), s_(0), m_(k_listen), ip_(), sz_(0), out_(0)
+    Service_dispatch::Service_dispatch() : is_w_(false), s_(0), m_(k_listen), ip_(), in_(0), in_offset_(0), in_sz_(4), in_post_length_(false), sz_(0), out_(0)
     {
+        in_ = new char[4];
     }
     Service_dispatch::~Service_dispatch()
     {
@@ -58,10 +62,52 @@ namespace logjamd
     }
     void Service_dispatch::read(const char* buffer, int sz)
     {
-        out_ = new char[sz];
-        memcpy(out_, buffer, sz);
-        sz_ = sz;
-        is_w_ = true;
+        int read_offset = 0;
+        if (!in_post_length_)
+        {
+            if (in_offset_ < in_sz_)
+            {
+                int nbytes = (in_sz_ - in_offset_ > sz - read_offset) ? sz - read_offset : in_sz_ - in_offset_;
+                memcpy(in_ + in_offset_, buffer, nbytes);
+                in_offset_ += nbytes;
+                read_offset += nbytes;
+            }
+            
+            if (in_offset_ == in_sz_)
+            {
+                char* old = in_;
+                in_sz_ = *reinterpret_cast<int32_t*>(in_);
+                in_ = new char[in_sz_];
+                memcpy(in_, old, 4);
+                delete[] old;
+                in_post_length_ = true;
+            }
+        }
+        
+        if (in_post_length_)
+        {
+            int nbytes = (in_sz_ - in_offset_ > sz - read_offset) ? sz - read_offset : in_sz_ - in_offset_;
+            memcpy(in_ + in_offset_, buffer + read_offset, nbytes);
+            in_offset_ += nbytes;
+            read_offset += nbytes;
+        }
+        
+        if (in_offset_ == in_sz_)
+        {
+            lj::Bson b;
+            b.set_value(lj::k_bson_document, in_);
+            lj::Log::info.log("%s") << bson_as_pretty_string(b, 0) << lj::Log::end;
+            delete[] in_;
+            in_ = new char[4];
+            in_offset_ = 0;
+            in_sz_ = 4;
+            in_post_length_ = false;
+        }
+        
+        if (sz - read_offset)
+        {
+            read(buffer + read_offset, sz - read_offset);
+        }
     }
     const char* Service_dispatch::write(int* sz)
     {

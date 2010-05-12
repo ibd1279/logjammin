@@ -71,6 +71,10 @@ namespace logjamd
         int s_;
         lj::Socket_dispatch::Socket_mode m_;
         std::string ip_;
+        char * in_;
+        int in_offset_;
+        int in_sz_;
+        bool in_post_length_;
         int sz_;
         char* out_;
     };

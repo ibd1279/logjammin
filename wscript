@@ -54,6 +54,7 @@ def build(ctx):
         ,source = ['Logger.cpp'
                 ,'logjamd.cpp'
 		,'Sockets.cpp'
+		,'Bson.cpp'
                 ,'logjamd_net.cpp']
         ,target = 'logjamd'
         ,vnum = ctx.env.vnum
