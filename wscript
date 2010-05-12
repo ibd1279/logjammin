@@ -51,7 +51,9 @@ def build(ctx):
 
     logjamd = ctx(
         features = ['cxx', 'cprogram']
-        ,source = ['Logger.cpp' ,'logjamd.cpp']
+        ,source = ['Logger.cpp'
+                ,'logjamd.cpp'
+                ,'logjamd_net.cpp']
         ,target = 'logjamd'
         ,vnum = ctx.env.vnum
         ,includes = ['.' ,'/usr/include']

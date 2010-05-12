@@ -32,27 +32,19 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <cerrno>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <arpa/inet.h>
+#include "logjamd_net.h"
 #include "Logger.h"
-
-
-void *get_in_addr(struct sockaddr *sa)
-{
-    if (sa->sa_family == AF_INET)
-    {
-        return &(((struct sockaddr_in*)sa)->sin_addr);
-    }
-    
-    return &(((struct sockaddr_in6*)sa)->sin6_addr);
-}
 
 int main(int argc, char * const argv[]) {
     lj::Log::debug.disable();
     lj::Log::info.enable();
+    
+    logjamd::Socket_listener sl;
+    
+    sl.bind_port(27754, new logjamd::Service_dispatch());
+    sl.select();
 
+    /*
     struct addrinfo hints;
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family = AF_UNSPEC;
@@ -88,6 +80,7 @@ int main(int argc, char * const argv[]) {
         if (-1 == bind(sock, iter->ai_addr, iter->ai_addrlen))
         {
             close(sock);
+            sock = NULL;
             lj::Log::emergency.log("Unable to bind: [%d][%s].") << errno << strerror(errno) << lj::Log::end;
             continue;
         }
@@ -135,5 +128,6 @@ int main(int argc, char * const argv[]) {
             return 0;
         }
     }
+     */
     return 0;
 }

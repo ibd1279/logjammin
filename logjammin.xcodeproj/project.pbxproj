@@ -74,6 +74,8 @@
 		22E9C9A8117C894700557ADA /* Exception.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Exception.h; sourceTree = "<group>"; };
 		22ED3BBF0FB8704A004E2511 /* Controller.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Controller.h; sourceTree = "<group>"; };
 		22ED3C110FB8F99C004E2511 /* Seed.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Seed.h; sourceTree = "<group>"; };
+		22F5065D11979F680071C874 /* logjamd_net.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = logjamd_net.h; sourceTree = "<group>"; };
+		22F5065E11979F680071C874 /* logjamd_net.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = logjamd_net.cpp; sourceTree = "<group>"; };
 		C6859E8B029090EE04C91782 /* logjammin.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = logjammin.1; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -195,6 +197,8 @@
 			isa = PBXGroup;
 			children = (
 				226BD3951194FA3C0096490A /* logjamd.cpp */,
+				22F5065D11979F680071C874 /* logjamd_net.h */,
+				22F5065E11979F680071C874 /* logjamd_net.cpp */,
 			);
 			name = logjamd;
 			sourceTree = "<group>";
