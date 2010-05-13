@@ -51,11 +51,13 @@ def build(ctx):
 
     logjamd = ctx(
         features = ['cxx', 'cprogram']
-        ,source = ['Logger.cpp'
-                ,'logjamd.cpp'
+        ,source = [
+                'Logger.cpp'
                 ,'Sockets.cpp'
                 ,'Bson.cpp'
-                ,'logjamd_net.cpp']
+                ,'logjamd_net.cpp'
+                ,'logjamd.cpp'
+                ]
         ,target = 'logjamd'
         ,vnum = ctx.env.vnum
         ,includes = ['.'
@@ -71,15 +73,13 @@ def build(ctx):
 
     logjam = ctx(
         features = ['cxx', 'cprogram']
-        ,source = ['Tokyo.cpp'
-                ,'Logger.cpp'
+        ,source = [
+                'Logger.cpp'
                 ,'Sockets.cpp'
                 ,'Bson.cpp'
-                ,'BSONParser.cpp'
-                ,'Storage.cpp'
-                ,'logjam_lua.cpp'
                 ,'logjam_net.cpp'
-                ,'logjam.cpp']
+                ,'logjam.cpp'
+                ]
         ,target = 'logjam'
         ,vnum = ctx.env.vnum
         ,includes = ['.'

@@ -34,16 +34,9 @@
 
 #include "build/default/config.h"
 #include <iostream>
-#include <list>
-#include "lunar.h"
-#include "logjam_lua.h"
 #include "logjam_net.h"
+#include "Bson.h"
 #include "Logger.h"
-#include "Exception.h"
-#include "LinkedMap.h"
-extern "C" {
-#include "lualib.h"
-}
 
 #ifdef HAVE_EDITLINE
 #include <histedit.h>
