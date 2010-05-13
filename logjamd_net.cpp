@@ -150,7 +150,7 @@ namespace logjamd
     
     void Service_dispatch::logic(lj::Bson& b)
     {
-        std::string cmd = lj::bson_as_string(b.nav("cmd"));
+        std::string cmd = lj::bson_as_string(b.nav("command"));
         
         b.set_child("is_ok", lj::bson_new_boolean(true));
         int error = luaL_loadbuffer(lua_,

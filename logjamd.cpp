@@ -42,7 +42,7 @@ int main(int argc, char * const argv[]) {
     lj::Socket_selector sl;
     
     sl.bind_port(27754, new logjamd::Service_dispatch());
-    sl.select();
+    sl.loop();
 
     return 0;
 }

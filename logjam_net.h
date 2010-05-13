@@ -38,7 +38,7 @@ namespace logjam
 {    
     class Send_bytes : public lj::Socket_dispatch {
     public:
-        Send_bytes(const char* buffer, int sz);
+        Send_bytes();
         virtual ~Send_bytes();
         virtual void set_socket(int sock)
         {
@@ -65,6 +65,7 @@ namespace logjam
         virtual const char* write(int* sz);
         virtual void written(int sz);
         virtual void close();
+        virtual void add_bytes(const char* buffer, int sz);
     private:
         bool is_w_;
         int s_;

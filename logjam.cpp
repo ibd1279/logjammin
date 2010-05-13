@@ -50,31 +50,44 @@ extern "C" {
 #endif
 
 namespace {
-    void read_from_cin(bool echo, bool prompt, lua_State *L) {
-        while(std::cin.good()) {
-            std::string buffer;
-            if(prompt) {
-                std::cout << ">" << std::flush;
-            }
-            getline(std::cin, buffer);
-            if(echo) {
-                std::cout << buffer << std::endl;
-            }
-            int error = luaL_loadbuffer(L, buffer.c_str(), buffer.size(), "line") || lua_pcall(L, 0, 0, 0);
-            if(error) {
-                std::cerr << lua_tostring(L, -1) << std::endl;
-                lua_pop(L, 1);  /* pop error message from the stack */
-            }
+    bool exit_line(const std::string& line)
+    {
+        if (std::string("quit\n").compare(line) == 0 ||
+            std::string("exit\n").compare(line) == 0 ||
+            std::string("\\q\n").compare(line) == 0)
+        {
+            return true;
         }
+        return false;
     }
     
+    bool send_line(const std::string& line)
+    {
+        if (std::string("\\send\n").compare(line) == 0 ||
+            std::string("\\go\n").compare(line) == 0)
+        {
+            return true;
+        }
+        return false;
+    }
+    
+    bool load_line(const std::string& line)
+    {
+        if (std::string("\\load ").compare(line.substr(0, 6)) == 0)
+        {
+            return true;
+        }
+        return false;
+    }
+        
 #ifdef HAVE_EDITLINE
     char *editline_prompt(EditLine *e) {
         return ">";
     }
-    void input_loop(lua_State *L) {
-        EditLine *el = el_init("logjam", stdin, stdout, stderr);
-        History *hist = history_init();
+    void input_loop(logjam::Send_bytes* dispatch, lj::Socket_selector& ss)
+    {
+        EditLine* el = el_init("logjam", stdin, stdout, stderr);
+        History* hist = history_init();
         HistEvent ev;
         
         el_set(el, EL_PROMPT, &editline_prompt);
@@ -82,51 +95,96 @@ namespace {
         history(hist, &ev, H_SETSIZE, 100);
         el_set(el, EL_HIST, history, hist);
         
-        while(1) {
+        std::string script;
+        while (true)
+        {
             int sz;
             const char *line = el_gets(el, &sz);
-            if(!line)
+            if (!line)
+            {
                 break;
-            if(sz && line && *line) {
+            }
+            if (sz && line && *line)
+            {
                 history(hist, &ev, H_ENTER, line);
-            } else {
+            }
+            else
+            {
                 continue;
             }
-            if(std::string("quit\n").compare(line) == 0 || std::string("exit\n").compare(line) == 0)
+            
+            if (exit_line(line))
+            {
                 break;
-            int error = luaL_loadbuffer(L, line, sz, "line") || lua_pcall(L, 0, 0, 0);
-            if(error) {
-                std::cerr << lua_tostring(L, -1) << std::endl;
-                lua_pop(L, 1);  /* pop error message from the stack */
+            }
+            else if (send_line(line))
+            {
+                lj::Bson b;
+                b.set_child("command", lj::bson_new_string(script));
+                dispatch->add_bytes(b.to_binary(), b.size());
+                while (dispatch->is_writing())
+                {
+                    ss.select(NULL);
+                };
+            }
+            else if (load_line(line))
+            {
+                // load file to send.
+            }
+            else
+            {
+                script.append(line);
             }
         }
         history_end(hist);
         el_end(el);
     }
 #else
-    void input_loop(lua_State *L) {
-        read_from_cin(false, true, L);
+    void input_loop(logjam::Send_bytes* dispatch, lj::Socket_selector& ss) {
+        std::string script;
+        while (std::cin.good())
+        {
+            std::string buffer;
+            std::cout << ">" << std::flush;
+            getline(std::cin, buffer);
+            if (exit_line(buffer))
+            {
+                break;
+            }
+            else if (send_line(buffer))
+            {
+                lj::Bson b;
+                b.set_child("command", lj::bson_new_string(script));
+                dispatch->add_bytes(b.to_binary(), b.size());
+                while (dispatch->is_writing())
+                {
+                    ss.select(NULL);
+                };
+            }
+            else if (load_line(buffer))
+            {
+                // load file to send.
+            }
+            else
+            {
+                script.append(buffer);
+            }
+        }
     }
 #endif
 };
-
 
 
 int main(int argc, char * const argv[]) {
     lj::Log::debug.disable();
     lj::Log::info.disable();
     
-    lj::Bson b;
-    b.set_child("cmd", lj::bson_new_string("print(\"Hello World.\")"));
-    b.set_child("foobar", lj::bson_new_boolean(false));
-    b.set_child("foobar2/testing", lj::bson_new_null());
-    
-    logjam::Send_bytes* sb = new logjam::Send_bytes(b.to_binary(), b.size());
-    
+    logjam::Send_bytes* sb = new logjam::Send_bytes();
     lj::Socket_selector sl;
     
     sl.connect("127.0.0.1", 27754, sb);
-    sl.select();
+    
+    input_loop(sb, sl);
     
     return 0;
     

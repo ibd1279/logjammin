@@ -59,15 +59,27 @@ namespace lj
         //! Bind a port for accepting connections.
         /*!
          \param port The port to listen on.
-         \param dispatch The class that will handle dispatching events.
+         \param dispatch The object that will handle dispatching events.
          */
         void bind_port(int port, Socket_dispatch* dispatch);
         
-        //! Perform a select operaation on all open sockets.
-        void select();
-        
         //! Connect to a remote host.
+        /*!
+         \param ip The remote IP address.
+         \param port The port.
+         \param dispatch The object that will handle dispatching events.
+         */
         void connect(const std::string& ip, int port, Socket_dispatch* dispatch);
+        
+        //! Perform a select operaation on all open sockets.
+        /*!
+         \param timeout How long to poll.
+         */
+        void select(struct timeval* timeout);
+        
+        //! Perform a select operation on all open sockets.
+        void loop();
+        
     private:
         //! Hidden copy constructor.
         /*!

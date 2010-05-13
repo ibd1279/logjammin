@@ -203,104 +203,109 @@ namespace lj
         return mx;
     }
     
-    void Socket_selector::select()
+    void Socket_selector::select(struct timeval* timeout)
+    {
+        fd_set rs;
+        fd_set ws;
+        
+        int mx = populate_sets(&rs, &ws);
+        
+        if (-1 == ::select(mx + 1, &rs, &ws, NULL, timeout))
+        {
+            throw new Exception("select",
+                                    strerror(errno));
+        }
+        
+        std::list<Socket_dispatch*> add;
+        std::list<int> remove;
+        for (std::map<int, Socket_dispatch*>::iterator iter = ud_.begin();
+             ud_.end() != iter;
+             ++iter)
+        {
+            if (FD_ISSET(iter->first, &rs))
+            {
+                if (Socket_dispatch::k_listen == iter->second->mode())
+                {
+                    struct sockaddr_storage ra;
+                    socklen_t ral = sizeof(struct sockaddr_storage);
+                    int remote_sock = accept(iter->first,
+                                             (struct sockaddr *)&ra,
+                                             &ral);
+                    if (-1 == remote_sock)
+                    {
+                        Log::warning.log("Unable to accept: [%d][%s].") << errno << strerror(errno) << Log::end;
+                    }
+                    else
+                    {
+                        char buff[INET6_ADDRSTRLEN];
+                        inet_ntop(ra.ss_family,
+                                  get_in_addr((struct sockaddr*)&ra),
+                                  buff,
+                                  INET6_ADDRSTRLEN);
+                        Socket_dispatch* dispatch = iter->second->accept(remote_sock, buff);
+                        add.push_back(dispatch);
+                    }
+                }
+                else
+                {
+                    char buff[1024];
+                    int nbytes = recv(iter->first, buff, 1024, 0);
+                    if (0 < nbytes)
+                    {
+                        Log::info.log("Reading %d.") << nbytes << Log::end;
+                        iter->second->read(buff, nbytes);
+                    }
+                    else
+                    {
+                        if (0 == nbytes)
+                        {
+                            Log::info.log("Broken connection.") << Log::end;
+                        }
+                        else
+                        {
+                            Log::warning.log("Unable to read: [%d][%s].") << errno << strerror(errno) << Log::end;
+                        }
+                        remove.push_back(iter->first);
+                        iter->second->close();
+                        delete iter->second;
+                    }
+                }
+            }
+            else if (FD_ISSET(iter->first, &ws))
+            {
+                int sz;
+                const char* buff = iter->second->write(&sz);
+                int sz2 = send(iter->first, buff, sz, 0);
+                if (-1 == sz2)
+                {
+                    Log::warning.log("Unable to write: [%d][%s].") << errno << strerror(errno) << Log::end;
+                }
+                else
+                {
+                    iter->second->written(sz2);
+                }
+            }
+        }
+        for (std::list<int>::iterator r_i = remove.begin();
+             remove.end() != r_i;
+             ++r_i)
+        {
+            ud_.erase(*r_i);
+        }
+        
+        for (std::list<Socket_dispatch*>::iterator a_i = add.begin();
+             add.end() != a_i;
+             ++a_i)
+        {
+            ud_.insert(std::pair<int, Socket_dispatch*>((*a_i)->socket(), (*a_i)));
+        }
+    }
+    
+    void Socket_selector::loop()
     {
         while (true)
         {
-            fd_set rs;
-            fd_set ws;
-            
-            int mx = populate_sets(&rs, &ws);
-            
-            if (-1 == ::select(mx + 1, &rs, &ws, NULL, NULL))
-            {
-                throw new Exception("select",
-                                        strerror(errno));
-            }
-            
-            std::list<Socket_dispatch*> add;
-            std::list<int> remove;
-            for (std::map<int, Socket_dispatch*>::iterator iter = ud_.begin();
-                 ud_.end() != iter;
-                 ++iter)
-            {
-                if (FD_ISSET(iter->first, &rs))
-                {
-                    if (Socket_dispatch::k_listen == iter->second->mode())
-                    {
-                        struct sockaddr_storage ra;
-                        socklen_t ral = sizeof(struct sockaddr_storage);
-                        int remote_sock = accept(iter->first,
-                                                 (struct sockaddr *)&ra,
-                                                 &ral);
-                        if (-1 == remote_sock)
-                        {
-                            Log::warning.log("Unable to accept: [%d][%s].") << errno << strerror(errno) << Log::end;
-                        }
-                        else
-                        {
-                            char buff[INET6_ADDRSTRLEN];
-                            inet_ntop(ra.ss_family,
-                                      get_in_addr((struct sockaddr*)&ra),
-                                      buff,
-                                      INET6_ADDRSTRLEN);
-                            Socket_dispatch* dispatch = iter->second->accept(remote_sock, buff);
-                            add.push_back(dispatch);
-                        }
-                    }
-                    else
-                    {
-                        char buff[1024];
-                        int nbytes = recv(iter->first, buff, 1024, 0);
-                        if (0 < nbytes)
-                        {
-                            Log::info.log("Reading %d.") << nbytes << Log::end;
-                            iter->second->read(buff, nbytes);
-                        }
-                        else
-                        {
-                            if (0 == nbytes)
-                            {
-                                Log::info.log("Broken connection.") << Log::end;
-                            }
-                            else
-                            {
-                                Log::warning.log("Unable to read: [%d][%s].") << errno << strerror(errno) << Log::end;
-                            }
-                            remove.push_back(iter->first);
-                            iter->second->close();
-                            delete iter->second;
-                        }
-                    }
-                }
-                else if (FD_ISSET(iter->first, &ws))
-                {
-                    int sz;
-                    const char* buff = iter->second->write(&sz);
-                    int sz2 = send(iter->first, buff, sz, 0);
-                    if (-1 == sz2)
-                    {
-                        Log::warning.log("Unable to write: [%d][%s].") << errno << strerror(errno) << Log::end;
-                    }
-                    else
-                    {
-                        iter->second->written(sz2);
-                    }
-                }
-            }
-            for (std::list<int>::iterator r_i = remove.begin();
-                 remove.end() != r_i;
-                 ++r_i)
-            {
-                ud_.erase(*r_i);
-            }
-            
-            for (std::list<Socket_dispatch*>::iterator a_i = add.begin();
-                 add.end() != a_i;
-                 ++a_i)
-            {
-                ud_.insert(std::pair<int, Socket_dispatch*>((*a_i)->socket(), (*a_i)));
-            }
+            this->select(0);
         }
-    }    
+    }
 }; // namespace lj

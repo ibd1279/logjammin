@@ -39,10 +39,8 @@
 
 namespace logjam
 {
-    Send_bytes::Send_bytes(const char* buffer, int sz) : is_w_(true), s_(0), m_(k_listen), out_(0), out_offset_(0), out_sz_(sz)
+    Send_bytes::Send_bytes() : is_w_(true), s_(0), m_(k_listen), out_(0), out_offset_(0), out_sz_(0)
     {
-        out_ = new char[sz];
-        memcpy(out_, buffer, sz);
     }
     
     Send_bytes::~Send_bytes()
@@ -82,5 +80,18 @@ namespace logjam
     void Send_bytes::close()
     {
         ::close(s_);
-    }    
+    }
+    void Send_bytes::add_bytes(const char* buffer, int sz)
+    {
+        char* ptr = new char[sz + out_sz_];
+        if (out_)
+        {
+            memcpy(ptr, out_, out_sz_);
+            delete[] out_;
+        }
+        memcpy(ptr + out_sz_, buffer, sz);
+        out_ = ptr;
+        out_sz_ += sz;
+        is_w_ = true;
+    }
 }; // namespace logjamd
