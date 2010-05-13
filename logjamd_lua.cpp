@@ -45,7 +45,7 @@
 
 using lj::Log;
 
-namespace logjam {
+namespace logjamd {
     void register_logjam_functions(lua_State *L) {
         Lunar<logjam::LuaBSONNode>::Register(L);
         Lunar<logjam::LuaStorageFilter>::Register(L);

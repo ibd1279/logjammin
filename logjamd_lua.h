@@ -36,7 +36,7 @@
 #include "Bson.h"
 #include "Storage.h"
 
-namespace logjam {
+namespace logjamd {
     void register_logjam_functions(lua_State *L);
     int storage_config_new(lua_State *L);
     int storage_config_save(lua_State *L);
