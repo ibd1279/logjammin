@@ -70,20 +70,25 @@ def build(ctx):
     )
 
     logjam = ctx(
-        features = ['cxx', 'cprogram'],
-        source = ['Tokyo.cpp',
-                'Logger.cpp',
-                'Bson.cpp',
-                'BSONParser.cpp',
-                'Storage.cpp',
-                'logjam_lua.cpp',
-                'logjam.cpp'],
-        target = 'logjam',
-        vnum = '0.1.0',
-        includes = ['.', '/usr/local/include/', '/opt/local/include/', '/usr/include'],
-        cxxflags = ['-O0', '-Wall', '-g'],
-        lib = ['lua'],
-        libpath = ['/usr/local/lib/', '/opt/local/lib/', '/usr/lib'],
-        linkflags = ['-g'],
-        uselib = ['HISTEDIT.H','TCUTIL.H', 'DYSTOPIA.H']
+        features = ['cxx', 'cprogram']
+        ,source = ['Tokyo.cpp'
+                ,'Logger.cpp'
+                ,'Sockets.cpp'
+                ,'Bson.cpp'
+                ,'BSONParser.cpp'
+                ,'Storage.cpp'
+                ,'logjam_lua.cpp'
+                ,'logjam_net.cpp'
+                ,'logjam.cpp']
+        ,target = 'logjam'
+        ,vnum = ctx.env.vnum
+        ,includes = ['.'
+                ,'/usr/local/include/'
+                ,'/opt/local/include/'
+                ,'/usr/include']
+        ,cxxflags = ['-O0', '-Wall', '-g']
+        ,lib = ['lua']
+        ,libpath = ['/usr/local/lib/', '/opt/local/lib/', '/usr/lib']
+        ,linkflags = ['-g']
+        ,uselib = ['HISTEDIT.H','TCUTIL.H', 'DYSTOPIA.H']
     )

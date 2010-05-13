@@ -37,6 +37,7 @@
 #include <list>
 #include "lunar.h"
 #include "logjam_lua.h"
+#include "logjam_net.h"
 #include "Logger.h"
 #include "Exception.h"
 #include "LinkedMap.h"
@@ -110,9 +111,24 @@ namespace {
 };
 
 
+
 int main(int argc, char * const argv[]) {
     lj::Log::debug.disable();
     lj::Log::info.disable();
+    
+    lj::Bson b;
+    b.set_child("cmd", lj::bson_new_string("print(\"Hello World.\")"));
+    b.set_child("foobar", lj::bson_new_boolean(false));
+    b.set_child("foobar2/testing", lj::bson_new_null());
+    
+    logjam::Send_bytes* sb = new logjam::Send_bytes(b.to_binary(), b.size());
+    
+    lj::Socket_selector sl;
+    
+    sl.connect("127.0.0.1", 27754, sb);
+    sl.select();
+    
+    return 0;
     
     /*
     lua_State *L = lua_open();

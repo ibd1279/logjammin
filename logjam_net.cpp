@@ -1,6 +1,6 @@
 /*!
- \file logjamd_net.h
- \brief Logjam server networking code.
+ \file logjamd_net.cpp
+ \brief Logjam Server Networking implementation.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -32,55 +32,55 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "Sockets.h"
-#include <string>
-#include "Bson.h"
-#include "lunar.h"
+#include <sstream>
+#include <list>
+#include "Logger.h"
+#include "logjam_net.h"
 
-namespace logjamd
-{    
-    class Service_dispatch : public lj::Socket_dispatch {
-    public:
-        Service_dispatch();
-        virtual ~Service_dispatch();
-        virtual void set_socket(int sock)
+namespace logjam
+{
+    Send_bytes::Send_bytes(const char* buffer, int sz) : is_w_(true), s_(0), m_(k_listen), out_(0), out_offset_(0), out_sz_(sz)
+    {
+        out_ = new char[sz];
+        memcpy(out_, buffer, sz);
+    }
+    
+    Send_bytes::~Send_bytes()
+    {
+        if (out_)
         {
-            s_ = sock;
+            delete[] out_;
         }
-        virtual int socket()
+    }
+    
+    lj::Socket_dispatch* Send_bytes::accept(int socket, char* buffer)
+    {
+        return NULL;
+    }
+    
+    void Send_bytes::read(const char* buffer, int sz)
+    {
+    }
+    
+    const char* Send_bytes::write(int* sz)
+    {
+        *sz = out_sz_ - out_offset_;
+        return out_ + out_offset_;
+    }
+    void Send_bytes::written(int sz)
+    {
+        out_offset_ += sz;
+        if (out_offset_ == out_sz_)
         {
-            return s_;
+            delete[] out_;
+            out_sz_ = 0;
+            out_offset_ = 0;
+            out_ = 0;
+            is_w_ = false;
         }
-        virtual void set_mode(lj::Socket_dispatch::Socket_mode mode)
-        {
-            m_ = mode;
-        }
-        virtual lj::Socket_dispatch::Socket_mode mode()
-        {
-            return m_;
-        }
-        virtual bool is_writing()
-        {
-            return is_w_;
-        }
-        virtual lj::Socket_dispatch* accept(int socket, char* buffer);
-        virtual void read(const char* buffer, int sz);
-        virtual const char* write(int* sz);
-        virtual void written(int sz);
-        virtual void close();
-    private:
-        void logic(lj::Bson& b);
-        bool is_w_;
-        int s_;
-        lj::Socket_dispatch::Socket_mode m_;
-        std::string ip_;
-        char * in_;
-        int in_offset_;
-        int in_sz_;
-        bool in_post_length_;
-        char* out_;
-        int out_offset_;
-        int out_sz_;
-        lua_State* lua_;
-    };
-};
+    }
+    void Send_bytes::close()
+    {
+        ::close(s_);
+    }    
+}; // namespace logjamd

@@ -1,6 +1,6 @@
 /*!
- \file logjamd_net.h
- \brief Logjam server networking code.
+ \file logjam_net.h
+ \brief Logjam client networking code.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -33,16 +33,13 @@
  */
 
 #include "Sockets.h"
-#include <string>
-#include "Bson.h"
-#include "lunar.h"
 
-namespace logjamd
+namespace logjam
 {    
-    class Service_dispatch : public lj::Socket_dispatch {
+    class Send_bytes : public lj::Socket_dispatch {
     public:
-        Service_dispatch();
-        virtual ~Service_dispatch();
+        Send_bytes(const char* buffer, int sz);
+        virtual ~Send_bytes();
         virtual void set_socket(int sock)
         {
             s_ = sock;
@@ -69,18 +66,11 @@ namespace logjamd
         virtual void written(int sz);
         virtual void close();
     private:
-        void logic(lj::Bson& b);
         bool is_w_;
         int s_;
         lj::Socket_dispatch::Socket_mode m_;
-        std::string ip_;
-        char * in_;
-        int in_offset_;
-        int in_sz_;
-        bool in_post_length_;
         char* out_;
         int out_offset_;
         int out_sz_;
-        lua_State* lua_;
     };
 };
