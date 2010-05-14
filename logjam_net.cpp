@@ -39,15 +39,21 @@
 
 namespace logjam
 {
-    Send_bytes::Send_bytes() : is_w_(true), s_(0), m_(k_listen), out_(0), out_offset_(0), out_sz_(0)
+    Send_bytes::Send_bytes() : in_(0), in_offset_(0), in_sz_(4), in_post_length_(false), response_(0)
     {
+        in_ = new char[4];
     }
     
     Send_bytes::~Send_bytes()
     {
-        if (out_)
+        if (in_)
         {
-            delete[] out_;
+            delete[] in_;
+        }
+        
+        if (response_)
+        {
+            delete response_;
         }
     }
     
@@ -58,40 +64,54 @@ namespace logjam
     
     void Send_bytes::read(const char* buffer, int sz)
     {
-    }
-    
-    const char* Send_bytes::write(int* sz)
-    {
-        *sz = out_sz_ - out_offset_;
-        return out_ + out_offset_;
-    }
-    void Send_bytes::written(int sz)
-    {
-        out_offset_ += sz;
-        if (out_offset_ == out_sz_)
+        int read_offset = 0;
+        if (!in_post_length_)
         {
-            delete[] out_;
-            out_sz_ = 0;
-            out_offset_ = 0;
-            out_ = 0;
-            is_w_ = false;
+            if (in_offset_ < in_sz_)
+            {
+                int nbytes = (in_sz_ - in_offset_ > sz - read_offset) ? sz - read_offset : in_sz_ - in_offset_;
+                memcpy(in_ + in_offset_, buffer, nbytes);
+                in_offset_ += nbytes;
+                read_offset += nbytes;
+            }
+            
+            if (in_offset_ == in_sz_)
+            {
+                char* old = in_;
+                in_sz_ = *reinterpret_cast<int32_t*>(in_);
+                in_ = new char[in_sz_];
+                memcpy(in_, old, 4);
+                delete[] old;
+                in_post_length_ = true;
+            }
         }
-    }
-    void Send_bytes::close()
-    {
-        ::close(s_);
-    }
-    void Send_bytes::add_bytes(const char* buffer, int sz)
-    {
-        char* ptr = new char[sz + out_sz_];
-        if (out_)
+        
+        if (in_post_length_)
         {
-            memcpy(ptr, out_, out_sz_);
-            delete[] out_;
+            int nbytes = (in_sz_ - in_offset_ > sz - read_offset) ? sz - read_offset : in_sz_ - in_offset_;
+            memcpy(in_ + in_offset_, buffer + read_offset, nbytes);
+            in_offset_ += nbytes;
+            read_offset += nbytes;
         }
-        memcpy(ptr + out_sz_, buffer, sz);
-        out_ = ptr;
-        out_sz_ += sz;
-        is_w_ = true;
-    }
+        
+        if (in_offset_ == in_sz_)
+        {
+            if (response_)
+            {
+                delete response_;
+            }
+            response_ = new lj::Bson(lj::k_bson_document, in_);
+            
+            delete[] in_;
+            in_ = new char[4];
+            in_offset_ = 0;
+            in_sz_ = 4;
+            in_post_length_ = false;
+        }
+        
+        if (sz - read_offset)
+        {
+            read(buffer + read_offset, sz - read_offset);
+        }
+    }    
 }; // namespace logjamd

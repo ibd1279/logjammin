@@ -115,10 +115,13 @@ namespace {
                 lj::Bson b;
                 b.set_child("command", lj::bson_new_string(script));
                 dispatch->add_bytes(b.to_binary(), b.size());
-                while (dispatch->is_writing())
+                dispatch->clear();
+                while (!dispatch->response())
                 {
                     ss.select(NULL);
                 };
+                script.clear();
+                std::cout << lj::bson_as_pretty_string(*dispatch->response()) << std::endl;
             }
             else if (load_line(line))
             {
@@ -149,10 +152,13 @@ namespace {
                 lj::Bson b;
                 b.set_child("command", lj::bson_new_string(script));
                 dispatch->add_bytes(b.to_binary(), b.size());
-                while (dispatch->is_writing())
+                dispatch->clear();
+                while (!dispatch->response())
                 {
                     ss.select(NULL);
                 };
+                script.clear();
+                std::cout << lj::bson_as_pretty_string(*dispatch->response()) << std::endl;
             }
             else if (load_line(buffer))
             {

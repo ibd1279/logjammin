@@ -39,16 +39,19 @@ extern "C" {
 #include <list>
 #include "Bson.h"
 #include "Logger.h"
+#include "logjamd_lua.h"
 #include "logjamd_net.h"
 
 namespace logjamd
 {
-    Service_dispatch::Service_dispatch() : is_w_(false), s_(0), m_(k_listen), ip_(), in_(0), in_offset_(0), in_sz_(4), in_post_length_(false), out_(0), out_offset_(0), out_sz_(0), lua_(0)
+    Service_dispatch::Service_dispatch() : ip_(), in_(0), in_offset_(0), in_sz_(4), in_post_length_(false), lua_(0)
     {
         in_ = new char[4];
         lua_ = lua_open();
         luaL_openlibs(lua_);
+        register_logjam_functions(lua_);
     }
+    
     Service_dispatch::~Service_dispatch()
     {
         if (in_)
@@ -59,13 +62,9 @@ namespace logjamd
         if (lua_)
         {
             lua_close(lua_);
-        }
-        
-        if (out_)
-        {
-            delete[] out_;
-        }
+        }        
     }
+    
     lj::Socket_dispatch* Service_dispatch::accept(int socket, char* buffer)
     {
         Service_dispatch* sd = new Service_dispatch();
@@ -74,6 +73,7 @@ namespace logjamd
         sd->ip_ = buffer;
         return sd;
     }
+    
     void Service_dispatch::read(const char* buffer, int sz)
     {
         int read_offset = 0;
@@ -111,7 +111,6 @@ namespace logjamd
             lj::Bson b;
             b.set_value(lj::k_bson_document, in_);
             
-            // XXX one doc at a time mode. needs to be modified to batch.
             logic(b);
             
             delete[] in_;
@@ -126,33 +125,16 @@ namespace logjamd
             read(buffer + read_offset, sz - read_offset);
         }
     }
-    const char* Service_dispatch::write(int* sz)
-    {
-        *sz = out_sz_ - out_offset_;
-        return out_ + out_offset_;
-    }
-    void Service_dispatch::written(int sz)
-    {
-        out_offset_ += sz;
-        if (out_offset_ == out_sz_)
-        {
-            delete[] out_;
-            out_sz_ = 0;
-            out_offset_ = 0;
-            out_ = 0;
-            is_w_ = false;
-        }
-    }
-    void Service_dispatch::close()
-    {
-        ::close(s_);
-    }
     
     void Service_dispatch::logic(lj::Bson& b)
     {
         std::string cmd = lj::bson_as_string(b.nav("command"));
-        
         b.set_child("is_ok", lj::bson_new_boolean(true));
+        
+        LuaBSONNode wrapped_node(&b, false);
+        Lunar<LuaBSONNode>::push(lua_, &wrapped_node, false);
+        lua_setglobal(lua_, "request");
+        
         int error = luaL_loadbuffer(lua_,
                                     cmd.c_str(),
                                     cmd.size(),
@@ -166,6 +148,12 @@ namespace logjamd
             b.set_child("is_ok", lj::bson_new_boolean(false));
         }
         
-        lj::Log::info.log("doc: %s") << bson_as_pretty_string(b, 0) << lj::Log::end;
+        Lunar<LuaBSONNode>::push(lua_, NULL, true);
+        lua_setglobal(lua_, "request");
+        
+        char* buffer = b.to_binary();
+        add_bytes(buffer, b.size());
+        delete[] buffer;
+        set_writing(true);
     }
 }; // namespace logjamd

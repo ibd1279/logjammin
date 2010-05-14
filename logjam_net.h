@@ -33,6 +33,7 @@
  */
 
 #include "Sockets.h"
+#include "Bson.h"
 
 namespace logjam
 {    
@@ -40,38 +41,25 @@ namespace logjam
     public:
         Send_bytes();
         virtual ~Send_bytes();
-        virtual void set_socket(int sock)
-        {
-            s_ = sock;
-        }
-        virtual int socket()
-        {
-            return s_;
-        }
-        virtual void set_mode(lj::Socket_dispatch::Socket_mode mode)
-        {
-            m_ = mode;
-        }
-        virtual lj::Socket_dispatch::Socket_mode mode()
-        {
-            return m_;
-        }
-        virtual bool is_writing()
-        {
-            return is_w_;
-        }
         virtual lj::Socket_dispatch* accept(int socket, char* buffer);
         virtual void read(const char* buffer, int sz);
-        virtual const char* write(int* sz);
-        virtual void written(int sz);
-        virtual void close();
-        virtual void add_bytes(const char* buffer, int sz);
+        lj::Bson* response()
+        {
+            return response_;
+        }
+        void clear()
+        {
+            if (response_)
+            {
+                delete response_;
+                response_ = 0;
+            }
+        }
     private:
-        bool is_w_;
-        int s_;
-        lj::Socket_dispatch::Socket_mode m_;
-        char* out_;
-        int out_offset_;
-        int out_sz_;
+        char * in_;
+        int in_offset_;
+        int in_sz_;
+        bool in_post_length_;
+        lj::Bson* response_;
     };
 };

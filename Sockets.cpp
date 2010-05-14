@@ -308,4 +308,55 @@ namespace lj
             this->select(0);
         }
     }
+    
+    Socket_dispatch::Socket_dispatch() : is_w_(false), s_(0), m_(k_communicate), out_(0), out_offset_(0), out_sz_(0)
+    {
+    }
+    
+    Socket_dispatch::~Socket_dispatch()
+    {
+        if (out_)
+        {
+            delete[] out_;
+        }
+    }
+    
+    
+    const char* Socket_dispatch::write(int* sz)
+    {
+        *sz = out_sz_ - out_offset_;
+        return out_ + out_offset_;
+    }
+    
+    void Socket_dispatch::written(int sz)
+    {
+        out_offset_ += sz;
+        if (out_offset_ == out_sz_)
+        {
+            delete[] out_;
+            out_sz_ = 0;
+            out_offset_ = 0;
+            out_ = 0;
+            is_w_ = false;
+        }
+    }
+    
+    void Socket_dispatch::close()
+    {
+        ::close(s_);
+    }
+    
+    void Socket_dispatch::add_bytes(const char* buffer, int sz)
+    {
+        char* ptr = new char[sz + out_sz_];
+        if (out_)
+        {
+            memcpy(ptr, out_, out_sz_);
+            delete[] out_;
+        }
+        memcpy(ptr + out_sz_, buffer, sz);
+        out_ = ptr;
+        out_sz_ += sz;
+        is_w_ = true;
+    }
 }; // namespace lj

@@ -124,40 +124,65 @@ namespace lj
             k_communicate       //!< Communicate acorss the connection.
         };
         
+        //! Ctor.
+        Socket_dispatch();
+        
         //! destructor.
-        virtual ~Socket_dispatch()
-        {
-        }
+        virtual ~Socket_dispatch();
         
         //! Set the socket for this dispatcher.
         /*!
          \param s The socket.
          */
-        virtual void set_socket(int s) = 0;
+        virtual void set_socket(int s)
+        {
+            s_ = s;
+        }
         
         //! Get the socket for this dispatcher.
         /*!
          \return The socket.
          */
-        virtual int socket() = 0;
+        virtual int socket()
+        {
+            return s_;
+        }
         
         //! Set the Socket_mode for this dispatcher.
         /*!
          \param m The mode.
          */
-        virtual void set_mode(Socket_mode m) = 0;
+        virtual void set_mode(Socket_mode m)
+        {
+            m_ = m;
+        }
         
         //! Get the Socket_mode for this dispatcher.
         /*!
          \return The mode.
          */
-        virtual Socket_mode mode() = 0;
+        virtual Socket_mode mode()
+        {
+            return m_;
+        }
         
         //! Get if this dispatcher wants to read or write.
         /*!
          \return True for writing, false for reading.
          */
-        virtual bool is_writing() = 0;
+        virtual bool is_writing()
+        {
+            return is_w_;
+        }
+        
+        //! Set if this dispatcher wants to read or write.
+        /*!
+         \param w True for writing, false for reading.
+         */
+        virtual void set_writing(bool w)
+        {
+            is_w_ = w;
+        }
         
         //! Create a new dispatcher for an accepted socket.
         /*!
@@ -179,15 +204,29 @@ namespace lj
          \param sz Pointer to store the size of the buffer.
          \return The buffer of bytes.
          */
-        virtual const char* write(int* sz) = 0;
+        virtual const char* write(int* sz);
         
         //! Record how many of the bytes were actually written.
         /*!
          \param sz The number of written bytes.
          */
-        virtual void written(int sz) = 0;
+        virtual void written(int sz);
         
         //! Close the dispatcher.
-        virtual void close() = 0;
+        virtual void close();
+        
+        //! Add bytes to the output buffer.
+        /*!
+         \param buffer Pointer to the bytes.
+         \param sz The number of bytes in the buffer.
+         */
+        virtual void add_bytes(const char* buffer, int sz);
+    private:
+        bool is_w_;
+        int s_;
+        lj::Socket_dispatch::Socket_mode m_;
+        char* out_;
+        int out_offset_;
+        int out_sz_;
     };    
 }; // namespace lj

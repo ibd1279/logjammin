@@ -34,7 +34,7 @@
 #include "build/default/config.h"
 #include <string>
 #include <sstream>
-#include "logjam_lua.h"
+#include "logjamd_lua.h"
 #include "Logger.h"
 
 // This should be moved somewhere for portability.
@@ -47,9 +47,9 @@ using lj::Log;
 
 namespace logjamd {
     void register_logjam_functions(lua_State *L) {
-        Lunar<logjam::LuaBSONNode>::Register(L);
-        Lunar<logjam::LuaStorageFilter>::Register(L);
-        Lunar<logjam::LuaStorage>::Register(L);
+        Lunar<logjamd::LuaBSONNode>::Register(L);
+        Lunar<logjamd::LuaStorageFilter>::Register(L);
+        Lunar<logjamd::LuaStorage>::Register(L);
         lua_pushcfunction(L, &storage_config_new);
         lua_setglobal(L, "sc_new");
         lua_pushcfunction(L, &storage_config_save);

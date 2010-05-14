@@ -52,10 +52,13 @@ def build(ctx):
     logjamd = ctx(
         features = ['cxx', 'cprogram']
         ,source = [
-                'Logger.cpp'
+                'Tokyo.cpp'
+                ,'Logger.cpp'
                 ,'Sockets.cpp'
                 ,'Bson.cpp'
+                ,'Storage.cpp'
                 ,'logjamd_net.cpp'
+                ,'logjamd_lua.cpp'
                 ,'logjamd.cpp'
                 ]
         ,target = 'logjamd'
@@ -68,7 +71,7 @@ def build(ctx):
         ,lib = ['lua']
         ,libpath = ['/usr/local/lib/', '/opt/local/lib/', '/usr/lib']
         ,linkflags = ['-g']
-        ,uselib = []
+        ,uselib = ['TCUTIL.H', 'DYSTOPIA.H']
     )
 
     logjam = ctx(

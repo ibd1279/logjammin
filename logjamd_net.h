@@ -43,44 +43,16 @@ namespace logjamd
     public:
         Service_dispatch();
         virtual ~Service_dispatch();
-        virtual void set_socket(int sock)
-        {
-            s_ = sock;
-        }
-        virtual int socket()
-        {
-            return s_;
-        }
-        virtual void set_mode(lj::Socket_dispatch::Socket_mode mode)
-        {
-            m_ = mode;
-        }
-        virtual lj::Socket_dispatch::Socket_mode mode()
-        {
-            return m_;
-        }
-        virtual bool is_writing()
-        {
-            return is_w_;
-        }
         virtual lj::Socket_dispatch* accept(int socket, char* buffer);
         virtual void read(const char* buffer, int sz);
-        virtual const char* write(int* sz);
-        virtual void written(int sz);
-        virtual void close();
     private:
         void logic(lj::Bson& b);
-        bool is_w_;
-        int s_;
-        lj::Socket_dispatch::Socket_mode m_;
+        
         std::string ip_;
         char * in_;
         int in_offset_;
         int in_sz_;
         bool in_post_length_;
-        char* out_;
-        int out_offset_;
-        int out_sz_;
         lua_State* lua_;
     };
 };
