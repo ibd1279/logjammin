@@ -225,11 +225,14 @@ namespace logjamd {
                 _node->copy_from(*ptr);
                 delete ptr;
                 break;
+            case LUA_TUSERDATA:
+            case LUA_TLIGHTUSERDATA:
+                ptr = &Lunar<LuaBSONNode>::check(L, -1)->real_node();
+                _node->copy_from(*ptr);
+                break;
             case LUA_TTABLE:
             case LUA_TFUNCTION:
             case LUA_TTHREAD:
-            case LUA_TUSERDATA:
-            case LUA_TLIGHTUSERDATA:
             case LUA_TNONE:
             default:
                 break;
@@ -326,7 +329,8 @@ namespace logjamd {
     LUNAR_MEMBER_METHOD(LuaStorageFilter, tagged),
     LUNAR_MEMBER_METHOD(LuaStorageFilter, records),
     LUNAR_MEMBER_METHOD(LuaStorageFilter, first),
-    {0, 0}
+    LUNAR_MEMBER_METHOD(LuaStorageFilter, size),
+    {0, 0, 0}
     };
     
     LuaStorageFilter::LuaStorageFilter(lua_State *L) : _filter(NULL) {
@@ -413,6 +417,11 @@ namespace logjamd {
         lj::Bson *d = new lj::Bson();
         _filter->first(*d);
         Lunar<LuaBSONNode>::push(L, new LuaBSONNode(d, true), true);
+        return 1;
+    }
+    
+    int LuaStorageFilter::size(lua_State *L) {
+        lua_pushinteger(L, _filter->size());
         return 1;
     }
     

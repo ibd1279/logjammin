@@ -37,6 +37,7 @@ extern "C" {
 }
 #include <sstream>
 #include <list>
+#include <sys/time.h>
 #include "Bson.h"
 #include "Logger.h"
 #include "logjamd_lua.h"
@@ -128,12 +129,13 @@ namespace logjamd
     
     void Service_dispatch::logic(lj::Bson& b)
     {
-        std::string cmd = lj::bson_as_string(b.nav("command"));
-        b.set_child("is_ok", lj::bson_new_boolean(true));
+        struct timeval start;
+        gettimeofday(&start, NULL);
         
+        std::string cmd = lj::bson_as_string(b.nav("command"));
         LuaBSONNode wrapped_node(&b, false);
         Lunar<LuaBSONNode>::push(lua_, &wrapped_node, false);
-        lua_setglobal(lua_, "request");
+        lua_setglobal(lua_, "response");
         
         int error = luaL_loadbuffer(lua_,
                                     cmd.c_str(),
@@ -147,9 +149,18 @@ namespace logjamd
             lua_pop(lua_, 1);
             b.set_child("is_ok", lj::bson_new_boolean(false));
         }
+        else
+        {
+            b.set_child("is_ok", lj::bson_new_boolean(true));
+        }
         
         Lunar<LuaBSONNode>::push(lua_, NULL, true);
-        lua_setglobal(lua_, "request");
+        lua_setglobal(lua_, "response");
+        struct timeval end;
+        gettimeofday(&end, NULL);
+        
+        b.set_child("elapsed_usecs", lj::bson_new_int64(((end.tv_sec - start.tv_sec) * 1000000) +
+                                                         (end.tv_usec - start.tv_usec)));
         
         char* buffer = b.to_binary();
         add_bytes(buffer, b.size());

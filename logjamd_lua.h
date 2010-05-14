@@ -100,6 +100,7 @@ namespace logjamd {
         int tagged(lua_State *L);
         int records(lua_State *L);
         int first(lua_State *L);
+        int size(lua_State *L);
         inline lj::Record_set &real_filter() { return *_filter; }
     };
 
