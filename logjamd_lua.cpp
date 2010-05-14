@@ -260,11 +260,14 @@ namespace logjamd {
                 ptr = lj::bson_new_boolean(lua_toboolean(L, -1));
                 _node->push_child("", ptr);
                 break;
+            case LUA_TUSERDATA:
+            case LUA_TLIGHTUSERDATA:
+                ptr = new lj::Bson(Lunar<LuaBSONNode>::check(L, -1)->real_node());
+                _node->push_child("", ptr);
+                break;
             case LUA_TTABLE:
             case LUA_TFUNCTION:
             case LUA_TTHREAD:
-            case LUA_TUSERDATA:
-            case LUA_TLIGHTUSERDATA:
             case LUA_TNONE:
             default:
                 break;
