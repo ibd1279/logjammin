@@ -205,6 +205,7 @@ namespace logjamd {
     }
     
     int LuaBSONNode::set(lua_State *L) {
+        int h = 0;
         lj::Bson* ptr;
         switch(lua_type(L, -1)) {
             case LUA_TSTRING:
@@ -231,6 +232,15 @@ namespace logjamd {
                 _node->copy_from(*ptr);
                 break;
             case LUA_TTABLE:
+                h = lua_objlen(L, -1);
+                for (int i = 1; i <= h; ++i)
+                {
+                    lua_rawgeti(L, -1, i);
+                    ptr = new lj::Bson(Lunar<LuaBSONNode>::check(L, -1)->real_node());
+                    _node->push_child("", ptr);
+                    lua_pop(L, 1);
+                }
+                break;
             case LUA_TFUNCTION:
             case LUA_TTHREAD:
             case LUA_TNONE:
@@ -242,6 +252,7 @@ namespace logjamd {
     
     int LuaBSONNode::push(lua_State *L)
     {
+        int h = 0;
         lj::Bson* ptr;
         switch(lua_type(L, -1)) {
             case LUA_TSTRING:
@@ -266,6 +277,15 @@ namespace logjamd {
                 _node->push_child("", ptr);
                 break;
             case LUA_TTABLE:
+                h = lua_objlen(L, -1);
+                for (int i = 1; i <= h; ++i)
+                {
+                    lua_rawgeti(L, -1, i);
+                    ptr = new lj::Bson(Lunar<LuaBSONNode>::check(L, -1)->real_node());
+                    _node->push_child("", ptr);
+                    lua_pop(L, 1);
+                }
+                break;
             case LUA_TFUNCTION:
             case LUA_TTHREAD:
             case LUA_TNONE:
@@ -282,8 +302,8 @@ namespace logjamd {
             case lj::k_bson_timestamp:
                 lua_pushinteger(L, lj::bson_as_int64(*_node));
                 break;
-            case lj::k_bson_document:
             case lj::k_bson_array:
+            case lj::k_bson_document:
             case lj::k_bson_string:
                 lua_pushstring(L, lj::bson_as_string(*_node).c_str());
                 break;
