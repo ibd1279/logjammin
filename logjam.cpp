@@ -34,6 +34,9 @@
 
 #include "build/default/config.h"
 #include <iostream>
+#include <cstdlib>
+#include <cstdio>
+#include <fstream>
 #include "logjam_net.h"
 #include "Bson.h"
 #include "Logger.h"
@@ -72,7 +75,16 @@ namespace {
         }
         return false;
     }
-        
+    
+    bool edit_line(const std::string& line)
+    {
+        if (std::string("\\edit\n").compare(line) == 0 ||
+            std::string("\\e\n").compare(line) == 0)
+        {
+            return true;
+        }
+        return false;
+    }
 #ifdef HAVE_EDITLINE
     char *editline_prompt(EditLine *e) {
         return ">";
@@ -89,6 +101,7 @@ namespace {
         el_set(el, EL_HIST, history, hist);
         
         std::string script;
+        std::string old_script;
         while (true)
         {
             int sz;
@@ -106,7 +119,53 @@ namespace {
                 continue;
             }
             
-            if (exit_line(line))
+            if (edit_line(line))
+            {
+                char* ed = getenv("EDITOR");
+                if (ed)
+                {
+                    std::string editor(ed);
+                    char fn_tmp[L_tmpnam];
+                    if (tmpnam(fn_tmp))
+                    {
+                        std::string fn(fn_tmp);
+                        fn.append(".lua");
+                        std::ofstream fo(fn.c_str());
+                        if (script.size() < 1)
+                        {
+                            fo << old_script;
+                        }
+                        else
+                        {
+                            fo << script;
+                        }
+                        fo.close();
+                        
+                        editor.append(" ").append(fn);
+                        system(editor.c_str());
+                        
+                        std::ifstream fi(fn.c_str());
+                        char buf[1024];
+                        script.clear();
+                        while(fi.good())
+                        {
+                            fi.read(buf, 1024);
+                            int h = fi.gcount();
+                            script.append(buf, h);
+                        }
+                        fi.close();
+                    }
+                    else
+                    {
+                        std::cout << "Unable to make temp filename.";
+                    }
+                }
+                else
+                {
+                    std::cout << "EDITOR must be set to use this feature.";
+                }
+            }
+            else if (exit_line(line))
             {
                 break;
             }
@@ -120,6 +179,7 @@ namespace {
                 {
                     ss.select(NULL);
                 };
+                old_script = script;
                 script.clear();
                 std::cout << lj::bson_as_pretty_string(*dispatch->response()) << std::endl;
             }

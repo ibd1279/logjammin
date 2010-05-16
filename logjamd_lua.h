@@ -43,6 +43,7 @@ namespace logjamd {
     int storage_config_load(lua_State *L);
     int storage_config_add_index(lua_State *L);
     int storage_config_add_nested_field(lua_State *L);
+    int send_response(lua_State *L);
     
     //! Lua Bson wrapper.
     /*!

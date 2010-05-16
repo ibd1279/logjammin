@@ -60,6 +60,8 @@ namespace logjamd {
         lua_setglobal(L, "sc_add_index");
         lua_pushcfunction(L, &storage_config_add_nested_field);
         lua_setglobal(L, "sc_add_nested");
+        lua_pushcfunction(L, &send_response);
+        lua_setglobal(L, "send_response");
     }
     
     //=====================================================================
@@ -158,6 +160,23 @@ namespace logjamd {
             n->set_child(buf.str(), lj::bson_new_string(*iter));
         }
         return 0;
+    }
+    
+    int send_response(lua_State *L)
+    {
+        LuaStorageFilter* filter = Lunar<LuaStorageFilter>::check(L, -1);
+        lua_getglobal(L, "response");
+        LuaBSONNode* node = Lunar<LuaBSONNode>::check(L, -1);
+        
+        std::list<lj::Bson *> d;
+        filter->real_filter().items<lj::Bson>(d);
+        for (std::list<lj::Bson *>::const_iterator iter = d.begin();
+             iter != d.end();
+             ++iter)
+        {
+            node->real_node().push_child("items", *iter);
+        }
+        return 1;        
     }
     
     //=====================================================================

@@ -121,15 +121,7 @@ public:
         if(!ud) luaL_typerror(L, narg, T::LUNAR_CLASS_NAME);
         return ud->pT;  // pointer to T object
     }
-    
-    
-    static bool is(lua_State *L, int narg) {
-        userdataType *ud =
-        static_cast<userdataType *>(luaL_checkudata(L, narg, T::LUNAR_CLASS_NAME));
-        if(!ud) return false;
-        return true;
-    }
-    
+        
     static void inject_method(lua_State *L, const char *name, RegType *l, int table) {
         int methods = (table > 0 ? table : lua_gettop(L) - table + 1);
         lua_pushstring(L, name);
