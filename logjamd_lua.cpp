@@ -169,7 +169,7 @@ namespace logjamd {
         LuaBSONNode* node = Lunar<LuaBSONNode>::check(L, -1);
         
         std::list<lj::Bson *> d;
-        filter->real_filter().items<lj::Bson>(d);
+        filter->real_filter().items(d);
         for (std::list<lj::Bson *>::const_iterator iter = d.begin();
              iter != d.end();
              ++iter)
@@ -377,7 +377,7 @@ namespace logjamd {
     
     LuaStorageFilter::LuaStorageFilter(lua_State *L) : _filter(NULL) {
         LuaStorage *ptr = Lunar<LuaStorage>::check(L, -1);
-        _filter = new lj::Record_set(ptr->real_storage().none());
+        _filter = ptr->real_storage().none().release();
     }
     
     LuaStorageFilter::LuaStorageFilter(lj::Record_set *filter) : _filter(filter) {
@@ -404,16 +404,16 @@ namespace logjamd {
         std::string field(lua_to_string(L, -2));
         if(lua_isstring(L, -1)) {
             std::string val(lua_to_string(L, -1));
-            lj::Record_set *ptr = new lj::Record_set(_filter->equal(field, val.c_str(), val.size()));
+            lj::Record_set* ptr = _filter->equal(field, val.c_str(), val.size()).release();
             Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
         } else {
-            LuaBSONNode *n = Lunar<LuaBSONNode>::check(L, -1);
-            char *bson = n->real_node().to_binary();
-            lj::Record_set *ptr = NULL;
+            LuaBSONNode* n = Lunar<LuaBSONNode>::check(L, -1);
+            char* bson = n->real_node().to_binary();
+            lj::Record_set* ptr = NULL;
             if(lj::bson_type_is_quotable(n->real_node().type())) {
-                ptr = new lj::Record_set(_filter->equal(field, bson + 4, n->real_node().size() - 5));
+                ptr = _filter->equal(field, bson + 4, n->real_node().size() - 5).release();
             } else {
-                ptr = new lj::Record_set(_filter->equal(field, bson, n->real_node().size()));
+                ptr = _filter->equal(field, bson, n->real_node().size()).release();
             }
             delete[] bson;
             Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
@@ -424,7 +424,7 @@ namespace logjamd {
     int LuaStorageFilter::search(lua_State *L) {
         std::string field(lua_to_string(L, -2));
         std::string val(lua_to_string(L, -1));
-        lj::Record_set *ptr = new lj::Record_set(_filter->contains(field, val));
+        lj::Record_set* ptr = _filter->contains(field, val).release();
         Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
         return 1;
     }
@@ -432,7 +432,7 @@ namespace logjamd {
     int LuaStorageFilter::tagged(lua_State *L) {
         std::string field(lua_to_string(L, -2));
         std::string val(lua_to_string(L, -1));
-        lj::Record_set *ptr = new lj::Record_set(_filter->tagged(field, val));
+        lj::Record_set* ptr = _filter->tagged(field, val).release();
         Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
         return 1;
     }
@@ -440,7 +440,7 @@ namespace logjamd {
     int LuaStorageFilter::records(lua_State *L) {
         std::list<lj::Bson *> d;
         int h = 0;
-        _filter->items<lj::Bson>(d);
+        _filter->items(d);
         lua_newtable(L);
         for(std::list<lj::Bson *>::const_iterator iter = d.begin();
             iter != d.end();
@@ -491,20 +491,20 @@ namespace logjamd {
     }
     
     int LuaStorage::all(lua_State *L) {
-        lj::Record_set *ptr = new lj::Record_set(_storage->all());
+        lj::Record_set *ptr = _storage->all().release();
         Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
         return 1;
     }
     
     int LuaStorage::none(lua_State *L) {
-        lj::Record_set *ptr = new lj::Record_set(_storage->none());
+        lj::Record_set *ptr = _storage->none().release();
         Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
         return 1;
     }
     
     int LuaStorage::at(lua_State* L)
     {
-        lj::Record_set* ptr = new lj::Record_set(_storage->at(luaL_checkint(L, -1)));
+        lj::Record_set* ptr = _storage->at(luaL_checkint(L, -1)).release();
         Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
         return 1;
     }

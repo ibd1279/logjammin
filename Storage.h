@@ -37,6 +37,7 @@
 #include "Bson.h"
 #include <list>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 
@@ -72,7 +73,7 @@ namespace lj
      \code
      Storage storage("user");
      std::list<BSONNode> records;
-     storage.refine("first_name", "Jason").refine("last_name", "Watson").items<BSONNode>(records);
+     storage.equal("first_name", "Jason").equal("last_name", "Watson").items<BSONNode>(records);
      \endcode
      \author Jason Watson
      \version 1.0
@@ -81,38 +82,15 @@ namespace lj
      */
     class Record_set {
     public:
-        //! Create a new Record_set from an STL set.
-        /*!
-         \par
-         The key set is copied into the Record_set
-         \param storage The storage root.
-         \param key_set The keys.
-         \param op The default operation to perform.
-         */
-        Record_set(const Storage* storage,
-                      const std::set<unsigned long long>& keys,
-                      const set::Operation op);
-        
-        //! Create a new Record_set from an STL set pointer.
-        /*!
-         \par
-         The pointer will be managed by the Record_set.
-         \param storage The storage root.
-         \param key_set The keys.
-         \param op The default operation to perform.
-         */
-        Record_set(const Storage* storage,
-                      std::set<unsigned long long>* keys,
-                      const set::Operation op);
-        
-        //! Create a new Record_set as a copy of an existing Record_set.
-        /*!
-         \param orig The original Record_set.
-         */
-        Record_set(const Record_set& orig);
+        //! Constructor.
+        Record_set()
+        {
+        }
         
         //! Destructor.
-        ~Record_set();
+        virtual ~Record_set()
+        {
+        }
         
         //! Set the Record_set operation.
         /*!
@@ -122,21 +100,14 @@ namespace lj
          \param op The new default operation to perform.
          \return The modified Record_set object.
          */
-        inline Record_set &set_operation(const set::Operation op)
-        {
-            op_ = op;
-            return *this;
-        }
+        virtual Record_set& set_operation(const set::Operation op) = 0;
         
         //! Check if the Record_set contains a key.
         /*!
          \param key The key to test for.
          \return True if the key is included. False otherwise.
          */
-        inline bool is_included(const unsigned long long key) const
-        {
-            return keys_->end() != keys_->find(key);
-        }
+        virtual bool is_included(const unsigned long long key) const = 0;
         
         //! Add keys to the Record_set.
         /*!
@@ -145,40 +116,28 @@ namespace lj
          \param keys The keys to add.
          \return The modified Record_set object.
          */
-        inline Record_set &include_keys(const std::set<unsigned long long>& keys)
-        {
-            keys_->insert(keys.begin(), keys.end());
-            return *this;
-        }
+        virtual Record_set& include_keys(const std::set<unsigned long long>& keys) = 0;
         
         //! Add a key to the Record_set.
         /*!
          \param key The key to add.
          \return The modified Record_set object.
          */
-        inline Record_set& include_key(const unsigned long long key)
-        {
-            keys_->insert(key);
-            return *this;
-        }
+        virtual Record_set& include_key(const unsigned long long key) = 0;
         
         //! Remove keys from the Record_set.
         /*!
          \param keys The keys to exclude.
          \return The modified Record_set object.
          */
-        Record_set& exclude_keys(const std::set<unsigned long long> &keys);
+        virtual Record_set& exclude_keys(const std::set<unsigned long long> &keys) = 0;
         
         //! Remove a key from the Record_set.
         /*!
          \param key The key to remove.
          \return The modified Record_set object.
          */
-        inline Record_set& exclude_key(const unsigned long long key)
-        {
-            keys_->erase(key);
-            return *this;
-        }
+        virtual Record_set& exclude_key(const unsigned long long key) = 0;
         
         //! Perform operation against this Record_set and another new Record_set.
         /*!
@@ -194,9 +153,9 @@ namespace lj
          \param len The length of the value.
          \return A Record_set.
          */
-        Record_set equal(const std::string& indx,
-                            const void* const val,
-                            const size_t len) const;
+        virtual std::auto_ptr<Record_set> equal(const std::string& indx,
+                                           const void* const val,
+                                           const size_t len) const = 0;
         
         //! Perform operation against this Record_set and another new Record_set.
         /*!
@@ -211,9 +170,9 @@ namespace lj
          \param len The length of the value.
          \return A Record_set.
          */
-        Record_set greater(const std::string& indx,
-                              const void* const val,
-                              const size_t len) const;
+        virtual std::auto_ptr<Record_set> greater(const std::string& indx,
+                                             const void* const val,
+                                             const size_t len) const = 0;
         
         //! Perform operation against this Record_set and another new Record_set.
         /*!
@@ -228,9 +187,9 @@ namespace lj
          \param len The length of the value.
          \return A Record_set.
          */
-        Record_set lesser(const std::string& indx,
-                             const void* const val,
-                             const size_t len) const;
+        virtual std::auto_ptr<Record_set> lesser(const std::string& indx,
+                                            const void* const val,
+                                            const size_t len) const = 0;
         
         //! Perform operation against this Record_set and another new Record_set.
         /*!
@@ -244,8 +203,8 @@ namespace lj
          \param term The value to search for.
          \return A Record_set.
          */
-        Record_set contains(const std::string& indx,
-                               const std::string& term) const;
+        virtual std::auto_ptr<Record_set> contains(const std::string& indx,
+                                              const std::string& term) const = 0;
         
         //! Perform operation against this Record_set and another new Record_set.
         /*!
@@ -259,17 +218,14 @@ namespace lj
          \param word The value to search for.
          \return A Record_set.
          */
-        Record_set tagged(const std::string& indx,
-                             const std::string& word) const;
+        virtual std::auto_ptr<Record_set> tagged(const std::string& indx,
+                                            const std::string& word) const = 0;
         
         //! Record_set size.
         /*!
          \return The number of documents currently in the set.
          */
-        inline unsigned long long size() const
-        {
-            return keys_->size();
-        }
+        virtual unsigned long long size() const = 0;
         
         //! Get the documents in this Record_set.
         /*!
@@ -278,19 +234,7 @@ namespace lj
          \param records The list to place items into.
          \return True when records have been added.
          */
-        template<typename D>
-        bool items(std::list<D>& records) const
-        {
-            for (std::set<unsigned long long>::const_iterator iter = keys_->begin();
-                 keys_->end() != iter;
-                 ++iter)
-            {
-                D obj;
-                obj.copy_from(doc_at(*iter));
-                records.push_back(obj);
-            }
-            return size();
-        }
+        virtual bool items(std::list<Bson>& records) const = 0;
         
         //! Get the documents in this Record_set as pointers.
         /*!
@@ -299,19 +243,7 @@ namespace lj
          \param records The list to place items into.
          \return True when records have been added.
          */
-        template<typename D>
-        bool items(std::list<D*>& records) const
-        {
-            for (std::set<unsigned long long>::const_iterator iter = keys_->begin();
-                 keys_->end() != iter;
-                 ++iter)
-            {
-                D* obj = new D();
-                obj->copy_from(doc_at(*iter));
-                records.push_back(obj);
-            }
-            return size();
-        }
+        virtual bool items(std::list<Bson*>& records) const = 0;
         
         //! Get the first document in the Record_set.
         /*!
@@ -321,36 +253,13 @@ namespace lj
          \param record Record to populate.
          \return True when the record has been modified.
          */
-        template<typename D>
-        bool first(D &result) const
-        {
-            for (std::set<unsigned long long>::const_iterator iter = keys_->begin();
-                 keys_->end() != iter;
-                 ++iter)
-            {
-                result.copy_from(doc_at(*iter));
-                return true;
-            }
-            return false;
-        }
-    private:
-        //! Storage pointer.  All filtering is done with this storage engine.
-        const Storage *storage_;
-        
-        //! Set of keys represented by this filter.
-        std::set<unsigned long long>* keys_;
-        
-        //! Mode for performing key evaluations.
-        set::Operation op_;
-        
-        //! Internal method to hide some logic for the template code above.
-        Bson doc_at(unsigned long long pkey) const;
-        
-        //! Hidden assignment operator.
-        /*!
-         \param o Copy from object.
-         */
-        Record_set& operator=(const Record_set& o);
+        virtual bool first(Bson& result) const = 0;
+    protected:
+        static tokyo::TreeDB* storage_db(const Storage* s);
+        static tokyo::TreeDB* storage_tree(const Storage* s, const std::string& indx);
+        static tokyo::Hash_db* storage_hash(const Storage* s, const std::string& indx);
+        static tokyo::TextSearcher* storage_text(const Storage* s, const std::string& indx);
+        static tokyo::TagSearcher* storage_tag(const Storage* s, const std::string& indx);
     };
     
     //! Storage Engine based on tokyo cabinet database libraries.
@@ -409,10 +318,7 @@ namespace lj
          \param key The key to populate the Record_set with.
          \return A new Record_set object.
          */
-        inline Record_set at(const unsigned long long key) const
-        {
-            return none().include_key(key);
-        }
+        std::auto_ptr<Record_set> at(const unsigned long long key) const;
         
         //! Get a Record_set containing all keys.
         /*!
@@ -422,7 +328,7 @@ namespace lj
          The default operation for the all Record_set is \c lj::set::k_intersection.
          \return All keys.
          */
-        Record_set all() const;
+        std::auto_ptr<Record_set> all() const;
         
         //! Get an empty Record_set.
         /*!
@@ -430,10 +336,7 @@ namespace lj
          The default operation for the none Record_set is \c lj::set::k_union.
          \return No keys.
          */
-        inline Record_set none() const
-        {
-            return Record_set(this, new std::set<unsigned long long>(), set::k_union);
-        }
+        std::auto_ptr<Record_set> none() const;
         
         //! Store a document
         /*!
@@ -468,19 +371,19 @@ namespace lj
         /*!
          \par Stores the actual documents, indexed by primary key.
          */
-        tokyo::TreeDB *db_;
+        tokyo::TreeDB* db_;
         
         //! Fields indexed using a tree db.
-        std::map<std::string, tokyo::TreeDB *> fields_tree_;
+        std::map<std::string, tokyo::TreeDB*> fields_tree_;
         
         //! Fields indexed using a hash db.
         std::map<std::string, tokyo::Hash_db*> fields_hash_;
         
         //! Fields indexed using full text searcher.
-        std::map<std::string, tokyo::TextSearcher *> fields_text_;
+        std::map<std::string, tokyo::TextSearcher*> fields_text_;
         
         //! Fields indexed using word searcher.
-        std::map<std::string, tokyo::TagSearcher *> fields_tag_;
+        std::map<std::string, tokyo::TagSearcher*> fields_tag_;
         
         //! Fields that have unique constraints.
         std::set<std::string> nested_indexing_;

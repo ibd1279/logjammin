@@ -43,6 +43,46 @@ using tokyo::TextSearcher;
 using tokyo::TagSearcher;
 
 namespace lj {
+    tokyo::TreeDB* Record_set::storage_db(const Storage* s)
+    {
+        return s->db_;
+    }
+    tokyo::TreeDB* Record_set::storage_tree(const Storage* s, const std::string& indx)
+    {
+        std::map<std::string, tokyo::TreeDB*>::const_iterator i = s->fields_tree_.find(indx);
+        if (s->fields_tree_.end() == i)
+        {
+            return 0;
+        }
+        return (*i).second;
+    }
+    tokyo::Hash_db* Record_set::storage_hash(const Storage* s, const std::string& indx)
+    {
+        std::map<std::string, tokyo::Hash_db*>::const_iterator i = s->fields_hash_.find(indx);
+        if (s->fields_hash_.end() == i)
+        {
+            return 0;
+        }
+        return (*i).second;
+    }
+    tokyo::TextSearcher* Record_set::storage_text(const Storage* s, const std::string& indx)
+    {
+        std::map<std::string, tokyo::TextSearcher*>::const_iterator i = s->fields_text_.find(indx);
+        if (s->fields_text_.end() == i)
+        {
+            return 0;
+        }
+        return (*i).second;
+    }
+    tokyo::TagSearcher* Record_set::storage_tag(const Storage* s, const std::string& indx)
+    {
+        std::map<std::string, tokyo::TagSearcher*>::const_iterator i = s->fields_tag_.find(indx);
+        if (s->fields_tag_.end() == i)
+        {
+            return 0;
+        }
+        return (*i).second;
+    }
     
     namespace {
         void dbvalue_to_storagekey(const tokyo::DB::list_value_t &ptr,
@@ -74,8 +114,8 @@ namespace lj {
          */
         template<typename T, typename Q>
         T *operate_on_sets(const set::Operation op,
-                                 const T& a,
-                                 const T& b)
+                           const T& a,
+                           const T& b)
         {
             const T* small = (a.size() < b.size()) ? &a : &b;
             const T* big = (a.size() < b.size()) ? &b : &a;
@@ -124,194 +164,271 @@ namespace lj {
             }
             return rs;
         }
-    };
-    
-    //=====================================================================
-    // Record_set Implementation.
-    //=====================================================================
-    
-    Record_set::Record_set(const Storage* storage,
-                                 const std::set<unsigned long long>& keys,
-                                 const set::Operation op) : storage_(storage), keys_(0), op_(op)
-    {
-        keys_ = new std::set<unsigned long long>(keys);
-    }
-    
-    Record_set::Record_set(const Storage* storage,
-                                 std::set<unsigned long long>* keys,
-                                 const set::Operation op) : storage_(storage), keys_(keys), op_(op)
-    {
-    }
-    
-    Record_set::Record_set(const Record_set& orig) : storage_(orig.storage_), keys_(0), op_(orig.op_)
-    {
-        keys_ = new std::set<unsigned long long>(*orig.keys_);
-    }
-    
-    Record_set::~Record_set()
-    {
-        storage_ = NULL;
-        if (keys_)
-        {
-            delete keys_;
-        }
-    }
-    
-    Record_set &Record_set::exclude_keys(const std::set<unsigned long long>& keys)
-    {
-        for (std::set<unsigned long long>::const_iterator iter = keys.begin();
-             keys.end() != iter;
-             ++iter)
-        {
-            keys_->erase(*iter);
-        }
-        return *this;
-    }
-    
-    Record_set Record_set::equal(const std::string& indx,
-                                       const void * const val,
-                                       const size_t len) const
-    {
-        Log::debug.log("Equal on [%s] with [%d][%s].") << indx << len << ((char *)val) << Log::end;
-        std::map<std::string, TreeDB*>::const_iterator tree_index = storage_->fields_tree_.find(indx);
-        std::map<std::string, Hash_db*>::const_iterator hash_index = storage_->fields_hash_.find(indx);
         
-        tokyo::DB::list_value_t db_values;
-        if (storage_->fields_hash_.end() != hash_index)
-        {
-            db_values.push_back(hash_index->second->at(val, len));
-        }
-        else if (storage_->fields_tree_.end() != tree_index)
-        {
-            tree_index->second->at_together(val, len, db_values);
-        }
-        else
-        {
-            return *this;
-        }
+        //=====================================================================
+        // Record_set Implementation.
+        //=====================================================================
         
-        std::set<unsigned long long> storage_keys;
-        dbvalue_to_storagekey(db_values, storage_keys);
-        std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, storage_keys);
-        Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
-        return Record_set(storage_, output, op_);
-    }
-    
-    Record_set Record_set::greater(const std::string &indx,
-                                         const void * const val,
-                                         const size_t len) const
-    {
-        Log::debug.log("Greater on [%s] with [%d][%s].") << indx << len << ((char *)val) << Log::end;
-        std::map<std::string, TreeDB*>::const_iterator tree_index = storage_->fields_tree_.find(indx);
-        
-        tokyo::DB::list_value_t db_values;
-        if (storage_->fields_tree_.end() != tree_index)
-        {
-            tokyo::DB::value_t max = tree_index->second->max_key();
-            tree_index->second->at_range(val,
+        class Standard_record_set : public Record_set {
+        public:
+            Standard_record_set(const Storage* storage,
+                                const std::set<unsigned long long>& keys,
+                                const set::Operation op) : storage_(storage), keys_(0), op_(op)
+            {
+                keys_ = new std::set<unsigned long long>(keys);
+            }
+            
+            Standard_record_set(const Storage* storage,
+                                std::set<unsigned long long>* keys,
+                                const set::Operation op) : storage_(storage), keys_(keys), op_(op)
+            {
+            }
+            
+            Standard_record_set(const Standard_record_set& orig) : storage_(orig.storage_), keys_(0), op_(orig.op_)
+            {
+                keys_ = new std::set<unsigned long long>(*orig.keys_);
+            }
+            
+            virtual ~Standard_record_set()
+            {
+                storage_ = NULL;
+                if (keys_)
+                {
+                    delete keys_;
+                }
+            }
+            
+            virtual Record_set& set_operation(const set::Operation op)
+            {
+                op_ = op;
+                return *this;
+            }
+            
+            virtual bool is_included(const unsigned long long key) const
+            {
+                return keys_->end() != keys_->find(key);
+            }
+            
+            virtual Record_set& include_keys(const std::set<unsigned long long>& keys)
+            {
+                keys_->insert(keys.begin(), keys.end());
+                return *this;
+            }
+            
+            virtual Record_set& include_key(const unsigned long long key)
+            {
+                keys_->insert(key);
+                return *this;
+            }
+            
+            virtual Record_set& exclude_keys(const std::set<unsigned long long> &keys)
+            {
+                for (std::set<unsigned long long>::const_iterator iter = keys.begin();
+                     keys.end() != iter;
+                     ++iter)
+                {
+                    keys_->erase(*iter);
+                }
+                return *this;
+            }
+            
+            virtual Record_set& exclude_key(const unsigned long long key)
+            {
+                keys_->erase(key);
+                return *this;
+            }
+            
+            virtual std::auto_ptr<Record_set> equal(const std::string& indx,
+                                                    const void* const val,
+                                                    const size_t len) const
+            {
+                Log::debug.log("Equal on [%s] with [%d][%s].") << indx << len << ((char *)val) << Log::end;
+                tokyo::Hash_db* hash_index = Record_set::storage_hash(storage_, indx);
+                tokyo::TreeDB* tree_index = Record_set::storage_tree(storage_, indx);
+                
+                tokyo::DB::list_value_t db_values;
+                if (hash_index)
+                {
+                    db_values.push_back(hash_index->at(val, len));
+                }
+                else if (tree_index)
+                {
+                    tree_index->at_together(val, len, db_values);
+                }
+                else
+                {
+                    return std::auto_ptr<Record_set>(new Standard_record_set(*this));
+                }
+                
+                std::set<unsigned long long> storage_keys;
+                dbvalue_to_storagekey(db_values, storage_keys);
+                std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, storage_keys);
+                Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
+                return std::auto_ptr<Record_set>(new Standard_record_set(storage_, output, op_));
+            }
+            
+            virtual std::auto_ptr<Record_set> greater(const std::string& indx,
+                                                      const void* const val,
+                                                      const size_t len) const
+            {
+                Log::debug.log("Greater on [%s] with [%d][%s].") << indx << len << ((char *)val) << Log::end;
+                tokyo::TreeDB* tree_index = Record_set::storage_tree(storage_, indx);
+                
+                tokyo::DB::list_value_t db_values;
+                if (tree_index)
+                {
+                    tokyo::DB::value_t max = tree_index->max_key();
+                    tree_index->at_range(val,
                                          len,
                                          false,
                                          max.first,
                                          max.second,
                                          true,
                                          db_values);
-        }
-        else
-        {
-            return *this;
-        }
-        
-        std::set<unsigned long long> storage_keys;
-        dbvalue_to_storagekey(db_values, storage_keys);
-        std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, storage_keys);
-        Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
-        return Record_set(storage_, output, op_);
-    }    
-    
-    Record_set Record_set::lesser(const std::string &indx,
-                                        const void * const val,
-                                        const size_t len) const
-    {
-        Log::debug.log("Lesser on [%s] with [%d][%s].") << indx << len << ((char *)val) << Log::end;
-        std::map<std::string, TreeDB*>::const_iterator tree_index = storage_->fields_tree_.find(indx);
-        
-        tokyo::DB::list_value_t db_values;
-        if (storage_->fields_tree_.end() != tree_index)
-        {
-            tokyo::DB::value_t min = tree_index->second->min_key();
-            tree_index->second->at_range(min.first,
+                }
+                else
+                {
+                    return std::auto_ptr<Record_set>(new Standard_record_set(*this));
+                }
+                
+                std::set<unsigned long long> storage_keys;
+                dbvalue_to_storagekey(db_values, storage_keys);
+                std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, storage_keys);
+                Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
+                return std::auto_ptr<Record_set>(new Standard_record_set(storage_, output, op_));
+            }    
+            
+            virtual std::auto_ptr<Record_set> lesser(const std::string& indx,
+                                                     const void* const val,
+                                                     const size_t len) const
+            {
+                Log::debug.log("Lesser on [%s] with [%d][%s].") << indx << len << ((char *)val) << Log::end;
+                tokyo::TreeDB* tree_index = Record_set::storage_tree(storage_, indx);
+                
+                tokyo::DB::list_value_t db_values;
+                if (tree_index)
+                {
+                    tokyo::DB::value_t min = tree_index->min_key();
+                    tree_index->at_range(min.first,
                                          min.second,
                                          true,
                                          val,
                                          len,
                                          false,
                                          db_values);
-        }
-        else
-        {
-            return *this;
-        }
-        
-        std::set<unsigned long long> storage_keys;
-        dbvalue_to_storagekey(db_values, storage_keys);
-        std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, storage_keys);
-        Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
-        return Record_set(storage_, output, op_);
-    }    
-    
-    Record_set Record_set::contains(const std::string& indx,
-                                          const std::string& term) const
-    {
-        Log::debug.log("Contains on [%s] with [%s]") << indx << term << Log::end;
-        std::map<std::string, TextSearcher *>::const_iterator index = storage_->fields_text_.find(indx);
-        
-        tokyo::Searcher::set_key_t searcher_values;
-        if (storage_->fields_text_.end() != index)
-        {
-            index->second->search(term, searcher_values);
-        }
-        else
-        {
-            return *this;
-        }
-        
-        std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, searcher_values);
-        Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
-        return Record_set(storage_, output, op_);
-    }
-    
-    Record_set Record_set::tagged(const std::string& indx,
-                                         const std::string& word) const
-    {
-        Log::debug.log("Tagged on [%s] with [%s]") << indx << word << Log::end;
-        std::map<std::string, TagSearcher *>::const_iterator index = storage_->fields_tag_.find(indx);
-        
-        tokyo::Searcher::set_key_t searcher_values;
-        if (storage_->fields_tag_.end() != index)
-        {
-            index->second->search(word, searcher_values);
-        }
-        else
-        {
-            return *this;
-        }
-        
-        std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, searcher_values);
-        Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
-        return Record_set(storage_, output, op_);
-    }
-    
-    Bson Record_set::doc_at(unsigned long long pkey) const
-    {
-        tokyo::DB::value_t p = storage_->db_->at(&pkey, sizeof(unsigned long long));
-        if (!p.first)
-        {
-            return Bson();
-        }
-        Bson n(k_bson_document, static_cast<char *>(p.first));
-        free(p.first);
-        return n;
-    }
+                }
+                else
+                {
+                    return std::auto_ptr<Record_set>(new Standard_record_set(*this));
+                }
+                
+                std::set<unsigned long long> storage_keys;
+                dbvalue_to_storagekey(db_values, storage_keys);
+                std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, storage_keys);
+                Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
+                return std::auto_ptr<Record_set>(new Standard_record_set(storage_, output, op_));
+            }
+            
+            virtual std::auto_ptr<Record_set> contains(const std::string& indx,
+                                                       const std::string& term) const
+            {
+                Log::debug.log("Contains on [%s] with [%s]") << indx << term << Log::end;
+                TextSearcher* text_index = Record_set::storage_text(storage_, indx);
+                
+                tokyo::Searcher::set_key_t searcher_values;
+                if (text_index)
+                {
+                    text_index->search(term, searcher_values);
+                }
+                else
+                {
+                    return std::auto_ptr<Record_set>(new Standard_record_set(*this));
+                }
+                
+                std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, searcher_values);
+                Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
+                return std::auto_ptr<Record_set>(new Standard_record_set(storage_, output, op_));
+            }
+            
+            virtual std::auto_ptr<Record_set> tagged(const std::string& indx,
+                                                     const std::string& word) const
+            {
+                Log::debug.log("Tagged on [%s] with [%s]") << indx << word << Log::end;
+                TagSearcher* tag_index = Record_set::storage_tag(storage_, indx);
+                
+                tokyo::Searcher::set_key_t searcher_values;
+                if (tag_index)
+                {
+                    tag_index->search(word, searcher_values);
+                }
+                else
+                {
+                    return std::auto_ptr<Record_set>(new Standard_record_set(*this));
+                }
+                
+                std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, searcher_values);
+                Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
+                return std::auto_ptr<Record_set>(new Standard_record_set(storage_, output, op_));
+            }
+            
+            virtual unsigned long long size() const
+            {
+                return keys_->size();
+            }
+            
+            virtual bool items(std::list<Bson>& records) const
+            {
+                for (std::set<unsigned long long>::const_iterator iter = keys_->begin();
+                     keys_->end() != iter;
+                     ++iter)
+                {
+                    records.push_back(doc_at(*iter));
+                }
+                return size();
+            }
+            
+            virtual bool items(std::list<Bson*>& records) const
+            {
+                for (std::set<unsigned long long>::const_iterator iter = keys_->begin();
+                     keys_->end() != iter;
+                     ++iter)
+                {
+                    records.push_back(new Bson(doc_at(*iter)));
+                }
+                return size();
+            }
+            
+            virtual bool first(Bson& result) const
+            {
+                for (std::set<unsigned long long>::const_iterator iter = keys_->begin();
+                     keys_->end() != iter;
+                     ++iter)
+                {
+                    result.copy_from(doc_at(*iter));
+                    return true;
+                }
+                return false;
+            }
+        private:
+            const Storage *storage_;
+            std::set<unsigned long long>* keys_;
+            set::Operation op_;
+            Bson doc_at(unsigned long long pkey) const
+            {
+                tokyo::TreeDB* db = Record_set::storage_db(storage_);
+                tokyo::DB::value_t p = db->at(&pkey, sizeof(unsigned long long));
+                if (!p.first)
+                {
+                    return Bson();
+                }
+                Bson n(k_bson_document, static_cast<char *>(p.first));
+                free(p.first);
+                return n;
+            }
+            
+            Record_set& operator=(const Record_set& o);
+        };
+    };
     
     //=====================================================================
     // Storage Implementation.
@@ -401,7 +518,7 @@ namespace lj {
                 return std::pair<int, int>(0,0);
             }
         }
-    } // namespace
+    }; // namespace
     
     Storage::Storage(const std::string &dir) : db_(NULL), fields_tree_(), fields_hash_(), fields_text_(), fields_tag_(), nested_indexing_(), directory_(DBDIR)
     {
@@ -483,7 +600,7 @@ namespace lj {
                 delete iter->second;
             }
         }
-
+        
         if (fields_hash_.size())
         {
             Log::info.log("Closing hash indicies under [%s].") << directory_ << Log::end;
@@ -511,7 +628,14 @@ namespace lj {
         delete db_;
     }
     
-    Record_set Storage::all() const
+    std::auto_ptr<Record_set> Storage::at(const unsigned long long key) const
+    {
+        std::auto_ptr<Record_set> ptr = none();
+        ptr->include_key(key);
+        return ptr;
+    }
+    
+    std::auto_ptr<Record_set> Storage::all() const
     {
         tokyo::DB::list_value_t keys;
         tokyo::DB::value_t max = db_->max_key();
@@ -524,13 +648,24 @@ namespace lj {
                             true,
                             keys))
         {
-            std::set<unsigned long long> real_keys;
-            dbvalue_to_storagekey(keys, real_keys);
-            return Record_set(this, real_keys, lj::set::k_intersection);
+            std::set<unsigned long long>* real_keys = new std::set<unsigned long long>();
+            dbvalue_to_storagekey(keys, *real_keys);
+            return std::auto_ptr<Record_set>(new Standard_record_set(this,
+                                                                     real_keys,
+                                                                     lj::set::k_intersection));
         }
-        return Record_set(this, std::set<unsigned long long>(), lj::set::k_intersection);
+        return std::auto_ptr<Record_set>(new Standard_record_set(this,
+                                                                 new std::set<unsigned long long>(),
+                                                                 lj::set::k_intersection));
     }
-        
+    
+    std::auto_ptr<Record_set> Storage::none() const
+    {
+        return std::auto_ptr<Record_set>(new Standard_record_set(this,
+                                                                 new std::set<unsigned long long>(),
+                                                                 lj::set::k_union));
+    }
+    
     Storage &Storage::place(Bson &value)
     {
         unsigned long long key = lj::bson_as_int64(value.nav("__key"));
@@ -664,7 +799,7 @@ namespace lj {
         
         Log::debug.log("Remove [%d] from indicies.") << key << Log::end;
         Bson original;
-        at(key).first<Bson>(original);
+        at(key)->first(original);
         
         // Remove from tree index entries.
         for (std::map<std::string, TreeDB *>::const_iterator iter = fields_tree_.begin();
@@ -769,7 +904,7 @@ namespace lj {
         
         Log::debug.log("Place [%d] in indicies.") << key << Log::end;
         Bson original;
-        at(key).first(original);
+        at(key)->first(original);
         
         // Insert into tree index.
         for (std::map<std::string, TreeDB*>::const_iterator iter = fields_tree_.begin();
