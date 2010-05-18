@@ -116,28 +116,28 @@ namespace lj
          \param keys The keys to add.
          \return The modified Record_set object.
          */
-        virtual Record_set& include_keys(const std::set<unsigned long long>& keys) = 0;
+        virtual std::auto_ptr<Record_set> include_keys(const std::set<unsigned long long>& keys) = 0;
         
         //! Add a key to the Record_set.
         /*!
          \param key The key to add.
          \return The modified Record_set object.
          */
-        virtual Record_set& include_key(const unsigned long long key) = 0;
+        virtual std::auto_ptr<Record_set> include_key(const unsigned long long key) = 0;
         
         //! Remove keys from the Record_set.
         /*!
          \param keys The keys to exclude.
          \return The modified Record_set object.
          */
-        virtual Record_set& exclude_keys(const std::set<unsigned long long> &keys) = 0;
+        virtual std::auto_ptr<Record_set> exclude_keys(const std::set<unsigned long long> &keys) = 0;
         
         //! Remove a key from the Record_set.
         /*!
          \param key The key to remove.
          \return The modified Record_set object.
          */
-        virtual Record_set& exclude_key(const unsigned long long key) = 0;
+        virtual std::auto_ptr<Record_set> exclude_key(const unsigned long long key) = 0;
         
         //! Perform operation against this Record_set and another new Record_set.
         /*!

@@ -41,8 +41,15 @@ int main(int argc, char * const argv[]) {
     
     lj::Socket_selector sl;
     
-    sl.bind_port(27754, new logjamd::Service_dispatch());
-    sl.loop();
+    try
+    {
+        sl.bind_port(27754, new logjamd::Service_dispatch());
+        sl.loop();
+    }
+    catch(lj::Exception* e)
+    {
+        std::cerr << e->to_string() << std::endl;
+    }
 
     return 0;
 }

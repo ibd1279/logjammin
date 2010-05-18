@@ -209,33 +209,37 @@ namespace lj {
                 return keys_->end() != keys_->find(key);
             }
             
-            virtual Record_set& include_keys(const std::set<unsigned long long>& keys)
+            virtual std::auto_ptr<Record_set> include_keys(const std::set<unsigned long long>& keys)
             {
-                keys_->insert(keys.begin(), keys.end());
-                return *this;
+                Standard_record_set* ptr = new Standard_record_set(*this);
+                ptr->keys_->insert(keys.begin(), keys.end());
+                return std::auto_ptr<Record_set>(ptr);
             }
             
-            virtual Record_set& include_key(const unsigned long long key)
+            virtual std::auto_ptr<Record_set> include_key(const unsigned long long key)
             {
-                keys_->insert(key);
-                return *this;
+                Standard_record_set* ptr = new Standard_record_set(*this);
+                ptr->keys_->insert(key);
+                return std::auto_ptr<Record_set>(ptr);
             }
             
-            virtual Record_set& exclude_keys(const std::set<unsigned long long> &keys)
+            virtual std::auto_ptr<Record_set> exclude_keys(const std::set<unsigned long long> &keys)
             {
+                Standard_record_set* ptr = new Standard_record_set(*this);
                 for (std::set<unsigned long long>::const_iterator iter = keys.begin();
                      keys.end() != iter;
                      ++iter)
                 {
-                    keys_->erase(*iter);
+                    ptr->keys_->erase(*iter);
                 }
-                return *this;
+                return std::auto_ptr<Record_set>(ptr);
             }
             
-            virtual Record_set& exclude_key(const unsigned long long key)
+            virtual std::auto_ptr<Record_set> exclude_key(const unsigned long long key)
             {
-                keys_->erase(key);
-                return *this;
+                Standard_record_set* ptr = new Standard_record_set(*this);
+                ptr->keys_->erase(key);
+                return std::auto_ptr<Record_set>(ptr);
             }
             
             virtual std::auto_ptr<Record_set> equal(const std::string& indx,
@@ -426,7 +430,259 @@ namespace lj {
                 return n;
             }
             
-            Record_set& operator=(const Record_set& o);
+            Record_set& operator=(const Standard_record_set& o);
+        };
+        
+        class All_record_set : public Record_set {
+        public:
+            All_record_set(const Storage* storage,
+                           const set::Operation op) : storage_(storage), op_(op)
+            {
+            }
+            
+            All_record_set(const All_record_set& orig) : storage_(orig.storage_), op_(orig.op_)
+            {
+            }
+            
+            virtual ~All_record_set()
+            {
+                storage_ = 0;
+            }
+            
+            virtual Record_set& set_operation(const set::Operation op)
+            {
+                op_ = op;
+                return *this;
+            }
+            
+            virtual bool is_included(const unsigned long long key) const
+            {
+                return true;
+            }
+            
+            virtual std::auto_ptr<Record_set> include_keys(const std::set<unsigned long long>& keys)
+            {
+                return std::auto_ptr<Record_set>(new All_record_set(*this));
+            }
+            
+            virtual std::auto_ptr<Record_set> include_key(const unsigned long long key)
+            {
+                return std::auto_ptr<Record_set>(new All_record_set(*this));
+            }
+            
+            virtual std::auto_ptr<Record_set> exclude_keys(const std::set<unsigned long long> &keys)
+            {
+                std::set<unsigned long long>* real_keys = new std::set<unsigned long long>();
+                get_all_keys(real_keys);
+                std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_,
+                                                                      real_keys,
+                                                                      op_));
+                ptr->exclude_keys(keys);
+                return ptr;
+            }
+            
+            virtual std::auto_ptr<Record_set> exclude_key(const unsigned long long key)
+            {
+                std::set<unsigned long long> tmp;
+                tmp.insert(key);
+                return exclude_keys(tmp);
+            }
+            
+            virtual std::auto_ptr<Record_set> equal(const std::string& indx,
+                                                    const void* const val,
+                                                    const size_t len) const
+            {
+                if (lj::set::k_union == op_)
+                {
+                    return std::auto_ptr<Record_set>(new All_record_set(*this));
+                }
+                else if (lj::set::k_intersection == op_)
+                {
+                    Standard_record_set tmp(storage_,
+                                            new std::set<unsigned long long>(),
+                                            lj::set::k_union);
+                    std::auto_ptr<Record_set> ptr = tmp.equal(indx, val, len);
+                    ptr->set_operation(op_);
+                    return ptr;
+                }
+                else
+                {
+                    std::set<unsigned long long>* real_keys = new std::set<unsigned long long>();
+                    get_all_keys(real_keys);
+                    std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_,
+                                                                          real_keys,
+                                                                          op_));
+                    return ptr->equal(indx, val, len);
+                }
+            }
+            
+            virtual std::auto_ptr<Record_set> greater(const std::string& indx,
+                                                      const void* const val,
+                                                      const size_t len) const
+            {
+                if (lj::set::k_union == op_)
+                {
+                    return std::auto_ptr<Record_set>(new All_record_set(*this));
+                }
+                else if (lj::set::k_intersection == op_)
+                {
+                    Standard_record_set tmp(storage_,
+                                            new std::set<unsigned long long>(),
+                                            lj::set::k_union);
+                    std::auto_ptr<Record_set> ptr = tmp.greater(indx, val, len);
+                    ptr->set_operation(op_);
+                    return ptr;
+                }
+                else
+                {
+                    std::set<unsigned long long>* real_keys = new std::set<unsigned long long>();
+                    get_all_keys(real_keys);
+                    std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_,
+                                                                          real_keys,
+                                                                          op_));
+                    return ptr->greater(indx, val, len);
+                }
+            }
+            
+            virtual std::auto_ptr<Record_set> lesser(const std::string& indx,
+                                                     const void* const val,
+                                                     const size_t len) const
+            {
+                if (lj::set::k_union == op_)
+                {
+                    return std::auto_ptr<Record_set>(new All_record_set(*this));
+                }
+                else if (lj::set::k_intersection == op_)
+                {
+                    Standard_record_set tmp(storage_,
+                                            new std::set<unsigned long long>(),
+                                            lj::set::k_union);
+                    std::auto_ptr<Record_set> ptr = tmp.lesser(indx, val, len);
+                    ptr->set_operation(op_);
+                    return ptr;
+                }
+                else
+                {
+                    std::set<unsigned long long>* real_keys = new std::set<unsigned long long>();
+                    get_all_keys(real_keys);
+                    std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_,
+                                                                          real_keys,
+                                                                          op_));
+                    return ptr->lesser(indx, val, len);
+                }
+            }
+            
+            virtual std::auto_ptr<Record_set> contains(const std::string& indx,
+                                                       const std::string& term) const
+            {
+                if (lj::set::k_union == op_)
+                {
+                    return std::auto_ptr<Record_set>(new All_record_set(*this));
+                }
+                else if (lj::set::k_intersection == op_)
+                {
+                    Standard_record_set tmp(storage_,
+                                            new std::set<unsigned long long>(),
+                                            lj::set::k_union);
+                    std::auto_ptr<Record_set> ptr = tmp.contains(indx, term);
+                    ptr->set_operation(op_);
+                    return ptr;
+                }
+                else
+                {
+                    std::set<unsigned long long>* real_keys = new std::set<unsigned long long>();
+                    get_all_keys(real_keys);
+                    std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_,
+                                                                          real_keys,
+                                                                          op_));
+                    return ptr->contains(indx, term);
+                }
+            }
+            
+            virtual std::auto_ptr<Record_set> tagged(const std::string& indx,
+                                                     const std::string& word) const
+            {
+                if (lj::set::k_union == op_)
+                {
+                    return std::auto_ptr<Record_set>(new All_record_set(*this));
+                }
+                else if (lj::set::k_intersection == op_)
+                {
+                    Standard_record_set tmp(storage_,
+                                            new std::set<unsigned long long>(),
+                                            lj::set::k_union);
+                    std::auto_ptr<Record_set> ptr = tmp.tagged(indx, word);
+                    ptr->set_operation(op_);
+                    return ptr;
+                }
+                else
+                {
+                    std::set<unsigned long long>* real_keys = new std::set<unsigned long long>();
+                    get_all_keys(real_keys);
+                    std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_,
+                                                                          real_keys,
+                                                                          op_));
+                    return ptr->tagged(indx, word);
+                }
+            }
+            
+            virtual unsigned long long size() const
+            {
+                std::set<unsigned long long> real_keys;
+                get_all_keys(&real_keys);
+                return real_keys.size();
+            }
+            
+            virtual bool items(std::list<Bson>& records) const
+            {
+                std::set<unsigned long long>* real_keys = new std::set<unsigned long long>();
+                get_all_keys(real_keys);
+                Standard_record_set tmp(storage_,
+                                        real_keys,
+                                        op_);
+                return tmp.items(records);
+            }
+            
+            virtual bool items(std::list<Bson*>& records) const
+            {
+                std::set<unsigned long long>* real_keys = new std::set<unsigned long long>();
+                get_all_keys(real_keys);
+                Standard_record_set tmp(storage_,
+                                        real_keys,
+                                        op_);
+                return tmp.items(records);
+            }
+            
+            virtual bool first(Bson& result) const
+            {
+                std::set<unsigned long long>* real_keys = new std::set<unsigned long long>();
+                get_all_keys(real_keys);
+                Standard_record_set tmp(storage_,
+                                        real_keys,
+                                        op_);
+                return tmp.first(result);
+            }
+        private:
+            const Storage *storage_;
+            set::Operation op_;
+            Record_set& operator=(const All_record_set& o);
+            void get_all_keys(std::set<unsigned long long>* result_keys) const
+            {
+                tokyo::TreeDB* db = Record_set::storage_db(storage_);
+                tokyo::DB::list_value_t keys;
+                tokyo::DB::value_t max = db->max_key();
+                tokyo::DB::value_t min = db->min_key();
+                if (db->range_keys(min.first,
+                                   min.second,
+                                   true,
+                                   max.first,
+                                   max.second,
+                                   true,
+                                   keys))
+                {
+                    dbvalue_to_storagekey(keys, *result_keys);
+                }                    
+            }
         };
     };
     
@@ -637,26 +893,8 @@ namespace lj {
     
     std::auto_ptr<Record_set> Storage::all() const
     {
-        tokyo::DB::list_value_t keys;
-        tokyo::DB::value_t max = db_->max_key();
-        tokyo::DB::value_t min = db_->min_key();
-        if (db_->range_keys(min.first,
-                            min.second,
-                            true,
-                            max.first,
-                            max.second,
-                            true,
-                            keys))
-        {
-            std::set<unsigned long long>* real_keys = new std::set<unsigned long long>();
-            dbvalue_to_storagekey(keys, *real_keys);
-            return std::auto_ptr<Record_set>(new Standard_record_set(this,
-                                                                     real_keys,
-                                                                     lj::set::k_intersection));
-        }
-        return std::auto_ptr<Record_set>(new Standard_record_set(this,
-                                                                 new std::set<unsigned long long>(),
-                                                                 lj::set::k_intersection));
+        return std::auto_ptr<Record_set>(new All_record_set(this,
+                                                            lj::set::k_intersection));
     }
     
     std::auto_ptr<Record_set> Storage::none() const
