@@ -1,6 +1,6 @@
 /*!
  \file logjamd_net.cpp
- \brief Logjam Server Networking implementation.
+ \brief Logjam server networking implementation.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.

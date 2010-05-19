@@ -1,6 +1,6 @@
 /*!
  \file logjamd_net.h
- \brief Logjam server networking code.
+ \brief Logjam server networking header.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
