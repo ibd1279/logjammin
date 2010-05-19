@@ -57,23 +57,23 @@ namespace logjamd {
      \version 1.0
      \date April 26, 2010
      */
-    class LuaBSONNode {
+    class Lua_bson_node {
     private:
         lj::Bson *_node;
         bool _gc;
     public:
         static const char LUNAR_CLASS_NAME[];
-        static Lunar<LuaBSONNode>::RegType LUNAR_METHODS[];
-        LuaBSONNode(lua_State *L);
-        LuaBSONNode(lj::Bson *ptr, bool gc);
-        ~LuaBSONNode();
-        int nav(lua_State *L);
-        int set(lua_State *L);
-        int push(lua_State *L);
-        int get(lua_State *L);
-        int save(lua_State *L);
-        int load(lua_State *L);
-        int __tostring(lua_State *L);
+        static Lunar<Lua_bson_node>::RegType LUNAR_METHODS[];
+        Lua_bson_node(lua_State* L);
+        Lua_bson_node(lj::Bson* ptr, bool gc);
+        ~Lua_bson_node();
+        int nav(lua_State* L);
+        int set(lua_State* L);
+        int push(lua_State* L);
+        int get(lua_State* L);
+        int save(lua_State* L);
+        int load(lua_State* L);
+        int __tostring(lua_State* L);
         inline lj::Bson &real_node() { return *_node; }
     };
     

@@ -47,7 +47,7 @@ using lj::Log;
 
 namespace logjamd {
     void register_logjam_functions(lua_State *L) {
-        Lunar<logjamd::LuaBSONNode>::Register(L);
+        Lunar<logjamd::Lua_bson_node>::Register(L);
         Lunar<logjamd::LuaStorageFilter>::Register(L);
         Lunar<logjamd::LuaStorage>::Register(L);
         lua_pushcfunction(L, &storage_config_new);
@@ -89,13 +89,13 @@ namespace logjamd {
         ptr->nav("index/text");
         ptr->nav("index/tag");
         ptr->nav("index/hash");
-        Lunar<LuaBSONNode>::push(L, new LuaBSONNode(ptr, true), true);
+        Lunar<Lua_bson_node>::push(L, new Lua_bson_node(ptr, true), true);
         return 1;
     }
     
     int storage_config_save(lua_State *L) {
         std::string dbname(lua_to_string(L, -2));
-        LuaBSONNode *ptr = Lunar<LuaBSONNode>::check(L, -1);
+        Lua_bson_node *ptr = Lunar<Lua_bson_node>::check(L, -1);
         std::string dbfile(DBDIR);
         if(dbname.size() > 1 && dbname[dbname.size() - 1] == '/')
             dbfile.append(dbname);
@@ -121,7 +121,7 @@ namespace logjamd {
             dbfile.append("/").append(dbname);
         dbfile.append("/config");
         lj::Bson *ptr = lj::bson_load(dbfile);
-        Lunar<LuaBSONNode>::push(L, new LuaBSONNode(ptr, true), true);
+        Lunar<Lua_bson_node>::push(L, new Lua_bson_node(ptr, true), true);
         return 1;
     }
     
@@ -130,7 +130,7 @@ namespace logjamd {
         std::string indxfield(lua_to_string(L, -2));
         std::string indxname(lua_to_string(L, -3));
         std::string indxtype(lua_to_string(L, -4));
-        LuaBSONNode *ptr = Lunar<LuaBSONNode>::check(L, -5);
+        Lua_bson_node *ptr = Lunar<Lua_bson_node>::check(L, -5);
         ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/compare", lj::bson_new_string(indxcomp));
         ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/file", lj::bson_new_string(std::string("index.") + indxname + "." + indxtype + ".tc"));
         ptr->real_node().push_child(std::string("index/") + indxtype + "/" + indxname + "/mode", lj::bson_new_string("create"));
@@ -144,7 +144,7 @@ namespace logjamd {
     
     int storage_config_add_nested_field(lua_State *L) {
         std::string field(lua_to_string(L, -1));
-        LuaBSONNode *ptr = Lunar<LuaBSONNode>::check(L, -2);
+        Lua_bson_node *ptr = Lunar<Lua_bson_node>::check(L, -2);
         
         std::set<std::string> allowed(lj::bson_as_value_string_set(ptr->real_node().nav("main/nested")));
         allowed.insert(field);
@@ -166,7 +166,7 @@ namespace logjamd {
     {
         LuaStorageFilter* filter = Lunar<LuaStorageFilter>::check(L, -1);
         lua_getglobal(L, "response");
-        LuaBSONNode* node = Lunar<LuaBSONNode>::check(L, -1);
+        Lua_bson_node* node = Lunar<Lua_bson_node>::check(L, -1);
         
         std::list<lj::Bson *> d;
         filter->real_filter().items(d);
@@ -182,48 +182,48 @@ namespace logjamd {
     //=====================================================================
     // Bson Lua integration Fields
     //=====================================================================
-    const char LuaBSONNode::LUNAR_CLASS_NAME[] = "Bson";
-    Lunar<LuaBSONNode>::RegType LuaBSONNode::LUNAR_METHODS[] = {
-    LUNAR_MEMBER_METHOD(LuaBSONNode, nav),
-    LUNAR_MEMBER_METHOD(LuaBSONNode, set),
-    LUNAR_MEMBER_METHOD(LuaBSONNode, push),
-    LUNAR_MEMBER_METHOD(LuaBSONNode, get),
-    LUNAR_MEMBER_METHOD(LuaBSONNode, load),
-    LUNAR_MEMBER_METHOD(LuaBSONNode, save),
-    LUNAR_MEMBER_METHOD(LuaBSONNode, __tostring),
+    const char Lua_bson_node::LUNAR_CLASS_NAME[] = "Bson";
+    Lunar<Lua_bson_node>::RegType Lua_bson_node::LUNAR_METHODS[] = {
+    LUNAR_MEMBER_METHOD(Lua_bson_node, nav),
+    LUNAR_MEMBER_METHOD(Lua_bson_node, set),
+    LUNAR_MEMBER_METHOD(Lua_bson_node, push),
+    LUNAR_MEMBER_METHOD(Lua_bson_node, get),
+    LUNAR_MEMBER_METHOD(Lua_bson_node, load),
+    LUNAR_MEMBER_METHOD(Lua_bson_node, save),
+    LUNAR_MEMBER_METHOD(Lua_bson_node, __tostring),
     {0, 0}
     };
 
     //=====================================================================
     // Bson Lua integration Methods.
     //=====================================================================
-    LuaBSONNode::LuaBSONNode(lj::Bson *ptr, bool gc) : _node(ptr), _gc(gc) {
+    Lua_bson_node::Lua_bson_node(lj::Bson *ptr, bool gc) : _node(ptr), _gc(gc) {
     }
     
-    LuaBSONNode::~LuaBSONNode() {
+    Lua_bson_node::~Lua_bson_node() {
         if(_gc && _node)
             delete _node;
     }
     
-    LuaBSONNode::LuaBSONNode(lua_State *L) : _node(NULL), _gc(true) {
+    Lua_bson_node::Lua_bson_node(lua_State *L) : _node(NULL), _gc(true) {
         if(lua_gettop(L) > 0) {
-            LuaBSONNode *ptr = Lunar<LuaBSONNode>::check(L, -1);
+            Lua_bson_node *ptr = Lunar<Lua_bson_node>::check(L, -1);
             _node = new lj::Bson(*ptr->_node);
         } else {
             _node = new lj::Bson();
         }
     }
 
-    int LuaBSONNode::nav(lua_State *L) {
+    int Lua_bson_node::nav(lua_State *L) {
         std::string path(lua_to_string(L, -1));
         // XXX This could be a possible source of memory coruption if 
         // XXX the root was GC'd but the user tried to continue using the
         // XXX the returned node.
-        Lunar<LuaBSONNode>::push(L, new LuaBSONNode(&_node->nav(path), false), true);
+        Lunar<Lua_bson_node>::push(L, new Lua_bson_node(&_node->nav(path), false), true);
         return 1;
     }
     
-    int LuaBSONNode::set(lua_State *L) {
+    int Lua_bson_node::set(lua_State *L) {
         int h = 0;
         lj::Bson* ptr;
         switch(lua_type(L, -1)) {
@@ -247,7 +247,7 @@ namespace logjamd {
                 break;
             case LUA_TUSERDATA:
             case LUA_TLIGHTUSERDATA:
-                ptr = &Lunar<LuaBSONNode>::check(L, -1)->real_node();
+                ptr = &Lunar<Lua_bson_node>::check(L, -1)->real_node();
                 _node->copy_from(*ptr);
                 break;
             case LUA_TTABLE:
@@ -255,7 +255,7 @@ namespace logjamd {
                 for (int i = 1; i <= h; ++i)
                 {
                     lua_rawgeti(L, -1, i);
-                    ptr = new lj::Bson(Lunar<LuaBSONNode>::check(L, -1)->real_node());
+                    ptr = new lj::Bson(Lunar<Lua_bson_node>::check(L, -1)->real_node());
                     _node->push_child("", ptr);
                     lua_pop(L, 1);
                 }
@@ -269,7 +269,7 @@ namespace logjamd {
         return 0;
     }
     
-    int LuaBSONNode::push(lua_State *L)
+    int Lua_bson_node::push(lua_State *L)
     {
         int h = 0;
         lj::Bson* ptr;
@@ -292,7 +292,7 @@ namespace logjamd {
                 break;
             case LUA_TUSERDATA:
             case LUA_TLIGHTUSERDATA:
-                ptr = new lj::Bson(Lunar<LuaBSONNode>::check(L, -1)->real_node());
+                ptr = new lj::Bson(Lunar<Lua_bson_node>::check(L, -1)->real_node());
                 _node->push_child("", ptr);
                 break;
             case LUA_TTABLE:
@@ -300,7 +300,7 @@ namespace logjamd {
                 for (int i = 1; i <= h; ++i)
                 {
                     lua_rawgeti(L, -1, i);
-                    ptr = new lj::Bson(Lunar<LuaBSONNode>::check(L, -1)->real_node());
+                    ptr = new lj::Bson(Lunar<Lua_bson_node>::check(L, -1)->real_node());
                     _node->push_child("", ptr);
                     lua_pop(L, 1);
                 }
@@ -314,7 +314,7 @@ namespace logjamd {
         return 0;
     }
     
-    int LuaBSONNode::get(lua_State *L) {
+    int Lua_bson_node::get(lua_State *L) {
         switch(_node->type()) {
             case lj::k_bson_int32:
             case lj::k_bson_int64:
@@ -339,13 +339,13 @@ namespace logjamd {
         return 1;
     }
     
-    int LuaBSONNode::save(lua_State *L) {
+    int Lua_bson_node::save(lua_State *L) {
         std::string fn(lua_to_string(L, -1));
         lj::bson_save(*_node, fn);
         return 0;
     }
     
-    int LuaBSONNode::load(lua_State *L) {
+    int Lua_bson_node::load(lua_State *L) {
         std::string fn(lua_to_string(L, -1));
         if(_gc)
             delete _node;
@@ -353,7 +353,7 @@ namespace logjamd {
         return 0;
     }
     
-    int LuaBSONNode::__tostring(lua_State *L) {
+    int Lua_bson_node::__tostring(lua_State *L) {
         lua_pushstring(L, bson_as_pretty_string(*_node).c_str());
         return 1;
     }
@@ -407,7 +407,7 @@ namespace logjamd {
             lj::Record_set* ptr = _filter->equal(field, val.c_str(), val.size()).release();
             Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
         } else {
-            LuaBSONNode* n = Lunar<LuaBSONNode>::check(L, -1);
+            Lua_bson_node* n = Lunar<Lua_bson_node>::check(L, -1);
             char* bson = n->real_node().to_binary();
             lj::Record_set* ptr = NULL;
             if(lj::bson_type_is_quotable(n->real_node().type())) {
@@ -445,7 +445,7 @@ namespace logjamd {
         for(std::list<lj::Bson *>::const_iterator iter = d.begin();
             iter != d.end();
             ++iter) {
-            Lunar<LuaBSONNode>::push(L, new LuaBSONNode(*iter, true), true);
+            Lunar<Lua_bson_node>::push(L, new Lua_bson_node(*iter, true), true);
             lua_rawseti(L, -2, ++h);
         }
         return 1;
@@ -458,7 +458,7 @@ namespace logjamd {
         }
         lj::Bson *d = new lj::Bson();
         _filter->first(*d);
-        Lunar<LuaBSONNode>::push(L, new LuaBSONNode(d, true), true);
+        Lunar<Lua_bson_node>::push(L, new Lua_bson_node(d, true), true);
         return 1;
     }
     
@@ -510,7 +510,7 @@ namespace logjamd {
     }
         
     int LuaStorage::place(lua_State *L) {
-        LuaBSONNode *ptr = Lunar<LuaBSONNode>::check(L, -1);
+        Lua_bson_node *ptr = Lunar<Lua_bson_node>::check(L, -1);
         try {
             _storage->place(ptr->real_node());
         } catch(lj::Exception* ex) {
@@ -521,7 +521,7 @@ namespace logjamd {
     }
     
     int LuaStorage::remove(lua_State *L) {
-        LuaBSONNode *ptr = Lunar<LuaBSONNode>::check(L, -1);
+        Lua_bson_node *ptr = Lunar<Lua_bson_node>::check(L, -1);
         _storage->remove(ptr->real_node());
         Lunar<LuaStorage>::push(L, this, false);
         return 1;

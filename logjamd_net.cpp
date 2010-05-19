@@ -133,8 +133,8 @@ namespace logjamd
         gettimeofday(&start, NULL);
         
         std::string cmd = lj::bson_as_string(b.nav("command"));
-        LuaBSONNode wrapped_node(&b, false);
-        Lunar<LuaBSONNode>::push(lua_, &wrapped_node, false);
+        Lua_bson_node wrapped_node(&b, false);
+        Lunar<Lua_bson_node>::push(lua_, &wrapped_node, false);
         lua_setglobal(lua_, "response");
         
         int error = luaL_loadbuffer(lua_,
@@ -154,7 +154,7 @@ namespace logjamd
             b.set_child("is_ok", lj::bson_new_boolean(true));
         }
         
-        Lunar<LuaBSONNode>::push(lua_, NULL, true);
+        Lunar<Lua_bson_node>::push(lua_, NULL, true);
         lua_setglobal(lua_, "response");
         struct timeval end;
         gettimeofday(&end, NULL);
