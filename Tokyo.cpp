@@ -168,10 +168,10 @@ namespace tokyo
     }
     
     //=====================================================================
-    // TreeDB Implementation
+    // Tree_db Implementation
     //=====================================================================
     
-    TreeDB::TreeDB(const std::string &filename,
+    Tree_db::Tree_db(const std::string &filename,
                    const int mode,
                    void (*db_tune_func)(TCBDB *, const void *),
                    const void *ptr) {
@@ -181,13 +181,13 @@ namespace tokyo
         tcbdbopen(db(), filename.c_str(), mode);
     }
     
-    TreeDB::~TreeDB() {
+    Tree_db::~Tree_db() {
         tcbdbclose(_db);
         tcbdbdel(_db);
         _db = 0;
     }
     
-    DB::value_t TreeDB::at(const void *key, const size_t len) {
+    DB::value_t Tree_db::at(const void *key, const size_t len) {
         int sz = 0;
         void *ptr = tcbdbget(db(), key, len, &sz);
         if(!ptr || !sz)
@@ -195,7 +195,7 @@ namespace tokyo
         return value_t(ptr, sz);
     }
     
-    bool TreeDB::at_together(const void *key,
+    bool Tree_db::at_together(const void *key,
                              const size_t len,
                              list_value_t &results) {
         TCLIST *ptr = tcbdbget4(db(), key, len);
@@ -215,7 +215,7 @@ namespace tokyo
         return true;
     }
     
-    bool TreeDB::at_range(const void *start,
+    bool Tree_db::at_range(const void *start,
                           const size_t start_len,
                           const bool start_inc,
                           const void *end,
@@ -241,7 +241,7 @@ namespace tokyo
         return false;
     }
     
-    void TreeDB::place(const void *key,
+    void Tree_db::place(const void *key,
                        const size_t key_len,
                        const void * const val, 
                        const size_t val_len) {
@@ -249,7 +249,7 @@ namespace tokyo
             throw new Exception("DBerror", tcbdberrmsg(tcbdbecode(db())));
     }
     
-    void TreeDB::place_with_existing(const void *key,
+    void Tree_db::place_with_existing(const void *key,
                                      const size_t key_len,
                                      const void * const val,
                                      const size_t val_len) {
@@ -257,7 +257,7 @@ namespace tokyo
             throw new Exception("DBerror", tcbdberrmsg(tcbdbecode(db())));
     }
     
-    void TreeDB::place_together(const void *key,
+    void Tree_db::place_together(const void *key,
                                 const size_t key_len,
                                 const list_value_t &vals) {
         // XXX This should probably be modified to build a TCLIST, then call
@@ -269,7 +269,7 @@ namespace tokyo
         }
     }
     
-    void TreeDB::place_if_absent(const void *key, 
+    void Tree_db::place_if_absent(const void *key, 
                                  const size_t key_len, 
                                  const void * const val,
                                  const size_t val_len) {
@@ -277,7 +277,7 @@ namespace tokyo
             throw new Exception("DBerror", tcbdberrmsg(tcbdbecode(db())));
     }
     
-    void TreeDB::place_or_append(const void *key, 
+    void Tree_db::place_or_append(const void *key, 
                                  const size_t key_len, 
                                  const void * const val,
                                  const size_t val_len) {
@@ -285,17 +285,17 @@ namespace tokyo
             throw new Exception("DBerror", tcbdberrmsg(tcbdbecode(db())));
     }
     
-    void TreeDB::remove(const void *key, const size_t len) {
+    void Tree_db::remove(const void *key, const size_t len) {
         if(!tcbdbout(db(), key, len))
             throw new Exception("DBerror", tcbdberrmsg(tcbdbecode(db())));
     }
     
-    void TreeDB::remove_together(const void *key, const size_t len) {
+    void Tree_db::remove_together(const void *key, const size_t len) {
         if(!tcbdbout3(db(), key, len))
             throw new Exception("DBerror", tcbdberrmsg(tcbdbecode(db())));
     }
     
-    void TreeDB::remove_from_existing(const void *key,
+    void Tree_db::remove_from_existing(const void *key,
                                       const size_t len,
                                       const void * const val,
                                       const size_t val_len) {
@@ -326,22 +326,22 @@ namespace tokyo
         }
     }
     
-    void TreeDB::start_writes() {
+    void Tree_db::start_writes() {
         if(!tcbdbtranbegin(db()))
             throw new Exception("DB error", tcbdberrmsg(tcbdbecode(db())));
     }
     
-    void TreeDB::save_writes() {
+    void Tree_db::save_writes() {
         if(!tcbdbtrancommit(db()))
             throw new Exception("DB error", tcbdberrmsg(tcbdbecode(db())));
     }
     
-    void TreeDB::abort_writes() {
+    void Tree_db::abort_writes() {
         if(!tcbdbtranabort(db()))
             throw new Exception("DB error", tcbdberrmsg(tcbdbecode(db())));
     }
     
-    DB::value_t TreeDB::max_key() {
+    DB::value_t Tree_db::max_key() {
         BDBCUR *cur = tcbdbcurnew(db());
         if(!tcbdbcurlast(cur)) {
             tcbdbcurdel(cur);
@@ -359,7 +359,7 @@ namespace tokyo
         return value_t(ptr, sz);
     }
     
-    DB::value_t TreeDB::min_key() {
+    DB::value_t Tree_db::min_key() {
         BDBCUR *cur = tcbdbcurnew(db());
         if(!tcbdbcurfirst(cur)) {
             tcbdbcurdel(cur);
@@ -378,7 +378,7 @@ namespace tokyo
         return value_t(ptr, sz);
     }
     
-    bool TreeDB::range_keys(const void *start,
+    bool Tree_db::range_keys(const void *start,
                             const size_t start_len,
                             const bool start_inc,
                             const void *end,

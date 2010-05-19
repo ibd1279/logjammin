@@ -38,18 +38,18 @@
 #include "Logger.h"
 
 using tokyo::Hash_db;
-using tokyo::TreeDB;
+using tokyo::Tree_db;
 using tokyo::TextSearcher;
 using tokyo::TagSearcher;
 
 namespace lj {
-    tokyo::TreeDB* Record_set::storage_db(const Storage* s)
+    tokyo::Tree_db* Record_set::storage_db(const Storage* s)
     {
         return s->db_;
     }
-    tokyo::TreeDB* Record_set::storage_tree(const Storage* s, const std::string& indx)
+    tokyo::Tree_db* Record_set::storage_tree(const Storage* s, const std::string& indx)
     {
-        std::map<std::string, tokyo::TreeDB*>::const_iterator i = s->fields_tree_.find(indx);
+        std::map<std::string, tokyo::Tree_db*>::const_iterator i = s->fields_tree_.find(indx);
         if (s->fields_tree_.end() == i)
         {
             return 0;
@@ -248,7 +248,7 @@ namespace lj {
             {
                 Log::debug.log("Equal on [%s] with [%d][%s].") << indx << len << ((char *)val) << Log::end;
                 tokyo::Hash_db* hash_index = Record_set::storage_hash(storage_, indx);
-                tokyo::TreeDB* tree_index = Record_set::storage_tree(storage_, indx);
+                tokyo::Tree_db* tree_index = Record_set::storage_tree(storage_, indx);
                 
                 tokyo::DB::list_value_t db_values;
                 if (hash_index)
@@ -276,7 +276,7 @@ namespace lj {
                                                       const size_t len) const
             {
                 Log::debug.log("Greater on [%s] with [%d][%s].") << indx << len << ((char *)val) << Log::end;
-                tokyo::TreeDB* tree_index = Record_set::storage_tree(storage_, indx);
+                tokyo::Tree_db* tree_index = Record_set::storage_tree(storage_, indx);
                 
                 tokyo::DB::list_value_t db_values;
                 if (tree_index)
@@ -307,7 +307,7 @@ namespace lj {
                                                      const size_t len) const
             {
                 Log::debug.log("Lesser on [%s] with [%d][%s].") << indx << len << ((char *)val) << Log::end;
-                tokyo::TreeDB* tree_index = Record_set::storage_tree(storage_, indx);
+                tokyo::Tree_db* tree_index = Record_set::storage_tree(storage_, indx);
                 
                 tokyo::DB::list_value_t db_values;
                 if (tree_index)
@@ -419,7 +419,7 @@ namespace lj {
             set::Operation op_;
             Bson doc_at(unsigned long long pkey) const
             {
-                tokyo::TreeDB* db = Record_set::storage_db(storage_);
+                tokyo::Tree_db* db = Record_set::storage_db(storage_);
                 tokyo::DB::value_t p = db->at(&pkey, sizeof(unsigned long long));
                 if (!p.first)
                 {
@@ -668,7 +668,7 @@ namespace lj {
             Record_set& operator=(const All_record_set& o);
             void get_all_keys(std::set<unsigned long long>* result_keys) const
             {
-                tokyo::TreeDB* db = Record_set::storage_db(storage_);
+                tokyo::Tree_db* db = Record_set::storage_db(storage_);
                 tokyo::DB::list_value_t keys;
                 tokyo::DB::value_t max = db->max_key();
                 tokyo::DB::value_t min = db->min_key();
@@ -787,13 +787,13 @@ namespace lj {
         
         std::string dbfile(directory_ + "/" + lj::bson_as_string(cfg->nav("main/file")));
         Log::info.log("Opening database [%s].") << dbfile << Log::end;
-        db_ = new TreeDB(dbfile,
+        db_ = new Tree_db(dbfile,
                          BDBOREADER | BDBOWRITER | BDBOCREAT,
                          &storage_tree_cfg,
                          cfg->path("main"));
         
         Log::info.log("Opening tree indices under [%s].") << directory_ << Log::end;
-        open_storage_index<TreeDB, TCBDB>(directory_,
+        open_storage_index<Tree_db, TCBDB>(directory_,
                                           cfg->nav("index/tree").to_map(),
                                           BDBOREADER | BDBOWRITER | BDBOCREAT,
                                           &storage_tree_cfg,
@@ -872,7 +872,7 @@ namespace lj {
         if (fields_tree_.size())
         {
             Log::info.log("Closing tree indicies under [%s].") << directory_ << Log::end;
-            for(std::map<std::string, TreeDB *>::const_iterator iter = fields_tree_.begin();
+            for(std::map<std::string, Tree_db *>::const_iterator iter = fields_tree_.begin();
                 iter != fields_tree_.end();
                 ++iter) {
                 Log::info.log("Closing tree index for field [%s].") << iter->first << Log::end;
@@ -1040,7 +1040,7 @@ namespace lj {
         at(key)->first(original);
         
         // Remove from tree index entries.
-        for (std::map<std::string, TreeDB *>::const_iterator iter = fields_tree_.begin();
+        for (std::map<std::string, Tree_db *>::const_iterator iter = fields_tree_.begin();
              fields_tree_.end() != iter;
              ++iter)
         {
@@ -1145,7 +1145,7 @@ namespace lj {
         at(key)->first(original);
         
         // Insert into tree index.
-        for (std::map<std::string, TreeDB*>::const_iterator iter = fields_tree_.begin();
+        for (std::map<std::string, Tree_db*>::const_iterator iter = fields_tree_.begin();
              fields_tree_.end() != iter;
              ++iter)
         {
@@ -1245,7 +1245,7 @@ namespace lj {
     void Storage::begin_transaction()
     {
         db_->start_writes();
-        for (std::map<std::string, TreeDB*>::const_iterator iter = fields_tree_.begin();
+        for (std::map<std::string, Tree_db*>::const_iterator iter = fields_tree_.begin();
              fields_tree_.end() != iter;
              ++iter)
         {
@@ -1266,7 +1266,7 @@ namespace lj {
         {
             iter->second->save_writes();
         }
-        for (std::map<std::string, TreeDB *>::reverse_iterator iter = fields_tree_.rbegin();
+        for (std::map<std::string, Tree_db *>::reverse_iterator iter = fields_tree_.rbegin();
              fields_tree_.rend() != iter;
              ++iter)
         {
@@ -1282,7 +1282,7 @@ namespace lj {
         {
             iter->second->abort_writes();
         }
-        for (std::map<std::string, TreeDB *>::reverse_iterator iter = fields_tree_.rbegin();
+        for (std::map<std::string, Tree_db *>::reverse_iterator iter = fields_tree_.rbegin();
              fields_tree_.rend() != iter;
              ++iter)
         {

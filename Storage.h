@@ -255,8 +255,8 @@ namespace lj
          */
         virtual bool first(Bson& result) const = 0;
     protected:
-        static tokyo::TreeDB* storage_db(const Storage* s);
-        static tokyo::TreeDB* storage_tree(const Storage* s, const std::string& indx);
+        static tokyo::Tree_db* storage_db(const Storage* s);
+        static tokyo::Tree_db* storage_tree(const Storage* s, const std::string& indx);
         static tokyo::Hash_db* storage_hash(const Storage* s, const std::string& indx);
         static tokyo::TextSearcher* storage_text(const Storage* s, const std::string& indx);
         static tokyo::TagSearcher* storage_tag(const Storage* s, const std::string& indx);
@@ -371,10 +371,10 @@ namespace lj
         /*!
          \par Stores the actual documents, indexed by primary key.
          */
-        tokyo::TreeDB* db_;
+        tokyo::Tree_db* db_;
         
         //! Fields indexed using a tree db.
-        std::map<std::string, tokyo::TreeDB*> fields_tree_;
+        std::map<std::string, tokyo::Tree_db*> fields_tree_;
         
         //! Fields indexed using a hash db.
         std::map<std::string, tokyo::Hash_db*> fields_hash_;

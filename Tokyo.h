@@ -214,7 +214,7 @@ namespace tokyo {
      \version 1.0
      \date April 9, 2010
      */
-    class TreeDB : public DB {
+    class Tree_db : public DB {
     private:
         //! Tokyo Tree Database handle.
         TCBDB *_db;
@@ -230,13 +230,13 @@ namespace tokyo {
         
     public:
         //! Tree DB Constructor.
-        TreeDB(const std::string &filename,
+        Tree_db(const std::string &filename,
                const int mode,
                void (*db_tune_func)(TCBDB *, const void *),
                const void *ptr);
         
         //! Tree DB Distructor.
-        virtual ~TreeDB();
+        virtual ~Tree_db();
         
         virtual value_t at(const void *key,
                            const size_t len);
