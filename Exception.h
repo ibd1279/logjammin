@@ -35,6 +35,11 @@
 
 #include <string>
 
+/*!
+ \namespace lj
+ \brief The lj utility classes.
+ Default functionality shared across all logjam* applications
+ */
 namespace lj
 {
     //! Exception base class.

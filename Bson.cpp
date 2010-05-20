@@ -243,6 +243,7 @@ namespace lj {
                     break;
                 case k_bson_document:
                 case k_bson_array:
+                    last_child_ = 0;
                     subdocument(type_, *this, v);
                     break;
                 default:
@@ -393,27 +394,53 @@ namespace lj {
             n->child_map_.erase(iter);
         }
         
-        // Add the child.
-        n->child_map_.insert(std::pair<std::string, Bson*>(child_name, c));
+        if (c)
+        {
+            if(k_bson_document != n->type())
+            {
+                // If this isn't a document, convert it to a document.
+                n->set_value(k_bson_document, NULL);
+            }
+            
+            // Add the child.
+            n->child_map_.insert(std::pair<std::string, Bson*>(child_name, c));
+        }
+        else
+        {
+            // Remove the child.
+            n->child_map_.erase(child_name);
+        }
     }
     
-    //! Push a child at a specific path.
     void Bson::push_child(const std::string& p, Bson* c)
     {
+        if (!c)
+        {
+            // Cannot push null.
+            return;
+        }
+        
         Bson* ptr = path(p);
         if(k_bson_array != ptr->type())
         {
-            ptr->set_value(k_bson_array, 0);
+            // If this isn't an array, convert it to an array.
+            ptr->set_value(k_bson_array, NULL);
         }
+        
         std::ostringstream oss;
         oss << ptr->last_child_++;
         std::string tmp = oss.str();
         ptr->child_map_.insert(std::pair<std::string, Bson*>(oss.str(), c));
     }
     
-    //! Push a child onto this Bson object.
     Bson& Bson::operator<<(const Bson& o)
     {
+        if(k_bson_array != type())
+        {
+            // If this isn't an array, convert it to an array.
+            set_value(k_bson_array, NULL);
+        }
+        
         std::ostringstream oss;
         oss << last_child_++;
         child_map_.insert(std::pair<std::string, Bson*>(oss.str(), new Bson(o)));
@@ -424,7 +451,7 @@ namespace lj {
     {
         if (bson_type_is_nested(type()))
         {
-            return (0 < child_map_.size() ? child_map_.size() : 0);
+            return (0 < child_map_.size() ? true : false);
         }
         else
         {
@@ -522,7 +549,7 @@ namespace lj {
     
     Bson* bson_new_null()
     {
-        return new Bson(k_bson_null, 0);
+        return new Bson(k_bson_null, NULL);
     }
     
     std::string bson_as_debug_string(const Bson& b)

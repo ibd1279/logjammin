@@ -141,16 +141,15 @@ namespace lj {
      some_node = *int_node; // assignment operator.
      
      // Access a specific path.
-     other_node = root_node.child("some"); // child method.
-     other_node = root_node.nav("some/path"); // nav method.
-     other_node = *root_node.path("some/path"); // path method.
-     other_node = root_node["some/path"]; // array index operator.
+     other_node = root_node.nav("some/path"); // nav method (reference)
+     other_node = *root_node.path("some/path"); // path method (pointer)
+     other_node = root_node["some/path"]; // array index operator (reference)
      
      // Set a child node at a path.
-     root_node["some/path/int"] = *int_node; // index operator
-     root_node.set_child("some/path/int", int_node); // set_child method.
-     root_node["some/path/string"] << *string_node; // shift left operator.
-     root_node.push_child("some/path/string", string_node); // push_child method.
+     root_node["some/path/int"] = *int_node; // index operator (reference)
+     root_node.set_child("some/path/int", int_node); // set_child method (pointer).
+     root_node["some/path/string"] << *string_node; // shift left operator (reference).
+     root_node.push_child("some/path/string", string_node); // push_child method (pointer).
      \endcode
      \author Jason Watson
      \version 1.0
@@ -314,10 +313,31 @@ namespace lj {
         }
         
         //! Set a child at a specific path.
-        void set_child(const std::string& p, Bson* c);
+        /*!
+         \par
+         The parent Bson becomes responsibile for the destruction of the pointer \c child.
+         \par
+         If \c path is an empty string, \c set_child becomes a no-op.
+         \par
+         If \c child is null, the child specified by \c path is removed.
+         \param path The path to set the child for.
+         \param child The child to set.
+         */
+        void set_child(const std::string& path, Bson* child);
         
         //! Push a child at a specific path.
-        void push_child(const std::string& p, Bson* c);
+        /*!
+         \par 
+         The parent Bson becomes responsible for the destruction of the pointer \c child.
+         \par
+         If \c path is an empty string, the child is pushed onto the
+         current Bson object.
+         \par
+         If \c child is null, \c push_child becomes a no-op.
+         \param path The path where the child should be pushed.
+         \param child The child to push.
+         */
+        void push_child(const std::string& path, Bson* child);
 
         //! Push a child onto this Bson object.
         Bson& operator<<(const Bson& o);

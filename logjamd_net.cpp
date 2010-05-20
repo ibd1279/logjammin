@@ -48,9 +48,6 @@ namespace logjamd
     Service_dispatch::Service_dispatch() : ip_(), in_(0), in_offset_(0), in_sz_(4), in_post_length_(false), lua_(0)
     {
         in_ = new char[4];
-        lua_ = lua_open();
-        luaL_openlibs(lua_);
-        register_logjam_functions(lua_);
     }
     
     Service_dispatch::~Service_dispatch()
@@ -72,6 +69,9 @@ namespace logjamd
         sd->set_socket(socket);
         sd->set_mode(Socket_dispatch::k_communicate);
         sd->ip_ = buffer;
+        sd->lua_ = lua_open();
+        luaL_openlibs(sd->lua_);
+        register_logjam_functions(sd->lua_);
         return sd;
     }
     

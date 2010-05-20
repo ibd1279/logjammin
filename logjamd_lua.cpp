@@ -1,5 +1,6 @@
-/*
+/*!
  \file logjam_lua.cpp
+ \brief Logjam server lua functions implementation.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -45,11 +46,63 @@
 
 using lj::Log;
 
-namespace logjamd {
+namespace
+{
+    std::string lua_to_string(lua_State* L, int offset)
+    {
+        const char* ptr = luaL_checkstring(L, offset);
+        if (!ptr)
+        {
+            return std::string();
+        }
+        size_t l = lua_strlen(L, offset);
+        return std::string(ptr, l);
+    }
+    
+    lj::Bson* get_connection_config()
+    {
+        std::string dbfile(DBDIR);
+        dbfile.append("/config");
+        lj::Bson* ptr = lj::bson_load(dbfile);
+        return ptr;
+    }
+    
+    void push_default_storage(lua_State* L, lj::Bson* config)
+    {
+        lua_newtable(L);
+        lj::Bson* default_storage = config->path("default_storage");
+        for (lj::Linked_map<std::string, lj::Bson*>::const_iterator iter = default_storage->to_map().begin();
+             default_storage->to_map().end() != iter;
+             ++iter)
+        {
+            lua_pushstring(L, lj::bson_as_string(*iter->second).c_str());
+            logjamd::Lua_storage* ptr = new logjamd::Lua_storage(lj::bson_as_string(*iter->second));
+            Lunar<logjamd::Lua_storage>::push(L, ptr, true);
+            lua_settable(L, -3);
+        }
+        lua_setglobal(L, "db");
+    }
+}; // namespace
+
+namespace logjamd
+{
     void register_logjam_functions(lua_State *L) {
+        // Load object model.
         Lunar<logjamd::Lua_bson_node>::Register(L);
         Lunar<logjamd::LuaStorageFilter>::Register(L);
-        Lunar<logjamd::LuaStorage>::Register(L);
+        Lunar<logjamd::Lua_storage>::Register(L);
+        
+        // load connection config functions.
+        lua_pushcfunction(L, &connection_config_load);
+        lua_setglobal(L, "cc_load");
+        lua_pushcfunction(L, &connection_config_save);
+        lua_setglobal(L, "cc_save");
+        lua_pushcfunction(L, &connection_config_add_default_storage);
+        lua_setglobal(L, "cc_add_default_storage");
+        lua_pushcfunction(L, &connection_config_remove_default_storage);
+        lua_setglobal(L, "cc_remove_default_storage");
+        
+        // load storage config functions.
         lua_pushcfunction(L, &storage_config_new);
         lua_setglobal(L, "sc_new");
         lua_pushcfunction(L, &storage_config_save);
@@ -60,19 +113,65 @@ namespace logjamd {
         lua_setglobal(L, "sc_add_index");
         lua_pushcfunction(L, &storage_config_add_nested_field);
         lua_setglobal(L, "sc_add_nested");
+        
+        // load standard query functions.
         lua_pushcfunction(L, &send_response);
         lua_setglobal(L, "send_response");
+        
+        // load the default storage.
+        lj::Bson* config = get_connection_config();
+        push_default_storage(L, config);
+        
+        // push the config into the global scope.
+        Lunar<logjamd::Lua_bson_node>::push(L, new Lua_bson_node(config, true), true);
+        lua_setglobal(L, "connection_config");
     }
     
     //=====================================================================
     // logjam global functions.
     //=====================================================================
-    std::string lua_to_string(lua_State *L, int offset) {
-        const char *ptr = luaL_checkstring(L, offset);
-        if(!ptr)
-            return std::string();
-        size_t l = lua_strlen(L, offset);
-        return std::string(ptr, l);
+    int connection_config_load(lua_State* L)
+    {
+        lj::Bson* ptr = get_connection_config();
+        Lunar<Lua_bson_node>::push(L, new Lua_bson_node(ptr, true), true);
+        return 1;
+    }
+    
+    int connection_config_save(lua_State* L)
+    {
+        Lua_bson_node* ptr = Lunar<Lua_bson_node>::check(L, -1);
+        std::string dbfile(DBDIR);
+        dbfile.append("/config");
+        lj::bson_save(ptr->real_node(), dbfile);
+        return 0;
+    }
+    
+    int connection_config_add_default_storage(lua_State* L)
+    {
+        std::string storage_name(lua_to_string(L, -2));
+        Lua_bson_node* ptr = Lunar<Lua_bson_node>::check(L, -1);
+        if (lj::bson_as_value_string_set(ptr->real_node()).count(storage_name) == 0)
+        {
+            ptr->real_node().push_child("default_storage", lj::bson_new_string(storage_name));
+        }
+        return 0;
+    }
+    
+    int connection_config_remove_default_storage(lua_State* L)
+    {
+        std::string storage_name(lua_to_string(L, -2));
+        Lua_bson_node* ptr = Lunar<Lua_bson_node>::check(L, -1);
+        lj::Bson* default_storage = ptr->real_node().path("default_storage");
+        for (lj::Linked_map<std::string, lj::Bson*>::const_iterator iter = default_storage->to_map().begin();
+             default_storage->to_map().end() != iter;
+             ++iter)
+        {
+            if (lj::bson_as_string(*(iter->second)).compare(storage_name) == 0)
+            {
+                default_storage->set_child(iter->first, NULL);
+            }
+        }
+        return 0;
     }
     
     int storage_config_new(lua_State *L) {
@@ -376,7 +475,7 @@ namespace logjamd {
     };
     
     LuaStorageFilter::LuaStorageFilter(lua_State *L) : _filter(NULL) {
-        LuaStorage *ptr = Lunar<LuaStorage>::check(L, -1);
+        Lua_storage *ptr = Lunar<Lua_storage>::check(L, -1);
         _filter = ptr->real_storage().none().release();
     }
     
@@ -470,61 +569,90 @@ namespace logjamd {
     //=====================================================================
     // Storage Lua integration Methods.
     //=====================================================================
-    const char LuaStorage::LUNAR_CLASS_NAME[] = "Storage";
-    Lunar<LuaStorage>::RegType LuaStorage::LUNAR_METHODS[] = {
-    LUNAR_MEMBER_METHOD(LuaStorage, all),
-    LUNAR_MEMBER_METHOD(LuaStorage, none),
-    LUNAR_MEMBER_METHOD(LuaStorage, at),
-    LUNAR_MEMBER_METHOD(LuaStorage, place),
-    LUNAR_MEMBER_METHOD(LuaStorage, remove),
-    {0, 0}
+    std::map<std::string, lj::Storage*> Lua_storage::cache_;
+    const char Lua_storage::LUNAR_CLASS_NAME[] = "Storage";
+    Lunar<Lua_storage>::RegType Lua_storage::LUNAR_METHODS[] = {
+    LUNAR_MEMBER_METHOD(Lua_storage, all),
+    LUNAR_MEMBER_METHOD(Lua_storage, none),
+    LUNAR_MEMBER_METHOD(Lua_storage, at),
+    LUNAR_MEMBER_METHOD(Lua_storage, place),
+    LUNAR_MEMBER_METHOD(Lua_storage, remove),
+    {0, 0, 0}
     };
     
-    LuaStorage::LuaStorage(lua_State *L) : _storage(NULL) {
-        std::string dbname(lua_to_string(L, -1));
-        _storage = new lj::Storage(dbname);
-    }
-    
-    LuaStorage::~LuaStorage() {
-        if(_storage)
-            delete _storage;
-    }
-    
-    int LuaStorage::all(lua_State *L) {
-        lj::Record_set *ptr = _storage->all().release();
-        Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
-        return 1;
-    }
-    
-    int LuaStorage::none(lua_State *L) {
-        lj::Record_set *ptr = _storage->none().release();
-        Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
-        return 1;
-    }
-    
-    int LuaStorage::at(lua_State* L)
+    Lua_storage::Lua_storage(const std::string& dbname) : storage_(NULL)
     {
-        lj::Record_set* ptr = _storage->at(luaL_checkint(L, -1)).release();
+        std::map<std::string, lj::Storage*>::iterator iter(Lua_storage::cache_.find(dbname));
+        if (Lua_storage::cache_.end() == iter)
+        {
+            storage_ = new lj::Storage(dbname);
+            Lua_storage::cache_.insert(std::pair<std::string, lj::Storage*>(dbname, storage_));
+        }
+        else
+        {
+            storage_ = (*iter).second;
+        }
+    }
+
+    Lua_storage::Lua_storage(lua_State* L) : storage_(NULL)
+    {
+        std::string dbname(lua_to_string(L, -1));
+        std::map<std::string, lj::Storage*>::iterator iter(Lua_storage::cache_.find(dbname));
+        if (Lua_storage::cache_.end() == iter)
+        {
+            storage_ = new lj::Storage(dbname);
+            Lua_storage::cache_.insert(std::pair<std::string, lj::Storage*>(dbname, storage_));
+        }
+        else
+        {
+            storage_ = (*iter).second;
+        }
+    }
+    
+    Lua_storage::~Lua_storage()
+    {
+    }
+    
+    int Lua_storage::all(lua_State* L)
+    {
+        lj::Record_set* ptr = real_storage().all().release();
+        Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
+        return 1;
+    }
+    
+    int Lua_storage::none(lua_State* L)
+    {
+        lj::Record_set* ptr = real_storage().none().release();
+        Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
+        return 1;
+    }
+    
+    int Lua_storage::at(lua_State* L)
+    {
+        lj::Record_set* ptr = real_storage().at(luaL_checkint(L, -1)).release();
         Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
         return 1;
     }
         
-    int LuaStorage::place(lua_State *L) {
-        Lua_bson_node *ptr = Lunar<Lua_bson_node>::check(L, -1);
-        try {
-            _storage->place(ptr->real_node());
-        } catch(lj::Exception* ex) {
+    int Lua_storage::place(lua_State* L)
+    {
+        Lua_bson_node* ptr = Lunar<Lua_bson_node>::check(L, -1);
+        try
+        {
+            real_storage().place(ptr->real_node());
+        }
+        catch(lj::Exception* ex)
+        {
             luaL_error(L, "Unable to place content. %s", ex->to_string().c_str());
         }
-        Lunar<LuaStorage>::push(L, this, false);
-        return 1;
+        return 0;
     }
     
-    int LuaStorage::remove(lua_State *L) {
-        Lua_bson_node *ptr = Lunar<Lua_bson_node>::check(L, -1);
-        _storage->remove(ptr->real_node());
-        Lunar<LuaStorage>::push(L, this, false);
-        return 1;
+    int Lua_storage::remove(lua_State* L)
+    {
+        Lua_bson_node* ptr = Lunar<Lua_bson_node>::check(L, -1);
+        real_storage().remove(ptr->real_node());
+        return 0;
     }
     
 };

@@ -32,18 +32,26 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <map>
 #include "lunar.h"
 #include "Bson.h"
 #include "Storage.h"
 
 namespace logjamd {
     void register_logjam_functions(lua_State *L);
-    int storage_config_new(lua_State *L);
-    int storage_config_save(lua_State *L);
-    int storage_config_load(lua_State *L);
-    int storage_config_add_index(lua_State *L);
-    int storage_config_add_nested_field(lua_State *L);
-    int send_response(lua_State *L);
+    
+    int connection_config_load(lua_State* L);
+    int connection_config_save(lua_State* L);
+    int connection_config_add_default_storage(lua_State* L);
+    int connection_config_remove_default_storage(lua_State* L);
+    
+    int storage_config_new(lua_State* L);
+    int storage_config_save(lua_State* L);
+    int storage_config_load(lua_State* L);
+    int storage_config_add_index(lua_State* L);
+    int storage_config_add_nested_field(lua_State* L);
+    
+    int send_response(lua_State* L);
     
     //! Lua Bson wrapper.
     /*!
@@ -113,19 +121,21 @@ namespace logjamd {
      \version 1.0
      \date April 27, 2010
      */
-    class LuaStorage {
-    private:
-        lj::Storage *_storage;
+    class Lua_storage {
     public:
         static const char LUNAR_CLASS_NAME[];
-        static Lunar<LuaStorage>::RegType LUNAR_METHODS[];
-        LuaStorage(lua_State *L);
-        ~LuaStorage();
-        int all(lua_State *L);
-        int none(lua_State *L);
-        int at(lua_State *L);
-        int place(lua_State *L);
-        int remove(lua_State *L);
-        inline lj::Storage &real_storage() { return *_storage; }
+        static Lunar<Lua_storage>::RegType LUNAR_METHODS[];
+        Lua_storage(const std::string& dbname);
+        Lua_storage(lua_State* L);
+        ~Lua_storage();
+        int all(lua_State* L);
+        int none(lua_State* L);
+        int at(lua_State* L);
+        int place(lua_State* L);
+        int remove(lua_State* L);
+        inline lj::Storage &real_storage() { return *storage_; }
+    private:
+        static std::map<std::string, lj::Storage*> cache_;
+        lj::Storage* storage_;
     };        
 };
