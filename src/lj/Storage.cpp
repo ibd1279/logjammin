@@ -347,7 +347,7 @@ namespace lj
                      ++iter)
                 {
                     modified = true;
-                    records.push_back(doc_at(*iter));
+                    records.push_back(*doc_at(*iter, true));
                 }
                 return modified;
             }
@@ -360,7 +360,7 @@ namespace lj
                      ++iter)
                 {
                     modified = true;
-                    records.push_back(new Bson(doc_at(*iter)));
+                    records.push_back(doc_at(*iter, true).release());
                 }
                 return modified;
             }
@@ -371,26 +371,39 @@ namespace lj
                      keys_->end() != iter;
                      ++iter)
                 {
-                    result.copy_from(doc_at(*iter));
+                    result.copy_from(*doc_at(*iter, true));
                     return true;
                 }
                 return false;
+            }
+            bool items_raw(std::list<Bson*>& records) const
+            {
+                bool modified = false;
+                for (std::set<unsigned long long>::const_iterator iter = keys_->begin();
+                     keys_->end() != iter;
+                     ++iter)
+                {
+                    modified = true;
+                    records.push_back(doc_at(*iter, false).release());
+                }
+                return modified;
             }
         private:
             const Storage *storage_;
             std::set<unsigned long long>* keys_;
             Record_set::Operation op_;
-            inline Bson doc_at(unsigned long long pkey) const
+            inline std::auto_ptr<Bson> doc_at(unsigned long long pkey, bool marshall) const
             {
                 tokyo::Tree_db* db = Record_set::storage_db(storage_);
                 tokyo::DB::value_t p = db->at(&pkey, sizeof(unsigned long long));
                 if (!p.first)
                 {
-                    return Bson();
+                    return std::auto_ptr<Bson>(new Bson());
                 }
-                Bson n(Bson::k_document, static_cast<char *>(p.first));
+                Bson* ptr = new Bson(marshall ? Bson::k_document : Bson::k_binary_document,
+                                     static_cast<char *>(p.first));
                 free(p.first);
-                return n;
+                return std::auto_ptr<Bson>(ptr);
             }
             
             Record_set& operator=(const Standard_record_set& o);
@@ -652,6 +665,25 @@ namespace lj
                     delete e;
                 }
                 return true;
+            }
+            bool items_raw(std::list<Bson*>& records) const
+            {
+                tokyo::Tree_db* db = Record_set::storage_db(storage_);
+                tokyo::Tree_db::Enumerator* e = db->forward_enumerator();
+                bool modified = false;
+                while (e->more())
+                {
+                    tokyo::DB::value_t p = e->next();
+                    if (!p.first)
+                    {
+                        continue;
+                    }
+                    modified = true;
+                    Bson* n = new Bson(Bson::k_binary_document, static_cast<char *>(p.first));
+                    records.push_back(n);
+                    free(p.first);
+                }
+                return modified;
             }
         private:
             const Storage *storage_;

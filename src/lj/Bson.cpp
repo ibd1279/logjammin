@@ -102,6 +102,7 @@ namespace lj {
         std::string k_bson_type_string_boolean("boolean");
         std::string k_bson_type_string_null("null");
         std::string k_bson_type_string_document("document");
+        std::string k_bson_type_string_binary_document("binary-document");
         std::string k_bson_type_string_array("array");
         std::string k_bson_type_string_unknown("unknown");
     };
@@ -126,6 +127,8 @@ namespace lj {
                 return k_bson_type_string_null;
             case Bson::k_document:
                 return k_bson_type_string_document;
+            case Bson::k_binary_document:
+                return k_bson_type_string_binary_document;
             case Bson::k_array:
                 return k_bson_type_string_array;
             default:
@@ -150,6 +153,7 @@ namespace lj {
                 return 1;
             case Bson::k_null:
                 return 0;
+            case Bson::k_binary_document:
             case Bson::k_document:
             case Bson::k_array:
                 return 5;
@@ -245,6 +249,11 @@ namespace lj {
                 case Bson::k_array:
                     last_child_ = 0;
                     subdocument(type_, *this, v);
+                    break;
+                case Bson::k_binary_document:
+                    memcpy(&sz, v, 4);
+                    value_ = new char[sz];
+                    memcpy(value_, v, sz);
                     break;
                 default:
                     break;
@@ -492,6 +501,9 @@ namespace lj {
                     sz += iter->second->size() + iter->first.size() + 2;
                 }
                 break;
+            case Bson::k_binary_document:
+                memcpy(&sz, value_, 4);
+                break;
             default:
                 break;
         }
@@ -512,6 +524,10 @@ namespace lj {
                      ++iter)
                 {
                     Bson::Type t = iter->second->type();
+                    if (Bson::k_binary_document == t)
+                    {
+                        t = Bson::k_document;
+                    }
                     memcpy(ptr++, &t, 1);
                     memcpy(ptr, iter->first.c_str(), iter->first.size() + 1);
                     ptr += iter->first.size() + 1;
@@ -611,6 +627,9 @@ namespace lj {
                     buf << ",";
                 }
                 return buf.str().erase(buf.str().size() - 1).append("(1-0)}");
+            case Bson::k_binary_document:
+                buf << bson_as_debug_string(Bson(Bson::k_document, b.to_value()));
+                break;
             default:
                 break;
         }
@@ -705,6 +724,9 @@ namespace lj {
                     buf << ",";
                 }
                 return buf.str().erase(buf.str().size() - 1).append("]");
+            case Bson::k_binary_document:
+                buf << bson_as_string(Bson(Bson::k_document, b.to_value()));
+                break;
             default:
                 break;
         }
@@ -806,6 +828,9 @@ namespace lj {
                     buf << ",\n";
                 }
                 return buf.str().erase(buf.str().size() - 2).append("\n").append(indent).append("]");
+            case Bson::k_binary_document:
+                buf << bson_as_pretty_string(Bson(Bson::k_document, b.to_value()));
+                break;
             default:
                 break;
         }

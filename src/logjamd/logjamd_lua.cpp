@@ -269,7 +269,7 @@ namespace logjamd
         Lua_bson_node* node = Lunar<Lua_bson_node>::check(L, -1);
         
         std::list<lj::Bson *> d;
-        filter->real_filter().items(d);
+        filter->real_filter().items_raw(d);
         for (std::list<lj::Bson *>::const_iterator iter = d.begin();
              iter != d.end();
              ++iter)

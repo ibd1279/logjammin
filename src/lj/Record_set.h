@@ -247,6 +247,21 @@ namespace lj
          \return True when the record has been modified.
          */
         virtual bool first(Bson& result) const = 0;
+        
+        //! Get the items in raw format.
+        /*!
+         \par
+         In some cases, converting the bytes of a record into real Bson object
+         is un-necessary.  This is typically the case if you are streaming the
+         results across the network after loading them from the db.
+         \par
+         This method loads the records from the database with out parsing them.
+         The Bson pointers returned will not work for any of the DOM methods.
+         \par
+         \param records The list to place un-marshalled items into.
+         \return True when records have been added.
+         */
+        virtual bool items_raw(std::list<Bson*>& records) const = 0;
     protected:
         static tokyo::Tree_db* storage_db(const Storage* s);
         static tokyo::Tree_db* storage_tree(const Storage* s, const std::string& indx);

@@ -80,6 +80,7 @@ namespace lj
             k_document = 0x03,  //!< Node contains a nested document value.
             k_array = 0x04,     //!< Node contains a nested array value.
             k_binary = 0x05,    //!< Node contains a binary value.
+            k_binary_document = 0x06, //!< Node contains a document that has not been parsed (Raw bytes).
             k_boolean = 0x08,   //!< Node contains a boolean value.
             k_datetime = 0x09,  //!< Node contains a date/time value.
             k_null = 0x0A,      //!< Node contains a null value.
@@ -430,7 +431,7 @@ namespace lj
      \return a new Bson object.
      */
     Bson* bson_new_null();
-    
+        
     //! Get the value of a Bson object as a C++ string in debug format.
     /*!
      \par
