@@ -425,7 +425,7 @@ namespace lj {
                 {
                     return Bson();
                 }
-                Bson n(k_bson_document, static_cast<char *>(p.first));
+                Bson n(Bson::k_document, static_cast<char *>(p.first));
                 free(p.first);
                 return n;
             }
@@ -941,7 +941,7 @@ namespace lj {
             }
             
             Log::debug.log("Place in DB.") << Log::end;
-            value.nav("__key").set_value(lj::k_bson_int64, reinterpret_cast<char*>(&key));
+            value.nav("__key").set_value(Bson::k_int64, reinterpret_cast<char*>(&key));
             char* bson = value.to_binary();
             db_->place(&key,
                        sizeof(unsigned long long),
@@ -954,7 +954,7 @@ namespace lj {
         }
         catch(Exception* ex)
         {
-            value.nav("__key").set_value(lj::k_bson_int64, reinterpret_cast<char *>(&original_key));
+            value.nav("__key").set_value(Bson::k_int64, reinterpret_cast<char *>(&original_key));
             abort_transaction();
             throw ex;
         }
@@ -988,7 +988,7 @@ namespace lj {
     
     Storage &Storage::check_unique(const Bson& n, const std::string& name, tokyo::DB* index)
     {
-        if (k_bson_document == n.type() &&
+        if (Bson::k_document == n.type() &&
             nested_indexing_.end() != nested_indexing_.find(name))
         {
             Log::debug.log("checking children of [%s].") << name << Log::end;
@@ -1046,7 +1046,7 @@ namespace lj {
         {
             Bson n(original.nav(iter->first));
             if (n.exists() && 
-                k_bson_document == n.type() && 
+                Bson::k_document == n.type() && 
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
                 for (Linked_map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
@@ -1082,7 +1082,7 @@ namespace lj {
         {
             Bson n(original.nav(iter->first));
             if (n.exists() &&
-                k_bson_document == n.type() && 
+                Bson::k_document == n.type() && 
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
                 for (Linked_map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
@@ -1151,7 +1151,7 @@ namespace lj {
         {
             Bson n(original.nav(iter->first));
             if (n.exists() &&
-                k_bson_document == n.type() &&
+                Bson::k_document == n.type() &&
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
                 for (Linked_map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
@@ -1187,7 +1187,7 @@ namespace lj {
         {
             Bson n(original.nav(iter->first));
             if (n.exists() &&
-                k_bson_document == n.type() &&
+                Bson::k_document == n.type() &&
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
                 for (Linked_map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();

@@ -415,20 +415,20 @@ namespace logjamd
     
     int Lua_bson_node::get(lua_State *L) {
         switch(_node->type()) {
-            case lj::k_bson_int32:
-            case lj::k_bson_int64:
-            case lj::k_bson_timestamp:
+            case lj::Bson::k_int32:
+            case lj::Bson::k_int64:
+            case lj::Bson::k_timestamp:
                 lua_pushinteger(L, lj::bson_as_int64(*_node));
                 break;
-            case lj::k_bson_array:
-            case lj::k_bson_document:
-            case lj::k_bson_string:
+            case lj::Bson::k_array:
+            case lj::Bson::k_document:
+            case lj::Bson::k_string:
                 lua_pushstring(L, lj::bson_as_string(*_node).c_str());
                 break;
-            case lj::k_bson_double:
+            case lj::Bson::k_double:
                 lua_pushnumber(L, lj::bson_as_double(*_node));
                 break;
-            case lj::k_bson_boolean:
+            case lj::Bson::k_boolean:
                 lua_pushboolean(L, lj::bson_as_boolean(*_node));
                 break;
             default:

@@ -55,7 +55,7 @@ namespace lj {
             return r;
         }
         
-        void subdocument(Bson_node_type parent_t, Bson& node, const char* value) {
+        void subdocument(Bson::Type parent_t, Bson& node, const char* value) {
             // treat it as a char * for pointer math reasons.
             const char *ptr = value;
             
@@ -80,12 +80,12 @@ namespace lj {
                 ptr += name.size() + 1;
                 
                 // child node.
-                Bson* new_child = new Bson(static_cast<Bson_node_type>(t), ptr);
-                if (k_bson_document == parent_t)
+                Bson* new_child = new Bson(static_cast<Bson::Type>(t), ptr);
+                if (Bson::k_document == parent_t)
                 {
                     node.set_child(name, new_child);
                 }
-                else if(k_bson_array == parent_t)
+                else if(Bson::k_array == parent_t)
                 {
                     node.push_child("", new_child);
                 }
@@ -106,27 +106,27 @@ namespace lj {
         std::string k_bson_type_string_unknown("unknown");
     };
     
-    const std::string& bson_type_string(const Bson_node_type t)
+    const std::string& bson_type_string(const Bson::Type t)
     {
         switch (t)
         {
-            case k_bson_string:
+            case Bson::k_string:
                 return k_bson_type_string_string;
-            case k_bson_int32:
+            case Bson::k_int32:
                 return k_bson_type_string_int32;
-            case k_bson_double:
+            case Bson::k_double:
                 return k_bson_type_string_double;
-            case k_bson_int64:
+            case Bson::k_int64:
                 return k_bson_type_string_int64;
-            case k_bson_timestamp:
+            case Bson::k_timestamp:
                 return k_bson_type_string_timestamp;
-            case k_bson_boolean:
+            case Bson::k_boolean:
                 return k_bson_type_string_boolean;
-            case k_bson_null:
+            case Bson::k_null:
                 return k_bson_type_string_null;
-            case k_bson_document:
+            case Bson::k_document:
                 return k_bson_type_string_document;
-            case k_bson_array:
+            case Bson::k_array:
                 return k_bson_type_string_array;
             default:
                 break;
@@ -134,24 +134,24 @@ namespace lj {
         return k_bson_type_string_unknown;
     }
     
-    size_t bson_type_min_size(const Bson_node_type t)
+    size_t bson_type_min_size(const Bson::Type t)
     {
         switch (t)
         {
-            case k_bson_string:
+            case Bson::k_string:
                 return 5;
-            case k_bson_int32:
+            case Bson::k_int32:
                 return 4;
-            case k_bson_timestamp:
-            case k_bson_int64:
-            case k_bson_double:
+            case Bson::k_timestamp:
+            case Bson::k_int64:
+            case Bson::k_double:
                 return 8;
-            case k_bson_boolean:
+            case Bson::k_boolean:
                 return 1;
-            case k_bson_null:
+            case Bson::k_null:
                 return 0;
-            case k_bson_document:
-            case k_bson_array:
+            case Bson::k_document:
+            case Bson::k_array:
                 return 5;
             default:
                 break;
@@ -163,11 +163,11 @@ namespace lj {
     // Bson ctor/dtor
     //=====================================================================
     
-    Bson::Bson() : child_map_(), last_child_(0), value_(0), type_(k_bson_document)
+    Bson::Bson() : child_map_(), last_child_(0), value_(0), type_(Bson::k_document)
     {
     }
     
-    Bson::Bson(const Bson_node_type t, const char *v) : child_map_(), last_child_(0), value_(0), type_(k_bson_document)
+    Bson::Bson(const Bson::Type t, const char *v) : child_map_(), last_child_(0), value_(0), type_(Bson::k_document)
     {
         set_value(t, v);
     }
@@ -191,7 +191,7 @@ namespace lj {
         }
     }
     
-    void Bson::set_value(const Bson_node_type t, const char* v)
+    void Bson::set_value(const Bson::Type t, const char* v)
     {
         // assume the type may have changed.
         char* old = NULL;
@@ -219,30 +219,30 @@ namespace lj {
             long long sz = 0;
             switch (type_)
             {
-                case k_bson_string:
+                case Bson::k_string:
                     memcpy(&sz, v, 4);
                     value_ = new char[sz + 4];
                     memcpy(value_, v, sz + 4);
                     break;
-                case k_bson_int32:
+                case Bson::k_int32:
                     value_ = new char[4];
                     memcpy(value_, v, 4);
                     break;
-                case k_bson_double:
-                case k_bson_int64:
-                case k_bson_timestamp:
+                case Bson::k_double:
+                case Bson::k_int64:
+                case Bson::k_timestamp:
                     value_ = new char[8];
                     memcpy(value_, v, 8);
                     break;
-                case k_bson_boolean:
+                case Bson::k_boolean:
                     value_ = new char[1];
                     memcpy(value_, v, 1);
                     break;
-                case k_bson_null:
+                case Bson::k_null:
                     value_ = NULL;
                     break;
-                case k_bson_document:
-                case k_bson_array:
+                case Bson::k_document:
+                case Bson::k_array:
                     last_child_ = 0;
                     subdocument(type_, *this, v);
                     break;
@@ -260,12 +260,12 @@ namespace lj {
     
     void Bson::nullify()
     {
-        set_value(k_bson_null, NULL);
+        set_value(Bson::k_null, NULL);
     }
 
     void Bson::destroy()
     {
-        set_value(k_bson_document, NULL);
+        set_value(Bson::k_document, NULL);
     }
     
     Bson& Bson::copy_from(const Bson& o)
@@ -396,10 +396,10 @@ namespace lj {
         
         if (c)
         {
-            if(k_bson_document != n->type())
+            if(Bson::k_document != n->type())
             {
                 // If this isn't a document, convert it to a document.
-                n->set_value(k_bson_document, NULL);
+                n->set_value(Bson::k_document, NULL);
             }
             
             // Add the child.
@@ -421,10 +421,10 @@ namespace lj {
         }
         
         Bson* ptr = path(p);
-        if(k_bson_array != ptr->type())
+        if(Bson::k_array != ptr->type())
         {
             // If this isn't an array, convert it to an array.
-            ptr->set_value(k_bson_array, NULL);
+            ptr->set_value(Bson::k_array, NULL);
         }
         
         std::ostringstream oss;
@@ -435,10 +435,10 @@ namespace lj {
     
     Bson& Bson::operator<<(const Bson& o)
     {
-        if(k_bson_array != type())
+        if(Bson::k_array != type())
         {
             // If this isn't an array, convert it to an array.
-            set_value(k_bson_array, NULL);
+            set_value(Bson::k_array, NULL);
         }
         
         std::ostringstream oss;
@@ -455,7 +455,7 @@ namespace lj {
         }
         else
         {
-            return (value_ ? true : (type() == k_bson_null ? true : false));
+            return (value_ ? true : (type() == Bson::k_null ? true : false));
         }
     }
     
@@ -464,26 +464,26 @@ namespace lj {
         long sz = 0;
         switch (type())
         {
-            case k_bson_string:
+            case Bson::k_string:
                 memcpy(&sz, value_, 4);
                 sz += 4;
                 break;
-            case k_bson_int32:
+            case Bson::k_int32:
                 sz = 4;
                 break;
-            case k_bson_double:
-            case k_bson_int64:
-            case k_bson_timestamp:
+            case Bson::k_double:
+            case Bson::k_int64:
+            case Bson::k_timestamp:
                 sz = 8;
                 break;
-            case k_bson_boolean:
+            case Bson::k_boolean:
                 sz = 1;
                 break;
-            case k_bson_null:
+            case Bson::k_null:
                 sz = 0;
                 break;
-            case k_bson_document:
-            case k_bson_array:
+            case Bson::k_document:
+            case Bson::k_array:
                 sz += 5;
                 for (Linked_map<std::string, Bson *>::const_iterator iter = to_map().begin();
                      to_map().end() != iter;
@@ -503,15 +503,15 @@ namespace lj {
         size_t sz = size();
         switch (type())
         {
-            case k_bson_document:
-            case k_bson_array:
+            case Bson::k_document:
+            case Bson::k_array:
                 memcpy(ptr, &sz, 4);
                 ptr += 4;
                 for (Linked_map<std::string, Bson*>::const_iterator iter = child_map_.begin();
                      child_map_.end() != iter;
                      ++iter)
                 {
-                    Bson_node_type t = iter->second->type();
+                    Bson::Type t = iter->second->type();
                     memcpy(ptr++, &t, 1);
                     memcpy(ptr, iter->first.c_str(), iter->first.size() + 1);
                     ptr += iter->first.size() + 1;
@@ -532,24 +532,24 @@ namespace lj {
         char *ptr = new char[sz + 4];;
         memcpy(ptr, &sz, 4);
         memcpy(ptr + 4, str.c_str(), sz);
-        Bson* new_bson = new Bson(k_bson_string, ptr);
+        Bson* new_bson = new Bson(Bson::k_string, ptr);
         delete[] ptr;
         return new_bson;
     }
     
     Bson* bson_new_boolean(const bool val)
     {
-        return new Bson(k_bson_boolean, reinterpret_cast<const char *> (&val));
+        return new Bson(Bson::k_boolean, reinterpret_cast<const char *> (&val));
     }
     
     Bson* bson_new_int64(const int64_t val)
     {
-        return new Bson(k_bson_int64, reinterpret_cast<const char *> (&val));
+        return new Bson(Bson::k_int64, reinterpret_cast<const char *> (&val));
     }
     
     Bson* bson_new_null()
     {
-        return new Bson(k_bson_null, NULL);
+        return new Bson(Bson::k_null, NULL);
     }
     
     std::string bson_as_debug_string(const Bson& b)
@@ -565,29 +565,29 @@ namespace lj {
         std::ostringstream buf;
         switch (b.type())
         {
-            case k_bson_string:
+            case Bson::k_string:
                 memcpy(&l, v, 4);
                 buf << "(4-" << l << ")" << "(" << l << ")" << (v + 4);
                 return buf.str();
-            case k_bson_int32:
+            case Bson::k_int32:
                 memcpy(&l, v, 4);
                 buf << "(4)" << l;
                 return buf.str();
-            case k_bson_double:
+            case Bson::k_double:
                 memcpy(&d, v, 8);
                 buf << "(8)" << d;
                 return buf.str();
-            case k_bson_int64:
-            case k_bson_timestamp:
+            case Bson::k_int64:
+            case Bson::k_timestamp:
                 memcpy(&l, v, 8);
                 buf << "(8)" << l;
                 return buf.str();
-            case k_bson_boolean:
+            case Bson::k_boolean:
                 memcpy(&l, v, 1);
                 buf << "(1)" << ((bool)l);
                 return buf.str();
-            case k_bson_document:
-            case k_bson_array:
+            case Bson::k_document:
+            case Bson::k_array:
                 if (!b.to_map().size())
                 {
                     return "{(4-0)(1-0)}";
@@ -630,29 +630,29 @@ namespace lj {
         std::ostringstream buf;
         switch (b.type())
         {
-            case k_bson_string:
+            case Bson::k_string:
                 memcpy(&l, v, 4);
                 return std::string(v + 4);
-            case k_bson_int32:
+            case Bson::k_int32:
                 memcpy(&l, v, 4);
                 buf << l;
                 return buf.str();
-            case k_bson_double:
+            case Bson::k_double:
                 memcpy(&d, v, 8);
                 buf << d;
                 return buf.str();
-            case k_bson_int64:
-            case k_bson_timestamp:
+            case Bson::k_int64:
+            case Bson::k_timestamp:
                 memcpy(&l, v, 8);
                 buf << l;
                 return buf.str();
-            case k_bson_boolean:
+            case Bson::k_boolean:
                 memcpy(&l, v, 1);
                 buf << ((bool)l);
                 return buf.str();
-            case k_bson_null:
+            case Bson::k_null:
                 return std::string("null");
-            case k_bson_document:
+            case Bson::k_document:
                 if (!b.to_map().size())
                 {
                     return "{}";
@@ -679,7 +679,7 @@ namespace lj {
                     buf << ",";
                 }
                 return buf.str().erase(buf.str().size() - 1).append("}");
-            case k_bson_array:
+            case Bson::k_array:
                 if (!b.to_map().size())
                 {
                     return "[]";
@@ -730,29 +730,29 @@ namespace lj {
         
         switch (b.type())
         {
-            case k_bson_string:
+            case Bson::k_string:
                 memcpy(&l, v, 4);
                 return std::string(v + 4);
-            case k_bson_int32:
+            case Bson::k_int32:
                 memcpy(&l, v, 4);
                 buf << l;
                 return buf.str();
-            case k_bson_double:
+            case Bson::k_double:
                 memcpy(&d, v, 8);
                 buf << d;
                 return buf.str();
-            case k_bson_int64:
-            case k_bson_timestamp:
+            case Bson::k_int64:
+            case Bson::k_timestamp:
                 memcpy(&l, v, 8);
                 buf << l;
                 return buf.str();
-            case k_bson_boolean:
+            case Bson::k_boolean:
                 memcpy(&l, v, 1);
                 buf << ((bool)l);
                 return buf.str();
-            case k_bson_null:
+            case Bson::k_null:
                 return std::string("null");
-            case k_bson_document:
+            case Bson::k_document:
                 if (!b.to_map().size())
                 {
                     return "{}";
@@ -779,7 +779,7 @@ namespace lj {
                     buf << ",\n";
                 }
                 return buf.str().erase(buf.str().size() - 2).append("\n").append(indent).append("}");
-            case k_bson_array:
+            case Bson::k_array:
                 if (!b.to_map().size())
                 {
                     return "[]";
@@ -816,7 +816,7 @@ namespace lj {
     {
         std::set<std::string> key_set;
         std::set<std::string>::iterator set_iter = key_set.begin();
-        if (k_bson_document == b.type())
+        if (Bson::k_document == b.type())
         {
             for (Linked_map<std::string, Bson*>::const_iterator iter = b.to_map().begin();
                  b.to_map().end() != iter;
@@ -854,19 +854,19 @@ namespace lj {
         const char* v = b.to_value();
         switch (b.type())
         {
-            case k_bson_string:
+            case Bson::k_string:
                 return atoi(v + 4);
-            case k_bson_int32:
+            case Bson::k_int32:
                 memcpy(&l, v, 4);
                 return (int)l;
-            case k_bson_double:
+            case Bson::k_double:
                 memcpy(&d, v, 8);
                 return (int)d;
-            case k_bson_int64:
-            case k_bson_timestamp:
+            case Bson::k_int64:
+            case Bson::k_timestamp:
                 memcpy(&l, v, 8);
                 return (int)l;
-            case k_bson_boolean:
+            case Bson::k_boolean:
                 memcpy(&l, v, 1);
                 return (int)l;
             default:
@@ -882,19 +882,19 @@ namespace lj {
         const char* v = b.to_value();
         switch (b.type())
         {
-            case k_bson_string:
+            case Bson::k_string:
                 return atol(v + 4);
-            case k_bson_int32:
+            case Bson::k_int32:
                 memcpy(&l, v, 4);
                 return l;
-            case k_bson_double:
+            case Bson::k_double:
                 memcpy(&d, v, 8);
                 return (long long)d;
-            case k_bson_int64:
-            case k_bson_timestamp:
+            case Bson::k_int64:
+            case Bson::k_timestamp:
                 memcpy(&l, v, 8);
                 return l;
-            case k_bson_boolean:
+            case Bson::k_boolean:
                 memcpy(&l, v, 1);
                 return l;
             default:
@@ -911,7 +911,7 @@ namespace lj {
         const char* s = v + 4;
         switch (b.type())
         {
-            case k_bson_string:
+            case Bson::k_string:
                 if(!v) return false;
                 if(!s[0]) return false;
                 if(s[0] == '0' && !s[1]) return false;
@@ -922,17 +922,17 @@ namespace lj {
                    toupper(s[2]) == 'U' &&
                    toupper(s[3]) == 'E')
                     return true;
-            case k_bson_int32:
+            case Bson::k_int32:
                 memcpy(&l, v, 4);
                 return l;
-            case k_bson_double:
+            case Bson::k_double:
                 memcpy(&d, v, 8);
                 return (long)d;
-            case k_bson_int64:
-            case k_bson_timestamp:
+            case Bson::k_int64:
+            case Bson::k_timestamp:
                 memcpy(&l, v, 8);
                 return l;
-            case k_bson_boolean:
+            case Bson::k_boolean:
                 memcpy(&l, v, 1);
                 return l;
             default:
@@ -948,19 +948,19 @@ namespace lj {
         const char* v = b.to_value();
         switch (b.type())
         {
-            case k_bson_string:
+            case Bson::k_string:
                 return atof(v + 4);
-            case k_bson_int32:
+            case Bson::k_int32:
                 memcpy(&l, v, 4);
                 return (double)l;
-            case k_bson_double:
+            case Bson::k_double:
                 memcpy(&d, v, 8);
                 return d;
-            case k_bson_int64:
-            case k_bson_timestamp:
+            case Bson::k_int64:
+            case Bson::k_timestamp:
                 memcpy(&l, v, 8);
                 return (double)l;
-            case k_bson_boolean:
+            case Bson::k_boolean:
                 memcpy(&l, v, 1);
                 return (double)l;
             default:
@@ -986,7 +986,7 @@ namespace lj {
         char *ptr = new char[sz];
         memcpy(ptr, &sz, 4);
         f.read(ptr + 4, sz - 4);
-        Bson* doc = new Bson(k_bson_document, ptr);
+        Bson* doc = new Bson(Bson::k_document, ptr);
         f.close();
         delete[] ptr;
         return doc;

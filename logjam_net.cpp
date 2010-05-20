@@ -100,7 +100,7 @@ namespace logjam
             {
                 delete response_;
             }
-            response_ = new lj::Bson(lj::k_bson_document, in_);
+            response_ = new lj::Bson(lj::Bson::k_document, in_);
             
             delete[] in_;
             in_ = new char[4];

@@ -110,7 +110,7 @@ namespace logjamd
         if (in_offset_ == in_sz_)
         {
             lj::Bson b;
-            b.set_value(lj::k_bson_document, in_);
+            b.set_value(lj::Bson::k_document, in_);
             
             logic(b);
             

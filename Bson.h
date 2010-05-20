@@ -42,89 +42,8 @@
 #include "LinkedMap.h"
 #include "Exception.h"
 
-namespace lj {
-    //! Enumeration of Document Node Types.
-    enum Bson_node_type
-    {
-        k_bson_double = 0x01,    //!< Node contains a double value.
-        k_bson_string = 0x02,    //!< Node contains a string value.
-        k_bson_document = 0x03,  //!< Node contains a nested document value.
-        k_bson_array = 0x04,     //!< Node contains a nested array value.
-        k_bson_binary = 0x05,    //!< Node contains a binary value.
-        k_bson_boolean = 0x08,   //!< Node contains a boolean value.
-        k_bson_datetime = 0x09,  //!< Node contains a date/time value.
-        k_bson_null = 0x0A,      //!< Node contains a null value.
-        k_bson_javascript = 0x0D, //!< Node contains a javascript value.
-        k_bson_int32 = 0x10,     //!< Node contains a int32 number value.
-        k_bson_timestamp = 0x11, //!< Node contains a timestamp value.
-        k_bson_int64 = 0x12,     //!< Node contains a int64 number value.
-        k_bson_minkey = 0xFF,    //!< Node contains a reserved BSON spec value.
-        k_bson_maxkey = 0x7F     //!< Node contains a reserved BSON spec value.
-    };
-    
-    //! Get a string version of the type.
-    /*!
-     \param t The type to convert into a string.
-     \return String name for the type.
-     */
-    const std::string& bson_type_string(const Bson_node_type t);
-    
-    //! Get the minimum number of bytes required for a type.
-    /*!
-     \param t The type to get the required bytes for.
-     \return The minimum size of the type.
-     */
-    size_t bson_type_min_size(const Bson_node_type t);
-    
-    //! Test if a type is a nested type (Array, or document).
-    /*!
-     \param t The type to test.
-     \return True if the type is a nested object, false otherwise.
-     */
-    inline bool bson_type_is_nested(const Bson_node_type t)
-    {
-        return (t == k_bson_document ||
-                t == k_bson_array);
-    }
-    
-    //! Test if a type is quotablable (string types).
-    /*!
-     \param t The type to test.
-     \return True if the type is a quotable object, false otherwise.
-     */
-    inline bool bson_type_is_quotable(const Bson_node_type t)
-    {
-        return (t == k_bson_string);
-    }
-    
-    //! Test if a type is a numerical type (integers and floats).
-    /*!
-     \param t The type to test.
-     \return True if the type is a number type, false otherwise.
-     */
-    inline bool bson_type_is_number(const Bson_node_type t)
-    {
-        return (t == k_bson_int32 ||
-                t == k_bson_int64 ||
-                t == k_bson_timestamp ||
-                t == k_bson_double);
-    }
-    
-    //! Test if a type is a native c++ type (integers, floats, booleans, null).
-    /*!
-     \param t The type to test.
-     \return True if the type is a native type, false otherwise.
-     */
-    inline bool bson_type_is_native(const Bson_node_type t)
-    {
-        return (t == k_bson_int32 ||
-                t == k_bson_int64 ||
-                t == k_bson_timestamp ||
-                t == k_bson_double ||
-                t == k_bson_boolean ||
-                t == k_bson_null);
-    }
-        
+namespace lj
+{
     //! Bson value.
     /*!
      \par
@@ -132,7 +51,7 @@ namespace lj {
      examples show different ways to set a value at some path.
      \code
      Bson *string_node = bson_new_string("test"); // using helper methods.
-     Bson *int_node = new bson_new_int(k_bson_int32, 123) // using constructor.
+     Bson *int_node = new bson_new_int(Bson::k_int32, 123) // using constructor.
      Bson root_node; // default constructor.
      Bson some_node;
      
@@ -157,6 +76,25 @@ namespace lj {
      */
     class Bson {
     public:
+        //! Enumeration of Bson Types.
+        enum Type
+        {
+            k_double = 0x01,    //!< Node contains a double value.
+            k_string = 0x02,    //!< Node contains a string value.
+            k_document = 0x03,  //!< Node contains a nested document value.
+            k_array = 0x04,     //!< Node contains a nested array value.
+            k_binary = 0x05,    //!< Node contains a binary value.
+            k_boolean = 0x08,   //!< Node contains a boolean value.
+            k_datetime = 0x09,  //!< Node contains a date/time value.
+            k_null = 0x0A,      //!< Node contains a null value.
+            k_javascript = 0x0D, //!< Node contains a javascript value.
+            k_int32 = 0x10,     //!< Node contains a int32 number value.
+            k_timestamp = 0x11, //!< Node contains a timestamp value.
+            k_int64 = 0x12,     //!< Node contains a int64 number value.
+            k_minkey = 0xFF,    //!< Node contains a reserved BSON spec value.
+            k_maxkey = 0x7F     //!< Node contains a reserved BSON spec value.
+        };
+        
         //! Create a new document Node.
         /*!
          \par
@@ -176,7 +114,7 @@ namespace lj {
          \param v The value to associate with this node.
          \sa Bson::set_value()
          */
-        Bson(const Bson_node_type t, const char* v);
+        Bson(const Bson::Type t, const char* v);
         
         //! Create a new document node as a copy of an existing Bson.
         /*!
@@ -199,7 +137,7 @@ namespace lj {
          \param v Array of data to read the new value from.
          \return Reference to \c this .
          */
-        void set_value(const Bson_node_type t, const char* v);
+        void set_value(const Bson::Type t, const char* v);
         
         //! Set the value of the document node to null.
         /*!
@@ -379,7 +317,7 @@ namespace lj {
         }
 
         //! Get the type of the document node.
-        Bson_node_type type() const
+        Bson::Type type() const
         {
             return type_;
         }
@@ -394,32 +332,169 @@ namespace lj {
         Linked_map<std::string, Bson*> child_map_;
         int last_child_;
         char* value_;
-        Bson_node_type type_;
+        Bson::Type type_;
         //! copy the value of this object into a bson byte array.
         size_t copy_to_bson(char *) const;
     };
     
+    //! Get a string version of the type.
+    /*!
+     \param t The type to convert into a string.
+     \return String name for the type.
+     */
+    const std::string& bson_type_string(const Bson::Type t);
     
-    Bson* bson_new_string(const std::string& str);
-    Bson* bson_new_boolean(const bool val);
-    Bson* bson_new_int64(const int64_t val);
-    Bson* bson_new_null();
-    //! get the value of the document node as a debug string.
+    //! Get the minimum number of bytes required for a type.
+    /*!
+     \param t The type to get the required bytes for.
+     \return The minimum size of the type.
+     */
+    size_t bson_type_min_size(const Bson::Type t);
+    
+    //! Test if a type is a nested type (Array, or document).
+    /*!
+     \param t The type to test.
+     \return True if the type is a nested object, false otherwise.
+     */
+    inline bool bson_type_is_nested(const Bson::Type t)
+    {
+        return (t == Bson::k_document ||
+                t == Bson::k_array);
+    }
+    
+    //! Test if a type is quotablable (string types).
+    /*!
+     \param t The type to test.
+     \return True if the type is a quotable object, false otherwise.
+     */
+    inline bool bson_type_is_quotable(const Bson::Type t)
+    {
+        return (t == Bson::k_string);
+    }
+    
+    //! Test if a type is a numerical type (integers and floats).
+    /*!
+     \param t The type to test.
+     \return True if the type is a number type, false otherwise.
+     */
+    inline bool bson_type_is_number(const Bson::Type t)
+    {
+        return (t == Bson::k_int32 ||
+                t == Bson::k_int64 ||
+                t == Bson::k_timestamp ||
+                t == Bson::k_double);
+    }
+    
+    //! Test if a type is a native c++ type (integers, floats, booleans, null).
+    /*!
+     \param t The type to test.
+     \return True if the type is a native type, false otherwise.
+     */
+    inline bool bson_type_is_native(const Bson::Type t)
+    {
+        return (t == Bson::k_int32 ||
+                t == Bson::k_int64 ||
+                t == Bson::k_timestamp ||
+                t == Bson::k_double ||
+                t == Bson::k_boolean ||
+                t == Bson::k_null);
+    }
+    
+    //! Create a new Bson string object.
     /*!
      \par
-     The debug string is a representation of the DocumentNode in BSON,
+     Object should be released with delete.
+     \param str The string value.
+     \return a new Bson object.
+     */
+    Bson* bson_new_string(const std::string& str);
+    
+    //! Create a new Bson boolean object.
+    /*!
+     \par
+     Object should be released with delete.
+     \param val The boolean value.
+     \return a new Bson object.
+     */
+    Bson* bson_new_boolean(const bool val);
+
+    //! Create a new int64 object.
+    /*!
+     \par
+     Object should be released with delete.
+     \param val The integer value.
+     \return a new Bson object.
+     */
+    Bson* bson_new_int64(const int64_t val);
+
+    //! Create a new null object.
+    /*!
+     \par
+     Object should be released with delete.
+     \return a new Bson object.
+     */
+    Bson* bson_new_null();
+    
+    //! Get the value of a Bson object as a C++ string in debug format.
+    /*!
+     \par
+     The debug string is a representation of the Bson object in BSON
      format.  Rather than being a byte array, the results are output in
-     a psudeo-JSON looking format, with lengths and byte counts included
+     a pseudo-JSON looking format, with lengths and byte counts included
      in the display.
      \par
      This is really only useful for debugging output.
-     \return A string describing how this DocumentNode should look in BSON.
+     \param b The Bson object
+     \return A string describing how this Bson object should look in BSON.
      */
     std::string bson_as_debug_string(const Bson& b);
+    
+    //! Get the value of a Bson object as a c++ string.
+    /*!
+     \par
+     Value types are output in their string representation.  Document and
+     array types are output in a JSON looking format.
+     \param b The Bson object.
+     \return A string describing how this Bson object should look in JSON.
+     */
     std::string bson_as_string(const Bson& b);
+    
+    //! Get the value of a Bson object as a c++ string with indenting.
+    /*!
+     \par
+     The pretty string is a representation of the Bson object in JSON
+     format.  The nested structures are indented to make the structure
+     easier to read.
+     \par
+     Value types are output in their string representation.  Document and
+     array types are output in a JSON looking format.
+     \param b The Bson object.
+     \return A string describing how this Bson object should look in JSON with indentation.
+     */
     std::string bson_as_pretty_string(const Bson& b, int lvl = 0);
+    
+    //! Get the set of keys.
+    /*!
+     \par
+     Value and array types return an empty set. Document types return
+     the set of keys.
+     \param b The Bson object.
+     \return Set of all keys for this object.
+     */
     std::set<std::string> bson_as_key_set(const Bson& b);
+    
+    //! Get the set of values.
+    /*!
+     \par
+     Valye types return a set containing themselves. Document and array types
+     return a set containing all child values as strings (not pretty or
+     debug strings).
+     \param b The Bson object.
+     \return A set of values.
+     \sa bson_as_string(const Bson&)
+     */
     std::set<std::string> bson_as_value_string_set(const Bson& b);
+    
     int32_t bson_as_int32(const Bson& b);
     int64_t bson_as_int64(const Bson& b);
     bool bson_as_boolean(const Bson& b);
