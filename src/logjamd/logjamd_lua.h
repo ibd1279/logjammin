@@ -1,6 +1,7 @@
 #pragma once
-/*
- \file logjam_lua.h
+/*!
+ \file logjamd_lua.h
+ \brief Logjam server lua functions implementation.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.

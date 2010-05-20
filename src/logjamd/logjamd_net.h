@@ -1,3 +1,4 @@
+#pragma once
 /*!
  \file logjamd_net.h
  \brief Logjam server networking header.
@@ -38,7 +39,7 @@
 #include <string>
 
 namespace logjamd
-{    
+{
     class Service_dispatch : public lj::Socket_dispatch {
     public:
         Service_dispatch();

@@ -1,5 +1,5 @@
 /*!
- \file logjam_lua.cpp
+ \file logjamd_lua.cpp
  \brief Logjam server lua functions implementation.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson

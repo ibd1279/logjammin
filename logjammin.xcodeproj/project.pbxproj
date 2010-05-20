@@ -171,12 +171,12 @@
 				2218BF7511A56C230099C15C /* Logger.h */,
 				2218BF7411A56C230099C15C /* Logger.cpp */,
 				2218BF7611A56C230099C15C /* lunar.h */,
+				2218BFAB11A57D120099C15C /* Record_set.h */,
+				2218BFAC11A57D120099C15C /* Record_set.cpp */,
 				2218BF7811A56C230099C15C /* Sockets.h */,
 				2218BF7711A56C230099C15C /* Sockets.cpp */,
 				2218BF7A11A56C230099C15C /* Storage.h */,
 				2218BF7911A56C230099C15C /* Storage.cpp */,
-				2218BFAB11A57D120099C15C /* Record_set.h */,
-				2218BFAC11A57D120099C15C /* Record_set.cpp */,
 			);
 			name = lj;
 			sourceTree = "<group>";
