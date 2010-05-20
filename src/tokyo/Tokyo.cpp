@@ -170,6 +170,64 @@ namespace tokyo
     // Tree_db Implementation
     //=====================================================================
     
+    Tree_db::Enumerator::Enumerator(TCBDB *db,
+                                    Tree_db::Enumerator::Direction dir) : dir_(dir), cur_(0), more_cache_(false)
+    {
+        cur_ = tcbdbcurnew(db);
+        if (Tree_db::Enumerator::k_forward)
+        {
+            more_cache_ = tcbdbcurfirst(cur_);
+        }
+        else
+        {
+            more_cache_ = tcbdbcurlast(cur_);
+        }
+    }
+    
+    Tree_db::Enumerator::~Enumerator()
+    {
+        if (cur_)
+        {
+            tcbdbcurdel(cur_);
+        }
+    }
+    
+    bool Tree_db::Enumerator::more()
+    {
+        bool tmp = more_cache_;
+        if (!tmp)
+        {
+            delete this;
+        }
+        return tmp;
+    }
+    
+    DB::value_t Tree_db::Enumerator::next()
+    {
+        if (!more())
+        {
+            throw new lj::Exception("DBerror", "Enumerator past end.");
+        }
+        
+        int sz = 0;
+        void* ptr = tcbdbcurval(cur_, &sz);
+        if (!ptr || !sz)
+        {
+            ptr = 0;
+        }
+        
+        if (Tree_db::Enumerator::k_forward)
+        {
+            more_cache_ = tcbdbcurnext(cur_);
+        }
+        else
+        {
+            more_cache_ = tcbdbcurprev(cur_);
+        }
+        
+        return value_t(ptr, sz);
+    }
+    
     Tree_db::Tree_db(const std::string &filename,
                      const int mode,
                      Tree_db::Tune_function_pointer db_tune_func,
@@ -468,6 +526,16 @@ namespace tokyo
         }
         tclistdel(ptr);
         return true;
+    }
+    
+    Tree_db::Enumerator* Tree_db::forward_enumerator()
+    {
+        return new Tree_db::Enumerator(db(), Tree_db::Enumerator::k_forward);
+    }
+    
+    Tree_db::Enumerator* Tree_db::backward_enumerator()
+    {
+        return new Tree_db::Enumerator(db(), Tree_db::Enumerator::k_backward);
     }
     
     //=====================================================================

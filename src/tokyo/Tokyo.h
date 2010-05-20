@@ -225,6 +225,46 @@ namespace tokyo {
      */
     class Tree_db : public DB {
     public:
+        //! Enumerator (Cursor).
+        /*!
+         \author Jason Watson
+         \version 1.0
+         \date May 20, 2010
+         */
+        class Enumerator {
+        public:
+            //! Enumerator direction
+            enum Direction
+            {
+                k_forward,  //!< Enumerate the database from the beginning to the end.
+                k_backward  //!< Enumerate the database from the end to the beginning.
+            };
+            
+            //! Constructor
+            Enumerator(TCBDB* db, Direction dir);
+            
+            //! Destructor.
+            ~Enumerator();
+            
+            //! Test for more records.
+            /*!
+             When more() returns false, it deletes the object.
+             */
+            bool more();
+            
+            //! Advance the Enumerator.
+            DB::value_t next();
+        private:
+            //! Hidden.
+            Enumerator(const Enumerator& o);
+            //! Hidden.
+            Enumerator& operator=(const Enumerator& o);
+            
+            Direction dir_;
+            BDBCUR* cur_;
+            bool more_cache_;
+        };
+        
         //! Type of the type function.
         typedef void (*Tune_function_pointer)(TCBDB*, const void*);
         
@@ -314,6 +354,12 @@ namespace tokyo {
                                 const size_t end_len,
                                 bool end_inc,
                                 list_value_t& keys);
+        
+        //! Get an enumerator for touching every element.
+        virtual Tree_db::Enumerator* forward_enumerator();
+        
+        //! Get an enumerator for touching every element.
+        virtual Tree_db::Enumerator* backward_enumerator();
     protected:
         //! Get the database handle.
         /*!

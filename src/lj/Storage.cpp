@@ -341,24 +341,28 @@ namespace lj
             
             virtual bool items(std::list<Bson>& records) const
             {
+                bool modified = false;
                 for (std::set<unsigned long long>::const_iterator iter = keys_->begin();
                      keys_->end() != iter;
                      ++iter)
                 {
+                    modified = true;
                     records.push_back(doc_at(*iter));
                 }
-                return size();
+                return modified;
             }
             
             virtual bool items(std::list<Bson*>& records) const
             {
+                bool modified = false;
                 for (std::set<unsigned long long>::const_iterator iter = keys_->begin();
                      keys_->end() != iter;
                      ++iter)
                 {
+                    modified = true;
                     records.push_back(new Bson(doc_at(*iter)));
                 }
-                return size();
+                return modified;
             }
             
             virtual bool first(Bson& result) const
@@ -594,32 +598,60 @@ namespace lj
             
             virtual bool items(std::list<Bson>& records) const
             {
-                std::set<unsigned long long>* real_keys = new std::set<unsigned long long>();
-                get_all_keys(real_keys);
-                Standard_record_set tmp(storage_,
-                                        real_keys,
-                                        op_);
-                return tmp.items(records);
+                tokyo::Tree_db* db = Record_set::storage_db(storage_);
+                tokyo::Tree_db::Enumerator* e = db->forward_enumerator();
+                bool modified = false;
+                while (e->more())
+                {
+                    tokyo::DB::value_t p = e->next();
+                    if (!p.first)
+                    {
+                        continue;
+                    }
+                    modified = true;
+                    Bson n(Bson::k_document, static_cast<char *>(p.first));
+                    records.push_back(n);
+                    free(p.first);
+                }
+                return modified;
             }
             
             virtual bool items(std::list<Bson*>& records) const
             {
-                std::set<unsigned long long>* real_keys = new std::set<unsigned long long>();
-                get_all_keys(real_keys);
-                Standard_record_set tmp(storage_,
-                                        real_keys,
-                                        op_);
-                return tmp.items(records);
+                tokyo::Tree_db* db = Record_set::storage_db(storage_);
+                tokyo::Tree_db::Enumerator* e = db->forward_enumerator();
+                bool modified = false;
+                while (e->more())
+                {
+                    tokyo::DB::value_t p = e->next();
+                    if (!p.first)
+                    {
+                        continue;
+                    }
+                    modified = true;
+                    Bson* n = new Bson(Bson::k_document, static_cast<char *>(p.first));
+                    records.push_back(n);
+                    free(p.first);
+                }
+                return modified;
             }
             
             virtual bool first(Bson& result) const
             {
-                std::set<unsigned long long>* real_keys = new std::set<unsigned long long>();
-                get_all_keys(real_keys);
-                Standard_record_set tmp(storage_,
-                                        real_keys,
-                                        op_);
-                return tmp.first(result);
+                tokyo::Tree_db* db = Record_set::storage_db(storage_);
+                tokyo::Tree_db::Enumerator* e = db->forward_enumerator();
+                if (e->more())
+                {
+                    tokyo::DB::value_t p = e->next();
+                    if (!p.first)
+                    {
+                        return false;
+                    }
+                    result.set_value(Bson::k_document, static_cast<char *>(p.first));
+                    free(p.first);
+                    delete e;
+                }
+                return true;
             }
         private:
             const Storage *storage_;
