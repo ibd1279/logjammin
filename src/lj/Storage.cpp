@@ -1,5 +1,6 @@
-/*
+/*!
  \file Storage.cpp
+ \brief LJ Storage implementation.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -37,53 +38,11 @@
 #include "lj/Exception.h"
 #include "lj/Logger.h"
 
-using tokyo::Hash_db;
-using tokyo::Tree_db;
 using tokyo::TextSearcher;
 using tokyo::TagSearcher;
 
-namespace lj {
-    tokyo::Tree_db* Record_set::storage_db(const Storage* s)
-    {
-        return s->db_;
-    }
-    tokyo::Tree_db* Record_set::storage_tree(const Storage* s, const std::string& indx)
-    {
-        std::map<std::string, tokyo::Tree_db*>::const_iterator i = s->fields_tree_.find(indx);
-        if (s->fields_tree_.end() == i)
-        {
-            return 0;
-        }
-        return (*i).second;
-    }
-    tokyo::Hash_db* Record_set::storage_hash(const Storage* s, const std::string& indx)
-    {
-        std::map<std::string, tokyo::Hash_db*>::const_iterator i = s->fields_hash_.find(indx);
-        if (s->fields_hash_.end() == i)
-        {
-            return 0;
-        }
-        return (*i).second;
-    }
-    tokyo::TextSearcher* Record_set::storage_text(const Storage* s, const std::string& indx)
-    {
-        std::map<std::string, tokyo::TextSearcher*>::const_iterator i = s->fields_text_.find(indx);
-        if (s->fields_text_.end() == i)
-        {
-            return 0;
-        }
-        return (*i).second;
-    }
-    tokyo::TagSearcher* Record_set::storage_tag(const Storage* s, const std::string& indx)
-    {
-        std::map<std::string, tokyo::TagSearcher*>::const_iterator i = s->fields_tag_.find(indx);
-        if (s->fields_tag_.end() == i)
-        {
-            return 0;
-        }
-        return (*i).second;
-    }
-    
+namespace lj
+{
     namespace {
         void dbvalue_to_storagekey(const tokyo::DB::list_value_t &ptr,
                                    std::set<unsigned long long> &keys) {
@@ -113,7 +72,7 @@ namespace lj {
          \return A newly created set.
          */
         template<typename T, typename Q>
-        T *operate_on_sets(const set::Operation op,
+        T *operate_on_sets(const Record_set::Operation op,
                            const T& a,
                            const T& b)
         {
@@ -123,7 +82,7 @@ namespace lj {
             Q inserted_at = rs->begin();
             switch (op)
             {
-                case set::k_intersection:
+                case Record_set::k_intersection:
                     for (Q iter = small->begin();
                          small->end() != iter;
                          ++iter)
@@ -134,11 +93,11 @@ namespace lj {
                         }
                     }
                     break;
-                case set::k_union:
+                case Record_set::k_union:
                     rs->insert(big->begin(), big->end());
                     rs->insert(small->begin(), small->end());
                     break;
-                case set::k_symmetric_difference:
+                case Record_set::k_symmetric_difference:
                     for (Q iter = b.begin();
                          b.end() != iter;
                          ++iter)
@@ -150,7 +109,7 @@ namespace lj {
                     }
                     inserted_at = rs->begin();
                     // fall through.
-                case set::k_complement:
+                case Record_set::k_complement:
                     for (Q iter = a.begin();
                          a.end() != iter;
                          ++iter)
@@ -173,14 +132,14 @@ namespace lj {
         public:
             Standard_record_set(const Storage* storage,
                                 const std::set<unsigned long long>& keys,
-                                const set::Operation op) : storage_(storage), keys_(0), op_(op)
+                                const Record_set::Operation op) : storage_(storage), keys_(0), op_(op)
             {
                 keys_ = new std::set<unsigned long long>(keys);
             }
             
             Standard_record_set(const Storage* storage,
                                 std::set<unsigned long long>* keys,
-                                const set::Operation op) : storage_(storage), keys_(keys), op_(op)
+                                const Record_set::Operation op) : storage_(storage), keys_(keys), op_(op)
             {
             }
             
@@ -198,7 +157,7 @@ namespace lj {
                 }
             }
             
-            virtual Record_set& set_operation(const set::Operation op)
+            virtual Record_set& set_operation(const Record_set::Operation op)
             {
                 op_ = op;
                 return *this;
@@ -416,8 +375,8 @@ namespace lj {
         private:
             const Storage *storage_;
             std::set<unsigned long long>* keys_;
-            set::Operation op_;
-            Bson doc_at(unsigned long long pkey) const
+            Record_set::Operation op_;
+            inline Bson doc_at(unsigned long long pkey) const
             {
                 tokyo::Tree_db* db = Record_set::storage_db(storage_);
                 tokyo::DB::value_t p = db->at(&pkey, sizeof(unsigned long long));
@@ -436,7 +395,7 @@ namespace lj {
         class All_record_set : public Record_set {
         public:
             All_record_set(const Storage* storage,
-                           const set::Operation op) : storage_(storage), op_(op)
+                           const Record_set::Operation op) : storage_(storage), op_(op)
             {
             }
             
@@ -449,7 +408,7 @@ namespace lj {
                 storage_ = 0;
             }
             
-            virtual Record_set& set_operation(const set::Operation op)
+            virtual Record_set& set_operation(const Record_set::Operation op)
             {
                 op_ = op;
                 return *this;
@@ -492,15 +451,15 @@ namespace lj {
                                                     const void* const val,
                                                     const size_t len) const
             {
-                if (lj::set::k_union == op_)
+                if (Record_set::k_union == op_)
                 {
                     return std::auto_ptr<Record_set>(new All_record_set(*this));
                 }
-                else if (lj::set::k_intersection == op_)
+                else if (Record_set::k_intersection == op_)
                 {
                     Standard_record_set tmp(storage_,
                                             new std::set<unsigned long long>(),
-                                            lj::set::k_union);
+                                            Record_set::k_union);
                     std::auto_ptr<Record_set> ptr = tmp.equal(indx, val, len);
                     ptr->set_operation(op_);
                     return ptr;
@@ -520,15 +479,15 @@ namespace lj {
                                                       const void* const val,
                                                       const size_t len) const
             {
-                if (lj::set::k_union == op_)
+                if (Record_set::k_union == op_)
                 {
                     return std::auto_ptr<Record_set>(new All_record_set(*this));
                 }
-                else if (lj::set::k_intersection == op_)
+                else if (Record_set::k_intersection == op_)
                 {
                     Standard_record_set tmp(storage_,
                                             new std::set<unsigned long long>(),
-                                            lj::set::k_union);
+                                            Record_set::k_union);
                     std::auto_ptr<Record_set> ptr = tmp.greater(indx, val, len);
                     ptr->set_operation(op_);
                     return ptr;
@@ -548,15 +507,15 @@ namespace lj {
                                                      const void* const val,
                                                      const size_t len) const
             {
-                if (lj::set::k_union == op_)
+                if (Record_set::k_union == op_)
                 {
                     return std::auto_ptr<Record_set>(new All_record_set(*this));
                 }
-                else if (lj::set::k_intersection == op_)
+                else if (Record_set::k_intersection == op_)
                 {
                     Standard_record_set tmp(storage_,
                                             new std::set<unsigned long long>(),
-                                            lj::set::k_union);
+                                            Record_set::k_union);
                     std::auto_ptr<Record_set> ptr = tmp.lesser(indx, val, len);
                     ptr->set_operation(op_);
                     return ptr;
@@ -575,15 +534,15 @@ namespace lj {
             virtual std::auto_ptr<Record_set> contains(const std::string& indx,
                                                        const std::string& term) const
             {
-                if (lj::set::k_union == op_)
+                if (Record_set::k_union == op_)
                 {
                     return std::auto_ptr<Record_set>(new All_record_set(*this));
                 }
-                else if (lj::set::k_intersection == op_)
+                else if (Record_set::k_intersection == op_)
                 {
                     Standard_record_set tmp(storage_,
                                             new std::set<unsigned long long>(),
-                                            lj::set::k_union);
+                                            Record_set::k_union);
                     std::auto_ptr<Record_set> ptr = tmp.contains(indx, term);
                     ptr->set_operation(op_);
                     return ptr;
@@ -602,15 +561,15 @@ namespace lj {
             virtual std::auto_ptr<Record_set> tagged(const std::string& indx,
                                                      const std::string& word) const
             {
-                if (lj::set::k_union == op_)
+                if (Record_set::k_union == op_)
                 {
                     return std::auto_ptr<Record_set>(new All_record_set(*this));
                 }
-                else if (lj::set::k_intersection == op_)
+                else if (Record_set::k_intersection == op_)
                 {
                     Standard_record_set tmp(storage_,
                                             new std::set<unsigned long long>(),
-                                            lj::set::k_union);
+                                            Record_set::k_union);
                     std::auto_ptr<Record_set> ptr = tmp.tagged(indx, word);
                     ptr->set_operation(op_);
                     return ptr;
@@ -664,7 +623,7 @@ namespace lj {
             }
         private:
             const Storage *storage_;
-            set::Operation op_;
+            Record_set::Operation op_;
             Record_set& operator=(const All_record_set& o);
             void get_all_keys(std::set<unsigned long long>* result_keys) const
             {
@@ -787,24 +746,24 @@ namespace lj {
         
         std::string dbfile(directory_ + "/" + lj::bson_as_string(cfg->nav("main/file")));
         Log::info.log("Opening database [%s].") << dbfile << Log::end;
-        db_ = new Tree_db(dbfile,
-                         BDBOREADER | BDBOWRITER | BDBOCREAT,
-                         &storage_tree_cfg,
-                         cfg->path("main"));
+        db_ = new tokyo::Tree_db(dbfile,
+                                 BDBOREADER | BDBOWRITER | BDBOCREAT,
+                                 &storage_tree_cfg,
+                                 cfg->path("main"));
         
         Log::info.log("Opening tree indices under [%s].") << directory_ << Log::end;
-        open_storage_index<Tree_db, TCBDB>(directory_,
-                                          cfg->nav("index/tree").to_map(),
-                                          BDBOREADER | BDBOWRITER | BDBOCREAT,
-                                          &storage_tree_cfg,
-                                          fields_tree_);
+        open_storage_index<tokyo::Tree_db, TCBDB>(directory_,
+                                                  cfg->nav("index/tree").to_map(),
+                                                  BDBOREADER | BDBOWRITER | BDBOCREAT,
+                                                  &storage_tree_cfg,
+                                                  fields_tree_);
         
         Log::info.log("Opening hash indices under [%s].") << directory_ << Log::end;
-        open_storage_index<Hash_db, TCHDB>(directory_,
-                                           cfg->nav("index/hash").to_map(),
-                                           HDBOREADER | HDBOWRITER | HDBOCREAT,
-                                           &storage_hash_cfg,
-                                           fields_hash_);
+        open_storage_index<tokyo::Hash_db, TCHDB>(directory_,
+                                                  cfg->nav("index/hash").to_map(),
+                                                  HDBOREADER | HDBOWRITER | HDBOCREAT,
+                                                  &storage_hash_cfg,
+                                                  fields_hash_);
         
         Log::info.log("Opening text indices under [%s].") << directory_ << Log::end;
         open_storage_index<TextSearcher, TCQDB>(directory_,
@@ -860,7 +819,7 @@ namespace lj {
         if (fields_hash_.size())
         {
             Log::info.log("Closing hash indicies under [%s].") << directory_ << Log::end;
-            for (std::map<std::string, Hash_db*>::const_iterator iter = fields_hash_.begin();
+            for (std::map<std::string, tokyo::Hash_db*>::const_iterator iter = fields_hash_.begin();
                  fields_hash_.end() != iter;
                  ++iter)
             {
@@ -872,7 +831,7 @@ namespace lj {
         if (fields_tree_.size())
         {
             Log::info.log("Closing tree indicies under [%s].") << directory_ << Log::end;
-            for(std::map<std::string, Tree_db *>::const_iterator iter = fields_tree_.begin();
+            for(std::map<std::string, tokyo::Tree_db *>::const_iterator iter = fields_tree_.begin();
                 iter != fields_tree_.end();
                 ++iter) {
                 Log::info.log("Closing tree index for field [%s].") << iter->first << Log::end;
@@ -894,14 +853,14 @@ namespace lj {
     std::auto_ptr<Record_set> Storage::all() const
     {
         return std::auto_ptr<Record_set>(new All_record_set(this,
-                                                            lj::set::k_intersection));
+                                                            Record_set::k_intersection));
     }
     
     std::auto_ptr<Record_set> Storage::none() const
     {
         return std::auto_ptr<Record_set>(new Standard_record_set(this,
                                                                  new std::set<unsigned long long>(),
-                                                                 lj::set::k_union));
+                                                                 Record_set::k_union));
     }
     
     Storage &Storage::place(Bson &value)
@@ -929,7 +888,7 @@ namespace lj {
             
             // Enforce unique constraints.
             Log::debug.log("Unique constraint check.") << Log::end;
-            for (std::map<std::string, Hash_db*>::const_iterator iter = fields_hash_.begin();
+            for (std::map<std::string, tokyo::Hash_db*>::const_iterator iter = fields_hash_.begin();
                  fields_hash_.end() != iter;
                  ++iter)
             {
@@ -1040,7 +999,7 @@ namespace lj {
         at(key)->first(original);
         
         // Remove from tree index entries.
-        for (std::map<std::string, Tree_db *>::const_iterator iter = fields_tree_.begin();
+        for (std::map<std::string, tokyo::Tree_db *>::const_iterator iter = fields_tree_.begin();
              fields_tree_.end() != iter;
              ++iter)
         {
@@ -1076,7 +1035,7 @@ namespace lj {
         }
         
         // remove from hash index entries.
-        for (std::map<std::string, Hash_db*>::const_iterator iter = fields_hash_.begin();
+        for (std::map<std::string, tokyo::Hash_db*>::const_iterator iter = fields_hash_.begin();
              fields_hash_.end() != iter;
              ++iter)
         {
@@ -1145,7 +1104,7 @@ namespace lj {
         at(key)->first(original);
         
         // Insert into tree index.
-        for (std::map<std::string, Tree_db*>::const_iterator iter = fields_tree_.begin();
+        for (std::map<std::string, tokyo::Tree_db*>::const_iterator iter = fields_tree_.begin();
              fields_tree_.end() != iter;
              ++iter)
         {
@@ -1181,7 +1140,7 @@ namespace lj {
         }
         
         // Insert into hash index.
-        for (std::map<std::string, Hash_db*>::const_iterator iter = fields_hash_.begin();
+        for (std::map<std::string, tokyo::Hash_db*>::const_iterator iter = fields_hash_.begin();
              fields_hash_.end() != iter;
              ++iter)
         {
@@ -1245,13 +1204,13 @@ namespace lj {
     void Storage::begin_transaction()
     {
         db_->start_writes();
-        for (std::map<std::string, Tree_db*>::const_iterator iter = fields_tree_.begin();
+        for (std::map<std::string, tokyo::Tree_db*>::const_iterator iter = fields_tree_.begin();
              fields_tree_.end() != iter;
              ++iter)
         {
             iter->second->start_writes();
         }
-        for (std::map<std::string, Hash_db*>::const_iterator iter = fields_hash_.begin();
+        for (std::map<std::string, tokyo::Hash_db*>::const_iterator iter = fields_hash_.begin();
              fields_hash_.end() != iter;
              ++iter)
         {
@@ -1260,13 +1219,13 @@ namespace lj {
     }
     void Storage::commit_transaction()
     {
-        for (std::map<std::string, Hash_db*>::reverse_iterator iter = fields_hash_.rbegin();
+        for (std::map<std::string, tokyo::Hash_db*>::reverse_iterator iter = fields_hash_.rbegin();
              fields_hash_.rend() != iter;
              ++iter)
         {
             iter->second->save_writes();
         }
-        for (std::map<std::string, Tree_db *>::reverse_iterator iter = fields_tree_.rbegin();
+        for (std::map<std::string, tokyo::Tree_db *>::reverse_iterator iter = fields_tree_.rbegin();
              fields_tree_.rend() != iter;
              ++iter)
         {
@@ -1276,13 +1235,13 @@ namespace lj {
     }
     void Storage::abort_transaction()
     {
-        for (std::map<std::string, Hash_db*>::reverse_iterator iter = fields_hash_.rbegin();
+        for (std::map<std::string, tokyo::Hash_db*>::reverse_iterator iter = fields_hash_.rbegin();
              fields_hash_.rend() != iter;
              ++iter)
         {
             iter->second->abort_writes();
         }
-        for (std::map<std::string, Tree_db *>::reverse_iterator iter = fields_tree_.rbegin();
+        for (std::map<std::string, tokyo::Tree_db *>::reverse_iterator iter = fields_tree_.rbegin();
              fields_tree_.rend() != iter;
              ++iter)
         {

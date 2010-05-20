@@ -489,13 +489,13 @@ namespace logjamd
     }
     
     int LuaStorageFilter::mode_and(lua_State *L) {
-        _filter->set_operation(lj::set::k_intersection);
+        _filter->set_operation(lj::Record_set::k_intersection);
         Lunar<LuaStorageFilter>::push(L, this, false);
         return 1;
     }
     
     int LuaStorageFilter::mode_or(lua_State *L) {
-        _filter->set_operation(lj::set::k_union);
+        _filter->set_operation(lj::Record_set::k_union);
         Lunar<LuaStorageFilter>::push(L, this, false);
         return 1;
     }

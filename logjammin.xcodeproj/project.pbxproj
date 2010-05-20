@@ -40,6 +40,8 @@
 		2218BF7E11A56C970099C15C /* Tokyo.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Tokyo.cpp; path = src/tokyo/Tokyo.cpp; sourceTree = "<group>"; };
 		2218BF7F11A56C970099C15C /* Tokyo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Tokyo.h; path = src/tokyo/Tokyo.h; sourceTree = "<group>"; };
 		2218BF9011A5728F0099C15C /* Linked_map.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Linked_map.h; path = src/lj/Linked_map.h; sourceTree = "<group>"; };
+		2218BFAB11A57D120099C15C /* Record_set.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Record_set.h; path = src/lj/Record_set.h; sourceTree = "<group>"; };
+		2218BFAC11A57D120099C15C /* Record_set.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Record_set.cpp; path = src/lj/Record_set.cpp; sourceTree = "<group>"; };
 		221B344A0FA89B99009AB597 /* ModuleCompilier.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ModuleCompilier.cpp; sourceTree = "<group>"; };
 		221B344B0FA89B99009AB597 /* ModuleCompilier.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ModuleCompilier.h; sourceTree = "<group>"; };
 		2222BE34101E89D000CE52E6 /* UserController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UserController.h; sourceTree = "<group>"; };
@@ -173,6 +175,8 @@
 				2218BF7711A56C230099C15C /* Sockets.cpp */,
 				2218BF7A11A56C230099C15C /* Storage.h */,
 				2218BF7911A56C230099C15C /* Storage.cpp */,
+				2218BFAB11A57D120099C15C /* Record_set.h */,
+				2218BFAC11A57D120099C15C /* Record_set.cpp */,
 			);
 			name = lj;
 			sourceTree = "<group>";
