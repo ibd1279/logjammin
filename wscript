@@ -82,8 +82,8 @@ def build(ctx):
         ,source = [
                 'src/lj/Logger.cpp'
                 ,'src/lj/Sockets.cpp'
+                ,'src/lj/Client.cpp'
                 ,'src/lj/Bson.cpp'
-                ,'src/logjam/logjam_net.cpp'
                 ,'src/logjam/logjam.cpp'
                 ]
         ,target = 'logjam'

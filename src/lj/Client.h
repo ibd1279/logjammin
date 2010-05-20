@@ -1,8 +1,9 @@
 #pragma once
-/*
- \file Model.h
+/*!
+ \file Client.h
+ \brief LJ client header.
  \author Jason Watson
- Copyright (c) 2009, Jason Watson
+ Copyright (c) 2010, Jason Watson
  All rights reserved.
  
  Redistribution and use in source and binary forms, with or without
@@ -32,49 +33,25 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "BSONNode.h"
-#include "Storage.h"
+#include "lj/Sockets.h"
 
-namespace logjammin {
+namespace lj
+{
+    class Bson;
     
-    //! Baseclass for data storage.
-    /*!
-     \author Jason Watson
-     \version 1.0
-     \date July 3, 2009
-     */
-    class Model : public lj::BSONNode {
-    protected:
-        //! Create and open the DB object.
-        Model() : lj::BSONNode() {
-        }
-        
-        //! Copy constructor.
-        /*!
-         \param orig The orignal model to copy.
-         */
-        Model(const Model &orig) : lj::BSONNode(orig) {
-        }
-        
-        //! Close the database object.
-        virtual ~Model() {
-        }
-        
-        //! Get the DAO
-        virtual lj::Storage *dao() const = 0;
+    class Client : public Socket_dispatch {
     public:
-        //! Save the current object into the database.
-        virtual void save() {
-            dao()->place(*this);
-        }
-        
-        //! Remove the current object from the database.
-        virtual void purge() {
-            dao()->remove(*this);
-        }
-        
-        //! Get the primary key for the current object.
-        inline unsigned long long pkey() const { return nav("__key").to_l(); };
+        Client();
+        virtual ~Client();
+        virtual Socket_dispatch* accept(int socket, char* buffer);
+        virtual void read(const char* buffer, int sz);
+        lj::Bson* response();
+        void clear();
+    private:
+        char * in_;
+        int in_offset_;
+        int in_sz_;
+        bool in_post_length_;
+        lj::Bson* response_;
     };
-}; // namespace logjammin
-
+};

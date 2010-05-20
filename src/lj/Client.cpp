@@ -32,7 +32,7 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjam/logjam_net.h"
+#include "lj/Client.h"
 
 #include "lj/Logger.h"
 #include "lj/Bson.h"
@@ -40,14 +40,14 @@
 #include <sstream>
 #include <list>
 
-namespace logjam
+namespace lj
 {
-    Send_bytes::Send_bytes() : in_(0), in_offset_(0), in_sz_(4), in_post_length_(false), response_(0)
+    Client::Client() : in_(0), in_offset_(0), in_sz_(4), in_post_length_(false), response_(0)
     {
         in_ = new char[4];
     }
     
-    Send_bytes::~Send_bytes()
+    Client::~Client()
     {
         if (in_)
         {
@@ -60,12 +60,12 @@ namespace logjam
         }
     }
     
-    lj::Socket_dispatch* Send_bytes::accept(int socket, char* buffer)
+    lj::Socket_dispatch* Client::accept(int socket, char* buffer)
     {
         return NULL;
     }
     
-    void Send_bytes::read(const char* buffer, int sz)
+    void Client::read(const char* buffer, int sz)
     {
         int read_offset = 0;
         if (!in_post_length_)
@@ -118,7 +118,12 @@ namespace logjam
         }
     }
     
-    void Send_bytes::clear()
+    lj::Bson* Client::response()
+    {
+        return response_;
+    }
+    
+    void Client::clear()
     {
         if (response_)
         {

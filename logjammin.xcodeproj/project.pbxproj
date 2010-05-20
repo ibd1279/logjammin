@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXFileReference section */
+		22021A9411A5E30C00E07168 /* logjammin.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = logjammin.cpp; path = src/logjammin/logjammin.cpp; sourceTree = "<group>"; };
+		22021A9811A5E65200E07168 /* Client.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Client.h; path = src/lj/Client.h; sourceTree = "<group>"; };
+		22021A9911A5E65200E07168 /* Client.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Client.cpp; path = src/lj/Client.cpp; sourceTree = "<group>"; };
+		22021AA011A5EC1900E07168 /* Role.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Role.cpp; path = src/logjammin/Role.cpp; sourceTree = "<group>"; };
+		22021AA111A5EC1900E07168 /* Role.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Role.h; path = src/logjammin/Role.h; sourceTree = "<group>"; };
 		2202B35C0FFFA4D100B6FCEC /* Project.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Project.h; sourceTree = "<group>"; };
 		2202B35D0FFFA4D100B6FCEC /* Project.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Project.cpp; sourceTree = "<group>"; };
 		2202B3720FFFAAA200B6FCEC /* Backlog.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Backlog.h; sourceTree = "<group>"; };
@@ -16,12 +21,9 @@
 		220AD6F60FA215F800C604BE /* openprop_int.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = openprop_int.h; sourceTree = "<group>"; };
 		220AD6F70FA215F800C604BE /* parser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parser.h; sourceTree = "<group>"; };
 		220AD6F80FA215F800C604BE /* parser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = parser.cpp; sourceTree = "<group>"; };
-		220AD7070FA233E600C604BE /* Model.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Model.h; sourceTree = "<group>"; };
 		221577CA100F38270020B133 /* ProjectController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ProjectController.h; sourceTree = "<group>"; };
 		221577CB100F38270020B133 /* ProjectController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ProjectController.cpp; sourceTree = "<group>"; };
 		2218BF6811A56B650099C15C /* logjam.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = logjam.cpp; path = src/logjam/logjam.cpp; sourceTree = "<group>"; };
-		2218BF6911A56B650099C15C /* logjam_net.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = logjam_net.cpp; path = src/logjam/logjam_net.cpp; sourceTree = "<group>"; };
-		2218BF6A11A56B650099C15C /* logjam_net.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = logjam_net.h; path = src/logjam/logjam_net.h; sourceTree = "<group>"; };
 		2218BF6B11A56B800099C15C /* logjamd.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = logjamd.cpp; path = src/logjamd/logjamd.cpp; sourceTree = "<group>"; };
 		2218BF6C11A56B800099C15C /* logjamd_lua.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = logjamd_lua.cpp; path = src/logjamd/logjamd_lua.cpp; sourceTree = "<group>"; };
 		2218BF6D11A56B800099C15C /* logjamd_lua.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = logjamd_lua.h; path = src/logjamd/logjamd_lua.h; sourceTree = "<group>"; };
@@ -61,9 +63,6 @@
 		223D698310078F5800F79019 /* Controller.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Controller.cpp; sourceTree = "<group>"; };
 		224046D5100595160005461A /* User.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = User.h; sourceTree = "<group>"; };
 		224046D6100595160005461A /* User.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = User.cpp; sourceTree = "<group>"; };
-		224046DA100597D90005461A /* Role.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Role.h; sourceTree = "<group>"; };
-		224046DB100597D90005461A /* Role.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Role.cpp; sourceTree = "<group>"; };
-		2267589A1185C8870097ADE1 /* logjammin.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = logjammin.cpp; sourceTree = "<group>"; };
 		2271D918101288A000749D9A /* BacklogController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BacklogController.h; sourceTree = "<group>"; };
 		2271D919101288A000749D9A /* BacklogController.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BacklogController.cpp; sourceTree = "<group>"; };
 		227A47051018186B0013EACE /* libcurl.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libcurl.dylib; path = /usr/lib/libcurl.dylib; sourceTree = "<absolute>"; };
@@ -135,9 +134,6 @@
 		220AD7060FA233CB00C604BE /* Model */ = {
 			isa = PBXGroup;
 			children = (
-				220AD7070FA233E600C604BE /* Model.h */,
-				224046DA100597D90005461A /* Role.h */,
-				224046DB100597D90005461A /* Role.cpp */,
 				224046D5100595160005461A /* User.h */,
 				224046D6100595160005461A /* User.cpp */,
 				2202B3720FFFAAA200B6FCEC /* Backlog.h */,
@@ -166,6 +162,8 @@
 			children = (
 				2218BF7111A56C230099C15C /* Bson.h */,
 				2218BF7011A56C230099C15C /* Bson.cpp */,
+				22021A9811A5E65200E07168 /* Client.h */,
+				22021A9911A5E65200E07168 /* Client.cpp */,
 				2218BF7211A56C230099C15C /* Exception.h */,
 				2218BF9011A5728F0099C15C /* Linked_map.h */,
 				2218BF7511A56C230099C15C /* Logger.h */,
@@ -185,8 +183,6 @@
 			isa = PBXGroup;
 			children = (
 				2218BF6811A56B650099C15C /* logjam.cpp */,
-				2218BF6911A56B650099C15C /* logjam_net.cpp */,
-				2218BF6A11A56B650099C15C /* logjam_net.h */,
 			);
 			name = logjam;
 			sourceTree = "<group>";
@@ -194,7 +190,9 @@
 		226758991185C85F0097ADE1 /* logjammin */ = {
 			isa = PBXGroup;
 			children = (
-				2267589A1185C8870097ADE1 /* logjammin.cpp */,
+				22021AA111A5EC1900E07168 /* Role.h */,
+				22021AA011A5EC1900E07168 /* Role.cpp */,
+				22021A9411A5E30C00E07168 /* logjammin.cpp */,
 			);
 			name = logjammin;
 			sourceTree = "<group>";

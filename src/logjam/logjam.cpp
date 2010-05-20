@@ -32,8 +32,7 @@
  */
 
 
-#include "logjam/logjam_net.h"
-
+#include "lj/Client.h"
 #include "lj/Bson.h"
 #include "lj/Logger.h"
 #include "build/default/config.h"
@@ -91,7 +90,7 @@ namespace {
     char *editline_prompt(EditLine *e) {
         return ">";
     }
-    void input_loop(logjam::Send_bytes* dispatch, lj::Socket_selector& ss)
+    void input_loop(lj::Client* dispatch, lj::Socket_selector& ss)
     {
         EditLine* el = el_init("logjam", stdin, stdout, stderr);
         History* hist = history_init();
@@ -198,7 +197,7 @@ namespace {
         el_end(el);
     }
 #else
-    void input_loop(logjam::Send_bytes* dispatch, lj::Socket_selector& ss) {
+    void input_loop(lj::Client* dispatch, lj::Socket_selector& ss) {
         std::string script;
         while (std::cin.good())
         {
@@ -235,12 +234,11 @@ namespace {
 #endif
 };
 
-
 int main(int argc, char * const argv[]) {
     lj::Log::debug.disable();
     lj::Log::info.disable();
     
-    logjam::Send_bytes* sb = new logjam::Send_bytes();
+    lj::Client* sb = new lj::Client();
     lj::Socket_selector sl;
     
     sl.connect("127.0.0.1", 27754, sb);
@@ -248,19 +246,4 @@ int main(int argc, char * const argv[]) {
     input_loop(sb, sl);
     
     return 0;
-    
-    /*
-    lua_State *L = lua_open();
-    luaL_openlibs(L);
-    logjam::register_logjam_functions(L);
-    
-    if(argc > 1 && strcmp(argv[1], "-") == 0) {
-        read_from_cin(true, false, L);
-    } else {
-        input_loop(L);
-    }
-    
-    lua_close(L);
-    return 0;
-     */
 }

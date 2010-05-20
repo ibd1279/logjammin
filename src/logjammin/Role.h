@@ -34,7 +34,6 @@
 
 #include <string>
 #include <list>
-#include "Model.h"
 #include "lunar.h"
 
 namespace logjammin {
