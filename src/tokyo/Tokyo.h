@@ -46,7 +46,7 @@ extern "C" {
 #include <list>
 
 namespace tokyo {
-
+    
     //! Abstract DB Class.
     /*!
      \author Jason Watson
@@ -54,12 +54,9 @@ namespace tokyo {
      \date April 9, 2010
      */
     class DB {
-    protected:
-        DB();
     public:
-        
         //! Type for returned database values.
-        typedef std::pair<void *, size_t> value_t;
+        typedef std::pair<void*, size_t> value_t;
         
         //! Type for returned database lists.
         typedef std::list<value_t> list_value_t;
@@ -74,31 +71,31 @@ namespace tokyo {
          released with "free".
          \exception Exception Thrown on any error performing the action.
          */        
-        virtual value_t at(const void *key,
+        virtual value_t at(const void* key,
                            const size_t len) = 0;
         
         //! Place a value at a key.
-        virtual void place(const void *key,
+        virtual void place(const void* key,
                            const size_t key_len,
-                           const void * const val,
+                           const void* const val,
                            const size_t val_len) = 0;
         
         //! Place a value at a specific key only if no record exists.
-        virtual void place_if_absent(const void *key, 
+        virtual void place_if_absent(const void* key, 
                                      const size_t key_len, 
-                                     const void * const val, 
+                                     const void* const val, 
                                      const size_t val_len) = 0;
         
         //! Place or append a value at a specific key.
-        virtual void place_or_append(const void *key, 
+        virtual void place_or_append(const void* key, 
                                      const size_t key_len, 
-                                     const void * const val,
+                                     const void* const val,
                                      const size_t val_len) = 0;
         
         //! Remove the first record matching at a specific key.
-        virtual void remove(const void *key,
+        virtual void remove(const void* key,
                             const size_t len) = 0;
-                
+        
         //! Start the transaction.
         virtual void start_writes() = 0;
         
@@ -107,6 +104,8 @@ namespace tokyo {
         
         //! Rollback the transaction.
         virtual void abort_writes() = 0;
+    protected:
+        DB();
     };
     
     //! Abstract Searcher Class.
@@ -133,19 +132,28 @@ namespace tokyo {
         
         //! Index a document.
         virtual void index(const key_t key,
-                           const value_t &txt) = 0;
+                           const value_t& txt) = 0;
         
         //! Remove a document.
         virtual void remove(const key_t key,
-                            const value_t &txt) = 0;
+                            const value_t& txt) = 0;
         
         //! Search for a document.
-        virtual bool search(const std::string &query,
-                            set_key_t &results) = 0;
+        virtual bool search(const std::string& query,
+                            set_key_t& results) = 0;
     };
     
+    //! Hash DB Class.
+    /*!
+     \author Jason Watson
+     \version 1.0
+     \date May 9, 2010
+     */
     class Hash_db : public DB {
     public:
+        //! Type of the type function.
+        typedef void (*Tune_function_pointer)(TCHDB*, const void*);
+        
         //! Hash_db constructor
         /*!
          \par
@@ -157,9 +165,9 @@ namespace tokyo {
          */
         Hash_db(const std::string& filename,
                 const int mode,
-                void (*db_tune_func)(TCHDB*, const void*),
+                Tune_function_pointer db_tune_func,
                 const void* ptr);
-                
+        
         //! Hash_db Destructor
         virtual ~Hash_db();
         
@@ -216,32 +224,22 @@ namespace tokyo {
      \date April 9, 2010
      */
     class Tree_db : public DB {
-    private:
-        //! Tokyo Tree Database handle.
-        TCBDB *_db;
-        
-    protected:
-        //! Get the database handle.
-        /*!
-         \return The pointer to the database object.
-         */
-        inline TCBDB *db() {
-            return _db;
-        }
-        
     public:
+        //! Type of the type function.
+        typedef void (*Tune_function_pointer)(TCBDB*, const void*);
+        
         //! Tree DB Constructor.
-        Tree_db(const std::string &filename,
-               const int mode,
-               void (*db_tune_func)(TCBDB *, const void *),
-               const void *ptr);
+        Tree_db(const std::string& filename,
+                const int mode,
+                Tune_function_pointer db_tune_func,
+                const void* ptr);
         
         //! Tree DB Distructor.
         virtual ~Tree_db();
         
-        virtual value_t at(const void *key,
+        virtual value_t at(const void* key,
                            const size_t len);
-
+        
         //! Read all values together at a key.
         /*!
          \par
@@ -249,59 +247,59 @@ namespace tokyo {
          released with "free".
          \exception Exception Thrown on any error performing the action.
          */
-        virtual bool at_together(const void *key,
+        virtual bool at_together(const void* key,
                                  const size_t len,
-                                 list_value_t &results);
+                                 list_value_t& results);
         
-        virtual void place(const void *key,
+        virtual void place(const void* key,
                            const size_t key_len,
-                           const void * const val, 
+                           const void* const val, 
                            const size_t val_len);
         
         //! Place a value after any existing records at a specific key.
-        virtual void place_with_existing(const void *key,
+        virtual void place_with_existing(const void* key,
                                          const size_t key_len,
-                                         const void * const val,
+                                         const void* const val,
                                          const size_t val_len);
         
         //! Place a list of values together at a specific key.
-        virtual void place_together(const void *key,
+        virtual void place_together(const void* key,
                                     const size_t key_len,
-                                    const list_value_t &vals);
-        virtual void place_if_absent(const void *key, 
+                                    const list_value_t& vals);
+        virtual void place_if_absent(const void* key, 
                                      const size_t key_len, 
-                                     const void * const val,
+                                     const void* const val,
                                      const size_t val_len);
-        virtual void place_or_append(const void *key, 
+        virtual void place_or_append(const void* key, 
                                      const size_t key_len, 
-                                     const void * const val,
+                                     const void* const val,
                                      const size_t val_len);
         
-        virtual void remove(const void *key,
+        virtual void remove(const void* key,
                             const size_t len);
         
         //! Remove all records together at a specific key.
-        virtual void remove_together(const void *key,
+        virtual void remove_together(const void* key,
                                      const size_t len);
         
         //! Remove the provided record from the existing records.
-        virtual void remove_from_existing(const void *key,
+        virtual void remove_from_existing(const void* key,
                                           const size_t len,
-                                          const void * const val,
+                                          const void* const val,
                                           const size_t val_len);
         virtual void start_writes();
         virtual void save_writes();
         virtual void abort_writes();
         
         //! Get all of the values between a start and end key.
-        virtual bool at_range(const void *start,
+        virtual bool at_range(const void* start,
                               const size_t start_len,
                               const bool start_inc,
-                              const void *end,
+                              const void* end,
                               const size_t end_len,
                               const bool end_inc,
-                              list_value_t &results);
-                
+                              list_value_t& results);
+        
         //! Get the maximum key value in the DB.
         virtual value_t max_key();
         
@@ -309,15 +307,38 @@ namespace tokyo {
         virtual value_t min_key();
         
         //! Get the keys in the range between start and end.
-        virtual bool range_keys(const void *start,
+        virtual bool range_keys(const void* start,
                                 const size_t start_len,
                                 bool start_inc,
-                                const void *end,
+                                const void* end,
                                 const size_t end_len,
                                 bool end_inc,
-                                list_value_t &keys);
-    };
+                                list_value_t& keys);
+    protected:
+        //! Get the database handle.
+        /*!
+         \return The pointer to the database object.
+         */
+        inline TCBDB* db() {
+            return db_;
+        }
+    private:
+        //! Hiding to prevent use.
+        /*!
+         \param o Other.
+         */
+        Tree_db(const Tree_db& o);
         
+        //! Hiding to prevent use.
+        /*!
+         \param o Other.
+         */
+        Tree_db& operator=(const Tree_db& o);
+        
+        //! Tokyo Tree Database handle.
+        TCBDB *db_;
+    };
+    
     //! Full text searcher.
     /*!
      Wraps a Tokyo Dystopia full text index object.
@@ -336,10 +357,13 @@ namespace tokyo {
         }
         
     public:
+        //! Type of the type function.
+        typedef void (*Tune_function_pointer)(TCQDB*, const void*);
+        
         //! Create a new searcher.
         TextSearcher(const std::string &filename,
                      const int mode,
-                     void (*db_tune_func)(TCQDB *, const void *),
+                     Tune_function_pointer db_tune_func,
                      const void *ptr);
         virtual ~TextSearcher();
         virtual void index(const key_t key,
@@ -373,13 +397,16 @@ namespace tokyo {
         }
         
     public:
+        //! Type of the type function.
+        typedef void (*Tune_function_pointer)(TCWDB*, const void*);
+        
         //! Type of lists of values.
         typedef std::set<value_t> set_value_t;
         
         //! Crete a new Tag Searcher.
         TagSearcher(const std::string &filename,
                     const int mode,
-                    void (*db_tune_func)(TCWDB *, const void *),
+                    Tune_function_pointer db_tune_func,
                     const void *ptr);
         virtual ~TagSearcher();
         virtual void index(const key_t key,
@@ -388,14 +415,14 @@ namespace tokyo {
                             const value_t &txt);
         virtual bool search(const std::string &query,
                             set_key_t &results);
-
+        
         //! index a key to multiple words/phrases.
         virtual void index(const key_t key,
                            const set_value_t &words);
         //! remove a key from multiple words/phrases.
         virtual void remove(const key_t key,
                             const set_value_t &words);
-
+        
         //! optimize the server db.
         void optimize();
         

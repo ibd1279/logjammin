@@ -695,11 +695,11 @@ namespace lj
             // XXX config other things like compression type.
         }
         
-        template<typename T, typename Q>
+        template<typename T>
         void open_storage_index(const std::string& dir,
                                 const Linked_map<std::string, Bson*>& cfg,
                                 int open_flags,
-                                void (*tune_function)(Q*, const void*),
+                                typename T::Tune_function_pointer tune_function,
                                 std::map<std::string, T*>& dest)
         {
             for (Linked_map<std::string, Bson*>::const_iterator iter = cfg.begin();
@@ -752,32 +752,32 @@ namespace lj
                                  cfg->path("main"));
         
         Log::info.log("Opening tree indices under [%s].") << directory_ << Log::end;
-        open_storage_index<tokyo::Tree_db, TCBDB>(directory_,
-                                                  cfg->nav("index/tree").to_map(),
-                                                  BDBOREADER | BDBOWRITER | BDBOCREAT,
-                                                  &storage_tree_cfg,
-                                                  fields_tree_);
+        open_storage_index<tokyo::Tree_db>(directory_,
+                                           cfg->nav("index/tree").to_map(),
+                                           BDBOREADER | BDBOWRITER | BDBOCREAT,
+                                           &storage_tree_cfg,
+                                           fields_tree_);
         
         Log::info.log("Opening hash indices under [%s].") << directory_ << Log::end;
-        open_storage_index<tokyo::Hash_db, TCHDB>(directory_,
-                                                  cfg->nav("index/hash").to_map(),
-                                                  HDBOREADER | HDBOWRITER | HDBOCREAT,
-                                                  &storage_hash_cfg,
-                                                  fields_hash_);
+        open_storage_index<tokyo::Hash_db>(directory_,
+                                           cfg->nav("index/hash").to_map(),
+                                           HDBOREADER | HDBOWRITER | HDBOCREAT,
+                                           &storage_hash_cfg,
+                                           fields_hash_);
         
         Log::info.log("Opening text indices under [%s].") << directory_ << Log::end;
-        open_storage_index<TextSearcher, TCQDB>(directory_,
-                                                cfg->nav("index/text").to_map(),
-                                                QDBOREADER | QDBOWRITER | QDBOCREAT,
-                                                &storage_text_cfg,
-                                                fields_text_);
+        open_storage_index<TextSearcher>(directory_,
+                                         cfg->nav("index/text").to_map(),
+                                         QDBOREADER | QDBOWRITER | QDBOCREAT,
+                                         &storage_text_cfg,
+                                         fields_text_);
         
         Log::info.log("Opening tag indices under [%s].") << directory_ << Log::end;
-        open_storage_index<TagSearcher, TCWDB>(directory_,
-                                               cfg->nav("index/tag").to_map(),
-                                               WDBOREADER | WDBOWRITER | WDBOCREAT,
-                                               &storage_tag_cfg,
-                                               fields_tag_);
+        open_storage_index<TagSearcher>(directory_,
+                                        cfg->nav("index/tag").to_map(),
+                                        WDBOREADER | WDBOWRITER | WDBOCREAT,
+                                        &storage_tag_cfg,
+                                        fields_tag_);
         
         Log::info.log("Registering nested indexing from [%s].") << directory_ << Log::end;
         Bson *nested_fields = cfg->path("main/nested");

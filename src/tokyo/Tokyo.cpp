@@ -72,7 +72,7 @@ namespace tokyo
     //=====================================================================
     Hash_db::Hash_db(const std::string& filename,
                      const int mode,
-                     void (*db_tune_func)(TCHDB*, const void*),
+                     Hash_db::Tune_function_pointer db_tune_func,
                      const void* ptr)
     {
         db_ = tchdbnew();
@@ -171,67 +171,82 @@ namespace tokyo
     //=====================================================================
     
     Tree_db::Tree_db(const std::string &filename,
-                   const int mode,
-                   void (*db_tune_func)(TCBDB *, const void *),
-                   const void *ptr) {
-        _db = tcbdbnew();
-        if(db_tune_func)
+                     const int mode,
+                     Tree_db::Tune_function_pointer db_tune_func,
+                     const void *ptr)
+    {
+        db_ = tcbdbnew();
+        if (db_tune_func)
+        {
             (*db_tune_func)(db(), ptr);
+        }
         tcbdbopen(db(), filename.c_str(), mode);
     }
     
-    Tree_db::~Tree_db() {
-        tcbdbclose(_db);
-        tcbdbdel(_db);
-        _db = 0;
+    Tree_db::~Tree_db()
+    {
+        tcbdbclose(db_);
+        tcbdbdel(db_);
+        db_ = 0;
     }
     
-    DB::value_t Tree_db::at(const void *key, const size_t len) {
+    DB::value_t Tree_db::at(const void* key, const size_t len)
+    {
         int sz = 0;
-        void *ptr = tcbdbget(db(), key, len, &sz);
-        if(!ptr || !sz)
+        void* ptr = tcbdbget(db(), key, len, &sz);
+        if (!ptr || !sz)
+        {
             ptr = 0;
+        }
         return value_t(ptr, sz);
     }
     
-    bool Tree_db::at_together(const void *key,
-                             const size_t len,
-                             list_value_t &results) {
-        TCLIST *ptr = tcbdbget4(db(), key, len);
-        if(!ptr) {
+    bool Tree_db::at_together(const void* key,
+                              const size_t len,
+                              list_value_t& results)
+    {
+        TCLIST* ptr = tcbdbget4(db(), key, len);
+        if (!ptr)
+        {
             return false;
         }
         
-        void *item;
+        void* item;
         int sz;
-        while(tclistnum(ptr)) {
+        while (tclistnum(ptr))
+        {
             item = tclistshift(ptr, &sz);
-            if(!item || !sz)
+            if (!item || !sz)
+            {
                 continue;
+            }
             results.push_back(value_t(item,sz));
         }
         tclistdel(ptr);
         return true;
     }
     
-    bool Tree_db::at_range(const void *start,
-                          const size_t start_len,
-                          const bool start_inc,
-                          const void *end,
-                          const size_t end_len,
-                          const bool end_inc,
-                          list_value_t &results) {
+    bool Tree_db::at_range(const void* start,
+                           const size_t start_len,
+                           const bool start_inc,
+                           const void* end,
+                           const size_t end_len,
+                           const bool end_inc,
+                           list_value_t& results)
+    {
         list_value_t keys;
-        if(range_keys(start,
-                      start_len,
-                      start_inc,
-                      end,
-                      end_len,
-                      end_inc,
-                      keys)) {
-            for(list_value_t::const_iterator iter = keys.begin();
-                iter != keys.end();
-                ++iter) {
+        if (range_keys(start,
+                       start_len,
+                       start_inc,
+                       end,
+                       end_len,
+                       end_inc,
+                       keys))
+        {
+            for (list_value_t::const_iterator iter = keys.begin();
+                 keys.end() != iter;
+                 ++iter)
+            {
                 at_together(iter->first, iter->second, results);
                 free(iter->first);
             }
@@ -240,72 +255,95 @@ namespace tokyo
         return false;
     }
     
-    void Tree_db::place(const void *key,
-                       const size_t key_len,
-                       const void * const val, 
-                       const size_t val_len) {
-        if(!tcbdbput(db(), key, key_len, val, val_len))
+    void Tree_db::place(const void* key,
+                        const size_t key_len,
+                        const void* const val, 
+                        const size_t val_len)
+    {
+        if (!tcbdbput(db(), key, key_len, val, val_len))
+        {
             throw new Exception("DBerror", tcbdberrmsg(tcbdbecode(db())));
+        }
     }
     
-    void Tree_db::place_with_existing(const void *key,
-                                     const size_t key_len,
-                                     const void * const val,
-                                     const size_t val_len) {
-        if(!tcbdbputdup(db(), key, key_len, val, val_len))
+    void Tree_db::place_with_existing(const void* key,
+                                      const size_t key_len,
+                                      const void* const val,
+                                      const size_t val_len)
+    {
+        if (!tcbdbputdup(db(), key, key_len, val, val_len))
+        {
             throw new Exception("DBerror", tcbdberrmsg(tcbdbecode(db())));
+        }
     }
     
-    void Tree_db::place_together(const void *key,
-                                const size_t key_len,
-                                const list_value_t &vals) {
+    void Tree_db::place_together(const void* key,
+                                 const size_t key_len,
+                                 const list_value_t& vals)
+    {
         // XXX This should probably be modified to build a TCLIST, then call
         // a different method.
-        for(list_value_t::const_iterator val = vals.begin();
-            val != vals.end();
-            ++val) {
+        for (list_value_t::const_iterator val = vals.begin();
+             vals.end() != val;
+             ++val)
+        {
             place_with_existing(key, key_len, val->first, val->second);
         }
     }
     
-    void Tree_db::place_if_absent(const void *key, 
-                                 const size_t key_len, 
-                                 const void * const val,
-                                 const size_t val_len) {
-        if(!tcbdbputkeep(db(), key, key_len, val, val_len))
+    void Tree_db::place_if_absent(const void* key, 
+                                  const size_t key_len, 
+                                  const void* const val,
+                                  const size_t val_len)
+    {
+        if (!tcbdbputkeep(db(), key, key_len, val, val_len))
+        {
             throw new Exception("DBerror", tcbdberrmsg(tcbdbecode(db())));
+        }
     }
     
-    void Tree_db::place_or_append(const void *key, 
-                                 const size_t key_len, 
-                                 const void * const val,
-                                 const size_t val_len) {
-        if(!tcbdbputcat(db(), key, key_len, val, val_len))
+    void Tree_db::place_or_append(const void* key, 
+                                  const size_t key_len, 
+                                  const void* const val,
+                                  const size_t val_len)
+    {
+        if (!tcbdbputcat(db(), key, key_len, val, val_len))
+        {
             throw new Exception("DBerror", tcbdberrmsg(tcbdbecode(db())));
+        }
     }
     
-    void Tree_db::remove(const void *key, const size_t len) {
-        if(!tcbdbout(db(), key, len))
+    void Tree_db::remove(const void* key, const size_t len)
+    {
+        if (!tcbdbout(db(), key, len))
+        {
             throw new Exception("DBerror", tcbdberrmsg(tcbdbecode(db())));
+        }
     }
     
-    void Tree_db::remove_together(const void *key, const size_t len) {
+    void Tree_db::remove_together(const void* key, const size_t len)
+    {
         if(!tcbdbout3(db(), key, len))
+        {
             throw new Exception("DBerror", tcbdberrmsg(tcbdbecode(db())));
+        }
     }
     
-    void Tree_db::remove_from_existing(const void *key,
-                                      const size_t len,
-                                      const void * const val,
-                                      const size_t val_len) {
+    void Tree_db::remove_from_existing(const void* key,
+                                       const size_t len,
+                                       const void* const val,
+                                       const size_t val_len)
+    {
         list_value_t values;
         at_together(key, len, values);
         
         bool rewrite = false;
-        for(list_value_t::iterator iter = values.begin();
-            iter != values.end();
-            ++iter) {
-            if(arrays_equal(val, val_len, iter->first, iter->second)) {
+        for (list_value_t::iterator iter = values.begin();
+             values.end() != iter;
+             ++iter)
+        {
+            if (arrays_equal(val, val_len, iter->first, iter->second))
+            {
                 free(iter->first);
                 values.erase(iter);
                 rewrite = true;
@@ -313,78 +351,98 @@ namespace tokyo
             }
         }
         
-        if(rewrite) {
+        if (rewrite)
+        {
             remove_together(key, len);
             place_together(key, len, values);
         }
         
-        for(list_value_t::const_iterator iter = values.begin();
-            iter != values.end();
-            ++iter) {
+        for (list_value_t::const_iterator iter = values.begin();
+             values.end() != iter;
+             ++iter)
+        {
             free(iter->first);
         }
     }
     
-    void Tree_db::start_writes() {
-        if(!tcbdbtranbegin(db()))
+    void Tree_db::start_writes()
+    {
+        if (!tcbdbtranbegin(db()))
+        {
             throw new Exception("DB error", tcbdberrmsg(tcbdbecode(db())));
+        }
     }
     
-    void Tree_db::save_writes() {
-        if(!tcbdbtrancommit(db()))
+    void Tree_db::save_writes()
+    {
+        if (!tcbdbtrancommit(db()))
+        {
             throw new Exception("DB error", tcbdberrmsg(tcbdbecode(db())));
+        }
     }
     
-    void Tree_db::abort_writes() {
-        if(!tcbdbtranabort(db()))
+    void Tree_db::abort_writes()
+    {
+        if (!tcbdbtranabort(db()))
+        {
             throw new Exception("DB error", tcbdberrmsg(tcbdbecode(db())));
+        }
     }
     
-    DB::value_t Tree_db::max_key() {
-        BDBCUR *cur = tcbdbcurnew(db());
-        if(!tcbdbcurlast(cur)) {
+    DB::value_t Tree_db::max_key()
+    {
+        BDBCUR* cur = tcbdbcurnew(db());
+        if (!tcbdbcurlast(cur))
+        {
             tcbdbcurdel(cur);
-            unsigned long long *ptr = (unsigned long long *)malloc(sizeof(unsigned long long));
+            unsigned long long* ptr = (unsigned long long*)malloc(sizeof(unsigned long long));
             *ptr = 0;
             return value_t(ptr, sizeof(unsigned long long));
         }
         
         int sz = 0;
-        void *ptr = tcbdbcurkey(cur, &sz);
+        void* ptr = tcbdbcurkey(cur, &sz);
         tcbdbcurdel(cur);
-        if(!ptr || !sz)
+        if (!ptr || !sz)
+        {
             throw new Exception("DB error", tcbdberrmsg(tcbdbecode(db())));
+        }
         
         return value_t(ptr, sz);
     }
     
-    DB::value_t Tree_db::min_key() {
-        BDBCUR *cur = tcbdbcurnew(db());
-        if(!tcbdbcurfirst(cur)) {
+    DB::value_t Tree_db::min_key()
+    {
+        BDBCUR* cur = tcbdbcurnew(db());
+        if (!tcbdbcurfirst(cur))
+        {
             tcbdbcurdel(cur);
-            unsigned long long *ptr = (unsigned long long *)malloc(sizeof(unsigned long long));
+            unsigned long long*ptr = (unsigned long long*)malloc(sizeof(unsigned long long));
             *ptr = 0;
             return value_t(ptr, sizeof(unsigned long long));
         }
         
         int sz = 0;
-        void *ptr = tcbdbcurkey(cur, &sz);
+        void* ptr = tcbdbcurkey(cur, &sz);
         tcbdbcurdel(cur);
         
         if(!ptr || !sz)
+        {
             throw new Exception("DB error", tcbdberrmsg(tcbdbecode(db())));
+        }
         
         return value_t(ptr, sz);
     }
     
-    bool Tree_db::range_keys(const void *start,
-                            const size_t start_len,
-                            const bool start_inc,
-                            const void *end,
-                            const size_t end_len,
-                            const bool end_inc,
-                            list_value_t &keys) {
-        TCLIST *ptr = tcbdbrange(db(),
+    bool Tree_db::range_keys(const void* start,
+                             const size_t start_len,
+                             const bool start_inc,
+                             const void* end,
+                             const size_t end_len,
+                             const bool end_inc,
+                             list_value_t& keys)
+    {
+        TCLIST* ptr = tcbdbrange(db(),
                                  start,
                                  start_len,
                                  start_inc,
@@ -392,16 +450,20 @@ namespace tokyo
                                  end_len,
                                  end_inc,
                                  -1);
-        if(!ptr) {
+        if (!ptr)
+        {
             return false;
         }
         
         void *key;
         int key_sz;
-        while(tclistnum(ptr)) {
+        while (tclistnum(ptr))
+        {
             key = tclistshift(ptr, &key_sz);
-            if(!key || !key_sz)
+            if (!key || !key_sz)
+            {
                 continue;
+            }
             keys.push_back(value_t(key, key_sz));
         }
         tclistdel(ptr);
@@ -414,7 +476,7 @@ namespace tokyo
     
     TextSearcher::TextSearcher(const std::string &filename,
                                const int mode,
-                               void (*db_tune_func)(TCQDB *, const void *),
+                               TextSearcher::Tune_function_pointer db_tune_func,
                                const void *ptr) {
         _db = tcqdbnew();
         if(db_tune_func)
@@ -470,7 +532,7 @@ namespace tokyo
     
     TagSearcher::TagSearcher(const std::string &filename,
                              const int mode,
-                             void (*db_tune_func)(TCWDB *, const void *),
+                             TagSearcher::Tune_function_pointer db_tune_func,
                              const void *ptr) {
         _db = tcwdbnew();
         if(db_tune_func)
