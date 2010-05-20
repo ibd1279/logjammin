@@ -1,7 +1,7 @@
 #pragma once
 /*!
  \file Logger.h
- \brief LJ logging header.
+ \brief LJ Logger header.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.

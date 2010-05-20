@@ -1,6 +1,7 @@
+#pragma once
 /*!
- \file logjamd_net.h
- \brief Logjam server networking header.
+ \file Exception.h
+ \brief LJ Exception header and implementation.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -32,27 +33,64 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "Sockets.h"
 #include <string>
-#include "Bson.h"
-#include "lunar.h"
 
-namespace logjamd
-{    
-    class Service_dispatch : public lj::Socket_dispatch {
+/*!
+ \namespace lj
+ \brief The lj utility classes.
+ Default functionality shared across all logjam* applications
+ */
+namespace lj
+{
+    //! Exception base class.
+    /*!
+     \par
+     Bubble up Exception type for exceptions in logjam.
+     \author Jason Watson
+     \version 1.0
+     \date July 3, 2009
+     */
+    class Exception {
     public:
-        Service_dispatch();
-        virtual ~Service_dispatch();
-        virtual lj::Socket_dispatch* accept(int socket, char* buffer);
-        virtual void read(const char* buffer, int sz);
-    private:
-        void logic(lj::Bson& b);
+        //! Create a new exception object.
+        /*!
+         \param lbl The type of exception.
+         \param msg Exception message.
+         */
+        Exception(const std::string& lbl, const std::string& msg) : msg_(msg), label_(lbl)
+        {
+        }
         
-        std::string ip_;
-        char * in_;
-        int in_offset_;
-        int in_sz_;
-        bool in_post_length_;
-        lua_State* lua_;
+        //! Destructor
+        virtual ~Exception()
+        {
+        }
+        
+        //! Convert the exception to a string.
+        /*!
+         \return String for the exception.
+         */
+        std::string to_string() const
+        {
+            return std::string(label_).append(": ").append(msg_);
+        }
+    private:
+        //! Declared to disable copying.
+        /*!
+         \param o Other.
+         */
+        Exception(const Exception& o);
+        
+        //! Declared to disable copying.
+        /*!
+         \param o Other.
+         */
+        Exception& operator=(const Exception& o);
+        
+        //! Exception message.
+        std::string msg_;
+        
+        //! Exception label.
+        std::string label_;
     };
-};
+}; // namespace lj

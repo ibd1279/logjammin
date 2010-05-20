@@ -1,7 +1,7 @@
 #pragma once
 /*!
  \file Bson.h
- \brief Bson header file.
+ \brief LJ Bson header.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -33,14 +33,10 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <list>
-#include <map>
+#include "lj/Exception.h"
+#include "lj/Linked_map.h"
 #include <set>
 #include <string>
-#include <vector>
-#include <sstream>
-#include "LinkedMap.h"
-#include "Exception.h"
 
 namespace lj
 {

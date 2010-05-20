@@ -33,8 +33,9 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "Tokyo.h"
-#include "Bson.h"
+#include "lj/Bson.h"
+#include "tokyo/Tokyo.h"
+
 #include <list>
 #include <map>
 #include <memory>

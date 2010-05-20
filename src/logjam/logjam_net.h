@@ -1,6 +1,6 @@
 /*!
- \file logjamd.cpp
- \brief Logjam Server Executable
+ \file logjam_net.h
+ \brief Logjam client networking code.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -32,24 +32,31 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjamd_net.h"
-#include "Logger.h"
+#include "lj/Sockets.h"
 
-int main(int argc, char * const argv[]) {
-    lj::Log::debug.disable();
-    lj::Log::info.enable();
-    
-    lj::Socket_selector sl;
-    
-    try
-    {
-        sl.bind_port(27754, new logjamd::Service_dispatch());
-        sl.loop();
-    }
-    catch(lj::Exception* e)
-    {
-        std::cerr << e->to_string() << std::endl;
-    }
-
-    return 0;
+namespace lj
+{
+    class Bson;
 }
+
+namespace logjam
+{    
+    class Send_bytes : public lj::Socket_dispatch {
+    public:
+        Send_bytes();
+        virtual ~Send_bytes();
+        virtual lj::Socket_dispatch* accept(int socket, char* buffer);
+        virtual void read(const char* buffer, int sz);
+        lj::Bson* response()
+        {
+            return response_;
+        }
+        void clear();
+    private:
+        char * in_;
+        int in_offset_;
+        int in_sz_;
+        bool in_post_length_;
+        lj::Bson* response_;
+    };
+};

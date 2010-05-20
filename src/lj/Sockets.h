@@ -1,7 +1,7 @@
 #pragma once
 /*!
  \file Sockets.h
- \brief LJ networking header
+ \brief LJ Socket_selector header
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.

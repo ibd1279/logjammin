@@ -32,10 +32,13 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "logjam/logjam_net.h"
+
+#include "lj/Logger.h"
+#include "lj/Bson.h"
+
 #include <sstream>
 #include <list>
-#include "Logger.h"
-#include "logjam_net.h"
 
 namespace logjam
 {
@@ -112,6 +115,15 @@ namespace logjam
         if (sz - read_offset)
         {
             read(buffer + read_offset, sz - read_offset);
+        }
+    }
+    
+    void Send_bytes::clear()
+    {
+        if (response_)
+        {
+            delete response_;
+            response_ = 0;
         }
     }    
 }; // namespace logjamd

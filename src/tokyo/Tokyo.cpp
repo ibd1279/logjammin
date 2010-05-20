@@ -31,8 +31,7 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "build/default/config.h"
-#include "Tokyo.h"
+#include "tokyo/Tokyo.h"
 
 using lj::Exception;
 

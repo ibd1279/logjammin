@@ -1,7 +1,7 @@
 #pragma once
 /*!
- \file LinkedMap.h
- \brief Linked map implementation.
+ \file Linked_map.h
+ \brief LJ Linked_map header and implementation.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.

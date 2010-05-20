@@ -31,11 +31,11 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "lj/Storage.h"
+
 #include "build/default/config.h"
-#include <iostream>
-#include "Storage.h"
-#include "Exception.h"
-#include "Logger.h"
+#include "lj/Exception.h"
+#include "lj/Logger.h"
 
 using tokyo::Hash_db;
 using tokyo::Tree_db;

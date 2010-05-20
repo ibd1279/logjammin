@@ -32,14 +32,16 @@
  */
 
 
+#include "logjam/logjam_net.h"
+
+#include "lj/Bson.h"
+#include "lj/Logger.h"
 #include "build/default/config.h"
+
 #include <iostream>
 #include <cstdlib>
 #include <cstdio>
 #include <fstream>
-#include "logjam_net.h"
-#include "Bson.h"
-#include "Logger.h"
 
 #ifdef HAVE_EDITLINE
 #include <histedit.h>

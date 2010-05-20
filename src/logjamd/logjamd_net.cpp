@@ -32,16 +32,18 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "logjamd/logjamd_net.h"
+
+#include "logjamd/logjamd_lua.h"
+#include "lj/Bson.h"
+#include "lj/Logger.h"
+
 extern "C" {
 #include "lualib.h"
 }
 #include <sstream>
 #include <list>
 #include <sys/time.h>
-#include "Bson.h"
-#include "Logger.h"
-#include "logjamd_lua.h"
-#include "logjamd_net.h"
 
 namespace logjamd
 {

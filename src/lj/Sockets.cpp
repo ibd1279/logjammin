@@ -1,6 +1,6 @@
 /*!
  \file Sockets.cpp
- \brief LJ networking implementation.
+ \brief LJ Socket_selector header
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -32,15 +32,17 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <sstream>
-#include <cerrno>
-#include <sys/socket.h>
-#include <netdb.h>
+#include "lj/Sockets.h"
+
+#include "lj/Exception.h"
+#include "lj/Logger.h"
+
 #include <arpa/inet.h>
+#include <cerrno>
 #include <list>
-#include "Exception.h"
-#include "Logger.h"
-#include "Sockets.h"
+#include <netdb.h>
+#include <sstream>
+#include <sys/socket.h>
 
 namespace
 {

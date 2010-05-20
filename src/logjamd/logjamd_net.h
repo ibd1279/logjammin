@@ -1,7 +1,6 @@
-#pragma once
 /*!
- \file Exception.h
- \brief LJ exception header.
+ \file logjamd_net.h
+ \brief Logjam server networking header.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -33,64 +32,27 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "lj/Sockets.h"
+#include "lj/Bson.h"
+#include "lj/lunar.h"
 #include <string>
 
-/*!
- \namespace lj
- \brief The lj utility classes.
- Default functionality shared across all logjam* applications
- */
-namespace lj
-{
-    //! Exception base class.
-    /*!
-     \par
-     Bubble up Exception type for exceptions in logjam.
-     \author Jason Watson
-     \version 1.0
-     \date July 3, 2009
-     */
-    class Exception {
+namespace logjamd
+{    
+    class Service_dispatch : public lj::Socket_dispatch {
     public:
-        //! Create a new exception object.
-        /*!
-         \param lbl The type of exception.
-         \param msg Exception message.
-         */
-        Exception(const std::string& lbl, const std::string& msg) : msg_(msg), label_(lbl)
-        {
-        }
-        
-        //! Destructor
-        virtual ~Exception()
-        {
-        }
-        
-        //! Convert the exception to a string.
-        /*!
-         \return String for the exception.
-         */
-        std::string to_string() const
-        {
-            return std::string(label_).append(": ").append(msg_);
-        }
+        Service_dispatch();
+        virtual ~Service_dispatch();
+        virtual lj::Socket_dispatch* accept(int socket, char* buffer);
+        virtual void read(const char* buffer, int sz);
     private:
-        //! Declared to disable copying.
-        /*!
-         \param o Other.
-         */
-        Exception(const Exception& o);
+        void logic(lj::Bson& b);
         
-        //! Declared to disable copying.
-        /*!
-         \param o Other.
-         */
-        Exception& operator=(const Exception& o);
-        
-        //! Exception message.
-        std::string msg_;
-        
-        //! Exception label.
-        std::string label_;
+        std::string ip_;
+        char * in_;
+        int in_offset_;
+        int in_sz_;
+        bool in_post_length_;
+        lua_State* lua_;
     };
-}; // namespace lj
+};

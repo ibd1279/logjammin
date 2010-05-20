@@ -32,10 +32,11 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "lj/Bson.h"
+#include "lj/lunar.h"
+#include "lj/Storage.h"
+
 #include <map>
-#include "lunar.h"
-#include "Bson.h"
-#include "Storage.h"
 
 namespace logjamd {
     void register_logjam_functions(lua_State *L);

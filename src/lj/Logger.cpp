@@ -1,6 +1,6 @@
 /*!
  \file Logger.cpp
- \brief LJ logging implementation.
+ \brief LJ Logger implementation.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -32,12 +32,13 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "Logger.h"
+#include "lj/Logger.h"
+
 #include <cstdarg>
 #include <cstdio>
+#include <iostream>
 #include <list>
 #include <memory>
-#include <iostream>
 #include <sstream>
 
 lj::Log lj::Log::emergency(lj::Log::level_emergency, &std::cerr);

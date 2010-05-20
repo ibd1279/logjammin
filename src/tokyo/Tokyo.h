@@ -33,6 +33,8 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "lj/Exception.h"
+
 extern "C" {
 #include <tcutil.h>
 #include <tcbdb.h>
@@ -42,7 +44,6 @@ extern "C" {
 #include <set>
 #include <string>
 #include <list>
-#include "Exception.h"
 
 namespace tokyo {
 

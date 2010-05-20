@@ -52,20 +52,22 @@ def build(ctx):
     logjamd = ctx(
         features = ['cxx', 'cprogram']
         ,source = [
-                'Tokyo.cpp'
-                ,'Logger.cpp'
-                ,'Sockets.cpp'
-                ,'Bson.cpp'
-                ,'Storage.cpp'
-                ,'logjamd_net.cpp'
-                ,'logjamd_lua.cpp'
-                ,'logjamd.cpp'
+                'src/tokyo/Tokyo.cpp'
+                ,'src/lj/Logger.cpp'
+                ,'src/lj/Sockets.cpp'
+                ,'src/lj/Bson.cpp'
+                ,'src/lj/Storage.cpp'
+                ,'src/logjamd/logjamd_net.cpp'
+                ,'src/logjamd/logjamd_lua.cpp'
+                ,'src/logjamd/logjamd.cpp'
                 ]
         ,target = 'logjamd'
         ,vnum = ctx.env.vnum
-        ,includes = ['.'
-                ,'/usr/local/include/'
-                ,'/opt/local/include/'
+        ,includes = [
+                '.'
+                ,'./src'
+                ,'/usr/local/include'
+                ,'/opt/local/include'
                 ,'/usr/include']
         ,cxxflags = ['-O0', '-Wall', '-g']
         ,lib = ['lua']
@@ -77,21 +79,23 @@ def build(ctx):
     logjam = ctx(
         features = ['cxx', 'cprogram']
         ,source = [
-                'Logger.cpp'
-                ,'Sockets.cpp'
-                ,'Bson.cpp'
-                ,'logjam_net.cpp'
-                ,'logjam.cpp'
+                'src/lj/Logger.cpp'
+                ,'src/lj/Sockets.cpp'
+                ,'src/lj/Bson.cpp'
+                ,'src/logjam/logjam_net.cpp'
+                ,'src/logjam/logjam.cpp'
                 ]
         ,target = 'logjam'
         ,vnum = ctx.env.vnum
-        ,includes = ['.'
-                ,'/usr/local/include/'
-                ,'/opt/local/include/'
+        ,includes = [
+                '.'
+                ,'./src'
+                ,'/usr/local/include'
+                ,'/opt/local/include'
                 ,'/usr/include']
         ,cxxflags = ['-O0', '-Wall', '-g']
         ,lib = ['lua']
         ,libpath = ['/usr/local/lib/', '/opt/local/lib/', '/usr/lib']
         ,linkflags = ['-g']
-        ,uselib = ['HISTEDIT.H','TCUTIL.H', 'DYSTOPIA.H']
+        ,uselib = ['HISTEDIT.H']
     )

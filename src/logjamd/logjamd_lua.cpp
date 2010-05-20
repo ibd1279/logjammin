@@ -32,13 +32,14 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "logjamd/logjamd_lua.h"
+#include "lj/Logger.h"
 #include "build/default/config.h"
+
 #include <string>
 #include <sstream>
-#include "logjamd_lua.h"
-#include "Logger.h"
 
-// This should be moved somewhere for portability.
+// XXX This should be moved somewhere for portability.
 #include <cerrno>
 #include <sys/types.h>
 #include <sys/stat.h>

@@ -1,5 +1,6 @@
 /*!
  \file Bson.cpp
+ \brief LJ Bson implementation.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -31,13 +32,12 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "build/default/config.h"
-#include "Bson.h"
-#include "Exception.h"
+#include "lj/Bson.h"
+
 #include <cstring>
-#include <sstream>
-#include <iostream>
 #include <fstream>
+#include <list>
+#include <sstream>
 
 namespace lj {
     namespace {
