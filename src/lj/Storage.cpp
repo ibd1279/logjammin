@@ -71,7 +71,7 @@ namespace lj
          \param b The second set.
          \return A newly created set.
          */
-        template<typename T, typename Q>
+        template<typename T>
         T *operate_on_sets(const Record_set::Operation op,
                            const T& a,
                            const T& b)
@@ -79,11 +79,11 @@ namespace lj
             const T* small = (a.size() < b.size()) ? &a : &b;
             const T* big = (a.size() < b.size()) ? &b : &a;
             T* rs = new T();
-            Q inserted_at = rs->begin();
+            typename T::iterator inserted_at = rs->begin();
             switch (op)
             {
                 case Record_set::k_intersection:
-                    for (Q iter = small->begin();
+                    for (typename T::const_iterator iter = small->begin();
                          small->end() != iter;
                          ++iter)
                     {
@@ -98,7 +98,7 @@ namespace lj
                     rs->insert(small->begin(), small->end());
                     break;
                 case Record_set::k_symmetric_difference:
-                    for (Q iter = b.begin();
+                    for (typename T::const_iterator iter = b.begin();
                          b.end() != iter;
                          ++iter)
                     {
@@ -110,7 +110,7 @@ namespace lj
                     inserted_at = rs->begin();
                     // fall through.
                 case Record_set::k_complement:
-                    for (Q iter = a.begin();
+                    for (typename T::const_iterator iter = a.begin();
                          a.end() != iter;
                          ++iter)
                     {
@@ -225,7 +225,7 @@ namespace lj
                 
                 std::set<unsigned long long> storage_keys;
                 dbvalue_to_storagekey(db_values, storage_keys);
-                std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, storage_keys);
+                std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long> >(op_, *keys_, storage_keys);
                 Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
                 return std::auto_ptr<Record_set>(new Standard_record_set(storage_, output, op_));
             }
@@ -256,7 +256,7 @@ namespace lj
                 
                 std::set<unsigned long long> storage_keys;
                 dbvalue_to_storagekey(db_values, storage_keys);
-                std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, storage_keys);
+                std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long> >(op_, *keys_, storage_keys);
                 Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
                 return std::auto_ptr<Record_set>(new Standard_record_set(storage_, output, op_));
             }    
@@ -287,7 +287,7 @@ namespace lj
                 
                 std::set<unsigned long long> storage_keys;
                 dbvalue_to_storagekey(db_values, storage_keys);
-                std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, storage_keys);
+                std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long> >(op_, *keys_, storage_keys);
                 Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
                 return std::auto_ptr<Record_set>(new Standard_record_set(storage_, output, op_));
             }
@@ -308,7 +308,7 @@ namespace lj
                     return std::auto_ptr<Record_set>(new Standard_record_set(*this));
                 }
                 
-                std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, searcher_values);
+                std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long> >(op_, *keys_, searcher_values);
                 Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
                 return std::auto_ptr<Record_set>(new Standard_record_set(storage_, output, op_));
             }
@@ -329,7 +329,7 @@ namespace lj
                     return std::auto_ptr<Record_set>(new Standard_record_set(*this));
                 }
                 
-                std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long>, std::set<unsigned long long>::const_iterator>(op_, *keys_, searcher_values);
+                std::set<unsigned long long>* output = operate_on_sets<std::set<unsigned long long> >(op_, *keys_, searcher_values);
                 Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
                 return std::auto_ptr<Record_set>(new Standard_record_set(storage_, output, op_));
             }
