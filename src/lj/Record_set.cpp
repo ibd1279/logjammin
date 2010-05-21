@@ -2,6 +2,7 @@
  \file Record_set.cpp
  \brief LJ Record_set implementation.
  \author Jason Watson
+ 
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  
@@ -41,7 +42,8 @@ namespace lj {
     {
         return s->db_;
     }
-    tokyo::Tree_db* Record_set::storage_tree(const Storage* s, const std::string& indx)
+    tokyo::Tree_db* Record_set::storage_tree(const Storage* s,
+                                             const std::string& indx)
     {
         std::map<std::string, tokyo::Tree_db*>::const_iterator i = s->fields_tree_.find(indx);
         if (s->fields_tree_.end() == i)
@@ -50,7 +52,8 @@ namespace lj {
         }
         return (*i).second;
     }
-    tokyo::Hash_db* Record_set::storage_hash(const Storage* s, const std::string& indx)
+    tokyo::Hash_db* Record_set::storage_hash(const Storage* s,
+                                             const std::string& indx)
     {
         std::map<std::string, tokyo::Hash_db*>::const_iterator i = s->fields_hash_.find(indx);
         if (s->fields_hash_.end() == i)
@@ -59,7 +62,8 @@ namespace lj {
         }
         return (*i).second;
     }
-    tokyo::TextSearcher* Record_set::storage_text(const Storage* s, const std::string& indx)
+    tokyo::TextSearcher* Record_set::storage_text(const Storage* s,
+                                                  const std::string& indx)
     {
         std::map<std::string, tokyo::TextSearcher*>::const_iterator i = s->fields_text_.find(indx);
         if (s->fields_text_.end() == i)
@@ -68,7 +72,8 @@ namespace lj {
         }
         return (*i).second;
     }
-    tokyo::TagSearcher* Record_set::storage_tag(const Storage* s, const std::string& indx)
+    tokyo::TagSearcher* Record_set::storage_tag(const Storage* s,
+                                                const std::string& indx)
     {
         std::map<std::string, tokyo::TagSearcher*>::const_iterator i = s->fields_tag_.find(indx);
         if (s->fields_tag_.end() == i)
@@ -76,5 +81,20 @@ namespace lj {
             return 0;
         }
         return (*i).second;
+    }
+    void Record_set::list_to_set(const tokyo::DB::list_value_t& a,
+                                 std::set<unsigned long long>& b)
+    {
+        for (tokyo::DB::list_value_t::const_iterator iter = a.begin();
+             a.end() != iter;
+             ++iter)
+        {
+            unsigned long long* x = static_cast<unsigned long long*>(iter->first);
+            if (x)
+            {
+                b.insert(*x);
+                free(iter->first);
+            }
+        }
     }
 }; // namespace lj

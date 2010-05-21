@@ -57,6 +57,7 @@ def build(ctx):
                 ,'src/lj/Sockets.cpp'
                 ,'src/lj/Bson.cpp'
                 ,'src/lj/Record_set.cpp'
+                ,'src/lj/Standard_record_set.cpp'
                 ,'src/lj/Storage.cpp'
                 ,'src/logjamd/logjamd_net.cpp'
                 ,'src/logjamd/logjamd_lua.cpp'

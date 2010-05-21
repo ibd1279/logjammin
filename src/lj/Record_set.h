@@ -3,6 +3,7 @@
  \file Record_set.h
  \brief LJ Record_set header.
  \author Jason Watson
+ 
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  
@@ -264,10 +265,67 @@ namespace lj
         virtual bool items_raw(std::list<Bson*>& records) const = 0;
     protected:
         static tokyo::Tree_db* storage_db(const Storage* s);
-        static tokyo::Tree_db* storage_tree(const Storage* s, const std::string& indx);
-        static tokyo::Hash_db* storage_hash(const Storage* s, const std::string& indx);
-        static tokyo::TextSearcher* storage_text(const Storage* s, const std::string& indx);
-        static tokyo::TagSearcher* storage_tag(const Storage* s, const std::string& indx);
+        static tokyo::Tree_db* storage_tree(const Storage* s,
+                                            const std::string& indx);
+        static tokyo::Hash_db* storage_hash(const Storage* s,
+                                            const std::string& indx);
+        static tokyo::TextSearcher* storage_text(const Storage* s,
+                                                 const std::string& indx);
+        static tokyo::TagSearcher* storage_tag(const Storage* s,
+                                               const std::string& indx);
+        static void list_to_set(const tokyo::DB::list_value_t& a,
+                                std::set<unsigned long long>& b);
+        template<typename T>
+        static T* operate_on_sets(const Record_set::Operation op,
+                           const T& a,
+                           const T& b)
+        {
+            const T* small = (a.size() < b.size()) ? &a : &b;
+            const T* big = (a.size() < b.size()) ? &b : &a;
+            T* rs = new T();
+            typename T::iterator inserted_at = rs->begin();
+            switch (op)
+            {
+                case Record_set::k_intersection:
+                    for (typename T::const_iterator iter = small->begin();
+                         small->end() != iter;
+                         ++iter)
+                    {
+                        if (big->end() != big->find(*iter))
+                        {
+                            inserted_at = rs->insert(inserted_at, *iter);
+                        }
+                    }
+                    break;
+                case Record_set::k_union:
+                    rs->insert(big->begin(), big->end());
+                    rs->insert(small->begin(), small->end());
+                    break;
+                case Record_set::k_symmetric_difference:
+                    for (typename T::const_iterator iter = b.begin();
+                         b.end() != iter;
+                         ++iter)
+                    {
+                        if (a.end() == a.find(*iter))
+                        {
+                            inserted_at = rs->insert(inserted_at, *iter);
+                        }
+                    }
+                    inserted_at = rs->begin();
+                    // fall through.
+                case Record_set::k_complement:
+                    for (typename T::const_iterator iter = a.begin();
+                         a.end() != iter;
+                         ++iter)
+                    {
+                        if (b.end() == b.find(*iter))
+                        {
+                            inserted_at = rs->insert(inserted_at, *iter);
+                        }
+                    }
+                    break;
+            }
+            return rs;
+        }
     };
-    
 }; // namespace lj.
