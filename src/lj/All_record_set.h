@@ -1,7 +1,7 @@
 #pragma once
 /*!
- \file Standard_record_set.h
- \brief LJ Standard_record_set header.
+ \file All_record_set.h
+ \brief LJ All_record_set header.
  \author Jason Watson
  
  Copyright (c) 2010, Jason Watson
@@ -38,18 +38,12 @@
 
 namespace lj
 {
-    class Storage;
-    
-    class Standard_record_set : public Record_set {
+    class All_record_set : public Record_set {
     public:
-        Standard_record_set(const Storage* storage,
-                            const std::set<unsigned long long>& keys,
-                            const Record_set::Operation op);
-        Standard_record_set(const Storage* storage,
-                            std::set<unsigned long long>* keys,
-                            const Record_set::Operation op);
-        Standard_record_set(const Standard_record_set& orig);
-        virtual ~Standard_record_set();
+        All_record_set(const Storage* storage,
+                       const Record_set::Operation op);
+        All_record_set(const All_record_set& orig);
+        virtual ~All_record_set();
         virtual Record_set& set_operation(const Record_set::Operation op);
         virtual bool is_included(const unsigned long long key) const;
         virtual std::auto_ptr<Record_set> include_keys(const std::set<unsigned long long>& keys);
@@ -76,9 +70,8 @@ namespace lj
         virtual bool items_raw(std::list<Bson*>& records) const;
     private:
         const Storage *storage_;
-        std::set<unsigned long long>* keys_;
         Record_set::Operation op_;
-        Record_set& operator=(const Standard_record_set& o);
-        std::auto_ptr<Bson> doc_at(unsigned long long pkey, bool marshall) const;
+        Record_set& operator=(const All_record_set& o);
+        void get_all_keys(std::set<unsigned long long>* result_keys) const;
     };
 }; // namespace lj

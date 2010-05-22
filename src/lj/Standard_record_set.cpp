@@ -1,6 +1,6 @@
 /*!
- \file Record_set.cpp
- \brief LJ Record_set implementation.
+ \file Standard_ecord_set.cpp
+ \brief LJ Standard_record_set implementation.
  \author Jason Watson
  
  Copyright (c) 2010, Jason Watson
@@ -36,6 +36,7 @@
 #include "lj/Standard_record_set.h"
 
 #include "tokyo/Tokyo.h"
+#include "lj/Logger.h"
 #include "lj/Storage.h"
 
 namespace lj

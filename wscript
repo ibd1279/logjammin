@@ -52,7 +52,8 @@ def build(ctx):
     logjamd = ctx(
         features = ['cxx', 'cprogram']
         ,source = [
-                'src/lj/Bson.cpp'
+                'src/lj/All_record_set.cpp'
+                ,'src/lj/Bson.cpp'
                 ,'src/lj/Logger.cpp'
                 ,'src/lj/Record_set.cpp'
                 ,'src/lj/Sockets.cpp'
