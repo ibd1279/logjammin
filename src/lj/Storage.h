@@ -45,6 +45,8 @@
 
 namespace lj
 {
+    class Storage_factory;
+    
     //! Storage Engine based on tokyo cabinet database libraries.
     /*!
      \par
@@ -64,30 +66,9 @@ namespace lj
      \sa lj::Record_set
      */
     class Storage {
+        friend class Storage_factory;
         friend class Record_set;
     public:
-        //! Open up a Storage engine.
-        /*!
-         \par
-         The settings information for this storage engine is loaded from
-         \c DBDIR \c + \c "/" \c + \c dir. The settings file can be created by
-         executing the logjam shell command. The following is an example of a
-         storage engine configuration:
-         \code
-         role_cfg = sc_new("role")
-         sc_add_index(role_cfg, "hash", "name", "name", "lex")
-         sc_add_index(role_cfg, "tree", "allowed", "allowed", "lex")
-         sc_add_index(role_cfg, "text", "allowed", "allowed", "lex")
-         sc_add_index(role_cfg, "text", "name", "name", "lex")
-         sc_add_index(role_cfg, "tag", "allowed", "allowed", "lex")
-         sc_add_index(role_cfg, "tag", "name", "name", "lex")
-         sc_add_nested(role_cfg, "allowed")
-         sc_save("role", role_cfg)         
-         \endcode
-         \param dir The document repository name.
-         */
-        Storage(const std::string &dir);
-        
         //! Destructor
         ~Storage();
         
@@ -147,6 +128,15 @@ namespace lj
         
         //! Rollback a transaction.
         void abort_transaction();
+    protected:
+        //! Open up a Storage engine.
+        /*!
+         \par
+         Hidden. Use the Storage_factory instead.
+         \sa lj::Storage_factory
+         \param dir The document repository name.
+         */
+        Storage(const std::string &dir);
     private:
         //! Primary database.
         /*!

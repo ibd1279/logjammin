@@ -53,6 +53,22 @@ namespace lj
     public:
         //! Produce a Storage object.
         /*!
+         \par
+         The settings information for this storage engine is loaded from
+         \c DBDIR \c + \c "/" \c + \c dir. The settings file can be created by
+         executing the logjam shell command. The following is an example of a
+         storage engine configuration:
+         \code
+         role_cfg = sc_new("role")
+         sc_add_index(role_cfg, "hash", "name", "name", "lex")
+         sc_add_index(role_cfg, "tree", "allowed", "allowed", "lex")
+         sc_add_index(role_cfg, "text", "allowed", "allowed", "lex")
+         sc_add_index(role_cfg, "text", "name", "name", "lex")
+         sc_add_index(role_cfg, "tag", "allowed", "allowed", "lex")
+         sc_add_index(role_cfg, "tag", "name", "name", "lex")
+         sc_add_nested(role_cfg, "allowed")
+         sc_save("role", role_cfg)         
+         \endcode
          \param name The name of the Storage object.
          \return Pointer to the storage object.
          */
