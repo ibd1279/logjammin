@@ -34,6 +34,7 @@
 
 #include "logjamd/logjamd_lua.h"
 #include "lj/Logger.h"
+#include "lj/Storage_factory.h"
 #include "build/default/config.h"
 
 #include <string>
@@ -570,7 +571,6 @@ namespace logjamd
     //=====================================================================
     // Storage Lua integration Methods.
     //=====================================================================
-    std::map<std::string, lj::Storage*> Lua_storage::cache_;
     const char Lua_storage::LUNAR_CLASS_NAME[] = "Storage";
     Lunar<Lua_storage>::RegType Lua_storage::LUNAR_METHODS[] = {
     LUNAR_MEMBER_METHOD(Lua_storage, all),
@@ -583,31 +583,13 @@ namespace logjamd
     
     Lua_storage::Lua_storage(const std::string& dbname) : storage_(NULL)
     {
-        std::map<std::string, lj::Storage*>::iterator iter(Lua_storage::cache_.find(dbname));
-        if (Lua_storage::cache_.end() == iter)
-        {
-            storage_ = new lj::Storage(dbname);
-            Lua_storage::cache_.insert(std::pair<std::string, lj::Storage*>(dbname, storage_));
-        }
-        else
-        {
-            storage_ = (*iter).second;
-        }
+        storage_ = lj::Storage_factory::produce(dbname);
     }
 
     Lua_storage::Lua_storage(lua_State* L) : storage_(NULL)
     {
         std::string dbname(lua_to_string(L, -1));
-        std::map<std::string, lj::Storage*>::iterator iter(Lua_storage::cache_.find(dbname));
-        if (Lua_storage::cache_.end() == iter)
-        {
-            storage_ = new lj::Storage(dbname);
-            Lua_storage::cache_.insert(std::pair<std::string, lj::Storage*>(dbname, storage_));
-        }
-        else
-        {
-            storage_ = (*iter).second;
-        }
+        storage_ = lj::Storage_factory::produce(dbname);
     }
     
     Lua_storage::~Lua_storage()

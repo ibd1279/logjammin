@@ -137,7 +137,6 @@ namespace logjamd {
         int remove(lua_State* L);
         inline lj::Storage &real_storage() { return *storage_; }
     private:
-        static std::map<std::string, lj::Storage*> cache_;
         lj::Storage* storage_;
     };        
 };

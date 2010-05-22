@@ -52,16 +52,17 @@ def build(ctx):
     logjamd = ctx(
         features = ['cxx', 'cprogram']
         ,source = [
-                'src/tokyo/Tokyo.cpp'
+                'src/lj/Bson.cpp'
                 ,'src/lj/Logger.cpp'
-                ,'src/lj/Sockets.cpp'
-                ,'src/lj/Bson.cpp'
                 ,'src/lj/Record_set.cpp'
+                ,'src/lj/Sockets.cpp'
                 ,'src/lj/Standard_record_set.cpp'
                 ,'src/lj/Storage.cpp'
-                ,'src/logjamd/logjamd_net.cpp'
-                ,'src/logjamd/logjamd_lua.cpp'
+                ,'src/lj/Storage_factory.cpp'
                 ,'src/logjamd/logjamd.cpp'
+                ,'src/logjamd/logjamd_lua.cpp'
+                ,'src/logjamd/logjamd_net.cpp'
+                ,'src/tokyo/Tokyo.cpp'
                 ]
         ,target = 'logjamd'
         ,vnum = ctx.env.vnum
