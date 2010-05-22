@@ -99,138 +99,148 @@ namespace lj
                                                     const void* const val,
                                                     const size_t len) const
     {
+        start_usecs();
+        std::auto_ptr<Record_set> ptr;
         if (Record_set::k_union == op_)
         {
-            return std::auto_ptr<Record_set>(new All_record_set(*this));
+            ptr.reset(new All_record_set(*this));
         }
         else if (Record_set::k_intersection == op_)
         {
             Standard_record_set tmp(storage_,
                                     new std::set<unsigned long long>(),
                                     Record_set::k_union);
-            std::auto_ptr<Record_set> ptr = tmp.equal(indx, val, len);
+            ptr = tmp.equal(indx, val, len);
             ptr->set_operation(op_);
-            return ptr;
         }
         else
         {
             std::set<unsigned long long>* real_keys = new std::set<unsigned long long>();
             get_all_keys(real_keys);
-            std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_,
-                                                                  real_keys,
-                                                                  op_));
-            return ptr->equal(indx, val, len);
+            Standard_record_set tmp(storage_, real_keys, op_);
+            ptr = tmp.equal(indx, val, len);
         }
+        
+        ptr->set_query_time(query_time() + elapsed_usecs());
+        return ptr;
     }
     
     std::auto_ptr<Record_set> All_record_set::greater(const std::string& indx,
                                                       const void* const val,
                                                       const size_t len) const
     {
+        start_usecs();
+        std::auto_ptr<Record_set> ptr;
         if (Record_set::k_union == op_)
         {
-            return std::auto_ptr<Record_set>(new All_record_set(*this));
+            ptr.reset(new All_record_set(*this));
         }
         else if (Record_set::k_intersection == op_)
         {
             Standard_record_set tmp(storage_,
                                     new std::set<unsigned long long>(),
                                     Record_set::k_union);
-            std::auto_ptr<Record_set> ptr = tmp.greater(indx, val, len);
+            ptr = tmp.greater(indx, val, len);
             ptr->set_operation(op_);
-            return ptr;
         }
         else
         {
             std::set<unsigned long long>* real_keys = new std::set<unsigned long long>();
             get_all_keys(real_keys);
-            std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_,
-                                                                  real_keys,
-                                                                  op_));
-            return ptr->greater(indx, val, len);
+            Standard_record_set tmp(storage_, real_keys, op_);
+            ptr = tmp.greater(indx, val, len);
         }
+        
+        ptr->set_query_time(query_time() + elapsed_usecs());
+        return ptr;
     }
     
     std::auto_ptr<Record_set> All_record_set::lesser(const std::string& indx,
                                                      const void* const val,
                                                      const size_t len) const
     {
+        start_usecs();
+        std::auto_ptr<Record_set> ptr;
         if (Record_set::k_union == op_)
         {
-            return std::auto_ptr<Record_set>(new All_record_set(*this));
+            ptr.reset(new All_record_set(*this));
         }
         else if (Record_set::k_intersection == op_)
         {
             Standard_record_set tmp(storage_,
                                     new std::set<unsigned long long>(),
                                     Record_set::k_union);
-            std::auto_ptr<Record_set> ptr = tmp.lesser(indx, val, len);
+            ptr = tmp.lesser(indx, val, len);
             ptr->set_operation(op_);
-            return ptr;
         }
         else
         {
             std::set<unsigned long long>* real_keys = new std::set<unsigned long long>();
             get_all_keys(real_keys);
-            std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_,
-                                                                  real_keys,
-                                                                  op_));
-            return ptr->lesser(indx, val, len);
+            Standard_record_set tmp(storage_, real_keys, op_);
+            ptr = tmp.lesser(indx, val, len);
         }
+        
+        ptr->set_query_time(query_time() + elapsed_usecs());
+        return ptr;
     }
     
     std::auto_ptr<Record_set> All_record_set::contains(const std::string& indx,
                                                        const std::string& term) const
     {
+        start_usecs();
+        std::auto_ptr<Record_set> ptr;
         if (Record_set::k_union == op_)
         {
-            return std::auto_ptr<Record_set>(new All_record_set(*this));
+            ptr.reset(new All_record_set(*this));
         }
         else if (Record_set::k_intersection == op_)
         {
             Standard_record_set tmp(storage_,
                                     new std::set<unsigned long long>(),
                                     Record_set::k_union);
-            std::auto_ptr<Record_set> ptr = tmp.contains(indx, term);
+            ptr = tmp.contains(indx, term);
             ptr->set_operation(op_);
-            return ptr;
         }
         else
         {
             std::set<unsigned long long>* real_keys = new std::set<unsigned long long>();
             get_all_keys(real_keys);
-            std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_,
-                                                                  real_keys,
-                                                                  op_));
-            return ptr->contains(indx, term);
+            Standard_record_set tmp(storage_, real_keys, op_);
+            ptr = tmp.contains(indx, term);
         }
+        
+        ptr->set_query_time(query_time() + elapsed_usecs());
+        return ptr;
     }
     
     std::auto_ptr<Record_set> All_record_set::tagged(const std::string& indx,
                                                      const std::string& word) const
     {
+        start_usecs();
+        std::auto_ptr<Record_set> ptr;
         if (Record_set::k_union == op_)
         {
-            return std::auto_ptr<Record_set>(new All_record_set(*this));
+            ptr.reset(new All_record_set(*this));
         }
         else if (Record_set::k_intersection == op_)
         {
             Standard_record_set tmp(storage_,
                                     new std::set<unsigned long long>(),
                                     Record_set::k_union);
-            std::auto_ptr<Record_set> ptr = tmp.tagged(indx, word);
+            ptr = tmp.tagged(indx, word);
             ptr->set_operation(op_);
-            return ptr;
         }
         else
         {
             std::set<unsigned long long>* real_keys = new std::set<unsigned long long>();
             get_all_keys(real_keys);
-            std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_,
-                                                                  real_keys,
-                                                                  op_));
-            return ptr->tagged(indx, word);
+            Standard_record_set tmp(storage_, real_keys, op_);
+            ptr = tmp.tagged(indx, word);
         }
+        
+        ptr->set_query_time(query_time() + elapsed_usecs());
+        return ptr;
     }
     
     unsigned long long All_record_set::size() const

@@ -277,7 +277,9 @@ namespace logjamd
         {
             node->real_node().push_child("items", *iter);
         }
-        return 1;        
+        node->real_node().set_child("query_usecs", lj::bson_new_int64(filter->real_filter().query_time()));
+        
+        return 0;
     }
     
     //=====================================================================

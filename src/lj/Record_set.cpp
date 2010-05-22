@@ -37,11 +37,41 @@
 
 #include "lj/Storage.h"
 
+#include <sys/time.h>
+
 namespace lj {
+    void Record_set::set_query_time(unsigned long long time) const
+    {
+        query_time_ = time;
+    }
+    
+    unsigned long long Record_set::query_time() const
+    {
+        return query_time_;
+    }
+    
+    void Record_set::start_usecs() const
+    {
+        struct timeval now;
+        gettimeofday(&now, NULL);
+        start_.first = now.tv_sec;
+        start_.second = now.tv_usec;
+    }
+    
+    unsigned long long Record_set::elapsed_usecs() const
+    {
+        struct timeval now;
+        gettimeofday(&now, NULL);
+        std::pair<unsigned long long, unsigned long long> end(now.tv_sec, now.tv_usec);
+        return (((end.first - start_.first) * 1000000UL) +
+                (end.second - start_.second));
+    }
+    
     tokyo::Tree_db* Record_set::storage_db(const Storage* s)
     {
         return s->db_;
     }
+    
     tokyo::Tree_db* Record_set::storage_tree(const Storage* s,
                                              const std::string& indx)
     {
@@ -52,6 +82,7 @@ namespace lj {
         }
         return (*i).second;
     }
+    
     tokyo::Hash_db* Record_set::storage_hash(const Storage* s,
                                              const std::string& indx)
     {
@@ -62,6 +93,7 @@ namespace lj {
         }
         return (*i).second;
     }
+    
     tokyo::TextSearcher* Record_set::storage_text(const Storage* s,
                                                   const std::string& indx)
     {
@@ -72,6 +104,7 @@ namespace lj {
         }
         return (*i).second;
     }
+    
     tokyo::TagSearcher* Record_set::storage_tag(const Storage* s,
                                                 const std::string& indx)
     {
@@ -82,6 +115,7 @@ namespace lj {
         }
         return (*i).second;
     }
+    
     void Record_set::list_to_set(const tokyo::DB::list_value_t& a,
                                  std::set<unsigned long long>& b)
     {

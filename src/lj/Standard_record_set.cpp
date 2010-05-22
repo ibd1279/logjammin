@@ -116,6 +116,7 @@ namespace lj
                                                          const void* const val,
                                                          const size_t len) const
     {
+        start_usecs();
         Log::debug.log("Equal on [%s] with [%d][%s].") << indx << len << ((char *)val) << Log::end;
         tokyo::Hash_db* hash_index = Record_set::storage_hash(storage_, indx);
         tokyo::Tree_db* tree_index = Record_set::storage_tree(storage_, indx);
@@ -138,13 +139,17 @@ namespace lj
         Record_set::list_to_set(db_values, storage_keys);
         std::set<unsigned long long>* output = Record_set::operate_on_sets<std::set<unsigned long long> >(op_, *keys_, storage_keys);
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
-        return std::auto_ptr<Record_set>(new Standard_record_set(storage_, output, op_));
+        
+        std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
+        ptr->set_query_time(query_time() + elapsed_usecs());
+        return ptr;
     }
     
     std::auto_ptr<Record_set> Standard_record_set::greater(const std::string& indx,
                                                            const void* const val,
                                                            const size_t len) const
     {
+        start_usecs();
         Log::debug.log("Greater on [%s] with [%d][%s].") << indx << len << ((char *)val) << Log::end;
         tokyo::Tree_db* tree_index = Record_set::storage_tree(storage_, indx);
         
@@ -169,13 +174,17 @@ namespace lj
         Record_set::list_to_set(db_values, storage_keys);
         std::set<unsigned long long>* output = Record_set::operate_on_sets<std::set<unsigned long long> >(op_, *keys_, storage_keys);
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
-        return std::auto_ptr<Record_set>(new Standard_record_set(storage_, output, op_));
+        
+        std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
+        ptr->set_query_time(query_time() + elapsed_usecs());
+        return ptr;
     }    
     
     std::auto_ptr<Record_set> Standard_record_set::lesser(const std::string& indx,
                                                           const void* const val,
                                                           const size_t len) const
     {
+        start_usecs();
         Log::debug.log("Lesser on [%s] with [%d][%s].") << indx << len << ((char *)val) << Log::end;
         tokyo::Tree_db* tree_index = Record_set::storage_tree(storage_, indx);
         
@@ -200,12 +209,16 @@ namespace lj
         Record_set::list_to_set(db_values, storage_keys);
         std::set<unsigned long long>* output = Record_set::operate_on_sets<std::set<unsigned long long> >(op_, *keys_, storage_keys);
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
-        return std::auto_ptr<Record_set>(new Standard_record_set(storage_, output, op_));
+        
+        std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
+        ptr->set_query_time(query_time() + elapsed_usecs());
+        return ptr;
     }
     
     std::auto_ptr<Record_set> Standard_record_set::contains(const std::string& indx,
                                                             const std::string& term) const
     {
+        start_usecs();
         Log::debug.log("Contains on [%s] with [%s]") << indx << term << Log::end;
         tokyo::TextSearcher* text_index = Record_set::storage_text(storage_, indx);
         
@@ -221,12 +234,16 @@ namespace lj
         
         std::set<unsigned long long>* output = Record_set::operate_on_sets<std::set<unsigned long long> >(op_, *keys_, searcher_values);
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
-        return std::auto_ptr<Record_set>(new Standard_record_set(storage_, output, op_));
+        
+        std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
+        ptr->set_query_time(query_time() + elapsed_usecs());
+        return ptr;
     }
     
     std::auto_ptr<Record_set> Standard_record_set::tagged(const std::string& indx,
                                                           const std::string& word) const
     {
+        start_usecs();
         Log::debug.log("Tagged on [%s] with [%s]") << indx << word << Log::end;
         tokyo::TagSearcher* tag_index = Record_set::storage_tag(storage_, indx);
         
@@ -242,7 +259,10 @@ namespace lj
         
         std::set<unsigned long long>* output = Record_set::operate_on_sets<std::set<unsigned long long> >(op_, *keys_, searcher_values);
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
-        return std::auto_ptr<Record_set>(new Standard_record_set(storage_, output, op_));
+        
+        std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
+        ptr->set_query_time(query_time() + elapsed_usecs());
+        return ptr;
     }
     
     unsigned long long Standard_record_set::size() const

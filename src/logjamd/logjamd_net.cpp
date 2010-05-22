@@ -162,7 +162,7 @@ namespace logjamd
         gettimeofday(&end, NULL);
         
         b.set_child("elapsed_usecs", lj::bson_new_int64(((end.tv_sec - start.tv_sec) * 1000000) +
-                                                         (end.tv_usec - start.tv_usec)));
+                                                        (end.tv_usec - start.tv_usec)));
         
         char* buffer = b.to_binary();
         add_bytes(buffer, b.size());
