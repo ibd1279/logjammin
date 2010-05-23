@@ -4,6 +4,7 @@
  Taken from http://lua-users.org/wiki/SimplerCppBinding with slight modifications.
  */
 
+#include <string>
 extern "C" {
 #include "lua.h"
 #include "lauxlib.h"
@@ -49,7 +50,31 @@ public:
         
         // fill method table with methods from class T
         for (RegType *l = T::LUNAR_METHODS; l->name; l++) {
-            inject_method(L, l->name, l, methods);
+            std::string tmp(l->name);
+            if (tmp.compare("__index") == 0)
+            {
+                lua_newtable(L);
+                int metametatable = lua_gettop(L);
+                lua_pushstring(L, l->name);
+                lua_pushlightuserdata(L, (void*)l);
+                lua_pushcclosure(L, thunk, 1);
+                lua_settable(L, metametatable);
+                lua_setmetatable(L, methods);
+            }
+            else
+            {
+                lua_pushstring(L, l->name);
+                lua_pushlightuserdata(L, (void*)l);
+                lua_pushcclosure(L, thunk, 1);
+                if(tmp.substr(0, 2).compare("__") == 0)
+                {
+                    lua_settable(L, metatable);
+                }
+                else
+                {
+                    lua_settable(L, methods);
+                }
+            }
         }
         
         lua_pop(L, 2);  // drop metatable and method table
@@ -170,26 +195,14 @@ private:
     }
     
     static int tostring_T (lua_State *L) {
-        RegType *l = NULL;
-        for (l = T::LUNAR_METHODS; l->name; l++) {
-            if(strcmp(l->name, "__tostring") == 0)
-                break;
-        }
-
+        char buff[32];
+        
         userdataType *ud = static_cast<userdataType*>(lua_touserdata(L, 1));
         T *obj = ud->pT;
-        if(l->name) {
-            if(l->mfunc)
-                return (obj->*(l->mfunc))(L);
-            else if(l->nmfunc)
-                return (*(l->nmfunc))(obj, L);
-            return 0;
-        } else {
-            char buff[32];
-            sprintf(buff, "%p", (void*)obj);
-            lua_pushfstring(L, "%s (%s)", T::LUNAR_CLASS_NAME, buff);
-            return 1;
-        }
+        sprintf(buff, "%p", (void*)obj);
+        lua_pushfstring(L, "%s (%s)", T::LUNAR_CLASS_NAME, buff);
+        
+        return 1;
     }
     
     static void set(lua_State *L, int table_index, const char *key) {
