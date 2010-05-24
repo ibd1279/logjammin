@@ -1,5 +1,5 @@
 /*!
- \file logjam_net.cpp
+ \file Client.cpp
  \brief Logjam client networking implementation.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson

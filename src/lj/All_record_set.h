@@ -38,11 +38,32 @@
 
 namespace lj
 {
+    //! Represents the universe of all records.
+    /*!
+     \par
+     This is an optomized version of the lj::Standard_record_set designed
+     to delay loading of the key set until after an exclusive operation
+     has been performed.
+     \sa lj::Standard_record_set
+     \sa lj::Record_set
+     */
     class All_record_set : public Record_set {
     public:
+        //! Storage constructor.
+        /*!
+         \param The storage this set is attached to.
+         \param The operation to perform for any filtering.
+         */
         All_record_set(const Storage* storage,
                        const Record_set::Operation op);
+        
+        //! Copy constructor.
+        /*!
+         \param orig The original.
+         */
         All_record_set(const All_record_set& orig);
+        
+        //! Destructor.
         virtual ~All_record_set();
         virtual Record_set& set_operation(const Record_set::Operation op);
         virtual bool is_included(const unsigned long long key) const;
@@ -71,7 +92,14 @@ namespace lj
     private:
         const Storage *storage_;
         Record_set::Operation op_;
+        
+        //! Hidden.
         Record_set& operator=(const All_record_set& o);
+        
+        //! Get all of the keys in the universe.
+        /*!
+         \param result_keys[out] The set to populate with keys.
+         */
         void get_all_keys(std::set<unsigned long long>* result_keys) const;
     };
 }; // namespace lj

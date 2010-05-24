@@ -76,6 +76,7 @@
 		2288A2A011AA2B28008CD19D /* Time_tracker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Time_tracker.h; path = src/lj/Time_tracker.h; sourceTree = "<group>"; };
 		2288A2AB11AAFFF5008CD19D /* Lua_storage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Lua_storage.h; path = src/logjamd/Lua_storage.h; sourceTree = "<group>"; };
 		2288A2AC11AAFFF5008CD19D /* Lua_storage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Lua_storage.cpp; path = src/logjamd/Lua_storage.cpp; sourceTree = "<group>"; };
+		2288A2C011AB0FA8008CD19D /* Doxygen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Doxygen.h; path = src/lj/Doxygen.h; sourceTree = "<group>"; };
 		229F36090FAA34E3003A1626 /* Response.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Response.h; sourceTree = "<group>"; };
 		229F360A0FAA34E3003A1626 /* Response.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Response.cpp; sourceTree = "<group>"; };
 		22D30BE10FA78F09005DE0D9 /* Request.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Request.h; sourceTree = "<group>"; };
@@ -193,6 +194,7 @@
 				220B1E4911A72A93002C9272 /* Storage_factory.cpp */,
 				2288A2A011AA2B28008CD19D /* Time_tracker.h */,
 				2288A29F11AA2B28008CD19D /* Time_tracker.cpp */,
+				2288A2C011AB0FA8008CD19D /* Doxygen.h */,
 			);
 			name = lj;
 			sourceTree = "<group>";

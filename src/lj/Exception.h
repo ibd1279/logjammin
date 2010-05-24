@@ -3,6 +3,7 @@
  \file Exception.h
  \brief LJ Exception header and implementation.
  \author Jason Watson
+ 
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  
@@ -35,11 +36,6 @@
 
 #include <string>
 
-/*!
- \namespace lj
- \brief The lj utility classes.
- Default functionality shared across all logjam* applications
- */
 namespace lj
 {
     //! Exception base class.

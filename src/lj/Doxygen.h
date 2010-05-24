@@ -1,8 +1,9 @@
 #pragma once
 /*!
- \file Client.h
- \brief LJ client header.
+ \file Doxygen.h
+ \brief LJ header to document some special objects.
  \author Jason Watson
+ 
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  
@@ -33,37 +34,9 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "lj/Sockets.h"
-
-namespace lj
-{
-    class Bson;
-    
-    //! Logjam client Socket_dispatch implementation.
-    class Client : public Socket_dispatch {
-    public:
-        //! Constructor
-        Client();
-        
-        //! Destructor
-        virtual ~Client();
-        
-        virtual Socket_dispatch* accept(int socket, char* buffer);
-        virtual void read(const char* buffer, int sz);
-        
-        //! Get the response object from the server.
-        /*!
-         \return The server response.
-         */
-        lj::Bson* response();
-        
-        //! Remove the response object.
-        void clear();
-    private:
-        char * in_;
-        int in_offset_;
-        int in_sz_;
-        bool in_post_length_;
-        lj::Bson* response_;
-    };
-};
+/*!
+ \namespace lj
+ \brief The lj library
+ C++ library for logjam functionality. Includes storage, recordsets, sockets,
+ etc.
+ */

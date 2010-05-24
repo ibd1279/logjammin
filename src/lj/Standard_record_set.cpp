@@ -1,5 +1,5 @@
 /*!
- \file Standard_ecord_set.cpp
+ \file Standard_record_set.cpp
  \brief LJ Standard_record_set implementation.
  \author Jason Watson
  

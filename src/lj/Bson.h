@@ -492,7 +492,7 @@ namespace lj
     //! Get the set of values.
     /*!
      \par
-     Valye types return a set containing themselves. Document and array types
+     Value types return a set containing themselves. Document and array types
      return a set containing all child values as strings (not pretty or
      debug strings).
      \param b The Bson object.
@@ -501,8 +501,37 @@ namespace lj
      */
     std::set<std::string> bson_as_value_string_set(const Bson& b);
     
+    //! Get the value of a Bson object as an 32-bit wide integer.
+    /*!
+     \par
+     Value types are converted into numbers. Document, Array, and strings that
+     cannot be converted into a number return 0.
+     \param b The Bson object.
+     \return The number value.
+     */
     int32_t bson_as_int32(const Bson& b);
+    
+    //! Get the value of a Bson object as an 64-bit wide integer.
+    /*!
+     \par
+     Value types are converted into numbers. Document, Array, and strings that
+     cannot be converted into a number return 0.
+     \param b The Bson object.
+     \return The number value.
+     */
     int64_t bson_as_int64(const Bson& b);
+    
+    //! Get the value of a Bson object as a boolean.
+    /*!
+     \par
+     If the value is a string, return true only if the string contains the
+     word "true" or the character '1'.
+     \par
+     Numeric types return true if the value is not equal to 0.
+     \par Document, Null, and Array types always return false.
+     \param b The Bson object.
+     \return The boolean value.
+     */
     bool bson_as_boolean(const Bson& b);
     double bson_as_double(const Bson& b);
     void bson_save(const Bson& b, const std::string& path);

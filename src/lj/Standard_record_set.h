@@ -40,15 +40,46 @@ namespace lj
 {
     class Storage;
     
+    //! Represents a set of records.
+    /*!
+     \par
+     This represents a set of records identified by ids.
+     \sa lj::All_record_set
+     \sa lj::Record_set
+     */
     class Standard_record_set : public Record_set {
     public:
+        //! Set-copy constructor.
+        /*!
+         Create a new Standard_record_set, copying values from the provided
+         set of keys.
+         \param storage The storage this set is attached to.
+         \param keys The set of keys to copy into the set.
+         \param op The operation to perform for any filtering.
+         */
         Standard_record_set(const Storage* storage,
                             const std::set<unsigned long long>& keys,
                             const Record_set::Operation op);
+        
+        //! Set-owner constructor.
+        /*!
+         Create a new Standard_record_set, taking ownership of the provided
+         key set.
+         \param storage The storage this set is attached to.
+         \param keys The set of keys included in the record set.
+         \param op The operation to perform for any filtering.
+         */
         Standard_record_set(const Storage* storage,
                             std::set<unsigned long long>* keys,
                             const Record_set::Operation op);
+        
+        //! Copy constructor.
+        /*!
+         \param orig The original.
+         */
         Standard_record_set(const Standard_record_set& orig);
+        
+        //! Destructor.
         virtual ~Standard_record_set();
         virtual Record_set& set_operation(const Record_set::Operation op);
         virtual bool is_included(const unsigned long long key) const;
@@ -78,7 +109,16 @@ namespace lj
         const Storage *storage_;
         std::set<unsigned long long>* keys_;
         Record_set::Operation op_;
+        
+        //! Hidden.
         Record_set& operator=(const Standard_record_set& o);
+        
+        //! Get a record from the database.
+        /*!
+         \param pkey The key of the record.
+         \param marshall True to parse the record into a full structure. False
+         to leave the records as an array of bytes.
+         */
         std::auto_ptr<Bson> doc_at(unsigned long long pkey, bool marshall) const;
     };
 }; // namespace lj

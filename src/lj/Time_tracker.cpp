@@ -39,6 +39,10 @@
 
 namespace lj
 {
+    Time_tracker::Time_tracker() : start_(0, 0), elapsed_(0)
+    {
+    }
+    
     void Time_tracker::start()
     {
         struct timeval now;
