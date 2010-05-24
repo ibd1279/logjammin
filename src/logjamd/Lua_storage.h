@@ -1,7 +1,7 @@
 #pragma once
 /*!
  \file Lua_storage.h
- \brief Logjamd lj::Storage wrapper for lua.
+ \brief Logjamd lj::Storage wrapper for lua header.
  \author Jason Watson
  
  Copyright (c) 2010, Jason Watson
