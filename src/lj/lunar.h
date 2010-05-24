@@ -249,5 +249,16 @@ private:
     }
 };
 
+inline std::string lua_to_string(lua_State* L, int offset)
+{
+    const char* ptr = luaL_checkstring(L, offset);
+    if (!ptr)
+    {
+        return std::string();
+    }
+    size_t l = lua_strlen(L, offset);
+    return std::string(ptr, l);
+}
+
 #define LUNAR_MEMBER_METHOD(Class, Name) {#Name, &Class::Name, 0}
 #define LUNAR_STATIC_METHOD(Prefix, Name) {#Name, 0, &Prefix##_##Name}

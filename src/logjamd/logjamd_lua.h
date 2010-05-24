@@ -3,6 +3,7 @@
  \file logjamd_lua.h
  \brief Logjam server lua functions implementation.
  \author Jason Watson
+ 
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  
@@ -46,12 +47,6 @@ namespace logjamd {
     int connection_config_save(lua_State* L);
     int connection_config_add_default_storage(lua_State* L);
     int connection_config_remove_default_storage(lua_State* L);
-    
-    int storage_config_new(lua_State* L);
-    int storage_config_save(lua_State* L);
-    int storage_config_load(lua_State* L);
-    int storage_config_add_index(lua_State* L);
-    int storage_config_add_nested_field(lua_State* L);
     
     int send_response(lua_State* L);
     
@@ -113,30 +108,5 @@ namespace logjamd {
         int first(lua_State *L);
         int size(lua_State *L);
         inline lj::Record_set &real_filter() { return *_filter; }
-    };
-
-    //! Lua Storage wrapper.
-    /*!
-     \par
-     Known as "Storage" in lua.
-     \author Jason Watson
-     \version 1.0
-     \date April 27, 2010
-     */
-    class Lua_storage {
-    public:
-        static const char LUNAR_CLASS_NAME[];
-        static Lunar<Lua_storage>::RegType LUNAR_METHODS[];
-        Lua_storage(const std::string& dbname);
-        Lua_storage(lua_State* L);
-        ~Lua_storage();
-        int all(lua_State* L);
-        int none(lua_State* L);
-        int at(lua_State* L);
-        int place(lua_State* L);
-        int remove(lua_State* L);
-        inline lj::Storage &real_storage() { return *storage_; }
-    private:
-        lj::Storage* storage_;
-    };        
+    };     
 };
