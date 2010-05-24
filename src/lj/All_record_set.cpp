@@ -99,7 +99,6 @@ namespace lj
                                                     const void* const val,
                                                     const size_t len) const
     {
-        start_usecs();
         std::auto_ptr<Record_set> ptr;
         if (Record_set::k_union == op_)
         {
@@ -121,7 +120,6 @@ namespace lj
             ptr = tmp.equal(indx, val, len);
         }
         
-        ptr->set_query_time(query_time() + elapsed_usecs());
         return ptr;
     }
     
@@ -129,7 +127,6 @@ namespace lj
                                                       const void* const val,
                                                       const size_t len) const
     {
-        start_usecs();
         std::auto_ptr<Record_set> ptr;
         if (Record_set::k_union == op_)
         {
@@ -151,7 +148,6 @@ namespace lj
             ptr = tmp.greater(indx, val, len);
         }
         
-        ptr->set_query_time(query_time() + elapsed_usecs());
         return ptr;
     }
     
@@ -159,7 +155,6 @@ namespace lj
                                                      const void* const val,
                                                      const size_t len) const
     {
-        start_usecs();
         std::auto_ptr<Record_set> ptr;
         if (Record_set::k_union == op_)
         {
@@ -181,14 +176,12 @@ namespace lj
             ptr = tmp.lesser(indx, val, len);
         }
         
-        ptr->set_query_time(query_time() + elapsed_usecs());
         return ptr;
     }
     
     std::auto_ptr<Record_set> All_record_set::contains(const std::string& indx,
                                                        const std::string& term) const
     {
-        start_usecs();
         std::auto_ptr<Record_set> ptr;
         if (Record_set::k_union == op_)
         {
@@ -210,14 +203,12 @@ namespace lj
             ptr = tmp.contains(indx, term);
         }
         
-        ptr->set_query_time(query_time() + elapsed_usecs());
         return ptr;
     }
     
     std::auto_ptr<Record_set> All_record_set::tagged(const std::string& indx,
                                                      const std::string& word) const
     {
-        start_usecs();
         std::auto_ptr<Record_set> ptr;
         if (Record_set::k_union == op_)
         {
@@ -239,7 +230,6 @@ namespace lj
             ptr = tmp.tagged(indx, word);
         }
         
-        ptr->set_query_time(query_time() + elapsed_usecs());
         return ptr;
     }
     

@@ -35,6 +35,7 @@
 #include "logjamd/logjamd_lua.h"
 #include "lj/Logger.h"
 #include "lj/Storage_factory.h"
+#include "lj/Time_tracker.h"
 #include "build/default/config.h"
 
 #include <string>
@@ -265,10 +266,12 @@ namespace logjamd
     
     int send_response(lua_State *L)
     {
+        lj::Time_tracker timer;
         LuaStorageFilter* filter = Lunar<LuaStorageFilter>::check(L, -1);
         lua_getglobal(L, "response");
         Lua_bson_node* node = Lunar<Lua_bson_node>::check(L, -1);
         
+        timer.start();
         std::list<lj::Bson *> d;
         filter->real_filter().items_raw(d);
         for (std::list<lj::Bson *>::const_iterator iter = d.begin();
@@ -277,7 +280,9 @@ namespace logjamd
         {
             node->real_node().push_child("items", *iter);
         }
-        node->real_node().set_child("query_usecs", lj::bson_new_int64(filter->real_filter().query_time()));
+        timer.stop();
+        node->real_node().push_child("time/load_usecs",
+                                     lj::bson_new_uint64(timer.elapsed()));
         
         return 0;
     }
@@ -504,8 +509,14 @@ namespace logjamd
     }
     
     int LuaStorageFilter::filter(lua_State *L) {
+        lj::Time_tracker timer;
+        lua_getglobal(L, "response");
+        Lua_bson_node* node = Lunar<Lua_bson_node>::check(L, -1);
+        lua_pop(L, 1);
+        timer.start();
+        
         std::string field(lua_to_string(L, -2));
-        if(lua_isstring(L, -1)) {
+                if(lua_isstring(L, -1)) {
             std::string val(lua_to_string(L, -1));
             lj::Record_set* ptr = _filter->equal(field, val.c_str(), val.size()).release();
             Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
@@ -521,6 +532,9 @@ namespace logjamd
             delete[] bson;
             Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
         }
+        timer.stop();
+        node->real_node().push_child("time/query_usecs", 
+                                     lj::bson_new_uint64(timer.elapsed()));
         return 1;
     }
 
@@ -533,10 +547,20 @@ namespace logjamd
     }
     
     int LuaStorageFilter::tagged(lua_State *L) {
+        lj::Time_tracker timer;
+        lua_getglobal(L, "response");
+        Lua_bson_node* node = Lunar<Lua_bson_node>::check(L, -1);
+        lua_pop(L, 1);
+        timer.start();
+        
         std::string field(lua_to_string(L, -2));
         std::string val(lua_to_string(L, -1));
         lj::Record_set* ptr = _filter->tagged(field, val).release();
         Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
+
+        timer.stop();
+        node->real_node().push_child("time/query_usecs", 
+                                     lj::bson_new_uint64(timer.elapsed()));
         return 1;
     }
     

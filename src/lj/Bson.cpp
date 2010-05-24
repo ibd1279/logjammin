@@ -563,6 +563,11 @@ namespace lj {
         return new Bson(Bson::k_int64, reinterpret_cast<const char *> (&val));
     }
     
+    Bson* bson_new_uint64(const uint64_t val)
+    {
+        return new Bson(Bson::k_int64, reinterpret_cast<const char*> (&val));
+    }
+    
     Bson* bson_new_null()
     {
         return new Bson(Bson::k_null, NULL);

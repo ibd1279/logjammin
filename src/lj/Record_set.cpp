@@ -37,36 +37,7 @@
 
 #include "lj/Storage.h"
 
-#include <sys/time.h>
-
 namespace lj {
-    void Record_set::set_query_time(unsigned long long time) const
-    {
-        query_time_ = time;
-    }
-    
-    unsigned long long Record_set::query_time() const
-    {
-        return query_time_;
-    }
-    
-    void Record_set::start_usecs() const
-    {
-        struct timeval now;
-        gettimeofday(&now, NULL);
-        start_.first = now.tv_sec;
-        start_.second = now.tv_usec;
-    }
-    
-    unsigned long long Record_set::elapsed_usecs() const
-    {
-        struct timeval now;
-        gettimeofday(&now, NULL);
-        std::pair<unsigned long long, unsigned long long> end(now.tv_sec, now.tv_usec);
-        return (((end.first - start_.first) * 1000000UL) +
-                (end.second - start_.second));
-    }
-    
     tokyo::Tree_db* Record_set::storage_db(const Storage* s)
     {
         return s->db_;

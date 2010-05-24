@@ -423,6 +423,15 @@ namespace lj
      \return a new Bson object.
      */
     Bson* bson_new_int64(const int64_t val);
+    
+    //! Create a new int64 object.
+    /*!
+     \par
+     Object should be released with delete.
+     \param val The integer value.
+     \return a new Bson object.
+     */
+    Bson* bson_new_uint64(const uint64_t val);
 
     //! Create a new null object.
     /*!

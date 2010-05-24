@@ -116,7 +116,6 @@ namespace lj
                                                          const void* const val,
                                                          const size_t len) const
     {
-        start_usecs();
         Log::debug.log("Equal on [%s] with [%d][%s].") << indx << len << ((char *)val) << Log::end;
         tokyo::Hash_db* hash_index = Record_set::storage_hash(storage_, indx);
         tokyo::Tree_db* tree_index = Record_set::storage_tree(storage_, indx);
@@ -141,7 +140,6 @@ namespace lj
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
         
         std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
-        ptr->set_query_time(query_time() + elapsed_usecs());
         return ptr;
     }
     
@@ -149,7 +147,6 @@ namespace lj
                                                            const void* const val,
                                                            const size_t len) const
     {
-        start_usecs();
         Log::debug.log("Greater on [%s] with [%d][%s].") << indx << len << ((char *)val) << Log::end;
         tokyo::Tree_db* tree_index = Record_set::storage_tree(storage_, indx);
         
@@ -176,7 +173,6 @@ namespace lj
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
         
         std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
-        ptr->set_query_time(query_time() + elapsed_usecs());
         return ptr;
     }    
     
@@ -184,7 +180,6 @@ namespace lj
                                                           const void* const val,
                                                           const size_t len) const
     {
-        start_usecs();
         Log::debug.log("Lesser on [%s] with [%d][%s].") << indx << len << ((char *)val) << Log::end;
         tokyo::Tree_db* tree_index = Record_set::storage_tree(storage_, indx);
         
@@ -211,14 +206,12 @@ namespace lj
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
         
         std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
-        ptr->set_query_time(query_time() + elapsed_usecs());
         return ptr;
     }
     
     std::auto_ptr<Record_set> Standard_record_set::contains(const std::string& indx,
                                                             const std::string& term) const
     {
-        start_usecs();
         Log::debug.log("Contains on [%s] with [%s]") << indx << term << Log::end;
         tokyo::TextSearcher* text_index = Record_set::storage_text(storage_, indx);
         
@@ -236,14 +229,12 @@ namespace lj
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
         
         std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
-        ptr->set_query_time(query_time() + elapsed_usecs());
         return ptr;
     }
     
     std::auto_ptr<Record_set> Standard_record_set::tagged(const std::string& indx,
                                                           const std::string& word) const
     {
-        start_usecs();
         Log::debug.log("Tagged on [%s] with [%s]") << indx << word << Log::end;
         tokyo::TagSearcher* tag_index = Record_set::storage_tag(storage_, indx);
         
@@ -261,7 +252,6 @@ namespace lj
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
         
         std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
-        ptr->set_query_time(query_time() + elapsed_usecs());
         return ptr;
     }
     

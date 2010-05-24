@@ -37,6 +37,7 @@
 #include "logjamd/logjamd_lua.h"
 #include "lj/Bson.h"
 #include "lj/Logger.h"
+#include "lj/Time_tracker.h"
 
 extern "C" {
 #include "lualib.h"
@@ -131,8 +132,8 @@ namespace logjamd
     
     void Service_dispatch::logic(lj::Bson& b)
     {
-        struct timeval start;
-        gettimeofday(&start, NULL);
+        lj::Time_tracker timer;
+        timer.start();
         
         std::string cmd = lj::bson_as_string(b.nav("command"));
         Lua_bson_node wrapped_node(&b, false);
@@ -158,11 +159,9 @@ namespace logjamd
         
         Lunar<Lua_bson_node>::push(lua_, NULL, true);
         lua_setglobal(lua_, "response");
-        struct timeval end;
-        gettimeofday(&end, NULL);
+        timer.stop();
         
-        b.set_child("elapsed_usecs", lj::bson_new_int64(((end.tv_sec - start.tv_sec) * 1000000) +
-                                                        (end.tv_usec - start.tv_usec)));
+        b.set_child("time/elapsed_usecs", lj::bson_new_uint64(timer.elapsed()));
         
         char* buffer = b.to_binary();
         add_bytes(buffer, b.size());

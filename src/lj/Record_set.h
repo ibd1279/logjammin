@@ -77,7 +77,7 @@ namespace lj
         };
         
         //! Constructor.
-        Record_set() : start_(0, 0), query_time_(0)
+        Record_set()
         {
         }
         
@@ -263,31 +263,7 @@ namespace lj
          \return True when records have been added.
          */
         virtual bool items_raw(std::list<Bson*>& records) const = 0;
-        
-        //! Get the time spent executing the query.
-        /*!
-         \return Time spent in microseconds.
-         */
-        unsigned long long query_time() const;
-        
-        //! Set the time spent executing the query.
-        /*!
-         \param time Time spent in microseconds.
-         */
-        virtual void set_query_time(unsigned long long time) const;
-    protected:        
-        //! Start calculating query time.
-        void start_usecs() const;
-        
-        //! Get the number of microseconds elapsed since start_usecs() was called.
-        /*!
-         \par
-         Gets the elapsed time from start_usecs(). If start_usecs() has not
-         been called, it gets the elapsed usecs() since the epoch.
-         \return Elapsed microseconds.
-         */
-        unsigned long long elapsed_usecs() const;
-        
+    protected:
         static tokyo::Tree_db* storage_db(const Storage* s);
         static tokyo::Tree_db* storage_tree(const Storage* s,
                                             const std::string& indx);
@@ -351,8 +327,5 @@ namespace lj
             }
             return rs;
         }
-    private:
-        mutable std::pair<unsigned long long, unsigned long long> start_;
-        mutable unsigned long long query_time_;
     };
 }; // namespace lj.

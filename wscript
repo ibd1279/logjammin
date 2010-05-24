@@ -60,6 +60,7 @@ def build(ctx):
                 ,'src/lj/Standard_record_set.cpp'
                 ,'src/lj/Storage.cpp'
                 ,'src/lj/Storage_factory.cpp'
+                ,'src/lj/Time_tracker.cpp'
                 ,'src/logjamd/logjamd.cpp'
                 ,'src/logjamd/logjamd_lua.cpp'
                 ,'src/logjamd/logjamd_net.cpp'
