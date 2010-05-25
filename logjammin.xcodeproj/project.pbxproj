@@ -90,6 +90,8 @@
 		22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = OpenID.cpp; sourceTree = "<group>"; };
 		22ED3BBF0FB8704A004E2511 /* Controller.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Controller.h; sourceTree = "<group>"; };
 		22ED3C110FB8F99C004E2511 /* Seed.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Seed.h; sourceTree = "<group>"; };
+		22EFAD2911AB45650080F184 /* Lua_bson.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Lua_bson.h; path = src/logjamd/Lua_bson.h; sourceTree = "<group>"; };
+		22EFAD2A11AB45650080F184 /* Lua_bson.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Lua_bson.cpp; path = src/logjamd/Lua_bson.cpp; sourceTree = "<group>"; };
 		C6859E8B029090EE04C91782 /* logjammin.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = logjammin.1; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -177,6 +179,7 @@
 				2218BF7011A56C230099C15C /* Bson.cpp */,
 				22021A9811A5E65200E07168 /* Client.h */,
 				22021A9911A5E65200E07168 /* Client.cpp */,
+				2288A2C011AB0FA8008CD19D /* Doxygen.h */,
 				2218BF7211A56C230099C15C /* Exception.h */,
 				2218BF9011A5728F0099C15C /* Linked_map.h */,
 				2218BF7511A56C230099C15C /* Logger.h */,
@@ -194,7 +197,6 @@
 				220B1E4911A72A93002C9272 /* Storage_factory.cpp */,
 				2288A2A011AA2B28008CD19D /* Time_tracker.h */,
 				2288A29F11AA2B28008CD19D /* Time_tracker.cpp */,
-				2288A2C011AB0FA8008CD19D /* Doxygen.h */,
 			);
 			name = lj;
 			sourceTree = "<group>";
@@ -225,6 +227,8 @@
 				2218BF6C11A56B800099C15C /* logjamd_lua.cpp */,
 				2218BF6F11A56B800099C15C /* logjamd_net.h */,
 				2218BF6E11A56B800099C15C /* logjamd_net.cpp */,
+				22EFAD2911AB45650080F184 /* Lua_bson.h */,
+				22EFAD2A11AB45650080F184 /* Lua_bson.cpp */,
 				2288A2AB11AAFFF5008CD19D /* Lua_storage.h */,
 				2288A2AC11AAFFF5008CD19D /* Lua_storage.cpp */,
 			);

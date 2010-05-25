@@ -64,6 +64,7 @@ def build(ctx):
                 ,'src/logjamd/logjamd.cpp'
                 ,'src/logjamd/logjamd_lua.cpp'
                 ,'src/logjamd/logjamd_net.cpp'
+                ,'src/logjamd/Lua_bson.cpp'
                 ,'src/logjamd/Lua_storage.cpp'
                 ,'src/tokyo/Tokyo.cpp'
                 ]

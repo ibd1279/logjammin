@@ -35,6 +35,7 @@
 
 #include "logjamd/Lua_storage.h"
 
+#include "logjamd/Lua_bson.h"
 #include "build/default/config.h"
 #include "logjamd/logjamd_lua.h"
 #include "lj/Storage_factory.h"
@@ -97,7 +98,7 @@ namespace logjamd
     
     int Lua_storage::place(lua_State* L)
     {
-        Lua_bson_node* ptr = Lunar<Lua_bson_node>::check(L, -1);
+        Lua_bson* ptr = Lunar<Lua_bson>::check(L, -1);
         try
         {
             real_storage().place(ptr->real_node());
@@ -111,12 +112,12 @@ namespace logjamd
     
     int Lua_storage::remove(lua_State* L)
     {
-        Lua_bson_node* ptr = Lunar<Lua_bson_node>::check(L, -1);
+        Lua_bson* ptr = Lunar<Lua_bson>::check(L, -1);
         real_storage().remove(ptr->real_node());
         return 0;
     }
     
-    int storage_config_new(lua_State *L) {
+    int storage_config_new(lua_State* L) {
         std::string dbname(lua_to_string(L, -1));
         lj::Bson *ptr = new lj::Bson();
         ptr->set_child("main/compare", lj::bson_new_string("int64"));
@@ -130,13 +131,13 @@ namespace logjamd
         ptr->nav("index/text");
         ptr->nav("index/tag");
         ptr->nav("index/hash");
-        Lunar<Lua_bson_node>::push(L, new Lua_bson_node(ptr, true), true);
+        Lunar<Lua_bson>::push(L, new Lua_bson(ptr, true), true);
         return 1;
     }
     
-    int storage_config_save(lua_State *L) {
+    int storage_config_save(lua_State* L) {
         std::string dbname(lua_to_string(L, -2));
-        Lua_bson_node *ptr = Lunar<Lua_bson_node>::check(L, -1);
+        Lua_bson* ptr = Lunar<Lua_bson>::check(L, -1);
         std::string dbfile(DBDIR);
         if(dbname.size() > 1 && dbname[dbname.size() - 1] == '/')
             dbfile.append(dbname);
@@ -153,7 +154,7 @@ namespace logjamd
         return 0;
     }
     
-    int storage_config_load(lua_State *L) {
+    int storage_config_load(lua_State* L) {
         std::string dbname(lua_to_string(L, -1));
         std::string dbfile(DBDIR);
         if(dbname.size() > 1 && dbname[dbname.size() - 1] == '/')
@@ -161,17 +162,17 @@ namespace logjamd
         else
             dbfile.append("/").append(dbname);
         dbfile.append("/config");
-        lj::Bson *ptr = lj::bson_load(dbfile);
-        Lunar<Lua_bson_node>::push(L, new Lua_bson_node(ptr, true), true);
+        lj::Bson* ptr = lj::bson_load(dbfile);
+        Lunar<Lua_bson>::push(L, new Lua_bson(ptr, true), true);
         return 1;
     }
     
-    int storage_config_add_index(lua_State *L) {
+    int storage_config_add_index(lua_State* L) {
         std::string indxcomp(lua_to_string(L, -1));
         std::string indxfield(lua_to_string(L, -2));
         std::string indxname(lua_to_string(L, -3));
         std::string indxtype(lua_to_string(L, -4));
-        Lua_bson_node *ptr = Lunar<Lua_bson_node>::check(L, -5);
+        Lua_bson* ptr = Lunar<Lua_bson>::check(L, -5);
         ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/compare", lj::bson_new_string(indxcomp));
         ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/file", lj::bson_new_string(std::string("index.") + indxname + "." + indxtype + ".tc"));
         ptr->real_node().push_child(std::string("index/") + indxtype + "/" + indxname + "/mode", lj::bson_new_string("create"));
@@ -183,9 +184,9 @@ namespace logjamd
         return 0;
     }
     
-    int storage_config_add_nested_field(lua_State *L) {
+    int storage_config_add_nested_field(lua_State* L) {
         std::string field(lua_to_string(L, -1));
-        Lua_bson_node *ptr = Lunar<Lua_bson_node>::check(L, -2);
+        Lua_bson* ptr = Lunar<Lua_bson>::check(L, -2);
         
         std::set<std::string> allowed(lj::bson_as_value_string_set(ptr->real_node().nav("main/nested")));
         allowed.insert(field);

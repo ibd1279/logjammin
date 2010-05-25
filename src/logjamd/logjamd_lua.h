@@ -50,38 +50,6 @@ namespace logjamd {
     
     int send_response(lua_State* L);
     
-    //! Lua Bson wrapper.
-    /*!
-     \par
-     Known as "Bson" in lua.
-     \par
-     TODO This should be modified to override the __index method on the meta
-     table to get children. get() should probably be replaced with type
-     specific getters.
-     \author Jason Watson
-     \version 1.0
-     \date April 26, 2010
-     */
-    class Lua_bson_node {
-    private:
-        lj::Bson *_node;
-        bool _gc;
-    public:
-        static const char LUNAR_CLASS_NAME[];
-        static Lunar<Lua_bson_node>::RegType LUNAR_METHODS[];
-        Lua_bson_node(lua_State* L);
-        Lua_bson_node(lj::Bson* ptr, bool gc);
-        ~Lua_bson_node();
-        int nav(lua_State* L);
-        int set(lua_State* L);
-        int push(lua_State* L);
-        int get(lua_State* L);
-        int save(lua_State* L);
-        int load(lua_State* L);
-        int __tostring(lua_State* L);
-        inline lj::Bson &real_node() { return *_node; }
-    };
-    
     //! Lua Record_set wrapper.
     /*!
      \par

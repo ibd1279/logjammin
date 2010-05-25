@@ -35,6 +35,7 @@
 #include "logjamd/logjamd_net.h"
 
 #include "logjamd/logjamd_lua.h"
+#include "logjamd/Lua_bson.h"
 #include "lj/Bson.h"
 #include "lj/Logger.h"
 #include "lj/Time_tracker.h"
@@ -136,8 +137,8 @@ namespace logjamd
         timer.start();
         
         std::string cmd = lj::bson_as_string(b.nav("command"));
-        Lua_bson_node wrapped_node(&b, false);
-        Lunar<Lua_bson_node>::push(lua_, &wrapped_node, false);
+        Lua_bson wrapped_node(&b, false);
+        Lunar<Lua_bson>::push(lua_, &wrapped_node, false);
         lua_setglobal(lua_, "response");
         
         int error = luaL_loadbuffer(lua_,
@@ -157,7 +158,7 @@ namespace logjamd
             b.set_child("is_ok", lj::bson_new_boolean(true));
         }
         
-        Lunar<Lua_bson_node>::push(lua_, NULL, true);
+        Lunar<Lua_bson>::push(lua_, NULL, true);
         lua_setglobal(lua_, "response");
         timer.stop();
         
