@@ -51,29 +51,16 @@ public:
         // fill method table with methods from class T
         for (RegType *l = T::LUNAR_METHODS; l->name; l++) {
             std::string tmp(l->name);
-            if (tmp.compare("__index") == 0)
+            lua_pushstring(L, l->name);
+            lua_pushlightuserdata(L, (void*)l);
+            lua_pushcclosure(L, thunk, 1);
+            if(tmp.substr(0, 2).compare("__") == 0)
             {
-                lua_newtable(L);
-                int metametatable = lua_gettop(L);
-                lua_pushstring(L, l->name);
-                lua_pushlightuserdata(L, (void*)l);
-                lua_pushcclosure(L, thunk, 1);
-                lua_settable(L, metametatable);
-                lua_setmetatable(L, methods);
+                lua_settable(L, metatable);
             }
             else
             {
-                lua_pushstring(L, l->name);
-                lua_pushlightuserdata(L, (void*)l);
-                lua_pushcclosure(L, thunk, 1);
-                if(tmp.substr(0, 2).compare("__") == 0)
-                {
-                    lua_settable(L, metatable);
-                }
-                else
-                {
-                    lua_settable(L, methods);
-                }
+                lua_settable(L, methods);
             }
         }
         

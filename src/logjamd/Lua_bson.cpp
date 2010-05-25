@@ -8,7 +8,7 @@
  */
 
 #include "Lua_bson.h"
-
+#include <iostream>
 namespace logjamd
 {
     const char Lua_bson::LUNAR_CLASS_NAME[] = "Bson";
@@ -206,7 +206,21 @@ namespace logjamd
     
     int Lua_bson::__index(lua_State* L)
     {
-        return nav(L);
+        std::string key(lua_to_string(L, -1));
+        lua_getglobal(L, LUNAR_CLASS_NAME);
+        lua_pushvalue(L, -2);
+        lua_gettable(L, -2);
+        if (lua_isnil(L, -1))
+        {
+            lua_pop(L, 2);
+            return nav(L);
+        }
+        else
+        {
+            lua_insert(L, -3);
+            lua_pop(L, 2);
+            return 1;
+        }
     }
     
 }; // namespace logjamd
