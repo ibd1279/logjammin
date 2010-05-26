@@ -58,7 +58,7 @@ namespace logjamd
         //! Create a new Lua_bson wrapper for lj::Bson.
         /*!
          \par
-         Expects a Lua_bson object or a nothing to be ontop of the stack.
+         Expects a Lua_bson object or a nothing to be on top of the stack.
          \param L The lua state.
          */
         Lua_bson(lua_State* L);

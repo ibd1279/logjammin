@@ -92,6 +92,8 @@
 		22ED3C110FB8F99C004E2511 /* Seed.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Seed.h; sourceTree = "<group>"; };
 		22EFAD2911AB45650080F184 /* Lua_bson.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Lua_bson.h; path = src/logjamd/Lua_bson.h; sourceTree = "<group>"; };
 		22EFAD2A11AB45650080F184 /* Lua_bson.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Lua_bson.cpp; path = src/logjamd/Lua_bson.cpp; sourceTree = "<group>"; };
+		22F2C28811ACBA3A00D034B1 /* Lua_record_set.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Lua_record_set.h; path = src/logjamd/Lua_record_set.h; sourceTree = "<group>"; };
+		22F2C28911ACBA3A00D034B1 /* Lua_record_set.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Lua_record_set.cpp; path = src/logjamd/Lua_record_set.cpp; sourceTree = "<group>"; };
 		C6859E8B029090EE04C91782 /* logjammin.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = logjammin.1; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -229,6 +231,8 @@
 				2218BF6E11A56B800099C15C /* logjamd_net.cpp */,
 				22EFAD2911AB45650080F184 /* Lua_bson.h */,
 				22EFAD2A11AB45650080F184 /* Lua_bson.cpp */,
+				22F2C28811ACBA3A00D034B1 /* Lua_record_set.h */,
+				22F2C28911ACBA3A00D034B1 /* Lua_record_set.cpp */,
 				2288A2AB11AAFFF5008CD19D /* Lua_storage.h */,
 				2288A2AC11AAFFF5008CD19D /* Lua_storage.cpp */,
 			);

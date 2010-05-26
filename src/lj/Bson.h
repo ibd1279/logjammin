@@ -533,7 +533,28 @@ namespace lj
      \return The boolean value.
      */
     bool bson_as_boolean(const Bson& b);
+    
+    //! Get the value of a bson object as a double.
+    /*!
+     \par
+     Value types are converted into numbers. Document, Array, and string that
+     cannot be converted into a number return 0.0.
+     \param b The Bson object.
+     \return The double value.
+     */
     double bson_as_double(const Bson& b);
+    
+    //! Save a Bson object.
+    /*!
+     \param b The Bson object.
+     \param path The path to save to.
+     */
     void bson_save(const Bson& b, const std::string& path);
+    
+    //! Load a Bson object.
+    /*!
+     \param path The path to load from.
+     \return The loaded Bson object.
+     */
     Bson* bson_load(const std::string& path);
 }; // namespace lj

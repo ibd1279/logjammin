@@ -34,6 +34,7 @@
 
 #include "logjamd/logjamd_lua.h"
 #include "logjamd/Lua_bson.h"
+#include "logjamd/Lua_record_set.h"
 #include "logjamd/Lua_storage.h"
 #include "lj/Logger.h"
 #include "lj/Time_tracker.h"
@@ -42,6 +43,10 @@
 #include <string>
 #include <sstream>
 
+// XXX This should be moved somewhere for portability.
+#include <cerrno>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 using lj::Log;
 
@@ -77,7 +82,7 @@ namespace logjamd
     void register_logjam_functions(lua_State *L) {
         // Load object model.
         Lunar<logjamd::Lua_bson>::Register(L);
-        Lunar<logjamd::LuaStorageFilter>::Register(L);
+        Lunar<logjamd::Lua_record_set>::Register(L);
         Lunar<logjamd::Lua_storage>::Register(L);
         
         // load connection config functions.
@@ -118,6 +123,8 @@ namespace logjamd
     //=====================================================================
     // logjam global functions.
     //=====================================================================
+    
+    
     int connection_config_load(lua_State* L)
     {
         lj::Bson* ptr = get_connection_config();
@@ -162,16 +169,103 @@ namespace logjamd
         return 0;
     }
     
+    int storage_config_new(lua_State* L) {
+        std::string dbname(lua_to_string(L, -1));
+        lj::Bson *ptr = new lj::Bson();
+        ptr->set_child("main/compare", lj::bson_new_string("int64"));
+        ptr->set_child("main/file", lj::bson_new_string(std::string("db_") + dbname + ".tcb"));
+        ptr->push_child("main/mode", lj::bson_new_string("create"));
+        ptr->push_child("main/mode", lj::bson_new_string("read"));
+        ptr->push_child("main/mode", lj::bson_new_string("write"));
+        ptr->set_child("main/type", lj::bson_new_string("tree"));
+        ptr->nav("main/unique");
+        ptr->nav("index/tree");
+        ptr->nav("index/text");
+        ptr->nav("index/tag");
+        ptr->nav("index/hash");
+        Lunar<Lua_bson>::push(L, new Lua_bson(ptr, true), true);
+        return 1;
+    }
+    
+    int storage_config_save(lua_State* L) {
+        std::string dbname(lua_to_string(L, -2));
+        Lua_bson* ptr = Lunar<Lua_bson>::check(L, -1);
+        std::string dbfile(DBDIR);
+        if(dbname.size() > 1 && dbname[dbname.size() - 1] == '/')
+            dbfile.append(dbname);
+        else
+            dbfile.append("/").append(dbname);
+        
+        // This should be moved somewhere for portability.
+        if(mkdir(dbfile.c_str(), S_IRWXU | S_IROTH | S_IXOTH | S_IRGRP | S_IXGRP)) {
+            return luaL_error(L, "Failed to create directory [%d][%s].", errno, strerror(errno));
+        }
+        
+        dbfile.append("/config");
+        lj::bson_save(ptr->real_node(), dbfile);
+        return 0;
+    }
+    
+    int storage_config_load(lua_State* L) {
+        std::string dbname(lua_to_string(L, -1));
+        std::string dbfile(DBDIR);
+        if(dbname.size() > 1 && dbname[dbname.size() - 1] == '/')
+            dbfile.append(dbname);
+        else
+            dbfile.append("/").append(dbname);
+        dbfile.append("/config");
+        lj::Bson* ptr = lj::bson_load(dbfile);
+        Lunar<Lua_bson>::push(L, new Lua_bson(ptr, true), true);
+        return 1;
+    }
+    
+    int storage_config_add_index(lua_State* L) {
+        std::string indxcomp(lua_to_string(L, -1));
+        std::string indxfield(lua_to_string(L, -2));
+        std::string indxname(lua_to_string(L, -3));
+        std::string indxtype(lua_to_string(L, -4));
+        Lua_bson* ptr = Lunar<Lua_bson>::check(L, -5);
+        ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/compare", lj::bson_new_string(indxcomp));
+        ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/file", lj::bson_new_string(std::string("index.") + indxname + "." + indxtype + ".tc"));
+        ptr->real_node().push_child(std::string("index/") + indxtype + "/" + indxname + "/mode", lj::bson_new_string("create"));
+        ptr->real_node().push_child(std::string("index/") + indxtype + "/" + indxname + "/mode", lj::bson_new_string("read"));
+        ptr->real_node().push_child(std::string("index/") + indxtype + "/" + indxname + "/mode", lj::bson_new_string("write"));
+        ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/type", lj::bson_new_string(indxtype));
+        ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/field", lj::bson_new_string(indxfield));
+        ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/children", lj::bson_new_boolean(false));
+        return 0;
+    }
+    
+    int storage_config_add_nested_field(lua_State* L) {
+        std::string field(lua_to_string(L, -1));
+        Lua_bson* ptr = Lunar<Lua_bson>::check(L, -2);
+        
+        std::set<std::string> allowed(lj::bson_as_value_string_set(ptr->real_node().nav("main/nested")));
+        allowed.insert(field);
+        
+        lj::Bson* n = ptr->real_node().path("main/nested");
+        n->destroy();
+        int h = 0;
+        for(std::set<std::string>::const_iterator iter = allowed.begin();
+            iter != allowed.end();
+            ++iter) {
+            std::ostringstream buf;
+            buf << h++;
+            n->set_child(buf.str(), lj::bson_new_string(*iter));
+        }
+        return 0;
+    }
+    
     int send_response(lua_State *L)
     {
         lj::Time_tracker timer;
-        LuaStorageFilter* filter = Lunar<LuaStorageFilter>::check(L, -1);
+        Lua_record_set* filter = Lunar<Lua_record_set>::check(L, -1);
         lua_getglobal(L, "response");
         Lua_bson* node = Lunar<Lua_bson>::check(L, -1);
         
         timer.start();
         std::list<lj::Bson *> d;
-        filter->real_filter().items_raw(d);
+        filter->real_set().items_raw(d);
         for (std::list<lj::Bson *>::const_iterator iter = d.begin();
              iter != d.end();
              ++iter)
@@ -183,133 +277,5 @@ namespace logjamd
                                      lj::bson_new_uint64(timer.elapsed()));
         
         return 0;
-    }
-    
-    //=====================================================================
-    // Storage Filter Lua integration Methods.
-    //=====================================================================
-    
-    const char LuaStorageFilter::LUNAR_CLASS_NAME[] = "Record_set";
-    Lunar<LuaStorageFilter>::RegType LuaStorageFilter::LUNAR_METHODS[] = {
-    LUNAR_MEMBER_METHOD(LuaStorageFilter, mode_and),
-    LUNAR_MEMBER_METHOD(LuaStorageFilter, mode_or),
-    LUNAR_MEMBER_METHOD(LuaStorageFilter, filter),
-    LUNAR_MEMBER_METHOD(LuaStorageFilter, search),
-    LUNAR_MEMBER_METHOD(LuaStorageFilter, tagged),
-    LUNAR_MEMBER_METHOD(LuaStorageFilter, records),
-    LUNAR_MEMBER_METHOD(LuaStorageFilter, first),
-    LUNAR_MEMBER_METHOD(LuaStorageFilter, size),
-    {0, 0, 0}
-    };
-    
-    LuaStorageFilter::LuaStorageFilter(lua_State *L) : _filter(NULL) {
-        Lua_storage *ptr = Lunar<Lua_storage>::check(L, -1);
-        _filter = ptr->real_storage().none().release();
-    }
-    
-    LuaStorageFilter::LuaStorageFilter(lj::Record_set *filter) : _filter(filter) {
-    }
-    
-    LuaStorageFilter::~LuaStorageFilter() {
-        if(_filter)
-            delete _filter;
-    }
-    
-    int LuaStorageFilter::mode_and(lua_State *L) {
-        _filter->set_operation(lj::Record_set::k_intersection);
-        Lunar<LuaStorageFilter>::push(L, this, false);
-        return 1;
-    }
-    
-    int LuaStorageFilter::mode_or(lua_State *L) {
-        _filter->set_operation(lj::Record_set::k_union);
-        Lunar<LuaStorageFilter>::push(L, this, false);
-        return 1;
-    }
-    
-    int LuaStorageFilter::filter(lua_State *L) {
-        lj::Time_tracker timer;
-        lua_getglobal(L, "response");
-        Lua_bson* node = Lunar<Lua_bson>::check(L, -1);
-        lua_pop(L, 1);
-        timer.start();
-        
-        std::string field(lua_to_string(L, -2));
-                if(lua_isstring(L, -1)) {
-            std::string val(lua_to_string(L, -1));
-            lj::Record_set* ptr = _filter->equal(field, val.c_str(), val.size()).release();
-            Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
-        } else {
-            Lua_bson* n = Lunar<Lua_bson>::check(L, -1);
-            char* bson = n->real_node().to_binary();
-            lj::Record_set* ptr = NULL;
-            if(lj::bson_type_is_quotable(n->real_node().type())) {
-                ptr = _filter->equal(field, bson + 4, n->real_node().size() - 5).release();
-            } else {
-                ptr = _filter->equal(field, bson, n->real_node().size()).release();
-            }
-            delete[] bson;
-            Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
-        }
-        timer.stop();
-        node->real_node().push_child("time/query_usecs", 
-                                     lj::bson_new_uint64(timer.elapsed()));
-        return 1;
-    }
-
-    int LuaStorageFilter::search(lua_State *L) {
-        std::string field(lua_to_string(L, -2));
-        std::string val(lua_to_string(L, -1));
-        lj::Record_set* ptr = _filter->contains(field, val).release();
-        Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
-        return 1;
-    }
-    
-    int LuaStorageFilter::tagged(lua_State *L) {
-        lj::Time_tracker timer;
-        lua_getglobal(L, "response");
-        Lua_bson* node = Lunar<Lua_bson>::check(L, -1);
-        lua_pop(L, 1);
-        timer.start();
-        
-        std::string field(lua_to_string(L, -2));
-        std::string val(lua_to_string(L, -1));
-        lj::Record_set* ptr = _filter->tagged(field, val).release();
-        Lunar<LuaStorageFilter>::push(L, new LuaStorageFilter(ptr), true);
-
-        timer.stop();
-        node->real_node().push_child("time/query_usecs", 
-                                     lj::bson_new_uint64(timer.elapsed()));
-        return 1;
-    }
-    
-    int LuaStorageFilter::records(lua_State *L) {
-        std::list<lj::Bson *> d;
-        int h = 0;
-        _filter->items(d);
-        lua_newtable(L);
-        for(std::list<lj::Bson *>::const_iterator iter = d.begin();
-            iter != d.end();
-            ++iter) {
-            Lunar<Lua_bson>::push(L, new Lua_bson(*iter, true), true);
-            lua_rawseti(L, -2, ++h);
-        }
-        return 1;
-    }
-    
-    int LuaStorageFilter::first(lua_State *L) {
-        if(_filter->size() < 1) {
-            lua_pushnil(L);
-            return 1;
-        }
-        lj::Bson *d = new lj::Bson();
-        _filter->first(*d);
-        Lunar<Lua_bson>::push(L, new Lua_bson(d, true), true);
-        return 1;
-    }
-    
-    int LuaStorageFilter::size(lua_State *L) {
-        lua_pushinteger(L, _filter->size());
-        return 1;
     }
 };
