@@ -146,6 +146,8 @@ namespace logjamd
          This method is injected into the metatable in lua.
          \par
          Expects a string to be ontop of the stack.
+         \todo This needs to be modified to use the metatable instead of the
+         global.
          \param L The lua state.
          \return 1
          \sa logjamd::Lua_bson::nav()

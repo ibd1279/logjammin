@@ -2,6 +2,7 @@
  \file logjamd_lua.cpp
  \brief Logjam server lua functions implementation.
  \author Jason Watson
+ 
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  
@@ -33,6 +34,7 @@
  */
 
 #include "logjamd/logjamd_lua.h"
+
 #include "logjamd/Lua_bson.h"
 #include "logjamd/Lua_record_set.h"
 #include "logjamd/Lua_storage.h"

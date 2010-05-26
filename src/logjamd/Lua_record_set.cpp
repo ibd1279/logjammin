@@ -196,7 +196,8 @@ namespace logjamd
         return 1;
     }
     
-    int Lua_record_set::search(lua_State* L) {
+    int Lua_record_set::search(lua_State* L)
+    {
         lj::Time_tracker timer;
         lua_getglobal(L, "response");
         Lua_bson* node = Lunar<Lua_bson>::check(L, -1);
@@ -214,7 +215,8 @@ namespace logjamd
         return 1;
     }
 
-    int Lua_record_set::tagged(lua_State* L) {
+    int Lua_record_set::tagged(lua_State* L)
+    {
         lj::Time_tracker timer;
         lua_getglobal(L, "response");
         Lua_bson* node = Lunar<Lua_bson>::check(L, -1);
@@ -232,22 +234,26 @@ namespace logjamd
         return 1;
     }
 
-    int Lua_record_set::records(lua_State* L) {
+    int Lua_record_set::records(lua_State* L)
+    {
         std::list<lj::Bson *> d;
         int h = 0;
         real_set().items(d);
         lua_newtable(L);
-        for(std::list<lj::Bson *>::const_iterator iter = d.begin();
-            iter != d.end();
-            ++iter) {
+        for (std::list<lj::Bson *>::const_iterator iter = d.begin();
+             iter != d.end();
+             ++iter)
+        {
             Lunar<Lua_bson>::push(L, new Lua_bson(*iter, true), true);
             lua_rawseti(L, -2, ++h);
         }
         return 1;
     }
 
-    int Lua_record_set::first(lua_State* L) {
-        if(real_set().size() < 1) {
+    int Lua_record_set::first(lua_State* L)
+    {
+        if (real_set().size() < 1)
+        {
             lua_pushnil(L);
             return 1;
         }
@@ -257,7 +263,8 @@ namespace logjamd
         return 1;
     }
 
-    int Lua_record_set::size(lua_State* L) {
+    int Lua_record_set::size(lua_State* L)
+    {
         lua_pushinteger(L, real_set().size());
         return 1;
     }
