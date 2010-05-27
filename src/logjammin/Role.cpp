@@ -36,105 +36,118 @@
 
 namespace logjammin {
     //=====================================================================
-    // Role Database
-    //=====================================================================
-    namespace {
-        lj::Storage * role_storage() {
-            static lj::Storage dbo("role");
-            return &dbo;
-        }
-    }; // namespace
-
-    //=====================================================================
     // Role Lua Integration
     //=====================================================================
     namespace {
-        int Role_allowed(Role *obj, lua_State *L) {
+        int Role_allowed(Role* obj, lua_State* L)
+        {
+            std::set<std::string> allowed(obj->allowed());
+            lua_newtable(L);
+            for (std::list<lj::Bson *>::const_iterator iter = allowed.begin();
+                 iter != allowed.end();
+                 ++iter)
+            {
+                lua_pushstring(L, *iter);
+                lua_rawseti(L, -2, ++h);
+            }
+            return 1;
+        }
+        
+        int Role_add_allowed(Role* obj, lua_State* L)
+        {
+            std::string action(lua_to_string(L, -1));
+            obj->add_allowed(action);
             return 0;
         }
         
-        int Role_name(Role *obj, lua_State *L) {
+        int Role_remove_allowed(Role* obj, lua_State* L)
+        {
+            std::string action(lua_to_string(L, -1));
+            obj->remove_allowed(action);
             return 0;
-        }
+        }        
     }; // namespace
     
     const char Role::LUNAR_CLASS_NAME[] = "Role";
     
     Lunar<Role>::RegType Role::LUNAR_METHODS[] = {
-    {0,0}
+    LUNAR_MEMBER_METHOD(Role, __index),
+    LUNAR_STATIC_METHOD(Role, allowed),
+    LUNAR_STATIC_METHOD(Role, add_allowed),
+    LUNAR_STATIC_METHOD(Role, remove_allowed),
+    {0,0,0}
     };
     
-    //=====================================================================
-    // Role Static Methods
-    //=====================================================================        
-    
-    void Role::all(std::list<Role> &results) {
-        role_storage()->all().items<Role>(results);
+    Role::Role(lj::Bson* ptr) : doc_(ptr)
+    {
     }
     
-    void Role::at(unsigned long long key,
-                  Role &model) {
-        role_storage()->none().union_key(key).first<Role>(model);
-    }
-    
-    void Role::at_name(const std::string &name, Role &model) {
-        lj::StorageFilter sf = role_storage()->filter("name",
-                                                      name.c_str(),
-                                                      name.size() + 1);
-        
-        if(sf.size() == 0) {
-            throw lj::Exception("Role", std::string("Unknown Name [").append(name).append("]."));
-        } else if(sf.size() > 1) {
-            throw lj::Exception("Role", std::string("Ambiguous Name [").append(name).append("]."));
+    Role::~Role()
+    {
+        if (doc_)
+        {
+            delete doc_;
         }
-        
-        sf.first<Role>(model);
     }
     
-    //=====================================================================
-    // Role ctor/dtor
-    //=====================================================================
-        
-    Role::~Role() {
-    }
-    
-    //=====================================================================
-    // Role Instance
-    //=====================================================================
-    
-    void Role::add_allowed(const std::string &action) {
-        std::set<std::string> allowed(nav("allowed").to_set());
-        allowed.insert(action);
-        
-        lj::BSONNode n;
-        int h = 0;
-        for(std::set<std::string>::const_iterator iter = allowed.begin();
-            iter != allowed.end();
-            ++iter) {
-            std::ostringstream buf;
-            buf << h++;
-            n.child(buf.str(), lj::BSONNode().value(*iter));
+    int __index(lua_State* L)
+    {
+        std::string key(lua_to_string(L, -1));
+        lua_getglobal(L, LUNAR_CLASS_NAME);
+        lua_pushvalue(L, -2);
+        lua_gettable(L, -2);
+        if (lua_isnil(L, -1))
+        {
+            lua_pop(L, 2);
+            return doc_->nav(L);
         }
-        nav("allowed").assign(n);
+        else
+        {
+            lua_insert(L, -3);
+            lua_pop(L, 2);
+            return 1;
+        }
     }
     
-    void Role::remove_allowed(const std::string &action) {
-        std::set<std::string> allowed(nav("allowed").to_set());
+    std::string name()
+    {
+        return lj::bson_as_string(doc_->nav("name"));
+    }
+    
+    void name(const std::string& v)
+    {
+        doc_->set_child("name", lj::bson_new_string(v));
+    }
+    
+    std::set<std::string> allowed()
+    {
+        return lj::bson_as_value_string_set(doc_->nav("allowed"));
+    }
+    
+    void add_allowed(const std::string& action)
+    {
+        lj::Bson* ptr = doc_->path("allowed");
+        std::set<std::string> allowed(lj::bson_as_value_string_set(*ptr));
+        
+        if (allowed.find(action) == allowed.end())
+        {
+            ptr->push_child("", lj::bson_new_string(action));
+        }
+    }
+    
+    void remove_allowed(const std::string& action)
+    {
+        lj::Bson* ptr = doc_->path("allowed");
+        std::set<std::string> allowed(lj::bson_as_value_string_set(*ptr));
         allowed.erase(action);
-
-        lj::BSONNode n;
-        int h = 0;
-        for(std::set<std::string>::const_iterator iter = allowed.begin();
-            iter != allowed.end();
-            ++iter) {
-            std::ostringstream buf;
-            buf << h++;
-            n.child(buf.str(), lj::BSONNode().value(*iter));
+        ptr->destroy();
+        
+        for (std::set<std::string>::const_iterator iter = allowed.begin();
+             allowed.end() != iter;
+             ++iter)
+        {
+            ptr->push_child("", lj::bson_new_string(*iter));
         }
-        nav("allowed").assign(n);
     }
     
-    lj::Storage *Role::dao() const {
-        return role_storage();
-    }
 }; // namespace logjammin

@@ -35,6 +35,7 @@
 #include <string>
 #include <list>
 #include "lunar.h"
+#include "lj/Bson.h"
 
 namespace logjammin {
     
@@ -44,77 +45,59 @@ namespace logjammin {
      \version 1.0
      \date July 9, 2009
      */
-    class Role : public Model {
+    class Role {
     public:
-        
-        //=====================================================================
-        // Role Lua Integration
-        //=====================================================================
-        
-        //! Lua bindings class name.
+        //! Class name in lua.
         static const char LUNAR_CLASS_NAME[];
         
-        //! Luna bindings method array.
+        //! Table of methods for lua.
         static Lunar<Role>::RegType LUNAR_METHODS[];
         
-        //=====================================================================
-        // Role Static Methods
-        //=====================================================================
-        
-        //! Get a list of all roles in the database.
-        /*!
-         \par
-         Roles in the list must be deallocated with "delete".
-         \return A list of roles.
-         */
-        static void all(std::list<Role> &results);
-        
-        //! Get a role by primary key.
-        /*!
-         \param key the primary key.
-         \param model Pointer to the object to populate.
-         \exception tokyo::Exception When the record cannot be found.
-         */
-        static void at(unsigned long long key,
-                       Role &model);
-        
-        //! Get a role by name.
-        /*!
-         \param name The role name.
-         \param model Pointer to the object to populate.
-         \exception tokyo::Exception When the record cannot be read.
-         \exception std::string When the record does not exist.
-         */
-        static void at_name(const std::string &name,
-                            Role &model);
-        
-        //=====================================================================
-        // Role ctor/dtor
-        //=====================================================================
-        
         //! Create a new role object.
-        Role() : Model() {}
-        
-        //! Create a new role object as a copy an existing role object.
-        Role(const Role &orig) : Model(orig) {}
-        
-        //! Lua constructor.
-        Role(lua_State *L) : Model() {}
-        
+        Role(lj::Bson* ptr);
+
         //! Delete the role.
-        virtual ~Role();
+        ~Role();
         
-        //=====================================================================
-        // Role Instance
-        //=====================================================================
+        //! Get a field.
+        /*!
+         \param L The lua state.
+         \return 1
+         */
+        int __index(lua_State* L);
         
-        //! Add an allowed action to the role.
-        void add_allowed(const std::string &action);
+        //! Get the name.
+        /*!
+         \return the name.
+         */
+        std::string name();
         
-        //! Remove an allowed action from the role.
-        void remove_allowed(const std::string &action);
+        //! Set the name.
+        /*!
+         \param v The new name.
+         */
+        void name(const std::string& v);
         
-    protected:
-        virtual lj::Storage *dao() const;
+        //! Get allowed actions.
+        /*!
+         \return action set.
+         */
+        std::set<std::string> allowed();
+        
+        //! Add an allowed action.
+        /*!
+         \param L The lua state.
+         \return 0
+         */
+        void add_allowed(const std::string& action);
+        
+        //! Remove an allowed action.
+        /*!
+         \param L The lua state.
+         \return 0
+         */
+        void remove_allowed(const std::string& action);
+    private:
+        lj::Bson* doc_;
     };
 }; // namespace logjammin
