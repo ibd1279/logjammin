@@ -32,6 +32,7 @@
  */
 
 #include "tokyo/Tokyo.h"
+#include <iostream>
 
 using lj::Exception;
 
@@ -174,7 +175,7 @@ namespace tokyo
                                     Tree_db::Enumerator::Direction dir) : dir_(dir), cur_(0), more_cache_(false)
     {
         cur_ = tcbdbcurnew(db);
-        if (Tree_db::Enumerator::k_forward)
+        if (Tree_db::Enumerator::k_forward == dir_)
         {
             more_cache_ = tcbdbcurfirst(cur_);
         }
@@ -216,7 +217,7 @@ namespace tokyo
             ptr = 0;
         }
         
-        if (Tree_db::Enumerator::k_forward)
+        if (Tree_db::Enumerator::k_forward == dir_)
         {
             more_cache_ = tcbdbcurnext(cur_);
         }

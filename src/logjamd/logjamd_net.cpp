@@ -51,7 +51,6 @@ namespace logjamd
 {
     Service_dispatch::Service_dispatch() : ip_(), in_(0), in_offset_(0), in_sz_(4), in_post_length_(false), lua_(0)
     {
-        in_ = new char[4];
     }
     
     Service_dispatch::~Service_dispatch()
@@ -81,6 +80,14 @@ namespace logjamd
     
     void Service_dispatch::read(const char* buffer, int sz)
     {
+        if (!in_)
+        {
+            in_ = new char[4];
+            in_offset_ = 0;
+            in_sz_ = 4;
+            in_post_length_ = false;
+        }
+        
         int read_offset = 0;
         if (!in_post_length_)
         {
@@ -119,10 +126,7 @@ namespace logjamd
             logic(b);
             
             delete[] in_;
-            in_ = new char[4];
-            in_offset_ = 0;
-            in_sz_ = 4;
-            in_post_length_ = false;
+            in_ = 0;
         }
         
         if (sz - read_offset)

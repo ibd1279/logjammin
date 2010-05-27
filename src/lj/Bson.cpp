@@ -34,6 +34,7 @@
 
 #include "lj/Bson.h"
 
+#include <cstdio>
 #include <cstring>
 #include <fstream>
 #include <list>
@@ -436,9 +437,13 @@ namespace lj {
             ptr->set_value(Bson::k_array, NULL);
         }
         
-        std::ostringstream oss;
-        oss << ptr->last_child_++;
-        ptr->child_map_.insert(std::pair<std::string, Bson*>(oss.str(), c));
+        //std::ostringstream oss;
+        //oss << ptr->last_child_++;
+        //ptr->child_map_.insert(std::pair<std::string, Bson*>(oss.str(), c));
+        char key[20];
+        sprintf(key, "%d", last_child_++);
+        std::string tmp(key);
+        ptr->child_map_.insert(std::pair<std::string, Bson*>(tmp, c));
     }
     
     Bson& Bson::operator<<(const Bson& o)

@@ -418,13 +418,17 @@ namespace lj
         ~Linked_map()
         {
             iterator* ptr = h_;
-            while (t_ != ptr)
+            while (ptr)
             {
                 iterator* tmp = ptr;
                 ptr = ptr->next_;
+                if (tmp->val_)
+                {
+                    delete tmp->val_;
+                }
+                
                 delete tmp;
             }
-            delete ptr;
         }
         
         //! Assignment operator.
