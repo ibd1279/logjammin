@@ -438,7 +438,6 @@ namespace lj {
         
         std::ostringstream oss;
         oss << ptr->last_child_++;
-        std::string tmp = oss.str();
         ptr->child_map_.insert(std::pair<std::string, Bson*>(oss.str(), c));
     }
     

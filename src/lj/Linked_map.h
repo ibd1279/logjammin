@@ -415,6 +415,18 @@ namespace lj
             }
         }
         
+        ~Linked_map()
+        {
+            iterator* ptr = h_;
+            while (t_ != ptr)
+            {
+                iterator* tmp = ptr;
+                ptr = ptr->next_;
+                delete tmp;
+            }
+            delete ptr;
+        }
+        
         //! Assignment operator.
         /*!
          \param o The original.
