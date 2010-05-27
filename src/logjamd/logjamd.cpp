@@ -39,12 +39,10 @@ int main(int argc, char * const argv[]) {
     lj::Log::debug.disable();
     lj::Log::info.enable();
     
-    lj::Socket_selector sl;
-    
     try
     {
-        sl.bind_port(27754, new logjamd::Service_dispatch());
-        sl.loop();
+        lj::Socket_selector::instance().bind_port(27754, new logjamd::Service_dispatch());
+        lj::Socket_selector::instance().loop();
     }
     catch(lj::Exception* e)
     {

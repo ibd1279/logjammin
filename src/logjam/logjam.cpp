@@ -90,7 +90,7 @@ namespace {
     char *editline_prompt(EditLine *e) {
         return ">";
     }
-    void input_loop(lj::Client* dispatch, lj::Socket_selector& ss)
+    void input_loop(lj::Client* dispatch)
     {
         EditLine* el = el_init("logjam", stdin, stdout, stderr);
         History* hist = history_init();
@@ -172,17 +172,10 @@ namespace {
             }
             else if (send_line(line))
             {
-                lj::Bson b;
-                b.set_child("command", lj::bson_new_string(script));
-                dispatch->add_bytes(b.to_binary(), b.size());
-                dispatch->clear();
-                while (!dispatch->response())
-                {
-                    ss.select(NULL);
-                };
+                lj::Bson* b = dispatch->send_command(script);
                 old_script = script;
                 script.clear();
-                std::cout << lj::bson_as_pretty_string(*dispatch->response()) << std::endl;
+                std::cout << lj::bson_as_pretty_string(*b) << std::endl;
             }
             else if (load_line(line))
             {
@@ -210,16 +203,10 @@ namespace {
             }
             else if (send_line(buffer))
             {
-                lj::Bson b;
-                b.set_child("command", lj::bson_new_string(script));
-                dispatch->add_bytes(b.to_binary(), b.size());
-                dispatch->clear();
-                while (!dispatch->response())
-                {
-                    ss.select(NULL);
-                };
+                lj::Bson* b = dispatch->send_command(script);
+                old_script = script;
                 script.clear();
-                std::cout << lj::bson_as_pretty_string(*dispatch->response()) << std::endl;
+                std::cout << lj::bson_as_pretty_string(*b) << std::endl;
             }
             else if (load_line(buffer))
             {
@@ -238,12 +225,9 @@ int main(int argc, char * const argv[]) {
     lj::Log::debug.disable();
     lj::Log::info.disable();
     
-    lj::Client* sb = new lj::Client();
-    lj::Socket_selector sl;
+    lj::Client* sb = lj::Client::connect("127.0.0.1", 27754);
     
-    sl.connect("127.0.0.1", 27754, sb);
-    
-    input_loop(sb, sl);
+    input_loop(sb);
     
     return 0;
 }

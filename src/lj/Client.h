@@ -42,14 +42,8 @@ namespace lj
     //! Logjam client Socket_dispatch implementation.
     class Client : public Socket_dispatch {
     public:
-        //! Constructor
-        Client();
-        
         //! Destructor
         virtual ~Client();
-        
-        virtual Socket_dispatch* accept(int socket, char* buffer);
-        virtual void read(const char* buffer, int sz);
         
         //! Get the response object from the server.
         /*!
@@ -59,6 +53,31 @@ namespace lj
         
         //! Remove the response object.
         void clear();
+        
+        //! Send a command to the server.
+        /*!
+         \param cmd The command to send.
+         */
+        lj::Bson* send_command(const std::string& cmd);
+        
+        //! Send a command to the server.
+        /*!
+         \param cmd The command to send.
+         */
+        lj::Bson* send_command(const lj::Bson* cmd);
+        
+        //! Connect to a client.
+        /*!
+         \param host The server host.
+         \param port The server port.
+         \return The connected client.
+         */
+        static lj::Client* connect(const std::string host, int port);
+    protected:
+        //! Constructor
+        Client();
+        virtual Socket_dispatch* accept(int socket, char* buffer);
+        virtual void read(const char* buffer, int sz);
     private:
         char * in_;
         int in_offset_;

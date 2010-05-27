@@ -130,5 +130,31 @@ namespace lj
             delete response_;
             response_ = 0;
         }
-    }    
+    }
+    
+    lj::Bson* Client::send_command(const std::string& cmd)
+    {
+        lj::Bson b;
+        b.set_child("command", lj::bson_new_string(cmd));
+        return send_command(&b);
+    }
+    
+    lj::Bson* Client::send_command(const lj::Bson* cmd)
+    {
+        clear();
+        add_bytes(cmd->to_binary(), cmd->size());
+        while (!response())
+        {
+            lj::Socket_selector::instance().select(NULL);
+        }
+        return response();
+    }
+    
+    lj::Client* Client::connect(const std::string host, int port)
+    {
+        lj::Client* client = new lj::Client();
+        lj::Socket_selector::instance().connect(host, port, client);
+        return client;
+    }
+
 }; // namespace logjamd

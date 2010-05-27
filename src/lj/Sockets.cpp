@@ -311,6 +311,12 @@ namespace lj
         }
     }
     
+    Socket_selector& Socket_selector::instance()
+    {
+        static Socket_selector sel;
+        return sel;
+    }
+    
     Socket_dispatch::Socket_dispatch() : is_w_(false), s_(0), m_(k_communicate), out_(0), out_offset_(0), out_sz_(0)
     {
     }

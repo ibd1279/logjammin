@@ -50,9 +50,6 @@ namespace lj
      */
     class Socket_selector {
     public:
-        //! Create a new socket selector.
-        Socket_selector();
-        
         //! destroy a socket selector.
         ~Socket_selector();
         
@@ -80,7 +77,16 @@ namespace lj
         //! Perform a select operation on all open sockets.
         void loop();
         
+        //! Get the current
+        /*!
+         \return A Socket_selector.
+         */
+        static Socket_selector& instance();
+        
     private:
+        //! Create a new socket selector.
+        Socket_selector();
+                
         //! Hidden copy constructor.
         /*!
          \param o Other.
