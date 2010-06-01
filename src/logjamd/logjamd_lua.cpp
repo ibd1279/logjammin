@@ -38,6 +38,7 @@
 #include "logjamd/Lua_bson.h"
 #include "logjamd/Lua_record_set.h"
 #include "logjamd/Lua_storage.h"
+#include "lj/base64.h"
 #include "lj/Logger.h"
 #include "lj/Time_tracker.h"
 #include "build/default/config.h"
@@ -65,17 +66,30 @@ namespace
     void push_default_storage(lua_State* L, lj::Bson* config)
     {
         lua_newtable(L);
+        int db_table = lua_gettop(L);
         lj::Bson* default_storage = config->path("default_storage");
         for (lj::Linked_map<std::string, lj::Bson*>::const_iterator iter = default_storage->to_map().begin();
              default_storage->to_map().end() != iter;
              ++iter)
         {
             lua_pushstring(L, lj::bson_as_string(*iter->second).c_str());
-            logjamd::Lua_storage* ptr = new logjamd::Lua_storage(lj::bson_as_string(*iter->second));
-            Lunar<logjamd::Lua_storage>::push(L, ptr, true);
-            lua_settable(L, -3);
+            logjamd::Lua_storage* db_ptr = new logjamd::Lua_storage(lj::bson_as_string(*iter->second));
+            Lunar<logjamd::Lua_storage>::push(L, db_ptr, true);
+            lua_settable(L, db_table);
+            
+            // Add some logic to load the event handlers.
         }
         lua_setglobal(L, "db");
+    }
+    
+    int function_writer(lua_State* L,
+                        const void* p,
+                        size_t sz,
+                        void* ud)
+    {
+        std::ostringstream* ptr = static_cast<std::ostringstream*>(ud);
+        ptr->write(static_cast<const char*>(p), sz);
+        return 0;
     }
 }; // namespace
 
@@ -108,6 +122,8 @@ namespace logjamd
         lua_setglobal(L, "sc_add_index");
         lua_pushcfunction(L, &storage_config_add_nested_field);
         lua_setglobal(L, "sc_add_nested");
+        lua_pushcfunction(L, &storage_config_add_handler);
+        lua_setglobal(L, "sc_add_event_handler");
         
         // load standard query functions.
         lua_pushcfunction(L, &send_response);
@@ -255,6 +271,41 @@ namespace logjamd
             buf << h++;
             n->set_child(buf.str(), lj::bson_new_string(*iter));
         }
+        return 0;
+    }
+    
+    int storage_config_add_handler(lua_State* L)
+    {
+        Lua_bson* ptr = Lunar<Lua_bson>::check(L, -3);
+        std::string event("handler/");
+        event.append(lua_to_string(L, -2));
+        if (lua_isstring(L, -1))
+        {
+            ptr->real_node().set_child(event,
+                                       lj::bson_new_string(lua_to_string(L, -1)));
+        }
+        else if (lua_isfunction(L, -1) && !lua_iscfunction(L, -1))
+        {
+            std::ostringstream buffer;
+            lua_dump(L, &function_writer, &buffer);
+            lj::Bson* function = lj::bson_new_binary(buffer.str().c_str(),
+                                                     buffer.str().size(),
+                                                     lj::Bson::k_bin_function);
+            ptr->real_node().set_child(event, function);
+        }
+        else
+        {
+            luaL_argerror(L, -1, "Expected string of lua, or a lua function.");
+        }
+        return 0;
+    }
+    
+    int storage_config_remove_handler(lua_State* L)
+    {
+        Lua_bson* ptr = Lunar<Lua_bson>::check(L, -2);
+        std::string event("handler/");
+        event.append(lua_to_string(L, -1));
+        ptr->real_node().nav(event).destroy();
         return 0;
     }
     

@@ -128,6 +128,8 @@ namespace lj
         
         //! Rollback a transaction.
         void abort_transaction();
+        
+        Bson* configuration();
     protected:
         //! Open up a Storage engine.
         /*!
@@ -161,6 +163,8 @@ namespace lj
         
         //! Directory where database files should be stored.
         std::string directory_;
+        
+        lj::Bson* config_;
         
         //! Remove a record from the indexed files.
         Storage &deindex(const unsigned long long key);

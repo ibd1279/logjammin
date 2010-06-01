@@ -126,6 +126,10 @@ namespace logjamd {
      */
     int storage_config_add_nested_field(lua_State* L);
     
+    int storage_config_add_handler(lua_State* L);
+
+    int storage_config_remove_handler(lua_State* L);
+
     //! Send a response.
     /*!
      \par

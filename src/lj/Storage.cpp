@@ -136,52 +136,52 @@ namespace lj
         }
     }; // namespace
     
-    Storage::Storage(const std::string &dir) : db_(NULL), fields_tree_(), fields_hash_(), fields_text_(), fields_tag_(), nested_indexing_(), directory_(DBDIR)
+    Storage::Storage(const std::string &dir) : db_(NULL), fields_tree_(), fields_hash_(), fields_text_(), fields_tag_(), nested_indexing_(), directory_(DBDIR), config_(NULL)
     {
         directory_.append("/").append(dir);
         std::string configfile(directory_ + "/config");
         
         Log::info.log("Loading configuration from [%s].") << configfile << Log::end;
-        Bson* cfg = bson_load(configfile);
-        Log::info.log("Loaded Settings [%s].") << lj::bson_as_pretty_string(*cfg) << Log::end;
+        config_ = bson_load(configfile);
+        Log::info.log("Loaded Settings [%s].") << lj::bson_as_pretty_string(*config_) << Log::end;
         
-        std::string dbfile(directory_ + "/" + lj::bson_as_string(cfg->nav("main/file")));
+        std::string dbfile(directory_ + "/" + lj::bson_as_string(config_->nav("main/file")));
         Log::info.log("Opening database [%s].") << dbfile << Log::end;
         db_ = new tokyo::Tree_db(dbfile,
                                  BDBOREADER | BDBOWRITER | BDBOCREAT,
                                  &storage_tree_cfg,
-                                 cfg->path("main"));
+                                 config_->path("main"));
         
         Log::info.log("Opening tree indices under [%s].") << directory_ << Log::end;
         open_storage_index<tokyo::Tree_db>(directory_,
-                                           cfg->nav("index/tree").to_map(),
+                                           config_->nav("index/tree").to_map(),
                                            BDBOREADER | BDBOWRITER | BDBOCREAT,
                                            &storage_tree_cfg,
                                            fields_tree_);
         
         Log::info.log("Opening hash indices under [%s].") << directory_ << Log::end;
         open_storage_index<tokyo::Hash_db>(directory_,
-                                           cfg->nav("index/hash").to_map(),
+                                           config_->nav("index/hash").to_map(),
                                            HDBOREADER | HDBOWRITER | HDBOCREAT,
                                            &storage_hash_cfg,
                                            fields_hash_);
         
         Log::info.log("Opening text indices under [%s].") << directory_ << Log::end;
         open_storage_index<TextSearcher>(directory_,
-                                         cfg->nav("index/text").to_map(),
+                                         config_->nav("index/text").to_map(),
                                          QDBOREADER | QDBOWRITER | QDBOCREAT,
                                          &storage_text_cfg,
                                          fields_text_);
         
         Log::info.log("Opening tag indices under [%s].") << directory_ << Log::end;
         open_storage_index<TagSearcher>(directory_,
-                                        cfg->nav("index/tag").to_map(),
+                                        config_->nav("index/tag").to_map(),
                                         WDBOREADER | WDBOWRITER | WDBOCREAT,
                                         &storage_tag_cfg,
                                         fields_tag_);
         
         Log::info.log("Registering nested indexing from [%s].") << directory_ << Log::end;
-        Bson *nested_fields = cfg->path("main/nested");
+        Bson *nested_fields = config_->path("main/nested");
         for (Linked_map<std::string, Bson*>::const_iterator iter = nested_fields->to_map().begin();
              nested_fields->to_map().end() != iter;
              ++iter)
@@ -242,6 +242,11 @@ namespace lj
         
         Log::info.log("Closing database for [%s].") << directory_ << Log::end;
         delete db_;
+        
+        if (config_)
+        {
+            delete config_;
+        }
     }
     
     std::auto_ptr<Record_set> Storage::at(const unsigned long long key) const
@@ -649,5 +654,10 @@ namespace lj
             iter->second->abort_writes();
         }
         db_->abort_writes();
+    }
+    
+    Bson* Storage::configuration()
+    {
+        return config_;
     }
 };

@@ -3,6 +3,7 @@
  \file Client.h
  \brief LJ client header.
  \author Jason Watson
+ 
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  
