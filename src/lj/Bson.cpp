@@ -33,6 +33,7 @@
  */
 
 #include "lj/Bson.h"
+#include "lj/Base64.h"
 
 #include <cstdio>
 #include <cstring>
@@ -95,17 +96,23 @@ namespace lj {
             }
         }
         
-        std::string k_bson_type_string_string("string");
-        std::string k_bson_type_string_int32("int32");
-        std::string k_bson_type_string_double("double");
-        std::string k_bson_type_string_int64("int64");
-        std::string k_bson_type_string_timestamp("timestamp");
-        std::string k_bson_type_string_boolean("boolean");
-        std::string k_bson_type_string_null("null");
-        std::string k_bson_type_string_document("document");
-        std::string k_bson_type_string_binary_document("binary-document");
-        std::string k_bson_type_string_array("array");
-        std::string k_bson_type_string_unknown("unknown");
+        const std::string k_bson_type_string_string("string");
+        const std::string k_bson_type_string_int32("int32");
+        const std::string k_bson_type_string_double("double");
+        const std::string k_bson_type_string_int64("int64");
+        const std::string k_bson_type_string_timestamp("timestamp");
+        const std::string k_bson_type_string_boolean("boolean");
+        const std::string k_bson_type_string_null("null");
+        const std::string k_bson_type_string_document("document");
+        const std::string k_bson_type_string_binary_document("binary-document");
+        const std::string k_bson_type_string_array("array");
+        const std::string k_bson_type_string_unknown("unknown");
+        
+        const std::string k_bson_binary_type_string_function("function");
+        const std::string k_bson_binary_type_string_binary("binary");
+        const std::string k_bson_binary_type_string_uuid("uuid");
+        const std::string k_bson_binary_type_string_md5("md5");
+        const std::string k_bson_binary_type_string_user_defined("user-defined");
     };
     
     const std::string& bson_type_string(const Bson::Type t)
@@ -138,26 +145,46 @@ namespace lj {
         return k_bson_type_string_unknown;
     }
     
+    const std::string& bson_binary_type_string(const Bson::Binary_type subtype)
+    {
+        switch (subtype)
+        {
+            case Bson::k_bin_function:
+                return k_bson_binary_type_string_function;
+            case Bson::k_bin_binary:
+                return k_bson_binary_type_string_binary;
+            case Bson::k_bin_uuid:
+                return k_bson_binary_type_string_uuid;
+            case Bson::k_bin_md5:
+                return k_bson_binary_type_string_md5;
+            case Bson::k_bin_user_defined:
+                return k_bson_binary_type_string_user_defined;
+            default:
+                break;
+        }
+        return k_bson_type_string_unknown;
+    }
+    
     size_t bson_type_min_size(const Bson::Type t)
     {
         switch (t)
         {
-            case Bson::k_string:
-                return 5;
-            case Bson::k_int32:
-                return 4;
-            case Bson::k_timestamp:
-            case Bson::k_int64:
-            case Bson::k_double:
-                return 8;
-            case Bson::k_boolean:
-                return 1;
             case Bson::k_null:
                 return 0;
+            case Bson::k_boolean:
+                return 1;
+            case Bson::k_int32:
+                return 4;
+            case Bson::k_string:
+            case Bson::k_binary:
             case Bson::k_binary_document:
             case Bson::k_document:
             case Bson::k_array:
                 return 5;
+            case Bson::k_timestamp:
+            case Bson::k_int64:
+            case Bson::k_double:
+                return 8;
             default:
                 break;
         }
@@ -228,6 +255,11 @@ namespace lj {
                     memcpy(&sz, v, 4);
                     value_ = new char[sz + 4];
                     memcpy(value_, v, sz + 4);
+                    break;
+                case Bson::k_binary:
+                    memcpy(&sz, v, 4);
+                    value_ = new char[sz + 5];
+                    memcpy(value_, v, sz + 5);
                     break;
                 case Bson::k_int32:
                     value_ = new char[4];
@@ -481,6 +513,10 @@ namespace lj {
                 memcpy(&sz, value_, 4);
                 sz += 4;
                 break;
+            case Bson::k_binary:
+                memcpy(&sz, value_, 4);
+                sz += 5;
+                break;
             case Bson::k_int32:
                 sz = 4;
                 break;
@@ -576,9 +612,21 @@ namespace lj {
     {
         return new Bson(Bson::k_null, NULL);
     }
+
+    Bson* bson_new_binary(const char* val, uint32_t sz, Bson::Binary_type subtype)
+    {
+        char* ptr = new char[sz + 5];
+        memcpy(ptr, &sz, 4);
+        memcpy(ptr + 4, &subtype, 1);
+        memcpy(ptr + 5, val, sz);
+        Bson* new_bson = new Bson(Bson::k_binary, ptr);
+        delete[] ptr;
+        return new_bson;
+    }
     
     std::string bson_as_debug_string(const Bson& b)
     {
+        Bson::Binary_type binary_type = Bson::k_bin_user_defined;
         long long l = 0;
         double d = 0.0;
         const char* v = b.to_value();
@@ -592,8 +640,14 @@ namespace lj {
         {
             case Bson::k_string:
                 memcpy(&l, v, 4);
-                buf << "(4-" << l << ")" << "(" << l << ")" << (v + 4);
+                buf << "(4-" << l << ")" << (v + 4);
                 return buf.str();
+            case Bson::k_binary:
+                memcpy(&l, v, 4);
+                memcpy(&binary_type, v, 1);
+                buf << "(4-" << l << ")";
+                buf << "(1-" << bson_binary_type_string(binary_type) << ")";
+                buf << lj::base64_encode(reinterpret_cast<const unsigned char*>(v + 4), l - 1);
             case Bson::k_int32:
                 memcpy(&l, v, 4);
                 buf << "(4)" << l;
@@ -661,6 +715,9 @@ namespace lj {
             case Bson::k_string:
                 memcpy(&l, v, 4);
                 return std::string(v + 4);
+            case Bson::k_binary:
+                memcpy(&l, v, 4);
+                buf << lj::base64_encode(reinterpret_cast<const unsigned char*>(v + 4), l - 1);
             case Bson::k_int32:
                 memcpy(&l, v, 4);
                 buf << l;
@@ -764,6 +821,9 @@ namespace lj {
             case Bson::k_string:
                 memcpy(&l, v, 4);
                 return std::string(v + 4);
+            case Bson::k_binary:
+                memcpy(&l, v, 4);
+                return lj::base64_encode(reinterpret_cast<const unsigned char*>(v + 4), l - 1);
             case Bson::k_int32:
                 memcpy(&l, v, 4);
                 buf << l;
@@ -1001,6 +1061,19 @@ namespace lj {
                 break;
         }
         return 0.0;
+    }
+    
+    const char* bson_as_binary(const Bson& b, Bson::Binary_type* t, uint32_t* sz)
+    {
+        if (Bson::k_binary == b.type())
+        {
+            return 0;
+        }
+        *t = Bson::k_bin_user_defined;
+        const char* v = b.to_value();
+        memcpy(sz, v, 4);
+        memcpy(t, v + 4, 1);
+        return v + 5;
     }
     
     void bson_save(const Bson& b, const std::string& path)

@@ -88,6 +88,8 @@
 		22D32CAA102AACB50015E71D /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
 		22DB7C5D101A5CC800BEEB52 /* OpenID.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenID.h; sourceTree = "<group>"; };
 		22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = OpenID.cpp; sourceTree = "<group>"; };
+		22E25DBF11B0957100A12B22 /* Base64.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Base64.h; path = src/lj/Base64.h; sourceTree = "<group>"; };
+		22E25DC011B0957100A12B22 /* Base64.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Base64.cpp; path = src/lj/Base64.cpp; sourceTree = "<group>"; };
 		22ED3BBF0FB8704A004E2511 /* Controller.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Controller.h; sourceTree = "<group>"; };
 		22ED3C110FB8F99C004E2511 /* Seed.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Seed.h; sourceTree = "<group>"; };
 		22EFAD2911AB45650080F184 /* Lua_bson.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Lua_bson.h; path = src/logjamd/Lua_bson.h; sourceTree = "<group>"; };
@@ -177,6 +179,8 @@
 			children = (
 				220B1E5611A77AF5002C9272 /* All_record_set.h */,
 				220B1E5711A77AF5002C9272 /* All_record_set.cpp */,
+				22E25DBF11B0957100A12B22 /* Base64.h */,
+				22E25DC011B0957100A12B22 /* Base64.cpp */,
 				2218BF7111A56C230099C15C /* Bson.h */,
 				2218BF7011A56C230099C15C /* Bson.cpp */,
 				22021A9811A5E65200E07168 /* Client.h */,

@@ -53,6 +53,7 @@ def build(ctx):
         features = ['cxx', 'cprogram']
         ,source = [
                 'src/lj/All_record_set.cpp'
+                ,'src/lj/Base64.cpp'
                 ,'src/lj/Bson.cpp'
                 ,'src/lj/Logger.cpp'
                 ,'src/lj/Record_set.cpp'
@@ -87,10 +88,11 @@ def build(ctx):
     logjam = ctx(
         features = ['cxx', 'cprogram']
         ,source = [
-                'src/lj/Logger.cpp'
-                ,'src/lj/Sockets.cpp'
-                ,'src/lj/Client.cpp'
+                'src/lj/Base64.cpp'
                 ,'src/lj/Bson.cpp'
+                ,'src/lj/Client.cpp'
+                ,'src/lj/Logger.cpp'
+                ,'src/lj/Sockets.cpp'
                 ,'src/logjam/logjam.cpp'
                 ]
         ,target = 'logjam'

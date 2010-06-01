@@ -92,6 +92,16 @@ namespace lj
             k_maxkey = 0x7F     //!< Node contains a reserved BSON spec value.
         };
         
+        //! Enumeration of Bson binary subtypes.
+        enum Binary_type
+        {
+            k_bin_function = 0x01,     //!< Function.
+            k_bin_binary = 0x02,       //!< Binary String.
+            k_bin_uuid = 0x03,         //!< UUID.
+            k_bin_md5 = 0x05,          //!< MD5.
+            k_bin_user_defined = 0x80  //!< User defined binary string.
+        };
+        
         //! Create a new document Node.
         /*!
          \par
@@ -341,6 +351,13 @@ namespace lj
      */
     const std::string& bson_type_string(const Bson::Type t);
     
+    //! Get a string version of the binary type.
+    /*!
+     \param subtype The type to convert into a string.
+     \return String name for the type.
+     */
+    const std::string& bson_binary_type_string(const Bson::Binary_type subtype);
+    
     //! Get the minimum number of bytes required for a type.
     /*!
      \param t The type to get the required bytes for.
@@ -440,7 +457,18 @@ namespace lj
      \return a new Bson object.
      */
     Bson* bson_new_null();
-        
+
+    //! Create a new binary object.
+    /*!
+     \par
+     Object should be released with delete.
+     \param val The binary value
+     \param sz The size of the binary value.
+     \param subtype The binary subtype.
+     \return a new Bson object.
+     */
+    Bson* bson_new_binary(const char* val, uint32_t sz, Bson::Binary_type subtype);
+    
     //! Get the value of a Bson object as a C++ string in debug format.
     /*!
      \par
@@ -543,6 +571,21 @@ namespace lj
      \return The double value.
      */
     double bson_as_double(const Bson& b);
+    
+    //! Get the value of a bson object as a pointer.
+    /*!
+     \par
+     Only works if the bson value is a binary type.
+     \par
+     Returned value points to an internal data structure and should not be
+     freed. Pointer will become invalid if the Bson object associated with
+     the value is deleted.
+     \param b The Bson object.
+     \param t[out] Location to store the subtype in.
+     \param sz[out] Location to store the length in.
+     \return pointer to a string of bytes, NULL otherwise.
+     */
+    const char* bson_as_binary(const Bson& b, Bson::Binary_type* t, uint32_t* sz);
     
     //! Save a Bson object.
     /*!
