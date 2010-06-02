@@ -259,10 +259,10 @@ namespace lj
          This method loads the records from the database with out parsing them.
          The Bson pointers returned will not work for any of the DOM methods.
          \par
-         \param records The list to place un-marshalled items into.
+         \param records The Bson object to place un-marshalled items into.
          \return True when records have been added.
          */
-        virtual bool items_raw(std::list<Bson*>& records) const = 0;
+        virtual bool items_raw(lj::Bson& records) const = 0;
     protected:
         static tokyo::Tree_db* storage_db(const Storage* s);
         static tokyo::Tree_db* storage_tree(const Storage* s,

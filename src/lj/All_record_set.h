@@ -88,7 +88,7 @@ namespace lj
         virtual bool items(std::list<Bson>& records) const;
         virtual bool items(std::list<Bson*>& records) const;
         virtual bool first(Bson& result) const;
-        virtual bool items_raw(std::list<Bson*>& records) const;
+        virtual bool items_raw(lj::Bson& records) const;
     private:
         const Storage *storage_;
         Record_set::Operation op_;

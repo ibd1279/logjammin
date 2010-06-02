@@ -169,8 +169,10 @@ namespace logjamd
         lua_setglobal(L, "sc_add_event_handler");
         
         // load standard query functions.
-        lua_pushcfunction(L, &send_response);
-        lua_setglobal(L, "send_response");
+        lua_pushcfunction(L, &send_set);
+        lua_setglobal(L, "send_set");
+        lua_pushcfunction(L, &send_item);
+        lua_setglobal(L, "send_item");
         
         // load the default storage.
         lj::Bson* config = get_connection_config();
@@ -352,7 +354,7 @@ namespace logjamd
         return 0;
     }
     
-    int send_response(lua_State *L)
+    int send_set(lua_State *L)
     {
         lj::Time_tracker timer;
         Lua_record_set* filter = Lunar<Lua_record_set>::check(L, -1);
@@ -360,17 +362,25 @@ namespace logjamd
         Lua_bson* node = Lunar<Lua_bson>::check(L, -1);
         
         timer.start();
-        std::list<lj::Bson *> d;
-        filter->real_set().items_raw(d);
-        for (std::list<lj::Bson *>::const_iterator iter = d.begin();
-             iter != d.end();
-             ++iter)
-        {
-            node->real_node().push_child("items", *iter);
-        }
+        lj::Bson* d = new lj::Bson();
+        node->real_node().push_child("results", d);
+        filter->real_set().items_raw(*d);
         timer.stop();
+        
         node->real_node().push_child("time/load_usecs",
                                      lj::bson_new_uint64(timer.elapsed()));
+        
+        return 0;
+    }
+    
+    int send_item(lua_State* L)
+    {        
+        Lua_bson* item = Lunar<Lua_bson>::check(L, -1);
+        lua_getglobal(L, "response");
+        Lua_bson* response = Lunar<Lua_bson>::check(L, -1);
+        lua_pop(L, 1);
+
+        response->real_node().push_child("item", new lj::Bson(item->real_node()));
         
         return 0;
     }

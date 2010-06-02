@@ -298,7 +298,7 @@ namespace lj
         return true;
     }
     
-    bool All_record_set::items_raw(std::list<Bson*>& records) const
+    bool All_record_set::items_raw(lj::Bson& records) const
     {
         tokyo::Tree_db* db = Record_set::storage_db(storage_);
         tokyo::Tree_db::Enumerator* e = db->forward_enumerator();
@@ -312,7 +312,7 @@ namespace lj
             }
             modified = true;
             Bson* n = new Bson(Bson::k_binary_document, static_cast<char *>(p.first));
-            records.push_back(n);
+            records.push_child("", n);
             free(p.first);
         }
         return modified;

@@ -136,51 +136,51 @@ namespace lj
         }
     }; // namespace
     
-    Storage::Storage(const std::string &dir) : db_(NULL), fields_tree_(), fields_hash_(), fields_text_(), fields_tag_(), nested_indexing_(), directory_(DBDIR), config_(NULL)
+    Storage::Storage(const std::string &name) : db_(NULL), fields_tree_(), fields_hash_(), fields_text_(), fields_tag_(), nested_indexing_(), config_(NULL), name_(name)
     {
-        directory_.append("/").append(dir);
-        std::string configfile(directory_ + "/config");
+        std::string dir(directory());
+        std::string configfile(dir + "/config");
         
         Log::info.log("Loading configuration from [%s].") << configfile << Log::end;
         config_ = bson_load(configfile);
         Log::info.log("Loaded Settings [%s].") << lj::bson_as_pretty_string(*config_) << Log::end;
         
-        std::string dbfile(directory_ + "/" + lj::bson_as_string(config_->nav("main/file")));
+        std::string dbfile(dir + "/" + lj::bson_as_string(config_->nav("main/file")));
         Log::info.log("Opening database [%s].") << dbfile << Log::end;
         db_ = new tokyo::Tree_db(dbfile,
                                  BDBOREADER | BDBOWRITER | BDBOCREAT,
                                  &storage_tree_cfg,
                                  config_->path("main"));
         
-        Log::info.log("Opening tree indices under [%s].") << directory_ << Log::end;
-        open_storage_index<tokyo::Tree_db>(directory_,
+        Log::info.log("Opening tree indices under [%s].") << dir << Log::end;
+        open_storage_index<tokyo::Tree_db>(dir,
                                            config_->nav("index/tree").to_map(),
                                            BDBOREADER | BDBOWRITER | BDBOCREAT,
                                            &storage_tree_cfg,
                                            fields_tree_);
         
-        Log::info.log("Opening hash indices under [%s].") << directory_ << Log::end;
-        open_storage_index<tokyo::Hash_db>(directory_,
+        Log::info.log("Opening hash indices under [%s].") << dir << Log::end;
+        open_storage_index<tokyo::Hash_db>(dir,
                                            config_->nav("index/hash").to_map(),
                                            HDBOREADER | HDBOWRITER | HDBOCREAT,
                                            &storage_hash_cfg,
                                            fields_hash_);
         
-        Log::info.log("Opening text indices under [%s].") << directory_ << Log::end;
-        open_storage_index<TextSearcher>(directory_,
+        Log::info.log("Opening text indices under [%s].") << dir << Log::end;
+        open_storage_index<TextSearcher>(dir,
                                          config_->nav("index/text").to_map(),
                                          QDBOREADER | QDBOWRITER | QDBOCREAT,
                                          &storage_text_cfg,
                                          fields_text_);
         
-        Log::info.log("Opening tag indices under [%s].") << directory_ << Log::end;
-        open_storage_index<TagSearcher>(directory_,
+        Log::info.log("Opening tag indices under [%s].") << dir << Log::end;
+        open_storage_index<TagSearcher>(dir,
                                         config_->nav("index/tag").to_map(),
                                         WDBOREADER | WDBOWRITER | WDBOCREAT,
                                         &storage_tag_cfg,
                                         fields_tag_);
         
-        Log::info.log("Registering nested indexing from [%s].") << directory_ << Log::end;
+        Log::info.log("Registering nested indexing from [%s].") << dir << Log::end;
         Bson *nested_fields = config_->path("main/nested");
         for (Linked_map<std::string, Bson*>::const_iterator iter = nested_fields->to_map().begin();
              nested_fields->to_map().end() != iter;
@@ -193,9 +193,10 @@ namespace lj
     
     Storage::~Storage()
     {
+        std::string dir(directory());
         if (fields_tag_.size())
         {
-            Log::info.log("Closing tag indicies under [%s].") << directory_ << Log::end;
+            Log::info.log("Closing tag indicies under [%s].") << dir << Log::end;
             for (std::map<std::string, TagSearcher *>::const_iterator iter = fields_tag_.begin();
                  fields_tag_.end() != iter;
                  ++iter)
@@ -207,7 +208,7 @@ namespace lj
         
         if (fields_text_.size())
         {
-            Log::info.log("Closing text indicies under [%s].") << directory_ << Log::end;
+            Log::info.log("Closing text indicies under [%s].") << dir << Log::end;
             for (std::map<std::string, TextSearcher *>::const_iterator iter = fields_text_.begin();
                  fields_text_.end() != iter;
                  ++iter)
@@ -219,7 +220,7 @@ namespace lj
         
         if (fields_hash_.size())
         {
-            Log::info.log("Closing hash indicies under [%s].") << directory_ << Log::end;
+            Log::info.log("Closing hash indicies under [%s].") << dir << Log::end;
             for (std::map<std::string, tokyo::Hash_db*>::const_iterator iter = fields_hash_.begin();
                  fields_hash_.end() != iter;
                  ++iter)
@@ -231,7 +232,7 @@ namespace lj
         
         if (fields_tree_.size())
         {
-            Log::info.log("Closing tree indicies under [%s].") << directory_ << Log::end;
+            Log::info.log("Closing tree indicies under [%s].") << dir << Log::end;
             for(std::map<std::string, tokyo::Tree_db *>::const_iterator iter = fields_tree_.begin();
                 iter != fields_tree_.end();
                 ++iter) {
@@ -240,7 +241,7 @@ namespace lj
             }
         }
         
-        Log::info.log("Closing database for [%s].") << directory_ << Log::end;
+        Log::info.log("Closing database for [%s].") << dir << Log::end;
         delete db_;
         
         if (config_)
@@ -659,5 +660,17 @@ namespace lj
     Bson* Storage::configuration()
     {
         return config_;
+    }
+    
+    const std::string& Storage::name() const
+    {
+        return name_;
+    }
+    
+    std::string Storage::directory()
+    {
+        std::string dir(DBDIR);
+        dir.append("/").append(name());
+        return dir;
     }
 };

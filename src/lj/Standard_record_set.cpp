@@ -297,7 +297,8 @@ namespace lj
         }
         return false;
     }
-    bool Standard_record_set::items_raw(std::list<Bson*>& records) const
+    
+    bool Standard_record_set::items_raw(lj::Bson& records) const
     {
         bool modified = false;
         for (std::set<unsigned long long>::const_iterator iter = keys_->begin();
@@ -305,10 +306,11 @@ namespace lj
              ++iter)
         {
             modified = true;
-            records.push_back(doc_at(*iter, false).release());
+            records.push_child("", doc_at(*iter, false).release());
         }
         return modified;
     }
+    
     std::auto_ptr<Bson> Standard_record_set::doc_at(unsigned long long pkey,
                                                     bool marshall) const
     {

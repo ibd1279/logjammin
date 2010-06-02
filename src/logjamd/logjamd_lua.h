@@ -130,7 +130,7 @@ namespace logjamd {
 
     int storage_config_remove_handler(lua_State* L);
 
-    //! Send a response.
+    //! Put a result set on the response.
     /*!
      \par
      Populates the item field on the response.
@@ -139,5 +139,16 @@ namespace logjamd {
      \param L The lua state.
      \return 0
      */
-    int send_response(lua_State* L);
+    int send_set(lua_State* L);
+    
+    //! Put one item on the response.
+    /*!
+     \par
+     populates the item field on the response with a single item.
+     \par
+     Expects a Lua_bson object on top of the stack.
+     \param L The lua state.
+     \return 0
+     */
+    int send_item(lua_State* L);
 };

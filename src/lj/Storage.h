@@ -129,7 +129,17 @@ namespace lj
         //! Rollback a transaction.
         void abort_transaction();
         
+        //! Get the configuration.
+        /*!
+         \return Bson object.
+         */
         Bson* configuration();
+        
+        //! Get the name associated with the loading of this storage object.
+        /*!
+         \return the name.
+         */
+        const std::string& name() const;
     protected:
         //! Open up a Storage engine.
         /*!
@@ -139,6 +149,12 @@ namespace lj
          \param dir The document repository name.
          */
         Storage(const std::string &dir);
+        
+        //! Get the directory to use for the storage engine.
+        /*!
+         \return Directory path.
+         */
+        std::string directory();
     private:
         //! Primary database.
         /*!
@@ -161,10 +177,11 @@ namespace lj
         //! Fields that have unique constraints.
         std::set<std::string> nested_indexing_;
         
-        //! Directory where database files should be stored.
-        std::string directory_;
-        
+        //! Configuration.
         lj::Bson* config_;
+        
+        //! name of the storage object.
+        std::string name_;
         
         //! Remove a record from the indexed files.
         Storage &deindex(const unsigned long long key);
