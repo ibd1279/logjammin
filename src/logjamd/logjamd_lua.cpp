@@ -54,7 +54,44 @@
 using lj::Log;
 
 namespace
-{    
+{
+    int function_writer(lua_State* L,
+                        const void* p,
+                        size_t sz,
+                        void* ud)
+    {
+        std::ostringstream* ptr = static_cast<std::ostringstream*>(ud);
+        ptr->write(static_cast<const char*>(p), sz);
+        return 0;
+    }
+    
+    struct Function_reader_state
+    {
+        bool done;
+        lj::Bson* bson;
+        
+        Function_reader_state(lj::Bson* ptr) : bson(ptr)
+        {
+        }
+    };
+    
+    const char* function_reader(lua_State* L,
+                                void* ud,
+                                size_t* sz)
+    {
+        Function_reader_state* ptr = static_cast<Function_reader_state*>(ud);
+        if (ptr->done)
+        {
+            *sz = 0;
+            return 0;
+        }
+        else
+        {
+            *sz = ptr->bson->size();
+            return ptr->bson->to_value();
+        }
+    }
+    
     lj::Bson* get_connection_config()
     {
         std::string dbfile(DBDIR);
@@ -67,29 +104,35 @@ namespace
     {
         lua_newtable(L);
         int db_table = lua_gettop(L);
+        lua_newtable(L);
+        int event_table = lua_gettop(L);
         lj::Bson* default_storage = config->path("default_storage");
         for (lj::Linked_map<std::string, lj::Bson*>::const_iterator iter = default_storage->to_map().begin();
              default_storage->to_map().end() != iter;
              ++iter)
         {
-            lua_pushstring(L, lj::bson_as_string(*iter->second).c_str());
-            logjamd::Lua_storage* db_ptr = new logjamd::Lua_storage(lj::bson_as_string(*iter->second));
+            std::string dbname(lj::bson_as_string(*iter->second));
+            lua_pushstring(L, dbname.c_str());
+            logjamd::Lua_storage* db_ptr = new logjamd::Lua_storage(dbname);
             Lunar<logjamd::Lua_storage>::push(L, db_ptr, true);
             lua_settable(L, db_table);
             
             // Add some logic to load the event handlers.
+            lj::Bson* handlers = db_ptr->real_storage().configuration()->path("handler");
+            for (lj::Linked_map<std::string, lj::Bson*>::const_iterator iter2 = handlers->to_map().begin();
+                 handlers->to_map().end() != iter2;
+                 ++iter2)
+            {
+                std::string event_name(dbname);
+                event_name.append("__").append(iter2->first);
+                lua_pushstring(L, event_name.c_str());
+                Function_reader_state state(iter2->second);
+                lua_load(L, &function_reader, &state, event_name.c_str());
+                lua_settable(L, event_table);
+            }
         }
+        lua_setglobal(L, "db_events");
         lua_setglobal(L, "db");
-    }
-    
-    int function_writer(lua_State* L,
-                        const void* p,
-                        size_t sz,
-                        void* ud)
-    {
-        std::ostringstream* ptr = static_cast<std::ostringstream*>(ud);
-        ptr->write(static_cast<const char*>(p), sz);
-        return 0;
     }
 }; // namespace
 
