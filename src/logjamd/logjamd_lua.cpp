@@ -55,40 +55,62 @@ using lj::Log;
 
 namespace
 {
-    int function_writer(lua_State* L,
+    struct Function_buffer
+    {
+        char* const buf;
+        char* cur;
+        char* const max;
+        size_t size;
+        
+        Function_buffer(size_t sz) : buf(new char[sz + 1]), cur(buf), max(buf + sz + 1)
+        {
+        }
+        
+        ~Function_buffer()
+        {
+            delete[] buf;
+        }
+        
+        int copy(const void* source, size_t sz)
+        {
+            if (cur + sz >= max)
+            {
+                return 1;
+            }
+            
+            memcpy(cur, source, sz);
+            cur += sz;
+            return 0;
+        }
+    private:
+        Function_buffer(const Function_buffer&);
+    };
+    
+    int function_writer(lua_State*,
                         const void* p,
                         size_t sz,
                         void* ud)
     {
-        std::ostringstream* ptr = static_cast<std::ostringstream*>(ud);
-        ptr->write(static_cast<const char*>(p), sz);
-        return 0;
+        Function_buffer* ptr = static_cast<Function_buffer*>(ud);
+        return ptr->copy(p, sz);
     }
-    
-    struct Function_reader_state
-    {
-        bool done;
-        lj::Bson* bson;
-        
-        Function_reader_state(lj::Bson* ptr) : bson(ptr)
-        {
-        }
-    };
-    
+
     const char* function_reader(lua_State* L,
                                 void* ud,
                                 size_t* sz)
     {
-        Function_reader_state* ptr = static_cast<Function_reader_state*>(ud);
-        if (ptr->done)
+        Function_buffer* ptr = static_cast<Function_buffer*>(ud);
+        if (ptr->cur >= ptr->max)
         {
             *sz = 0;
             return 0;
         }
         else
         {
-            *sz = ptr->bson->size();
-            return ptr->bson->to_value();
+            const char* bytes = ptr->buf;
+            *sz = ptr->cur - ptr->buf;
+            ptr->cur = ptr->max;
+            return bytes;
         }
     }
     
@@ -126,9 +148,32 @@ namespace
                 std::string event_name(dbname);
                 event_name.append("__").append(iter2->first);
                 lua_pushstring(L, event_name.c_str());
-                Function_reader_state state(iter2->second);
-                lua_load(L, &function_reader, &state, event_name.c_str());
-                lua_settable(L, event_table);
+
+                Function_buffer state(iter2->second->size());
+                if (lj::Bson::k_string == iter2->second->type())
+                {
+                    std::string tmp(lj::bson_as_string(*(iter2->second)));
+                    state.copy(tmp.c_str(), tmp.size());
+                }
+                else
+                {
+                    uint32_t sz = 0;
+                    lj::Bson::Binary_type t = lj::Bson::k_bin_function;
+                    const char* tmp = lj::bson_as_binary(*(iter2->second),
+                                                         &t,
+                                                         &sz);
+                    state.copy(tmp, sz);
+                }
+                
+                if (lua_load(L, &function_reader, &state, event_name.c_str()))
+                {
+                    Log::critical.log("Error %s") << lua_to_string(L, -1) << Log::end;
+                    lua_pop(L, 2);
+                }
+                else
+                {
+                    lua_settable(L, event_table);
+                }
             }
         }
         lua_setglobal(L, "db_events");
@@ -324,17 +369,19 @@ namespace logjamd
         Lua_bson* ptr = Lunar<Lua_bson>::check(L, -3);
         std::string event("handler/");
         event.append(lua_to_string(L, -2));
+        
         if (lua_isstring(L, -1))
         {
-            ptr->real_node().set_child(event,
-                                       lj::bson_new_string(lua_to_string(L, -1)));
+            lj::Bson* function = lj::bson_new_string(lua_to_string(L, -1));
+            ptr->real_node().set_child(event, function);
         }
         else if (lua_isfunction(L, -1) && !lua_iscfunction(L, -1))
         {
-            std::ostringstream buffer;
+            Function_buffer buffer(10 * 1024);
             lua_dump(L, &function_writer, &buffer);
-            lj::Bson* function = lj::bson_new_binary(buffer.str().c_str(),
-                                                     buffer.str().size(),
+            
+            lj::Bson* function = lj::bson_new_binary(buffer.buf,
+                                                     buffer.cur - buffer.buf,
                                                      lj::Bson::k_bin_function);
             ptr->real_node().set_child(event, function);
         }
@@ -343,6 +390,7 @@ namespace logjamd
             luaL_argerror(L, -1, "Expected string of lua, or a lua function.");
         }
         return 0;
+        
     }
     
     int storage_config_remove_handler(lua_State* L)
@@ -379,7 +427,7 @@ namespace logjamd
         lua_getglobal(L, "response");
         Lua_bson* response = Lunar<Lua_bson>::check(L, -1);
         lua_pop(L, 1);
-
+        
         response->real_node().push_child("item", new lj::Bson(item->real_node()));
         
         return 0;

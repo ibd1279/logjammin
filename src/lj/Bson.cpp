@@ -34,6 +34,7 @@
 
 #include "lj/Bson.h"
 #include "lj/Base64.h"
+#include "lj/Logger.h"
 
 #include <cstdio>
 #include <cstring>
@@ -105,6 +106,7 @@ namespace lj {
         const std::string k_bson_type_string_null("null");
         const std::string k_bson_type_string_document("document");
         const std::string k_bson_type_string_binary_document("binary-document");
+        const std::string k_bson_type_string_binary("binary");
         const std::string k_bson_type_string_array("array");
         const std::string k_bson_type_string_unknown("unknown");
         
@@ -121,6 +123,8 @@ namespace lj {
         {
             case Bson::k_string:
                 return k_bson_type_string_string;
+            case Bson::k_binary:
+                return k_bson_type_string_binary;
             case Bson::k_int32:
                 return k_bson_type_string_int32;
             case Bson::k_double:
@@ -647,7 +651,8 @@ namespace lj {
                 memcpy(&binary_type, v, 1);
                 buf << "(4-" << l << ")";
                 buf << "(1-" << bson_binary_type_string(binary_type) << ")";
-                buf << lj::base64_encode(reinterpret_cast<const unsigned char*>(v + 4), l - 1);
+                buf << lj::base64_encode(reinterpret_cast<const unsigned char*>(v + 5), l);
+                return buf.str();
             case Bson::k_int32:
                 memcpy(&l, v, 4);
                 buf << "(4)" << l;
@@ -717,7 +722,7 @@ namespace lj {
                 return std::string(v + 4);
             case Bson::k_binary:
                 memcpy(&l, v, 4);
-                buf << lj::base64_encode(reinterpret_cast<const unsigned char*>(v + 4), l - 1);
+                return lj::base64_encode(reinterpret_cast<const unsigned char*>(v + 5), l);
             case Bson::k_int32:
                 memcpy(&l, v, 4);
                 buf << l;
@@ -823,7 +828,7 @@ namespace lj {
                 return std::string(v + 4);
             case Bson::k_binary:
                 memcpy(&l, v, 4);
-                return lj::base64_encode(reinterpret_cast<const unsigned char*>(v + 4), l - 1);
+                return lj::base64_encode(reinterpret_cast<const unsigned char*>(v + 5), l);
             case Bson::k_int32:
                 memcpy(&l, v, 4);
                 buf << l;
@@ -1065,11 +1070,10 @@ namespace lj {
     
     const char* bson_as_binary(const Bson& b, Bson::Binary_type* t, uint32_t* sz)
     {
-        if (Bson::k_binary == b.type())
+        if (Bson::k_binary != b.type())
         {
             return 0;
         }
-        *t = Bson::k_bin_user_defined;
         const char* v = b.to_value();
         memcpy(sz, v, 4);
         memcpy(t, v + 4, 1);

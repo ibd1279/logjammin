@@ -37,6 +37,8 @@
 #include "lj/lunar.h"
 #include "lj/Record_set.h"
 
+#include <string>
+
 namespace logjamd
 {
     //! Lua Record_set wrapper.
@@ -223,6 +225,6 @@ namespace logjamd
          */
         inline lj::Record_set &real_set() { return *filter_; }
     private:
-        lj::Record_set *filter_;
+        lj::Record_set* filter_;
     };     
 }; // namespace logjamd

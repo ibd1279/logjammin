@@ -73,7 +73,7 @@ namespace lj
                 {
                     throw new lj::Exception("base64", "invalid character");
                 }
-                tmp[i] = base64_dictionary[*iter - 43];
+                tmp[i] = base64_dictionary[*iter - '+'];
             }
             
             switch (i)
@@ -111,16 +111,19 @@ namespace lj
     }
 
     std::string base64_encode(const unsigned char *input, unsigned int size)
-    {
+    {        
         std::ostringstream data;
         unsigned int h = 0;
-        while (h < size - 2)
+        if (2 < size)
         {
-            data << base64_values[input[h] >> 2];
-            data << base64_values[((input[h] & 3) << 4)  | (input[h + 1] >> 4)];
-            data << base64_values[((input[h + 1] & 15) << 2) | (input[h + 2] >> 6)];
-            data << base64_values[input[h + 2] & 63];
-            h += 3;
+            while (h < size - 2)
+            {
+                data << base64_values[input[h] >> 2];
+                data << base64_values[((input[h] & 3) << 4)  | (input[h + 1] >> 4)];
+                data << base64_values[((input[h + 1] & 15) << 2) | (input[h + 2] >> 6)];
+                data << base64_values[input[h + 2] & 63];
+                h += 3;
+            }
         }
         
         switch (size - h)
