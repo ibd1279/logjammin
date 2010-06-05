@@ -107,6 +107,7 @@ namespace logjamd
          */
         int remove(lua_State* L);
         inline lj::Storage &real_storage() { return *storage_; }
+        
     private:
         //! Hidden.
         Lua_storage(const Lua_storage&);

@@ -241,6 +241,7 @@ namespace lj {
             }
             child_map_.clear();
             value_ = NULL;
+            last_child_ = 0;
         }
         else
         {
@@ -317,14 +318,25 @@ namespace lj {
     Bson& Bson::copy_from(const Bson& o)
     {
         destroy();
-        if (bson_type_is_nested(o.type()))
+        type_ = o.type();
+        if (k_document == o.type())
         {
             for (Linked_map<std::string, Bson *>::const_iterator iter = o.child_map_.begin();
                  o.child_map_.end() != iter;
                  ++iter)
             {
                 Bson *ptr = new Bson(*(iter->second));
-                child_map_.insert(std::pair<std::string, Bson *>(iter->first, ptr));
+                set_child(iter->first, ptr);
+            }
+        }
+        else if (k_array == o.type())
+        {
+            for (Linked_map<std::string, Bson *>::const_iterator iter = o.child_map_.begin();
+                 o.child_map_.end() != iter;
+                 ++iter)
+            {
+                Bson *ptr = new Bson(*(iter->second));
+                push_child("", ptr);
             }
         }
         else
@@ -626,6 +638,19 @@ namespace lj {
         Bson* new_bson = new Bson(Bson::k_binary, ptr);
         delete[] ptr;
         return new_bson;
+    }
+
+    lj::Bson* bson_new_cost(const std::string& cmd,
+                            unsigned long long time,
+                            long long filter_size,
+                            long long result_size)
+    {
+        lj::Bson* b = new lj::Bson();
+        b->set_child("cmd", lj::bson_new_string(cmd));
+        b->set_child("usecs", lj::bson_new_uint64(time));
+        b->set_child("filter_size", lj::bson_new_int64(filter_size));
+        b->set_child("result_size", lj::bson_new_int64(result_size));
+        return b;
     }
     
     std::string bson_as_debug_string(const Bson& b)

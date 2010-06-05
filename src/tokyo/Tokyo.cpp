@@ -167,6 +167,11 @@ namespace tokyo
         }
     }
     
+    long long Hash_db::count()
+    {
+        return (long long)tchdbrnum(db());
+    }
+    
     //=====================================================================
     // Tree_db Implementation
     //=====================================================================
@@ -448,6 +453,11 @@ namespace tokyo
         }
     }
     
+    long long Tree_db::count()
+    {
+        return (long long)tcbdbrnum(db());
+    }
+    
     DB::value_t Tree_db::max_key()
     {
         BDBCUR* cur = tcbdbcurnew(db());
@@ -538,7 +548,7 @@ namespace tokyo
     {
         return new Tree_db::Enumerator(db(), Tree_db::Enumerator::k_backward);
     }
-    
+        
     //=====================================================================
     // TextSearcher Implementation
     //=====================================================================

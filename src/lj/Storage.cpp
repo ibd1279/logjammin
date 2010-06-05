@@ -265,9 +265,11 @@ namespace lj
     
     std::auto_ptr<Record_set> Storage::none() const
     {
-        return std::auto_ptr<Record_set>(new Standard_record_set(this,
-                                                                 new std::set<unsigned long long>(),
-                                                                 Record_set::k_union));
+        Standard_record_set* ptr = new Standard_record_set(this,
+                                                           new std::set<unsigned long long>(),
+                                                           Record_set::k_union);
+        ptr->set_raw_size(0);
+        return std::auto_ptr<Record_set>(ptr);
     }
     
     Storage &Storage::place(Bson &value)

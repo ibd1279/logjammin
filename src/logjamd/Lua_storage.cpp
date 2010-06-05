@@ -37,9 +37,10 @@
 
 #include "logjamd/Lua_bson.h"
 #include "logjamd/Lua_record_set.h"
-#include "build/default/config.h"
 #include "logjamd/logjamd_lua.h"
 #include "lj/Storage_factory.h"
+#include "lj/Time_tracker.h"
+#include "build/default/config.h"
 
 #include <string>
 #include <sstream>
@@ -73,27 +74,82 @@ namespace logjamd
     
     int Lua_storage::all(lua_State* L)
     {
+        lj::Time_tracker timer;
+        timer.start();
+        
+        // Build the command.
+        std::string cmd("db.");
+        cmd.append(storage_->name()).append(":all()");
+        
+        // Create the record set.
+        lj::Bson* cost_data = new lj::Bson();
         lj::Record_set* ptr = real_storage().all().release();
-        Lunar<Lua_record_set>::push(L, new Lua_record_set(ptr), true);
+        Lua_record_set* wrapper = new Lua_record_set(ptr, cost_data);
+        Lunar<Lua_record_set>::push(L, wrapper, true);
+        
+        // Finish the debug info collection.
+        timer.stop();
+        cost_data->push_child("", lj::bson_new_cost(cmd,
+                                                    timer.elapsed(),
+                                                    ptr->raw_size(),
+                                                    ptr->size()));        
         return 1;
     }
     
     int Lua_storage::none(lua_State* L)
     {
+        lj::Time_tracker timer;
+        timer.start();
+        
+        // Build the command.
+        std::string cmd("db.");
+        cmd.append(storage_->name()).append(":none()");
+        
+        // Create the record set.
+        lj::Bson* cost_data = new lj::Bson();
         lj::Record_set* ptr = real_storage().none().release();
-        Lunar<Lua_record_set>::push(L, new Lua_record_set(ptr), true);
+        Lua_record_set* wrapper = new Lua_record_set(ptr, cost_data);
+        Lunar<Lua_record_set>::push(L, wrapper, true);
+        
+        // Finish the debug info collection.
+        timer.stop();
+        cost_data->push_child("", lj::bson_new_cost(cmd,
+                                                    timer.elapsed(),
+                                                    ptr->raw_size(),
+                                                    ptr->size()));        
         return 1;
     }
     
     int Lua_storage::at(lua_State* L)
     {
-        lj::Record_set* ptr = real_storage().at(luaL_checkint(L, -1)).release();
-        Lunar<Lua_record_set>::push(L, new Lua_record_set(ptr), true);
+        lj::Time_tracker timer;
+        timer.start();
+        
+        // Get the key to exclude.
+        int key = luaL_checkint(L, -1);
+
+        // Build the command executed.
+        std::ostringstream cmd_builder;
+        cmd_builder << "include(" << key << ")";
+        
+        lj::Bson* cost_data = new lj::Bson();
+        lj::Record_set* ptr = real_storage().at(key).release();
+        Lua_record_set* wrapper = new Lua_record_set(ptr, cost_data);
+        Lunar<Lua_record_set>::push(L, wrapper, true);
+        
+        timer.stop();
+        cost_data->push_child("", lj::bson_new_cost(cmd_builder.str(),
+                                                    timer.elapsed(),
+                                                    ptr->raw_size(),
+                                                    ptr->size()));        
         return 1;
     }
     
     int Lua_storage::place(lua_State* L)
     {
+        lj::Time_tracker timer;
+        timer.start();
+        
         Lua_bson* ptr = Lunar<Lua_bson>::check(L, -1);
         try
         {
@@ -103,13 +159,22 @@ namespace logjamd
         {
             luaL_error(L, "Unable to place content. %s", ex->to_string().c_str());
         }
+        
+        timer.stop();
+        
         return 0;
     }
     
     int Lua_storage::remove(lua_State* L)
     {
+        lj::Time_tracker timer;
+        timer.start();
+        
         Lua_bson* ptr = Lunar<Lua_bson>::check(L, -1);
         real_storage().remove(ptr->real_node());
+        
+        timer.stop();
+        
         return 0;
     }
 }; // namespace logjamd

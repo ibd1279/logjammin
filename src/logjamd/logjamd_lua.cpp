@@ -405,19 +405,47 @@ namespace logjamd
     int send_set(lua_State *L)
     {
         lj::Time_tracker timer;
+        timer.start();
+
+        // Get the set to send.
         Lua_record_set* filter = Lunar<Lua_record_set>::check(L, -1);
+        
+        // Build the full string for the set.
+        std::string cmd("send_set(");
+        for (lj::Linked_map<std::string, lj::Bson*>::const_iterator iter = filter->costs().to_map().begin();
+             filter->costs().to_map().end() != iter;
+             ++iter)
+        {
+            cmd.append(lj::bson_as_string(*(*iter).second->path("cmd")));
+            cmd.append(":");
+        }
+        cmd.erase(cmd.size() - 1).append(")");
+        
+        // Get the set of costs.
+        lj::Bson* cost_data = new lj::Bson(filter->costs());
+        
+        // get the items.
+        lj::Bson* items = new lj::Bson();
+        filter->real_set().items_raw(*items);
+        
+        // Put it all together.
+        lj::Bson* result = new lj::Bson();
+        result->set_child("cmd", lj::bson_new_string(cmd));
+        result->set_child("costs", cost_data);
+        result->set_child("items", items);
+
+        // Put it on the response.
         lua_getglobal(L, "response");
         Lua_bson* node = Lunar<Lua_bson>::check(L, -1);
+        lua_pop(L, 1);
+        node->real_node().push_child("results", result);
         
-        timer.start();
-        lj::Bson* d = new lj::Bson();
-        node->real_node().push_child("results", d);
-        filter->real_set().items_raw(*d);
+        // Add the last cost
         timer.stop();
-        
-        node->real_node().push_child("time/load_usecs",
-                                     lj::bson_new_uint64(timer.elapsed()));
-        
+        cost_data->push_child("", lj::bson_new_cost("send_set",
+                                                    timer.elapsed(),
+                                                    filter->real_set().size(),
+                                                    filter->real_set().size()));
         return 0;
     }
     

@@ -140,6 +140,7 @@ namespace lj
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
         
         std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
+        ptr->set_raw_size(storage_keys.size());
         return ptr;
     }
     
@@ -173,6 +174,7 @@ namespace lj
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
         
         std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
+        ptr->set_raw_size(storage_keys.size());
         return ptr;
     }    
     
@@ -206,6 +208,7 @@ namespace lj
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
         
         std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
+        ptr->set_raw_size(storage_keys.size());
         return ptr;
     }
     
@@ -229,6 +232,7 @@ namespace lj
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
         
         std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
+        ptr->set_raw_size(searcher_values.size());
         return ptr;
     }
     
@@ -252,10 +256,11 @@ namespace lj
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
         
         std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
+        ptr->set_raw_size(searcher_values.size());
         return ptr;
     }
     
-    unsigned long long Standard_record_set::size() const
+    long long Standard_record_set::size() const
     {
         return keys_->size();
     }
@@ -309,6 +314,16 @@ namespace lj
             records.push_child("", doc_at(*iter, false).release());
         }
         return modified;
+    }
+    
+    void Standard_record_set::set_raw_size(long long sz)
+    {
+        raw_size_ = sz;
+    }
+    
+    long long Standard_record_set::raw_size() const
+    {
+        return raw_size_;
     }
     
     std::auto_ptr<Bson> Standard_record_set::doc_at(unsigned long long pkey,

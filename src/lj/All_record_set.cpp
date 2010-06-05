@@ -233,11 +233,9 @@ namespace lj
         return ptr;
     }
     
-    unsigned long long All_record_set::size() const
+    long long All_record_set::size() const
     {
-        std::set<unsigned long long> real_keys;
-        get_all_keys(&real_keys);
-        return real_keys.size();
+        return Record_set::storage_db(storage_)->count();
     }
     
     bool All_record_set::items(std::list<Bson>& records) const
@@ -317,7 +315,16 @@ namespace lj
         }
         return modified;
     }
+
+    void All_record_set::set_raw_size(long long sz)
+    {
+    }
     
+    long long All_record_set::raw_size() const
+    {
+        return Record_set::storage_db(storage_)->count();
+    }
+
     void All_record_set::get_all_keys(std::set<unsigned long long>* result_keys) const
     {
         tokyo::Tree_db* db = Record_set::storage_db(storage_);

@@ -469,6 +469,23 @@ namespace lj
      */
     Bson* bson_new_binary(const char* val, uint32_t sz, Bson::Binary_type subtype);
     
+    //! Create a new cost object.
+    /*!
+     \par
+     The cost object is a bson document with a specific set of fields.
+     \par
+     Object should be released with delete.
+     \param cmd The command associated with the cost.
+     \param time The time cost.
+     \param filter_size The size of the cost before any set operations.
+     \param result_size The size of the cost after any set operations.
+     \return a new Bson object.
+     */
+    lj::Bson* bson_new_cost(const std::string& cmd,
+                            unsigned long long time,
+                            long long filter_size,
+                            long long result_size);
+    
     //! Get the value of a Bson object as a C++ string in debug format.
     /*!
      \par

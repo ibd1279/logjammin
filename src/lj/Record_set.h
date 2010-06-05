@@ -219,7 +219,7 @@ namespace lj
         /*!
          \return The number of documents currently in the set.
          */
-        virtual unsigned long long size() const = 0;
+        virtual long long size() const = 0;
         
         //! Get the documents in this Record_set.
         /*!
@@ -263,6 +263,18 @@ namespace lj
          \return True when records have been added.
          */
         virtual bool items_raw(lj::Bson& records) const = 0;
+
+        //! Set the size of the Record_set prior to the set operation.
+        /*!
+         \param sz The size of the set prior to executing the set operation.
+         */
+        virtual void set_raw_size(long long sz) = 0;
+        
+        //! Get the size of the Record_set prior to the set operation.
+        /*!
+         \return The size of the set prior to executing the set operation.
+         */
+        virtual long long raw_size() const = 0;
     protected:
         static tokyo::Tree_db* storage_db(const Storage* s);
         static tokyo::Tree_db* storage_tree(const Storage* s,

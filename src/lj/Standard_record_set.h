@@ -100,15 +100,18 @@ namespace lj
                                                    const std::string& term) const;
         virtual std::auto_ptr<Record_set> tagged(const std::string& indx,
                                                  const std::string& word) const;
-        virtual unsigned long long size() const;
+        virtual long long size() const;
         virtual bool items(std::list<Bson>& records) const;
         virtual bool items(std::list<Bson*>& records) const;
         virtual bool first(Bson& result) const;
         virtual bool items_raw(lj::Bson& records) const;
+        virtual void set_raw_size(long long sz);
+        virtual long long raw_size() const;
     private:
         const Storage *storage_;
         std::set<unsigned long long>* keys_;
         Record_set::Operation op_;
+        long long raw_size_;
         
         //! Hidden.
         Record_set& operator=(const Standard_record_set& o);

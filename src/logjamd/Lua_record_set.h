@@ -34,6 +34,7 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "lj/Bson.h"
 #include "lj/lunar.h"
 #include "lj/Record_set.h"
 
@@ -70,8 +71,9 @@ namespace logjamd
          \par
          Takes ownership of the pointer.
          \param filter The lj::Record_set.
+         \param cost_data The costs up to this point.
          */
-        Lua_record_set(lj::Record_set *filter);
+        Lua_record_set(lj::Record_set*filter, lj::Bson* cost_data);
         
         //! Destructor
         ~Lua_record_set();
@@ -170,7 +172,7 @@ namespace logjamd
          \param L The lua state.
          \return 1
          */
-        int search(lua_State* L);
+        int contains(lua_State* L);
         
         //! Filter the lj::Record_set on an index.
         /*!
@@ -224,7 +226,15 @@ namespace logjamd
          \return The real record set object.
          */
         inline lj::Record_set &real_set() { return *filter_; }
+        
+        //! Get the cost structure associated with this Record_set.
+        /*!
+         \return The costs.
+         */
+        inline const lj::Bson& costs() { return *costs_; }
     private:
         lj::Record_set* filter_;
-    };     
+        std::string command_;
+        lj::Bson* costs_;
+    };
 }; // namespace logjamd

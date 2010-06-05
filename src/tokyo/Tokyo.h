@@ -104,6 +104,9 @@ namespace tokyo {
         
         //! Rollback the transaction.
         virtual void abort_writes() = 0;
+        
+        //! Get the number of records in the database.
+        virtual long long count() = 0;
     protected:
         DB();
     };
@@ -190,6 +193,7 @@ namespace tokyo {
         virtual void start_writes();
         virtual void save_writes();
         virtual void abort_writes();
+        virtual long long count();
         
     protected:
         //! Get the database handle.
@@ -330,6 +334,7 @@ namespace tokyo {
         virtual void start_writes();
         virtual void save_writes();
         virtual void abort_writes();
+        virtual long long count();
         
         //! Get all of the values between a start and end key.
         virtual bool at_range(const void* start,
