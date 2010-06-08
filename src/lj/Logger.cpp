@@ -124,6 +124,11 @@ namespace
         
         virtual Log &operator<<(const char *msg)
         {
+            if (0 == msg) 
+            {
+                msg = "NULL";
+            }
+            
             if (parts_.size() > 0)
             {
                 char *buffer = new char[strlen(msg) + parts_.front().size()];

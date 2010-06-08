@@ -32,13 +32,18 @@
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
  */
+
 extern "C" {
 #include "lua.h"
 #include "lauxlib.h"
 }
 
+#include <string>
+
 namespace logjamd {
-    void register_logjam_functions(lua_State *L);
+    void logjam_lua_init(lua_State *L);
+    
+    void logjam_lua_init_connection(lua_State *L, const std::string& name);
     
     int connection_config_load(lua_State* L);
     int connection_config_save(lua_State* L);

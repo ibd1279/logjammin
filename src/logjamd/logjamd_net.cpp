@@ -60,7 +60,7 @@ namespace logjamd
             delete[] in_;
         }
         
-        if (lua_)
+        if (lua_ && Socket_dispatch::k_listen == mode())
         {
             lua_close(lua_);
         }        
@@ -68,13 +68,20 @@ namespace logjamd
     
     lj::Socket_dispatch* Service_dispatch::accept(int socket, char* buffer)
     {
+        if (!lua_ && Socket_dispatch::k_listen == mode())
+        {
+            lua_ = luaL_newstate();
+            luaL_openlibs(lua_);
+            logjam_lua_init(lua_);
+        }
+        
+        logjam_lua_init_connection(lua_, buffer);
+        lua_pop(lua_, 1);
         Service_dispatch* sd = new Service_dispatch();
         sd->set_socket(socket);
         sd->set_mode(Socket_dispatch::k_communicate);
         sd->ip_ = buffer;
-        sd->lua_ = lua_open();
-        luaL_openlibs(sd->lua_);
-        register_logjam_functions(sd->lua_);
+        sd->lua_ = lua_;
         return sd;
     }
     
@@ -141,29 +148,47 @@ namespace logjamd
         timer.start();
         
         std::string cmd = lj::bson_as_string(b.nav("command"));
-        Lua_bson wrapped_node(&b, false);
-        Lunar<Lua_bson>::push(lua_, &wrapped_node, false);
-        lua_setglobal(lua_, "response");
         
-        int error = luaL_loadbuffer(lua_,
-                                    cmd.c_str(),
-                                    cmd.size(),
-                                    ip_.c_str()) || lua_pcall(lua_, 0, 0, 0);
+        // Create the thread.
+        lua_State *L = lua_newthread(lua_);
+        
+        // Load the closure.
+        Lua_bson wrapped_node(&b, false);
+        Lunar<Lua_bson>::push(L, &wrapped_node, false);
+        lua_setglobal(L, "response");
+        luaL_loadbuffer(L,
+                        cmd.c_str(),
+                        cmd.size(),
+                        ip_.c_str());
+        
+        // Hide the global environment.
+        logjam_lua_init_connection(L, ip_);
+        lua_setfenv(L, -2);
+        
+        int error;
+        while (true)
+        {
+            error = lua_resume(L, 0);
+            if (LUA_YIELD != error)
+            {
+                // force yields to return instantly.
+                // this is incase I decide to do something more co-operative later.
+                break;
+            }
+        }
+        
         if (error)
         {
-            const char* error_string = lua_tostring(lua_, -1);
+            const char* error_string = lua_tostring(L, -1);
             lj::Log::warning.log("Lua error: %s") << error_string << lj::Log::end;
             b.set_child("error", lj::bson_new_string(error_string));
-            lua_pop(lua_, 1);
             b.set_child("is_ok", lj::bson_new_boolean(false));
         }
         else
         {
             b.set_child("is_ok", lj::bson_new_boolean(true));
         }
-        
-        Lunar<Lua_bson>::push(lua_, NULL, true);
-        lua_setglobal(lua_, "response");
+        lua_pop(L, 1);
         timer.stop();
         
         b.set_child("time/elapsed_usecs", lj::bson_new_uint64(timer.elapsed()));

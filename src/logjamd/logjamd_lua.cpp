@@ -183,7 +183,7 @@ namespace
 
 namespace logjamd
 {
-    void register_logjam_functions(lua_State *L) {
+    void logjam_lua_init(lua_State *L) {
         // Load object model.
         Lunar<logjamd::Lua_bson>::Register(L);
         Lunar<logjamd::Lua_record_set>::Register(L);
@@ -226,6 +226,34 @@ namespace logjamd
         // push the config into the global scope.
         Lunar<logjamd::Lua_bson>::push(L, new Lua_bson(config, true), true);
         lua_setglobal(L, "connection_config");
+    }
+    
+    void logjam_lua_init_connection(lua_State *L, const std::string& name)
+    {
+        lua_getglobal(L, "environment_cache"); // {ec}
+        if (lua_isnil(L, -1))
+        {
+            lua_pop(L, 1); // {}
+            lua_newtable(L); // {ec}
+            lua_pushvalue(L, -1); // {ec, ec}
+            lua_setglobal(L, "environment_cache"); // {ec}
+        }
+        lua_pushstring(L, name.c_str()); // {ec, name}
+        lua_gettable(L, -2); // {ec, t}
+        if (lua_isnil(L, -1))
+        {
+            lua_pop(L, 1); // {ec}
+            lua_newtable(L); // {ec, t}
+            lua_pushstring(L, name.c_str()); // {ec, t, name}
+            lua_pushvalue(L, -2); // {ec, t, name, t}
+            lua_settable(L, -4); // {ec, t}
+            lua_pushvalue(L, -1); // {ec, t, t}
+            lua_pushstring(L, "__index"); // {ec, t, t, __index}
+            lua_pushvalue(L, LUA_GLOBALSINDEX); // {ec, t, t, __index, _G}
+            lua_settable(L, -3); // {ec, t, t}
+            lua_setmetatable(L, -2); // {ec, t}
+        }
+        lua_replace(L, -2);
     }
     
     //=====================================================================
