@@ -57,7 +57,7 @@ namespace logjamd
         
         //! Create a new Lua_storage wrapper for lj::Storage.
         /*!
-         \param The name of the DB to open.
+         \param dbname The name of the DB to open.
          */
         Lua_storage(const std::string& dbname);
         
@@ -106,8 +106,12 @@ namespace logjamd
          \return 0
          */
         int remove(lua_State* L);
-        inline lj::Storage &real_storage() { return *storage_; }
         
+        //! Get the real storage object.
+        /*!
+         \return a reference to the storage object.
+         */
+        inline lj::Storage &real_storage() { return *storage_; }
     private:
         //! Hidden.
         Lua_storage(const Lua_storage&);

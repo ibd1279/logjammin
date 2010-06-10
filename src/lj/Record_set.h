@@ -244,7 +244,7 @@ namespace lj
          \par
          Because the STL set backing the Record_set is ordered, the first
          document will always be the lowest key document in the set.
-         \param record Record to populate.
+         \param result Record to populate.
          \return True when the record has been modified.
          */
         virtual bool first(Bson& result) const = 0;
@@ -282,17 +282,65 @@ namespace lj
          */
         virtual const lj::Storage& storage() const = 0;
     protected:
+        //! Get the storage pointer.
+        /*!
+         \param s The Storage object.
+         \return The primary Storage pointer.
+         */
         static tokyo::Tree_db* storage_db(const Storage* s);
+        
+        //! Get a tree index from the Storage object.
+        /*!
+         \param s The Storage object.
+         \param indx The index name.
+         \return The tree index pointer.
+         */
         static tokyo::Tree_db* storage_tree(const Storage* s,
                                             const std::string& indx);
+        
+        //! Get a hash index from the Storage object.
+        /*!
+         \param s The Storage object.
+         \param indx The index name.
+         \return The hash index pointer.
+         */
         static tokyo::Hash_db* storage_hash(const Storage* s,
                                             const std::string& indx);
+        
+        //! Get a text index from the Storage object.
+        /*!
+         \param s The Storage object.
+         \param indx The index name.
+         \return The text index pointer.
+         */
         static tokyo::TextSearcher* storage_text(const Storage* s,
                                                  const std::string& indx);
+        
+        //! Get a tag index from the Storage object.
+        /*!
+         \param s The Storage object.
+         \param indx The index name.
+         \return The tag index pointer.
+         */
         static tokyo::TagSearcher* storage_tag(const Storage* s,
                                                const std::string& indx);
+        
+        //! Convert a list to a set.
+        /*!
+         \param a The list to convert to a set.
+         \param b The set to store the result in.
+         */
         static void list_to_set(const tokyo::DB::list_value_t& a,
                                 std::set<unsigned long long>& b);
+        
+        //! Perform an operation on two sets.
+        /*!
+         \tparam T The set type.
+         \param op The operation to perform on the sets.
+         \param a The first set.
+         \param b The second set.
+         \return The resulting set.
+         */
         template<typename T>
         static T* operate_on_sets(const Record_set::Operation op,
                            const T& a,

@@ -41,13 +41,57 @@ extern "C" {
 #include <string>
 
 namespace logjamd {
+    //! Initialize the lua state for the server process.
+    /*!
+     \param L The lua state.
+     */
     void logjam_lua_init(lua_State *L);
     
+    //! Initialize the lua state for the server process.
+    /*!
+     \param L The lua state.
+     \param name The connection identifier.
+     */
     void logjam_lua_init_connection(lua_State *L, const std::string& name);
     
+    //! Load the connection configuration.
+    /*!
+     \par
+     Returns the Lua_bson connection configuration object.
+     \param L The lua state.
+     \return 1
+     */
     int connection_config_load(lua_State* L);
+    
+    //! Save the connection configuration.
+    /*!
+     \par
+     Pops the connection configuration (Lua_bson) off the stack.
+     \param L The lua state.
+     \return 0
+     */
     int connection_config_save(lua_State* L);
+    
+    //! Add a default storage engine.
+    /*!
+     \par
+     Pops the storage name (Lua string) off the stack.
+     \par
+     Pops the connection configuration (Lua_bson) off the stack.
+     \param L The lua state.
+     \return 0
+     */
     int connection_config_add_default_storage(lua_State* L);
+    
+    //! Remove a default storage engine.
+    /*!
+     \par
+     Pops the storage name (Lua string) off the stack.
+     \par
+     Pops the connection configuration (Lua_bson) off the stack.
+     \param L The lua state.
+     \return 0
+     */
     int connection_config_remove_default_storage(lua_State* L);
     
     //! Create a new lj::Storage configuration document.
@@ -127,12 +171,38 @@ namespace logjamd {
      \par
      Pops the Storage configuration document (Lua_bson) off the stack.
      \param L The lua state.
-     \returns 0.
+     \returns 0
      */
     int storage_config_add_nested_field(lua_State* L);
     
+    //! Add an event handler.
+    /*!
+     \par
+     Storage configuration is a lj::Bson object.
+     \par
+     The handler is invoked when the event fires.
+     \par
+     Pops the handler function (Lua function) off the stack.
+     \par
+     Pops the event name (lua string) off the stack.
+     \par
+     Pops the Storage configuration (Lua_bson) off the stack.
+     \param L The lua state.
+     \return 0
+     */
     int storage_config_add_handler(lua_State* L);
 
+    //! remove an event handler.
+    /*!
+     \par
+     Storage configuration is a lj::Bson object.
+     \par
+     Pops the event name (lua string) off the stack.
+     \par
+     Pops the Storage configuration (Lua_bson) off the stack.
+     \param L The lua state.
+     \return 0
+     */
     int storage_config_remove_handler(lua_State* L);
 
     //! Put a result set on the response.

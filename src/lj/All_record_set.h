@@ -51,8 +51,8 @@ namespace lj
     public:
         //! Storage constructor.
         /*!
-         \param The storage this set is attached to.
-         \param The operation to perform for any filtering.
+         \param storage The storage this set is attached to.
+         \param op The operation to perform for any filtering.
          */
         All_record_set(const Storage* storage,
                        const Record_set::Operation op);

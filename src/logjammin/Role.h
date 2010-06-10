@@ -86,14 +86,14 @@ namespace logjammin {
         
         //! Add an allowed action.
         /*!
-         \param L The lua state.
+         \param action The action to add.
          \return 0
          */
         void add_allowed(const std::string& action);
         
         //! Remove an allowed action.
         /*!
-         \param L The lua state.
+         \param action The action to remove.
          \return 0
          */
         void remove_allowed(const std::string& action);

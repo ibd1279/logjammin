@@ -40,6 +40,7 @@
 
 namespace logjamd
 {
+    //! request and connection dispatcher for the logjamd server.
     class Service_dispatch : public lj::Socket_dispatch {
     public:
         Service_dispatch();

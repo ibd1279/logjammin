@@ -86,6 +86,7 @@
 		22D32CA8102AACB50015E71D /* Doxyfile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = Doxyfile; sourceTree = "<group>"; };
 		22D32CA9102AACB50015E71D /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
 		22D32CAA102AACB50015E71D /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
+		22D9DB3B11C1651B0029EE4E /* Doxygen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Doxygen.h; path = src/logjamd/Doxygen.h; sourceTree = "<group>"; };
 		22DB7C5D101A5CC800BEEB52 /* OpenID.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenID.h; sourceTree = "<group>"; };
 		22DB7C5E101A5CC800BEEB52 /* OpenID.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = OpenID.cpp; sourceTree = "<group>"; };
 		22E25DBF11B0957100A12B22 /* Base64.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Base64.h; path = src/lj/Base64.h; sourceTree = "<group>"; };
@@ -228,17 +229,18 @@
 		226BD3941194FA0F0096490A /* logjamd */ = {
 			isa = PBXGroup;
 			children = (
-				2218BF6B11A56B800099C15C /* logjamd.cpp */,
-				2218BF6D11A56B800099C15C /* logjamd_lua.h */,
-				2218BF6C11A56B800099C15C /* logjamd_lua.cpp */,
-				2218BF6F11A56B800099C15C /* logjamd_net.h */,
-				2218BF6E11A56B800099C15C /* logjamd_net.cpp */,
+				22D9DB3B11C1651B0029EE4E /* Doxygen.h */,
 				22EFAD2911AB45650080F184 /* Lua_bson.h */,
 				22EFAD2A11AB45650080F184 /* Lua_bson.cpp */,
 				22F2C28811ACBA3A00D034B1 /* Lua_record_set.h */,
 				22F2C28911ACBA3A00D034B1 /* Lua_record_set.cpp */,
 				2288A2AB11AAFFF5008CD19D /* Lua_storage.h */,
 				2288A2AC11AAFFF5008CD19D /* Lua_storage.cpp */,
+				2218BF6B11A56B800099C15C /* logjamd.cpp */,
+				2218BF6D11A56B800099C15C /* logjamd_lua.h */,
+				2218BF6C11A56B800099C15C /* logjamd_lua.cpp */,
+				2218BF6F11A56B800099C15C /* logjamd_net.h */,
+				2218BF6E11A56B800099C15C /* logjamd_net.cpp */,
 			);
 			name = logjamd;
 			sourceTree = "<group>";

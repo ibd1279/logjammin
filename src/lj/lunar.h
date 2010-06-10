@@ -10,13 +10,26 @@ extern "C" {
 #include "lauxlib.h"
 }
 
+//! Lua integration class.
 template <typename T> class Lunar {
     typedef struct { T *pT; } userdataType;
 public:
+    //! Member function pointer definition.
     typedef int (T::*mfp)(lua_State *L);
+    //! Non-member function pointer definition.
     typedef int (*nmfp)(T*, lua_State *);
-    typedef struct { const char *name; mfp mfunc; nmfp nmfunc; } RegType;
     
+    //! Method registration type.
+    struct RegType {
+        const char *name; //!< The method name in lua.
+        mfp mfunc; //!< The member function pointer or null.
+        nmfp nmfunc; //!< The non-member function pointer or null.
+    };
+    
+    //! Register this class in the Lua state.
+    /*!
+     \param L The lua state.
+     */
     static void Register(lua_State *L) {
         lua_newtable(L);
         int methods = lua_gettop(L);
@@ -67,7 +80,15 @@ public:
         lua_pop(L, 2);  // drop metatable and method table
     }
     
-    // call named lua method from userdata method table
+    //! call named lua method from userdata method table
+    /*!
+     \param L The lua state.
+     \param method The method name to call.
+     \param nargs Number of args to the function.
+     \param nresults The number of results expected to be returned.
+     \param errfunc The location in the stack of the error handling function.
+     \return Number of results.
+     */
     static int call(lua_State *L, const char *method,
                     int nargs=0, int nresults=LUA_MULTRET, int errfunc=0)
     {
@@ -99,7 +120,13 @@ public:
         return lua_gettop(L) - base + 1;   // number of results
     }
     
-    // push onto the Lua stack a userdata containing a pointer to T object
+    //! push onto the Lua stack a userdata containing a pointer to T object
+    /*!
+     \param L The lua state.
+     \param obj The object to push.
+     \param gc True if lua is responsible for destructing the pointer, false otherwise.
+     \return index of the userdata on the stack.
+     */
     static int push(lua_State *L, T *obj, bool gc=false) {
         if (!obj) { lua_pushnil(L); return 0; }
         luaL_getmetatable(L, T::LUNAR_CLASS_NAME);  // lookup metatable in Lua registry
@@ -126,14 +153,20 @@ public:
         return mt;  // index of userdata containing pointer to T object
     }
         
-    // get userdata from Lua stack and return pointer to T object
+    //! get userdata from Lua stack and return pointer to T object
+    /*!
+     \param L The lua state.
+     \param narg The location in the stack to check the type of.
+     \return The pointer from the stack.
+     */
     static T *check(lua_State *L, int narg) {
         userdataType *ud =
         static_cast<userdataType *>(luaL_checkudata(L, narg, T::LUNAR_CLASS_NAME));
         if(!ud) luaL_typerror(L, narg, T::LUNAR_CLASS_NAME);
         return ud->pT;  // pointer to T object
     }
-        
+    
+private:
     static void inject_method(lua_State *L, const char *name, RegType *l, int table) {
         int methods = (table > 0 ? table : lua_gettop(L) - table + 1);
         lua_pushstring(L, name);
@@ -142,7 +175,6 @@ public:
         lua_settable(L, methods);
     }
     
-private:
     Lunar();  // hide default constructor
     
     // member function dispatcher
@@ -236,6 +268,12 @@ private:
     }
 };
 
+//! Convert a lua stack position into a c++ string.
+/*!
+ \param L The lua state.
+ \param offset The position in the stack.
+ \return The C++ String.
+ */
 inline std::string lua_to_string(lua_State* L, int offset)
 {
     const char* ptr = luaL_checkstring(L, offset);

@@ -1,6 +1,6 @@
 #pragma once
 /*!
- \file Doxygen.h
+ \file lj/Doxygen.h
  \brief LJ header to document some special objects.
  \author Jason Watson
  

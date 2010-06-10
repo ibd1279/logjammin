@@ -520,6 +520,7 @@ namespace lj
      Value types are output in their string representation.  Document and
      array types are output in a JSON looking format.
      \param b The Bson object.
+     \param lvl The current indention level.
      \return A string describing how this Bson object should look in JSON with indentation.
      */
     std::string bson_as_pretty_string(const Bson& b, int lvl = 0);
@@ -566,6 +567,14 @@ namespace lj
      */
     int64_t bson_as_int64(const Bson& b);
     
+    //! Get the value of a Bson object as an unsigned 64-bit wide integer.
+    /*!
+     \par
+     Value types are converted into numbers. Document, Array and strings that
+     cannot be converted into a number return 0.
+     \param b The Bson object.
+     \return The number value.
+     */
     uint64_t bson_as_uint64(const Bson& b);
     
     //! Get the value of a Bson object as a boolean.
@@ -600,8 +609,8 @@ namespace lj
      freed. Pointer will become invalid if the Bson object associated with
      the value is deleted.
      \param b The Bson object.
-     \param t[out] Location to store the subtype in.
-     \param sz[out] Location to store the length in.
+     \param t Location to store the subtype in.
+     \param sz Location to store the length in.
      \return pointer to a string of bytes, NULL otherwise.
      */
     const char* bson_as_binary(const Bson& b, Bson::Binary_type* t, uint32_t* sz);

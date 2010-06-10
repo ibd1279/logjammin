@@ -1,7 +1,9 @@
+#pragma once
 /*!
- \file logjamd.cpp
- \brief Logjam Server Executable
+ \file logjamd/Doxygen.h
+ \brief logjamd header to document some special objects.
  \author Jason Watson
+ 
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  
@@ -32,23 +34,8 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjamd/logjamd_net.h"
-#include "lj/Logger.h"
-
-//! Server main entry point.
-int main(int argc, char * const argv[]) {
-    lj::Log::debug.disable();
-    lj::Log::info.enable();
-    
-    try
-    {
-        lj::Socket_selector::instance().bind_port(27754, new logjamd::Service_dispatch());
-        lj::Socket_selector::instance().loop();
-    }
-    catch(lj::Exception* e)
-    {
-        std::cerr << e->to_string() << std::endl;
-    }
-
-    return 0;
-}
+/*!
+ \namespace logjamd
+ \brief The logjamd server library
+ The logjamd server code.
+ */
