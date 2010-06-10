@@ -275,6 +275,12 @@ namespace lj
          \return The size of the set prior to executing the set operation.
          */
         virtual long long raw_size() const = 0;
+        
+        //! Get the storage this Record_set is attached to.
+        /*!
+         \return the Storage object.
+         */
+        virtual const lj::Storage& storage() const = 0;
     protected:
         static tokyo::Tree_db* storage_db(const Storage* s);
         static tokyo::Tree_db* storage_tree(const Storage* s,

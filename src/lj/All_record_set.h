@@ -91,6 +91,7 @@ namespace lj
         virtual bool items_raw(lj::Bson& records) const;
         virtual void set_raw_size(long long sz);
         virtual long long raw_size() const;
+        virtual const lj::Storage& storage() const;
     private:
         const Storage *storage_;
         Record_set::Operation op_;

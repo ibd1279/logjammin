@@ -83,6 +83,7 @@ namespace lj
     {
         Standard_record_set* ptr = new Standard_record_set(*this);
         ptr->keys_->insert(keys.begin(), keys.end());
+        ptr->set_raw_size(size());
         return std::auto_ptr<Record_set>(ptr);
     }
     
@@ -90,6 +91,7 @@ namespace lj
     {
         Standard_record_set* ptr = new Standard_record_set(*this);
         ptr->keys_->insert(key);
+        ptr->set_raw_size(size());
         return std::auto_ptr<Record_set>(ptr);
     }
     
@@ -102,6 +104,7 @@ namespace lj
         {
             ptr->keys_->erase(*iter);
         }
+        ptr->set_raw_size(size());
         return std::auto_ptr<Record_set>(ptr);
     }
     
@@ -324,6 +327,11 @@ namespace lj
     long long Standard_record_set::raw_size() const
     {
         return raw_size_;
+    }
+    
+    const lj::Storage& Standard_record_set::storage() const
+    {
+        return *storage_;
     }
     
     std::auto_ptr<Bson> Standard_record_set::doc_at(unsigned long long pkey,

@@ -84,8 +84,7 @@ namespace lj
         std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_,
                                                               real_keys,
                                                               op_));
-        ptr->exclude_keys(keys);
-        return ptr;
+        return ptr->exclude_keys(keys);
     }
     
     std::auto_ptr<Record_set> All_record_set::exclude_key(const unsigned long long key)
@@ -324,7 +323,12 @@ namespace lj
     {
         return Record_set::storage_db(storage_)->count();
     }
-
+    
+    const lj::Storage& All_record_set::storage() const
+    {
+        return *storage_;
+    }
+    
     void All_record_set::get_all_keys(std::set<unsigned long long>* result_keys) const
     {
         tokyo::Tree_db* db = Record_set::storage_db(storage_);

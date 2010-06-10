@@ -103,7 +103,7 @@ namespace logjamd
         //! Include an id in the set.
         /*!
          \par
-         Expects an integer on top of the stack.
+         Expects an integer or function on top of the stack.
          \par
          Pushes a new Lua_record_set object onto the stack.
          \param L The lua state.
@@ -114,7 +114,7 @@ namespace logjamd
         //! Exclude an id from the set.
         /*!
          \par
-         Expects an integer on top of the stack.
+         Expects an integer or function on top of the stack.
          \par
          Pushes new Lua_record_set object onto the stack.
          \param L The lua state.
@@ -198,7 +198,7 @@ namespace logjamd
          \return 1
          */
         int records(lua_State* L);
-        
+                
         //! Get the first Lua_bson record.
         /*!
          \par

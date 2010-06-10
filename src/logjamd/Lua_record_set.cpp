@@ -38,6 +38,8 @@
 #include "logjamd/Lua_storage.h"
 #include "logjamd/Lua_bson.h"
 #include "lj/Bson.h"
+#include "lj/Logger.h"
+#include "lj/Standard_record_set.h"
 #include "lj/Storage.h"
 #include "lj/Time_tracker.h"
 
@@ -185,10 +187,11 @@ namespace logjamd
     {0, 0, 0}
     };
 
-    Lua_record_set::Lua_record_set(lua_State* L) : filter_(NULL)
+    Lua_record_set::Lua_record_set(lua_State* L) : filter_(NULL), costs_(NULL)
     {
         Lua_storage *ptr = Lunar<Lua_storage>::check(L, -1);
         filter_ = ptr->real_storage().none().release();
+        costs_ = new lj::Bson();
     }
 
     Lua_record_set::Lua_record_set(lj::Record_set* filter, lj::Bson* cost_data) : filter_(filter), costs_(cost_data)
@@ -200,6 +203,13 @@ namespace logjamd
         if (filter_)
         {
             delete filter_;
+            filter_ = 0;
+        }
+        
+        if (costs_)
+        {
+            delete costs_;
+            costs_ = 0;
         }
     }
 
@@ -222,25 +232,81 @@ namespace logjamd
         lj::Time_tracker timer;
         timer.start();
         
-        // Get the key to include
-        int key = luaL_checkint(L, -1);
-        
         // Build the command executed.
         std::ostringstream cmd_builder;
-        cmd_builder << "include(" << key << ")";
+        cmd_builder << "include(";
         
-        // Include the key.
+        // Include the value.
         lj::Bson* cost_data = new lj::Bson(*costs_);
-        lj::Record_set* ptr = real_set().include_key(key).release();
-        Lua_record_set* wrapper = new Lua_record_set(ptr, cost_data);
+        lj::Record_set* ptr = NULL;
+        Lua_record_set* wrapper = NULL;
+        if (lua_isfunction(L, -1) && !lua_iscfunction(L, -1))
+        {            
+            // Build the command executed.
+            cmd_builder << "function(b) ... end";
+            
+            // Get the set to filter.
+            std::list<lj::Bson*> d;
+            real_set().storage().all()->items(d);
+            
+            // Run the filter function on each item in the set.
+            int function = lua_gettop(L);
+            
+            // Push "this" back into the stack, to prevent GC while looping.
+            Lunar<Lua_record_set>::push(L, this, true);
+            
+            std::set<unsigned long long> keys;
+            for (std::list<lj::Bson*>::iterator iter = d.begin();
+                 d.end() != iter;
+                 ++iter)
+            {
+                uint64_t key = lj::bson_as_uint64((*iter)->nav("__key"));
+                
+                // Check to see if the key is already included.
+                if (real_set().is_included(key)) 
+                {
+                    continue;
+                }
+                
+                // Run the function.
+                lua_pushvalue(L, function);
+                Lunar<Lua_bson>::push(L, new Lua_bson(*iter, true), true);
+                int res = lua_pcall(L, 1, 1, 0);
+                if (res == 0)
+                {
+                    if (lua_toboolean(L, -1))
+                    {
+                        keys.insert(key);
+                    }
+                }
+                lua_pop(L, 1); // pop off the result.
+            }
+            lua_pop(L, 2); // pop off the function and the GC protection.
+            
+            // Include the key
+            ptr = real_set().include_keys(keys).release();
+            wrapper = new Lua_record_set(ptr, cost_data);
+        }
+        else
+        {
+            int key = luaL_checkint(L, -1);
+            
+            cmd_builder << key;
+                        
+            // Include the key.
+            ptr = real_set().include_key(key).release();
+            wrapper = new Lua_record_set(ptr, cost_data);
+        }
         Lunar<Lua_record_set>::push(L, wrapper, true);
         
         // Finish the debug info collection.
+        cmd_builder << ")";
         timer.stop();
         cost_data->push_child("", lj::bson_new_cost(cmd_builder.str(),
                                                     timer.elapsed(),
                                                     ptr->raw_size(),
                                                     ptr->size()));
+        
         return 1;
     }
     
@@ -249,25 +315,79 @@ namespace logjamd
         lj::Time_tracker timer;
         timer.start();
         
-        // Get the key to exclude.
-        int key = luaL_checkint(L, -1);
-        
         // Build the command executed.
         std::ostringstream cmd_builder;
-        cmd_builder << "include(" << key << ")";
+        cmd_builder << "exclude(";
         
-        // Exclude the key
+        // Include the value.
         lj::Bson* cost_data = new lj::Bson(*costs_);
-        lj::Record_set* ptr = real_set().exclude_key(key).release();
-        Lua_record_set* wrapper = new Lua_record_set(ptr, cost_data);
+        lj::Record_set* ptr = NULL;
+        Lua_record_set* wrapper = NULL;
+        if (lua_isfunction(L, -1) && !lua_iscfunction(L, -1))
+        {
+            // Build the command executed.
+            cmd_builder << "function(b) ... end";
+            
+            // Get the set to filter.
+            std::list<lj::Bson*> d;
+            real_set().items(d);
+            
+            // Run the filter function on each item in the set.
+            int function = lua_gettop(L);
+            
+            // Push "this" back into the stack, to prevent GC while looping.
+            Lunar<Lua_record_set>::push(L, this, true);
+            
+            std::set<unsigned long long> keys;
+            for (std::list<lj::Bson*>::iterator iter = d.begin();
+                 d.end() != iter;
+                 ++iter)
+            {
+                uint64_t key = lj::bson_as_uint64((*iter)->nav("__key"));
+                
+                // Run the function.
+                lua_pushvalue(L, function);
+                Lunar<Lua_bson>::push(L, new Lua_bson(*iter, true), false);
+                int res = lua_pcall(L, 1, 1, 0);
+                if (res == 0)
+                {
+                    if (lua_toboolean(L, -1))
+                    {
+                        keys.insert(key);
+                    }
+                }
+                else
+                {
+                    keys.insert(key);
+                }
+                lua_pop(L, 1); // pop off result.
+            }
+            lua_pop(L, 2); // pop off function and GC guard.
+            
+            // Include the key
+            ptr = real_set().exclude_keys(keys).release();
+            wrapper = new Lua_record_set(ptr, cost_data);
+        }
+        else
+        {
+            int key = luaL_checkint(L, -1);
+            
+            cmd_builder << key;
+            
+            // Include the key.
+            ptr = real_set().exclude_key(key).release();
+            wrapper = new Lua_record_set(ptr, cost_data);
+        }
         Lunar<Lua_record_set>::push(L, wrapper, true);
         
         // Finish the debug info collection.
+        cmd_builder << ")";
         timer.stop();
         cost_data->push_child("", lj::bson_new_cost(cmd_builder.str(),
                                                     timer.elapsed(),
                                                     ptr->raw_size(),
                                                     ptr->size()));
+        
         return 1;
     }
         
