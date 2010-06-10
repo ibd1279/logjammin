@@ -66,7 +66,7 @@ namespace logjamd
         }        
     }
     
-    lj::Socket_dispatch* Service_dispatch::accept(int socket, char* buffer)
+    lj::Socket_dispatch* Service_dispatch::accept(int socket, const std::string& buffer)
     {
         if (!lua_ && Socket_dispatch::k_listen == mode())
         {
@@ -156,6 +156,8 @@ namespace logjamd
         Lua_bson wrapped_node(&b, false);
         Lunar<Lua_bson>::push(L, &wrapped_node, false);
         lua_setglobal(L, "response");
+        lua_pushstring(L, ip_.c_str());
+        lua_setglobal(L, "connection_id");
         luaL_loadbuffer(L,
                         cmd.c_str(),
                         cmd.size(),

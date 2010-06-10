@@ -77,7 +77,7 @@ namespace lj
     protected:
         //! Constructor
         Client();
-        virtual Socket_dispatch* accept(int socket, char* buffer);
+        virtual Socket_dispatch* accept(int socket, const std::string& buffer);
         virtual void read(const char* buffer, int sz);
     private:
         char * in_;

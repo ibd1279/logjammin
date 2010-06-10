@@ -196,7 +196,7 @@ namespace lj
          \param ip The remote address in presentation format.
          \return The new dispatcher for the accepted socket.
          */
-        virtual Socket_dispatch* accept(int socket, char* ip) = 0;
+        virtual Socket_dispatch* accept(int socket, const std::string& ip) = 0;
         
         //! Read bytes from the socket.
         /*!

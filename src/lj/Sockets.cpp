@@ -244,7 +244,9 @@ namespace lj
                                   get_in_addr((struct sockaddr*)&ra),
                                   buff,
                                   INET6_ADDRSTRLEN);
-                        Socket_dispatch* dispatch = iter->second->accept(remote_sock, buff);
+                        std::ostringstream id;
+                        id << buff << ' ' << rand();
+                        Socket_dispatch* dispatch = iter->second->accept(remote_sock, id.str());
                         add.push_back(dispatch);
                     }
                 }

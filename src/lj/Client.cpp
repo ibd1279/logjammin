@@ -61,7 +61,7 @@ namespace lj
         }
     }
     
-    lj::Socket_dispatch* Client::accept(int socket, char* buffer)
+    lj::Socket_dispatch* Client::accept(int socket, const std::string& buffer)
     {
         return NULL;
     }

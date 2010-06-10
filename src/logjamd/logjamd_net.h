@@ -44,7 +44,7 @@ namespace logjamd
     public:
         Service_dispatch();
         virtual ~Service_dispatch();
-        virtual lj::Socket_dispatch* accept(int socket, char* buffer);
+        virtual lj::Socket_dispatch* accept(int socket, const std::string& buffer);
         virtual void read(const char* buffer, int sz);
     private:
         void logic(lj::Bson& b);
