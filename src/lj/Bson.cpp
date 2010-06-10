@@ -1001,13 +1001,41 @@ namespace lj {
     
     int64_t bson_as_int64(const Bson& b)
     {
-        long l = 0;
+        int64_t l = 0;
         double d = 0.0;
         const char* v = b.to_value();
         switch (b.type())
         {
             case Bson::k_string:
                 return atol(v + 4);
+            case Bson::k_int32:
+                memcpy(&l, v, 4);
+                return l;
+            case Bson::k_double:
+                memcpy(&d, v, 8);
+                return (long long)d;
+            case Bson::k_int64:
+            case Bson::k_timestamp:
+                memcpy(&l, v, 8);
+                return l;
+            case Bson::k_boolean:
+                memcpy(&l, v, 1);
+                return l;
+            default:
+                break;
+        }
+        return 0;
+    }
+    
+    uint64_t bson_as_uint64(const Bson& b)
+    {
+        uint64_t l = 0;
+        double d = 0.0;
+        const char* v = b.to_value();
+        switch (b.type())
+        {
+            case Bson::k_string:
+                return static_cast<uint64_t>(atol(v + 4));
             case Bson::k_int32:
                 memcpy(&l, v, 4);
                 return l;

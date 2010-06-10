@@ -566,6 +566,8 @@ namespace lj
      */
     int64_t bson_as_int64(const Bson& b);
     
+    uint64_t bson_as_uint64(const Bson& b);
+    
     //! Get the value of a Bson object as a boolean.
     /*!
      \par
