@@ -223,6 +223,20 @@ namespace
             }
             return *this;
         }
+        virtual Log &operator<<(void* msg) {
+            char *buffer = new char[64 + parts_.front().size()];
+            if (parts_.size() > 0)
+            {
+                sprintf(buffer, parts_.front().c_str(), msg);
+                buffer_ << buffer;
+                parts_.pop_front();
+            } else {
+                sprintf(buffer, "%p", msg);
+                buffer_ << msg;
+            }
+            delete[] buffer;
+            return *this;
+        }
         virtual void operator<<(const Log::End &msg)
         {
             for(std::list<std::string>::const_iterator iter = parts_.begin();

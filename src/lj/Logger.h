@@ -176,6 +176,8 @@ namespace lj
         virtual Log &operator<<(unsigned char msg) { return *this; };
         //! Log a value.
         virtual Log &operator<<(bool msg) { return *this; };
+        //! Log a value.
+        virtual Log &operator<<(void* msg) { return *this; };
         //! Close the logger.
         virtual void operator<<(const End &msg) { };
         
