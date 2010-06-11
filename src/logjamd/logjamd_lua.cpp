@@ -190,14 +190,12 @@ namespace logjamd
         Lunar<logjamd::Lua_storage>::Register(L);
         
         // load connection config functions.
-        lua_pushcfunction(L, &connection_config_load);
-        lua_setglobal(L, "cc_load");
-        lua_pushcfunction(L, &connection_config_save);
-        lua_setglobal(L, "cc_save");
-        lua_pushcfunction(L, &connection_config_add_default_storage);
-        lua_setglobal(L, "cc_add_default_storage");
-        lua_pushcfunction(L, &connection_config_remove_default_storage);
-        lua_setglobal(L, "cc_remove_default_storage");
+        lua_register(L, "cc_load", &connection_config_load);
+        lua_register(L, "cc_save", &connection_config_save);
+        lua_register(L, "cc_add_default_storage",
+                     &connection_config_add_default_storage);
+        lua_register(L, "cc_remove_default_storage",
+                     &connection_config_remove_default_storage);
         
         // load storage config functions.
         lua_pushcfunction(L, &storage_config_new);
@@ -333,7 +331,9 @@ namespace logjamd
             dbfile.append("/").append(dbname);
         
         // This should be moved somewhere for portability.
-        if(mkdir(dbfile.c_str(), S_IRWXU | S_IROTH | S_IXOTH | S_IRGRP | S_IXGRP)) {
+        int err = mkdir(dbfile.c_str(), S_IRWXU | S_IROTH | S_IXOTH | S_IRGRP | S_IXGRP);
+        if (0 != err && EEXIST != err)
+        {
             return luaL_error(L, "Failed to create directory [%d][%s].", errno, strerror(errno));
         }
         
