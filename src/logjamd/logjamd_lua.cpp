@@ -307,11 +307,12 @@ namespace logjamd
         std::string dbname(lua_to_string(L, -1));
         lj::Bson *ptr = new lj::Bson();
         ptr->set_child("main/compare", lj::bson_new_string("int64"));
-        ptr->set_child("main/file", lj::bson_new_string(std::string("db_") + dbname + ".tcb"));
-        ptr->push_child("main/mode", lj::bson_new_string("create"));
-        ptr->push_child("main/mode", lj::bson_new_string("read"));
-        ptr->push_child("main/mode", lj::bson_new_string("write"));
+        ptr->set_child("main/file", lj::bson_new_string(std::string("db.") + dbname + ".tcb"));
+        ptr->set_child("main/backup_file", lj::bson_new_string(std::string("db.") + dbname + ".tcb.backup"));
         ptr->set_child("main/type", lj::bson_new_string("tree"));
+        ptr->set_child("journal/compare", lj::bson_new_string("int64"));
+        ptr->set_child("journal/file", lj::bson_new_string(std::string("journal.") + dbname + ".tcb"));
+        ptr->set_child("journal/type", lj::bson_new_string("tree"));
         ptr->nav("main/unique");
         ptr->nav("index/tree");
         ptr->nav("index/text");
@@ -361,14 +362,35 @@ namespace logjamd
         std::string indxname(lua_to_string(L, -3));
         std::string indxtype(lua_to_string(L, -4));
         Lua_bson* ptr = Lunar<Lua_bson>::check(L, -5);
-        ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/compare", lj::bson_new_string(indxcomp));
-        ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/file", lj::bson_new_string(std::string("index.") + indxname + "." + indxtype + ".tc"));
-        ptr->real_node().push_child(std::string("index/") + indxtype + "/" + indxname + "/mode", lj::bson_new_string("create"));
-        ptr->real_node().push_child(std::string("index/") + indxtype + "/" + indxname + "/mode", lj::bson_new_string("read"));
-        ptr->real_node().push_child(std::string("index/") + indxtype + "/" + indxname + "/mode", lj::bson_new_string("write"));
-        ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/type", lj::bson_new_string(indxtype));
-        ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/field", lj::bson_new_string(indxfield));
-        ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname + "/children", lj::bson_new_boolean(false));
+        
+        std::string extension;
+        if (indxtype.compare("tree") == 0)
+        {
+            extension = "tcb";
+        }
+        else if (indxtype.compare("hash") == 0)
+        {
+            extension = "tch";
+        }
+        else if (indxtype.compare("text") == 0)
+        {
+            extension = "tcq";
+        }
+        else if (indxtype.compare("tag") == 0)
+        {
+            extension = "tcw";
+        }
+        else {
+            extension = indxtype + ".tc";
+        }
+        
+        lj::Bson* index_cfg = new lj::Bson();
+        ptr->real_node().set_child(std::string("index/") + indxtype + "/" + indxname, index_cfg);
+        
+        index_cfg->set_child("compare", lj::bson_new_string(indxcomp));
+        index_cfg->set_child("file", lj::bson_new_string(std::string("index.") + indxname + "." + extension));
+        index_cfg->set_child("type", lj::bson_new_string(indxtype));
+        index_cfg->set_child("field", lj::bson_new_string(indxfield));
         return 0;
     }
     

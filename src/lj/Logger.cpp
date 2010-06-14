@@ -92,7 +92,7 @@ namespace
             {
                 parts_.push_back(tmp);
             }
-            buffer_ << "[" << level_text(level_) << "] ";
+            buffer_ << level_text(level_);
             if (parts_.size() < 2)
             {
                 parts_.clear();
@@ -261,21 +261,21 @@ namespace lj
         switch(level)
         {
             case level_emergency:
-                return std::string("EMERGENCY");
+                return std::string("[EMERGENCY]   ");
             case level_alert:
-                return std::string("ALERT");
+                return std::string("[ALERT]       ");
             case level_critical:
-                return std::string("CRITICAL");
+                return std::string("[CRITICAL]    ");
             case level_error:
-                return std::string("ERROR");
+                return std::string("[ERROR]       ");
             case level_warning:
-                return std::string("WARNING");
+                return std::string("[WARNING]     ");
             case level_notice:
-                return std::string("NOTICE");
+                return std::string("[NOTICE]      ");
             case level_info:
-                return std::string("INFORMATION");
+                return std::string("[INFORMATION] ");
             default:
-                return std::string("DEBUG");
+                return std::string("[DEBUG]       ");
         }
     }
     

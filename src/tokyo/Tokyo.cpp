@@ -172,6 +172,22 @@ namespace tokyo
         return (long long)tchdbrnum(db());
     }
     
+    void Hash_db::vanish()
+    {
+        if (!tchdbvanish(db()))
+        {
+            throw new Exception("TokyoHash", tchdberrmsg(tchdbecode(db())));
+        }
+    }
+    
+    void Hash_db::copy(const std::string &target)
+    {
+        if (!tchdbcopy(db(), target.c_str()))
+        {
+            throw new Exception("TokyoHash", tchdberrmsg(tchdbecode(db())));
+        }
+    }
+    
     //=====================================================================
     // Tree_db Implementation
     //=====================================================================
@@ -206,6 +222,23 @@ namespace tokyo
             delete this;
         }
         return tmp;
+    }
+    
+    DB::value_t Tree_db::Enumerator::next_key()
+    {
+        if (!more())
+        {
+            throw new lj::Exception("DBerror", "Enumerator past end.");
+        }
+        
+        int sz = 0;
+        void* ptr = tcbdbcurkey(cur_, &sz);
+        if (!ptr || !sz)
+        {
+            ptr = 0;
+        }
+        
+        return value_t(ptr, sz);
     }
     
     DB::value_t Tree_db::Enumerator::next()
@@ -548,7 +581,23 @@ namespace tokyo
     {
         return new Tree_db::Enumerator(db(), Tree_db::Enumerator::k_backward);
     }
-        
+    
+    void Tree_db::vanish()
+    {
+        if (!tcbdbvanish(db()))
+        {
+            throw new Exception("TokyoTree", tcbdberrmsg(tcbdbecode(db())));
+        }
+    }
+    
+    void Tree_db::copy(const std::string &target)
+    {
+        if (!tcbdbcopy(db(), target.c_str()))
+        {
+            throw new Exception("TokyoTree", tcbdberrmsg(tcbdbecode(db())));
+        }
+    }
+    
     //=====================================================================
     // TextSearcher Implementation
     //=====================================================================

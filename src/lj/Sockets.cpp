@@ -157,7 +157,7 @@ namespace lj
             {
                 ::close(sock);
                 sock = NULL;
-                Log::emergency.log("Unable to bind: [%d][%s].") << errno << strerror(errno) << Log::end;
+                Log::emergency.log("Unable to connect: [%d][%s].") << errno << strerror(errno) << Log::end;
                 continue;
             }
             
@@ -173,7 +173,7 @@ namespace lj
         freeaddrinfo(info);
         
         dispatch->set_socket(sock);
-        dispatch->set_mode(Socket_dispatch::k_communicate);
+        dispatch->set_mode(Socket_dispatch::k_connect);
         ud_.insert(std::pair<int, Socket_dispatch*>(sock, dispatch));        
     }
     
@@ -210,12 +210,14 @@ namespace lj
         fd_set rs;
         fd_set ws;
         
+        Log::debug.log("Entering select") << Log::end;
+        
         int mx = populate_sets(&rs, &ws);
         
         if (-1 == ::select(mx + 1, &rs, &ws, NULL, timeout))
         {
             throw new Exception("select",
-                                    strerror(errno));
+                                strerror(errno));
         }
         
         std::list<Socket_dispatch*> add;
@@ -268,10 +270,14 @@ namespace lj
                         else
                         {
                             Log::warning.log("Unable to read: [%d][%s].") << errno << strerror(errno) << Log::end;
+                            iter->second->set_bad(errno);
                         }
                         remove.push_back(iter->first);
                         iter->second->close();
-                        delete iter->second;
+                        if (Socket_dispatch::k_communicate == iter->second->mode())
+                        {
+                            delete iter->second;
+                        }
                     }
                 }
             }
@@ -283,6 +289,7 @@ namespace lj
                 if (-1 == sz2)
                 {
                     Log::warning.log("Unable to write: [%d][%s].") << errno << strerror(errno) << Log::end;
+                    iter->second->set_bad(errno);
                 }
                 else
                 {
@@ -319,7 +326,7 @@ namespace lj
         return sel;
     }
     
-    Socket_dispatch::Socket_dispatch() : is_w_(false), s_(0), m_(k_communicate), out_(0), out_offset_(0), out_sz_(0)
+    Socket_dispatch::Socket_dispatch() : is_w_(false), s_(0), m_(k_communicate), out_(0), out_offset_(0), out_sz_(0), bad_(0)
     {
     }
     

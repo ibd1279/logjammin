@@ -107,6 +107,12 @@ namespace tokyo {
         
         //! Get the number of records in the database.
         virtual long long count() = 0;
+        
+        //! Delete all records from the database.
+        virtual void vanish() = 0;
+        
+        //! Copy a file to a backup file.
+        virtual void copy(const std::string &target) = 0;
     protected:
         DB();
     };
@@ -194,6 +200,8 @@ namespace tokyo {
         virtual void save_writes();
         virtual void abort_writes();
         virtual long long count();
+        virtual void vanish();
+        virtual void copy(const std::string &target);
         
     protected:
         //! Get the database handle.
@@ -258,6 +266,9 @@ namespace tokyo {
             
             //! Advance the Enumerator.
             DB::value_t next();
+
+            //! Get the next key.
+            DB::value_t next_key();
         private:
             //! Hidden.
             Enumerator(const Enumerator& o);
@@ -335,6 +346,8 @@ namespace tokyo {
         virtual void save_writes();
         virtual void abort_writes();
         virtual long long count();
+        virtual void vanish();
+        virtual void copy(const std::string &target);
         
         //! Get all of the values between a start and end key.
         virtual bool at_range(const void* start,

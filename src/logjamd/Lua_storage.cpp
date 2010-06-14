@@ -54,6 +54,7 @@ namespace logjamd
     LUNAR_MEMBER_METHOD(Lua_storage, at),
     LUNAR_MEMBER_METHOD(Lua_storage, place),
     LUNAR_MEMBER_METHOD(Lua_storage, remove),
+    LUNAR_MEMBER_METHOD(Lua_storage, checkpoint),
     {0, 0, 0}
     };
     
@@ -172,6 +173,18 @@ namespace logjamd
         
         Lua_bson* ptr = Lunar<Lua_bson>::check(L, -1);
         real_storage().remove(ptr->real_node());
+        
+        timer.stop();
+        
+        return 0;
+    }
+    
+    int Lua_storage::checkpoint(lua_State* L)
+    {
+        lj::Time_tracker timer;
+        timer.start();
+        
+        real_storage().checkpoint();
         
         timer.stop();
         

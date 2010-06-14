@@ -140,6 +140,14 @@ namespace lj
          \return the name.
          */
         const std::string& name() const;
+        
+        //! Checkpoint the database.
+        /*!
+         \par
+         Checkpointing the database causes the journal to be cleared and a copy
+         of the database is created.
+         */
+        void checkpoint();
     protected:
         //! Open up a Storage engine.
         /*!
@@ -161,6 +169,12 @@ namespace lj
          \par Stores the actual documents, indexed by primary key.
          */
         tokyo::Tree_db* db_;
+        
+        //! Journal database.
+        /*!
+         \par Journal used to track database actions for recovery purposes.
+         */
+        tokyo::Tree_db* journal_;
         
         //! Fields indexed using a tree db.
         std::map<std::string, tokyo::Tree_db*> fields_tree_;
@@ -191,6 +205,12 @@ namespace lj
         
         //! Check that an existing record does not exist for a given value.
         Storage &check_unique(const Bson &n, const std::string &name, tokyo::DB *index);
+        
+        //! Write a journal entry at the start of a modification action.
+        void journal_start(const unsigned long long key);
+        
+        //! Update the journal entry to completed.
+        void journal_end(const unsigned long long key);
         
         //! Hidden copy constructor
         /*!

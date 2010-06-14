@@ -113,7 +113,10 @@ namespace {
             }
             if (sz && line && *line)
             {
-                history(hist, &ev, H_ENTER, line);
+                if (!edit_line(line))
+                {
+                    history(hist, &ev, H_ENTER, line);
+                }
             }
             else
             {
@@ -155,6 +158,7 @@ namespace {
                             script.append(buf, h);
                         }
                         fi.close();
+                        history(hist, &ev, H_ENTER, script.c_str());
                     }
                     else
                     {
@@ -173,9 +177,21 @@ namespace {
             else if (send_line(line))
             {
                 lj::Bson* b = dispatch->send_command(script);
-                old_script = script;
-                script.clear();
-                std::cout << lj::bson_as_pretty_string(*b) << std::endl;
+                if (b)
+                {
+                    old_script = script;
+                    script.clear();
+                    std::cout << lj::bson_as_pretty_string(*b) << std::endl;
+                }
+                else
+                {
+                    old_script = script;
+                    script.clear();
+                    std::cerr << "Disconnected.  Attempting to reconnect." << std::endl;
+                    delete dispatch;
+                    dispatch = lj::Client::connect("127.0.0.1", 27754);
+                    std::cerr << "    WARNING: Command was not executed." << std::endl;
+                }
             }
             else if (load_line(line))
             {
@@ -222,12 +238,19 @@ namespace {
 };
 
 int main(int argc, char * const argv[]) {
-    lj::Log::debug.disable();
-    lj::Log::info.disable();
+    lj::Log::debug.enable();
+    lj::Log::info.enable();
     
-    lj::Client* sb = lj::Client::connect("127.0.0.1", 27754);
-    
-    input_loop(sb);
-    
+    lj::Client* sb = 0;
+    try
+    {
+        sb = lj::Client::connect("127.0.0.1", 27754);
+        input_loop(sb);
+    }
+    catch(lj::Exception* ex)
+    {
+        std::cerr << "Unable to connect. Exiting." << std::endl;
+    }
+        
     return 0;
 }

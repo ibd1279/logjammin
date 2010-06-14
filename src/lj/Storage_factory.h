@@ -85,6 +85,8 @@ namespace lj
          \param name The name of the Storage object.
          */
         static void recall(const std::string& name);
+        
+        static void checkpoint_all();
     private:
         typedef std::map<std::string, Storage*> Cache_map;
         static Cache_map cache_;

@@ -58,6 +58,7 @@ namespace lj
         if (response_)
         {
             delete response_;
+            response_ = 0;
         }
     }
     
@@ -144,9 +145,10 @@ namespace lj
     {
         clear();
         add_bytes(cmd->to_binary(), cmd->size());
-        while (!response())
+        while (!response() && bad() == 0)
         {
-            lj::Socket_selector::instance().select(NULL);
+            timeval t = {5, 0};
+            lj::Socket_selector::instance().select(&t);
         }
         return response();
     }

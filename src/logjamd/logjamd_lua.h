@@ -53,7 +53,7 @@ namespace logjamd {
      \param name The connection identifier.
      */
     void logjam_lua_init_connection(lua_State *L, const std::string& name);
-    
+        
     //! Load the connection configuration.
     /*!
      \par

@@ -127,7 +127,8 @@ namespace lj
         enum Socket_mode
         {
             k_listen,           //!< Listen for incoming connections.
-            k_communicate       //!< Communicate acorss the connection.
+            k_communicate,      //!< Communicate acorss the connection.
+            k_connect           //!< Client connection.
         };
         
         //! Ctor.
@@ -227,6 +228,24 @@ namespace lj
          \param sz The number of bytes in the buffer.
          */
         virtual void add_bytes(const char* buffer, int sz);
+        
+        //! Set the error code for this dispatcher.
+        /*!
+         \param bad The current errorno
+         */
+        virtual void set_bad(int bad)
+        {
+            bad_ = bad;
+        }
+        
+        //! Get the error code for this dispatcher.
+        /*!
+         \return 0 if the connection is good, the errno otherwise.
+         */
+        virtual int bad() const
+        {
+            return bad_;
+        }
     private:
         bool is_w_;
         int s_;
@@ -234,5 +253,6 @@ namespace lj
         char* out_;
         int out_offset_;
         int out_sz_;
+        int bad_;
     };    
 }; // namespace lj

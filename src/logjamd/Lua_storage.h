@@ -107,6 +107,15 @@ namespace logjamd
          */
         int remove(lua_State* L);
         
+        //! Checkpoint the database.
+        /*!
+         \par
+         Clears out the journal, and creates a backup copy of the database.
+         \param L The lua state.
+         \return 0
+         */
+        int checkpoint(lua_State* L);
+        
         //! Get the real storage object.
         /*!
          \return a reference to the storage object.

@@ -263,7 +263,7 @@ namespace lj
          \return True when records have been added.
          */
         virtual bool items_raw(lj::Bson& records) const = 0;
-
+        
         //! Set the size of the Record_set prior to the set operation.
         /*!
          \param sz The size of the set prior to executing the set operation.
@@ -343,8 +343,8 @@ namespace lj
          */
         template<typename T>
         static T* operate_on_sets(const Record_set::Operation op,
-                           const T& a,
-                           const T& b)
+                                  const T& a,
+                                  const T& b)
         {
             const T* small = (a.size() < b.size()) ? &a : &b;
             const T* big = (a.size() < b.size()) ? &b : &a;

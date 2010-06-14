@@ -41,6 +41,9 @@
 #include "lj/Logger.h"
 #include "lj/Standard_record_set.h"
 
+#include <sstream>
+#include <sys/time.h>
+
 using tokyo::TextSearcher;
 using tokyo::TagSearcher;
 
@@ -70,13 +73,13 @@ namespace lj
                 tcbdbsetcmpfunc(db, tcbdbcmpint64, NULL);
                 Log::info.log("Using int64 for compares") << Log::end;
             }
-            
-            // XXX config other things like compression type, tree hight, etc.
+            tcbdbtune(db, 256, 512, 65498, 9, 11, BDBTLARGE | BDBTBZIP);
         }
         
         void storage_hash_cfg(TCHDB* db, const void* ptr)
         {
             //const Bson *bn = static_cast<const Bson *>(ptr);
+            tchdbtune(db, 514229, 8, 11, HDBTLARGE | HDBTBZIP);
             
             // XXX config other things like compression type.
         }
@@ -84,6 +87,7 @@ namespace lj
         void storage_text_cfg(TCQDB* db, const void* ptr)
         {
             //const Bson *bn = static_cast<const Bson *>(ptr);
+            tcqdbtune(db, 10000000, QDBTLARGE | QDBTBZIP);
             
             // XXX config other things like compression type.
         }
@@ -92,6 +96,7 @@ namespace lj
         void storage_tag_cfg(TCWDB* db, const void* ptr)
         {
             //const Bson *bn = static_cast<const Bson *>(ptr);
+            tcwdbtune(db, 10000000, WDBTLARGE | WDBTBZIP);
             
             // XXX config other things like compression type.
         }
@@ -103,7 +108,7 @@ namespace lj
                                 typename T::Tune_function_pointer tune_function,
                                 std::map<std::string, T*>& dest)
         {
-            for (Linked_map<std::string, Bson*>::const_iterator iter = cfg.begin();
+            for (lj::Linked_map<std::string, Bson*>::const_iterator iter = cfg.begin();
                  cfg.end() != iter;
                  ++iter)
             {
@@ -114,18 +119,19 @@ namespace lj
                     continue;
                 }
                 std::string indexfile(dir + "/" + bson_as_string((*iter).second->nav("file")));
+                std::string field = bson_as_string((*iter).second->nav("field"));
+                Log::debug.log("  Opening [%s] for [%s]") << indexfile << field << Log::end;
                 T* db = new T(indexfile,
                               open_flags,
                               tune_function,
                               (*iter).second);
-                std::string field = bson_as_string((*iter).second->nav("field"));
                 dest.insert(std::pair<std::string, T*>(field, db));
             }
         }
         
         std::pair<int, int> bson_to_storage_delta(const lj::Bson* ptr)
         {
-            if(bson_type_is_quotable(ptr->type()))
+            if(lj::bson_type_is_quotable(ptr->type()))
             {
                 return std::pair<int, int>(4,5);
             }
@@ -151,6 +157,13 @@ namespace lj
                                  BDBOREADER | BDBOWRITER | BDBOCREAT,
                                  &storage_tree_cfg,
                                  config_->path("main"));
+        
+        std::string journalfile(dir + "/" + lj::bson_as_string(config_->nav("journal/file")));
+        Log::info.log("Opening journal [%s].") << journalfile << Log::end;
+        journal_ = new tokyo::Tree_db(journalfile,
+                                      BDBOREADER | BDBOWRITER | BDBOCREAT,
+                                      &storage_tree_cfg,
+                                      config_->path("journal"));
         
         Log::info.log("Opening tree indices under [%s].") << dir << Log::end;
         open_storage_index<tokyo::Tree_db>(dir,
@@ -189,10 +202,16 @@ namespace lj
             Log::info.log("Adding nested field [%s].") << lj::bson_as_string(*iter->second) << Log::end;
             nested_indexing_.insert(lj::bson_as_string(*iter->second));
         }
+        
+        Log::info.log("Checkpointing after startup.") << Log::end;
+        checkpoint();
     }
     
     Storage::~Storage()
     {
+        Log::info.log("Checkpointing before shutdown.") << Log::end;
+        checkpoint();
+        
         std::string dir(directory());
         if (fields_tag_.size())
         {
@@ -241,20 +260,71 @@ namespace lj
             }
         }
         
+        Log::info.log("Closing journal for [%s].") << dir << Log::end;
+        if (journal_)
+        {
+            delete journal_;
+            journal_ = 0;
+        }
+        
         Log::info.log("Closing database for [%s].") << dir << Log::end;
-        delete db_;
+        if (db_)
+        {
+            delete db_;
+            db_ = 0;
+        }
         
         if (config_)
         {
             delete config_;
+            config_ = 0;
+        }
+    }
+
+    void Storage::checkpoint()
+    {
+        tokyo::Tree_db::Enumerator* e = journal_->forward_enumerator();
+        bool modified = false;
+        
+        while (e->more())
+        {
+            tokyo::DB::value_t k = e->next_key();
+            tokyo::DB::value_t v = e->next();
+            unsigned long long key = *static_cast<unsigned long long*>(k.first);
+            bool val = *static_cast<bool*>(v.first);
+            free(k.first);
+            free(v.first);
+            
+            modified = true;
+            
+            if (!val)
+            {
+                Log::debug.log("  Repairing [%d].") << key << Log::end;
+                deindex(key);
+                reindex(key);
+            }
+        }
+        
+        Log::debug.log("  Clearing journal.") << Log::end;
+        journal_->vanish();
+        
+        if (modified)
+        {
+            Log::debug.log("  Backing up datafile.") << Log::end;
+            struct timeval tv;
+            gettimeofday(&tv, NULL);
+            std::ostringstream target;
+            target << directory() << "/";
+            target << lj::bson_as_string(config_->nav("main/file")) << ".backup";
+            //target << (tv.tv_sec);
+            db_->copy(target.str());
         }
     }
     
     std::auto_ptr<Record_set> Storage::at(const unsigned long long key) const
     {
         std::auto_ptr<Record_set> ptr = none();
-        ptr->include_key(key);
-        return ptr;
+        return ptr->include_key(key);
     }
     
     std::auto_ptr<Record_set> Storage::all() const
@@ -275,15 +345,17 @@ namespace lj
     Storage &Storage::place(Bson &value)
     {
         unsigned long long key = lj::bson_as_int64(value.nav("__key"));
-        unsigned long long original_key = lj::bson_as_int64(value.nav("__key"));
+        unsigned long long original_key = key;
         
-        Log::debug.log("Placing [%llu] [%s]") << key << lj::bson_as_pretty_string(value) << Log::end;
         try
         {
             begin_transaction();
+            Log::debug.log("Placing [%llu]") << key << Log::end;
+            
             if (key)
             {
                 Log::debug.log("Deindexing previous record to clean house.") << Log::end;
+                journal_start(key);
                 deindex(key);
             }
             else
@@ -293,9 +365,9 @@ namespace lj
                 key = (*ptr) + 1;
                 free(ptr);
                 Log::debug.log("New key is [%d].") << key << Log::end;
+                journal_start(key);
             }
             
-            // Enforce unique constraints.
             Log::debug.log("Unique constraint check.") << Log::end;
             for (std::map<std::string, tokyo::Hash_db*>::const_iterator iter = fields_hash_.begin();
                  fields_hash_.end() != iter;
@@ -316,14 +388,16 @@ namespace lj
                        bson,
                        value.size());
             delete[] bson;
-            
+                        
             reindex(key);
             commit_transaction();
+            journal_end(key);
         }
         catch(Exception* ex)
         {
             value.nav("__key").set_value(Bson::k_int64, reinterpret_cast<char *>(&original_key));
             abort_transaction();
+            journal_end(key);
             throw ex;
         }
         return *this;
@@ -340,14 +414,17 @@ namespace lj
             try
             {
                 begin_transaction();
+                journal_start(key);
                 deindex(key);
                 db_->remove(&key, sizeof(unsigned long long));
                 commit_transaction();
+                journal_end(key);
                 value.nav("__key").destroy();
             }
             catch (Exception* ex)
             {
                 abort_transaction();
+                journal_end(key);
                 throw ex;
             }
         }
@@ -395,7 +472,7 @@ namespace lj
         return *this;
     }
     
-    // XXX Method is too long. Needs to be devided up somehow.
+    // XXX Method is too long. Needs to be divided up somehow.
     Storage &Storage::deindex(const unsigned long long key)
     {
         if (!key)
@@ -417,6 +494,7 @@ namespace lj
                 Bson::k_document == n.type() && 
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
+                Log::debug.log("  Remove [%d] from [%s] nested tree index.") << key << iter->first << Log::end;
                 for (Linked_map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
                      n.to_map().end() != iter2;
                      ++iter2)
@@ -433,6 +511,7 @@ namespace lj
             // XXX add the array type support here.
             else if (n.exists())
             {
+                Log::debug.log("  Remove [%d] from [%s] tree index.") << key << iter->first << Log::end;
                 char* bson = n.to_binary();
                 std::pair<int, int> delta(bson_to_storage_delta(&n));
                 iter->second->remove_from_existing(bson + delta.first,
@@ -453,6 +532,7 @@ namespace lj
                 Bson::k_document == n.type() && 
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
+                Log::debug.log("  Remove [%d] from [%s] nested hash index.") << key << iter->first << Log::end;
                 for (Linked_map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
                      n.to_map().end() != iter2;
                      ++iter2)
@@ -467,6 +547,7 @@ namespace lj
             // XXX add the array type support here.
             else if (n.exists())
             {
+                Log::debug.log("  Remove [%d] from [%s] hash index.") << key << iter->first << Log::end;
                 char* bson = n.to_binary();
                 std::pair<int, int> delta(bson_to_storage_delta(&n));
                 iter->second->remove(bson + delta.first,
@@ -483,6 +564,7 @@ namespace lj
             Bson n(original.nav(iter->first));
             if (n.exists())
             {
+                Log::debug.log("  Remove [%d] from [%s] text index.") << key << iter->first << Log::end;
                 iter->second->remove(key, bson_as_string(n));
             }
         }
@@ -495,6 +577,7 @@ namespace lj
             Bson n(original.nav(iter->first));
             if (n.exists())
             {
+                Log::debug.log("  Remove [%d] from [%s] tag index.") << key << iter->first << Log::end;
                 iter->second->remove(key, bson_as_value_string_set(n));
             }
         }
@@ -522,6 +605,7 @@ namespace lj
                 Bson::k_document == n.type() &&
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
+                Log::debug.log("  Place [%d] in [%s] nested tree index.") << key << iter->first << Log::end;
                 for (Linked_map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
                      n.to_map().end() != iter2;
                      ++iter2)
@@ -538,6 +622,7 @@ namespace lj
             // XXX add the array type support here.
             else if (n.exists())
             {
+                Log::debug.log("  Place [%d] in [%s] tree index.") << key << iter->first << Log::end;
                 char* bson = n.to_binary();
                 std::pair<int, int> delta(bson_to_storage_delta(&n));
                 iter->second->place_with_existing(bson + delta.first,
@@ -558,6 +643,7 @@ namespace lj
                 Bson::k_document == n.type() &&
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
+                Log::debug.log("  Place [%d] in [%s] nested hash index.") << key << iter->first << Log::end;
                 for (Linked_map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
                      n.to_map().end() != iter2;
                      ++iter2)
@@ -574,6 +660,7 @@ namespace lj
             // XXX add the array type support here.
             else if (n.exists())
             {
+                Log::debug.log("  Place [%d] in [%s] hash index.") << key << iter->first << Log::end;
                 char* bson = n.to_binary();
                 std::pair<int, int> delta(bson_to_storage_delta(&n));
                 iter->second->place(bson + delta.first,
@@ -592,6 +679,7 @@ namespace lj
             Bson n(original.nav(iter->first));
             if (n.exists())
             {
+                Log::debug.log("  Place [%d] in [%s] text index.") << key << iter->first << Log::end;
                 iter->second->index(key, bson_as_string(n));
             }
         }
@@ -604,15 +692,39 @@ namespace lj
             Bson n(original.nav(iter->first));
             if (n.exists())
             {
+                Log::debug.log("  Place [%d] in [%s] tag index.") << key << iter->first << Log::end;
                 iter->second->index(key, bson_as_value_string_set(n));
             }
         }
         return *this;
     }
     
+    void Storage::journal_start(const unsigned long long key)
+    {
+        bool complete = false;
+        
+        journal_->start_writes();
+        journal_->place(&key,
+                        sizeof(unsigned long long),
+                        &complete,
+                        sizeof(bool));
+        journal_->save_writes();
+    }
+    
+    void Storage::journal_end(const unsigned long long key)
+    {
+        bool complete = true;
+
+        journal_->start_writes();
+        journal_->place(&key,
+                        sizeof(unsigned long long),
+                        &complete,
+                        sizeof(bool));
+        journal_->save_writes();
+    }
+    
     void Storage::begin_transaction()
     {
-        db_->start_writes();
         for (std::map<std::string, tokyo::Tree_db*>::const_iterator iter = fields_tree_.begin();
              fields_tree_.end() != iter;
              ++iter)
@@ -625,9 +737,11 @@ namespace lj
         {
             iter->second->start_writes();
         }
+        db_->start_writes();
     }
     void Storage::commit_transaction()
     {
+        db_->save_writes();
         for (std::map<std::string, tokyo::Hash_db*>::reverse_iterator iter = fields_hash_.rbegin();
              fields_hash_.rend() != iter;
              ++iter)
@@ -640,10 +754,10 @@ namespace lj
         {
             iter->second->save_writes();
         }
-        db_->save_writes();
     }
     void Storage::abort_transaction()
     {
+        db_->abort_writes();
         for (std::map<std::string, tokyo::Hash_db*>::reverse_iterator iter = fields_hash_.rbegin();
              fields_hash_.rend() != iter;
              ++iter)
@@ -656,7 +770,6 @@ namespace lj
         {
             iter->second->abort_writes();
         }
-        db_->abort_writes();
     }
     
     Bson* Storage::configuration()

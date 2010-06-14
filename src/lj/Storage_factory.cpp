@@ -65,5 +65,16 @@ namespace lj
             delete (*iter).second;
         }
     }
+    
+    void Storage_factory::checkpoint_all()
+    {
+        for (Cache_map::iterator iter = cache_.begin();
+             cache_.end() != iter;
+             ++iter)
+        {
+            (*iter).second->checkpoint();
+        }
+    }
+
 
 }; // namespace lj
