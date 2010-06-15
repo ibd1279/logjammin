@@ -86,6 +86,7 @@ namespace lj
          */
         static void recall(const std::string& name);
         
+        //! Checkpoint all databases.
         static void checkpoint_all();
     private:
         typedef std::map<std::string, Storage*> Cache_map;

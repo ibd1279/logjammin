@@ -35,6 +35,7 @@
 
 #include "Storage_factory.h"
 
+#include "lj/Logger.h"
 #include "lj/Storage.h"
 
 namespace lj
@@ -47,11 +48,13 @@ namespace lj
         Cache_map::iterator iter(cache_.find(name));
         if (cache_.end() == iter)
         {
+            Log::debug.log("Producing storage [%s].") << name << Log::end;
             tmp = new Storage(name);
             cache_.insert(Cache_map::value_type(name, tmp));
         }
         else
         {
+            Log::debug.log("Already produced storage [%s].") << name << Log::end;
             tmp = (*iter).second;
         }
         return tmp;

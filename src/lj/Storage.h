@@ -174,7 +174,7 @@ namespace lj
         /*!
          \par Journal used to track database actions for recovery purposes.
          */
-        tokyo::Tree_db* journal_;
+        tokyo::Fixed_db* journal_;
         
         //! Fields indexed using a tree db.
         std::map<std::string, tokyo::Tree_db*> fields_tree_;

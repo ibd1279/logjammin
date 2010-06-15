@@ -101,6 +101,11 @@ namespace lj
             // XXX config other things like compression type.
         }
         
+        void storage_journal_cfg(TCFDB* db, const void* ptr)
+        {
+            tcfdbtune(db, sizeof(bool), -1);
+        }
+        
         template<typename T>
         void open_storage_index(const std::string& dir,
                                 const Linked_map<std::string, Bson*>& cfg,
@@ -160,9 +165,9 @@ namespace lj
         
         std::string journalfile(dir + "/" + lj::bson_as_string(config_->nav("journal/file")));
         Log::info.log("Opening journal [%s].") << journalfile << Log::end;
-        journal_ = new tokyo::Tree_db(journalfile,
-                                      BDBOREADER | BDBOWRITER | BDBOCREAT,
-                                      &storage_tree_cfg,
+        journal_ = new tokyo::Fixed_db(journalfile,
+                                      FDBOREADER | FDBOWRITER | FDBOCREAT,
+                                      &storage_journal_cfg,
                                       config_->path("journal"));
         
         Log::info.log("Opening tree indices under [%s].") << dir << Log::end;
@@ -283,16 +288,14 @@ namespace lj
 
     void Storage::checkpoint()
     {
-        tokyo::Tree_db::Enumerator* e = journal_->forward_enumerator();
+        tokyo::Fixed_db::Enumerator* e = journal_->enumerator();
         bool modified = false;
         
         while (e->more())
         {
-            tokyo::DB::value_t k = e->next_key();
+            uint64_t key = e->next_key();
             tokyo::DB::value_t v = e->next();
-            unsigned long long key = *static_cast<unsigned long long*>(k.first);
             bool val = *static_cast<bool*>(v.first);
-            free(k.first);
             free(v.first);
             
             modified = true;
@@ -480,7 +483,7 @@ namespace lj
             return *this;
         }
         
-        Log::debug.log("Remove [%d] from indicies.") << key << Log::end;
+        Log::debug.log("Deindex [%d].") << key << Log::end;
         Bson original;
         at(key)->first(original);
         
@@ -494,7 +497,7 @@ namespace lj
                 Bson::k_document == n.type() && 
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
-                Log::debug.log("  Remove [%d] from [%s] nested tree index.") << key << iter->first << Log::end;
+                Log::debug.log("  Deindex [%d] from [%s] nested tree index.") << key << iter->first << Log::end;
                 for (Linked_map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
                      n.to_map().end() != iter2;
                      ++iter2)
@@ -511,7 +514,7 @@ namespace lj
             // XXX add the array type support here.
             else if (n.exists())
             {
-                Log::debug.log("  Remove [%d] from [%s] tree index.") << key << iter->first << Log::end;
+                Log::debug.log("  Deindex [%d] from [%s] tree index.") << key << iter->first << Log::end;
                 char* bson = n.to_binary();
                 std::pair<int, int> delta(bson_to_storage_delta(&n));
                 iter->second->remove_from_existing(bson + delta.first,
@@ -532,7 +535,7 @@ namespace lj
                 Bson::k_document == n.type() && 
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
-                Log::debug.log("  Remove [%d] from [%s] nested hash index.") << key << iter->first << Log::end;
+                Log::debug.log("  Deindex [%d] from [%s] nested hash index.") << key << iter->first << Log::end;
                 for (Linked_map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
                      n.to_map().end() != iter2;
                      ++iter2)
@@ -547,7 +550,7 @@ namespace lj
             // XXX add the array type support here.
             else if (n.exists())
             {
-                Log::debug.log("  Remove [%d] from [%s] hash index.") << key << iter->first << Log::end;
+                Log::debug.log("  Deindex [%d] from [%s] hash index.") << key << iter->first << Log::end;
                 char* bson = n.to_binary();
                 std::pair<int, int> delta(bson_to_storage_delta(&n));
                 iter->second->remove(bson + delta.first,
@@ -564,7 +567,7 @@ namespace lj
             Bson n(original.nav(iter->first));
             if (n.exists())
             {
-                Log::debug.log("  Remove [%d] from [%s] text index.") << key << iter->first << Log::end;
+                Log::debug.log("  Deindex [%d] from [%s] text index.") << key << iter->first << Log::end;
                 iter->second->remove(key, bson_as_string(n));
             }
         }
@@ -577,7 +580,7 @@ namespace lj
             Bson n(original.nav(iter->first));
             if (n.exists())
             {
-                Log::debug.log("  Remove [%d] from [%s] tag index.") << key << iter->first << Log::end;
+                Log::debug.log("  Deindex [%d] from [%s] tag index.") << key << iter->first << Log::end;
                 iter->second->remove(key, bson_as_value_string_set(n));
             }
         }
@@ -591,7 +594,7 @@ namespace lj
             return *this;
         }
         
-        Log::debug.log("Place [%d] in indicies.") << key << Log::end;
+        Log::debug.log("Index [%d].") << key << Log::end;
         Bson original;
         at(key)->first(original);
         
@@ -605,7 +608,7 @@ namespace lj
                 Bson::k_document == n.type() &&
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
-                Log::debug.log("  Place [%d] in [%s] nested tree index.") << key << iter->first << Log::end;
+                Log::debug.log("  Index [%d] in [%s] nested tree index.") << key << iter->first << Log::end;
                 for (Linked_map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
                      n.to_map().end() != iter2;
                      ++iter2)
@@ -622,7 +625,7 @@ namespace lj
             // XXX add the array type support here.
             else if (n.exists())
             {
-                Log::debug.log("  Place [%d] in [%s] tree index.") << key << iter->first << Log::end;
+                Log::debug.log("  Index [%d] in [%s] tree index.") << key << iter->first << Log::end;
                 char* bson = n.to_binary();
                 std::pair<int, int> delta(bson_to_storage_delta(&n));
                 iter->second->place_with_existing(bson + delta.first,
@@ -643,7 +646,7 @@ namespace lj
                 Bson::k_document == n.type() &&
                 nested_indexing_.end() != nested_indexing_.find(iter->first))
             {
-                Log::debug.log("  Place [%d] in [%s] nested hash index.") << key << iter->first << Log::end;
+                Log::debug.log("  Index [%d] in [%s] nested hash index.") << key << iter->first << Log::end;
                 for (Linked_map<std::string, Bson*>::const_iterator iter2 = n.to_map().begin();
                      n.to_map().end() != iter2;
                      ++iter2)
@@ -660,7 +663,7 @@ namespace lj
             // XXX add the array type support here.
             else if (n.exists())
             {
-                Log::debug.log("  Place [%d] in [%s] hash index.") << key << iter->first << Log::end;
+                Log::debug.log("  Index [%d] in [%s] hash index.") << key << iter->first << Log::end;
                 char* bson = n.to_binary();
                 std::pair<int, int> delta(bson_to_storage_delta(&n));
                 iter->second->place(bson + delta.first,
@@ -679,7 +682,7 @@ namespace lj
             Bson n(original.nav(iter->first));
             if (n.exists())
             {
-                Log::debug.log("  Place [%d] in [%s] text index.") << key << iter->first << Log::end;
+                Log::debug.log("  Index [%d] in [%s] text index.") << key << iter->first << Log::end;
                 iter->second->index(key, bson_as_string(n));
             }
         }
@@ -692,7 +695,7 @@ namespace lj
             Bson n(original.nav(iter->first));
             if (n.exists())
             {
-                Log::debug.log("  Place [%d] in [%s] tag index.") << key << iter->first << Log::end;
+                Log::debug.log("  Index [%d] in [%s] tag index.") << key << iter->first << Log::end;
                 iter->second->index(key, bson_as_value_string_set(n));
             }
         }
@@ -701,6 +704,8 @@ namespace lj
     
     void Storage::journal_start(const unsigned long long key)
     {
+        Log::debug.log("Starting journaling for [%d]") << key << Log::end;
+        
         bool complete = false;
         
         journal_->start_writes();
@@ -713,6 +718,8 @@ namespace lj
     
     void Storage::journal_end(const unsigned long long key)
     {
+        Log::debug.log("Ending journaling for [%d]") << key << Log::end;
+        
         bool complete = true;
 
         journal_->start_writes();
