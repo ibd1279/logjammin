@@ -599,6 +599,192 @@ namespace tokyo
     }
     
     //=====================================================================
+    // Fixed_db Implementation
+    //=====================================================================
+    Fixed_db::Enumerator::Enumerator(TCFDB *db) : last_(0), more_cache_(true), db_(db)
+    {
+        tcfdbiterinit(db_);
+        last_ = tcfdbiternext(db_);
+        more_cache_ = (0 < last_);
+    }
+    
+    Fixed_db::Enumerator::~Enumerator()
+    {
+    }
+    
+    bool Fixed_db::Enumerator::more()
+    {
+        bool tmp = more_cache_;
+        if (!tmp)
+        {
+            delete this;
+        }
+        return tmp;
+    }
+    
+    uint64_t Fixed_db::Enumerator::next_key()
+    {
+        if (!more())
+        {
+            throw new lj::Exception("TokyoFixedEnumeratorNextKey", "Enumerator past end.");
+        }
+        
+        return last_;
+    }
+    
+    DB::value_t Fixed_db::Enumerator::next()
+    {
+        if (!more())
+        {
+            throw new lj::Exception("TokyoFixedEnumeratorNext", "Enumerator past end.");
+        }
+        
+        int sz = 0;
+        void* ptr = tcfdbget(db_, last_, &sz);
+        if (!ptr || !sz)
+        {
+            ptr = 0;
+        }
+        
+        last_ = tcfdbiternext(db_);
+        more_cache_ = (0 < last_);
+        
+        return value_t(ptr, sz);
+    }
+    
+    Fixed_db::Fixed_db(const std::string& filename,
+                     const int mode,
+                     Fixed_db::Tune_function_pointer db_tune_func,
+                     const void* ptr)
+    {
+        db_ = tcfdbnew();
+        if (db_tune_func)
+        {
+            (*db_tune_func)(db(), ptr);
+        }
+        tcfdbopen(db(), filename.c_str(), mode);
+    }
+    
+    Fixed_db::~Fixed_db()
+    {
+        tcfdbclose(db_);
+        tcfdbdel(db_);
+        db_ = 0;
+    }
+    
+    DB::value_t Fixed_db::at(const void* key, const size_t len)
+    {
+        int64_t real_key = *static_cast<const int64_t*>(key);
+        
+        int sz = 0;
+        void* ptr = tcfdbget(db(), real_key, &sz);
+        if (!ptr || !sz)
+        {
+            ptr = 0;
+        }
+        return value_t(ptr, sz);
+    }
+    
+    void Fixed_db::place(const void* key,
+                        const size_t key_len,
+                        const void* const val, 
+                        const size_t val_len)
+    {
+        int64_t real_key = *static_cast<const int64_t*>(key);
+        
+        if (!tcfdbput(db(), real_key, val, val_len))
+        {
+            throw new Exception("TokyoFixedPlace", tcfdberrmsg(tcfdbecode(db())));
+        }
+    }
+    
+    void Fixed_db::place_if_absent(const void* key, 
+                                  const size_t key_len, 
+                                  const void* const val,
+                                  const size_t val_len)
+    {
+        int64_t real_key = *static_cast<const int64_t*>(key);
+        
+        if (!tcfdbputkeep(db(), real_key, val, val_len))
+        {
+            throw new Exception("TokyoFixedPlaceIfAbsent", tcfdberrmsg(tcfdbecode(db())));
+        }
+    }
+    
+    void Fixed_db::place_or_append(const void*key, 
+                                  const size_t key_len, 
+                                  const void* const val,
+                                  const size_t val_len)
+    {
+        int64_t real_key = *static_cast<const int64_t*>(key);
+        
+        if (!tcfdbputcat(db(), real_key, val, val_len))
+        {
+            throw new Exception("TokyoFixedPlaceOrAddpend", tcfdberrmsg(tcfdbecode(db())));
+        }
+    }
+    
+    void Fixed_db::remove(const void* key, const size_t len)
+    {
+        int64_t real_key = *static_cast<const int64_t*>(key);
+        
+        if (!tcfdbout(db(), real_key))
+        {
+            throw new Exception("TokyoFixedRemove", tcfdberrmsg(tcfdbecode(db())));
+        }
+    }
+    
+    void Fixed_db::start_writes()
+    {
+        if (!tcfdbtranbegin(db()))
+        {
+            throw new Exception("TokyoFixedStartWrites", tcfdberrmsg(tcfdbecode(db())));
+        }
+    }
+    
+    void Fixed_db::save_writes()
+    {
+        if (!tcfdbtrancommit(db()))
+        {
+            throw new Exception("TokyoFixedSaveWrites", tcfdberrmsg(tcfdbecode(db())));
+        }
+    }
+    
+    void Fixed_db::abort_writes()
+    {
+        if (!tcfdbtranabort(db()))
+        {
+            throw new Exception("TokyoFixedAbortWrites", tcfdberrmsg(tcfdbecode(db())));
+        }
+    }
+    
+    long long Fixed_db::count()
+    {
+        return (long long)tcfdbrnum(db());
+    }
+    
+    void Fixed_db::vanish()
+    {
+        if (!tcfdbvanish(db()))
+        {
+            throw new Exception("TokyoFixedVanish", tcfdberrmsg(tcfdbecode(db())));
+        }
+    }
+    
+    void Fixed_db::copy(const std::string &target)
+    {
+        if (!tcfdbcopy(db(), target.c_str()))
+        {
+            throw new Exception("TokyoFixedCopy", tcfdberrmsg(tcfdbecode(db())));
+        }
+    }
+    
+    Fixed_db::Enumerator* Fixed_db::enumerator()
+    {
+        return new Fixed_db::Enumerator(db());
+    }
+        
+    //=====================================================================
     // TextSearcher Implementation
     //=====================================================================
     

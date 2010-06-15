@@ -38,6 +38,8 @@
 extern "C" {
 #include <tcutil.h>
 #include <tcbdb.h>
+#include <tchdb.h>
+#include <tcfdb.h>
 #include <dystopia.h>
 #include <laputa.h>
 }
@@ -64,11 +66,14 @@ namespace tokyo {
         //! Destructor.
         virtual ~DB();
         
-        //! Read all values together at a key.
+        //! Read the value at a key.
         /*!
          \par
          The pointer returned is allocated with "malloc" and must be
          released with "free".
+         \param key The record key.
+         \param len The length of the record key.
+         \return The value.
          \exception Exception Thrown on any error performing the action.
          */        
         virtual value_t at(const void* key,
@@ -401,6 +406,129 @@ namespace tokyo {
         
         //! Tokyo Tree Database handle.
         TCBDB *db_;
+    };
+    
+    //! Fixed DB Class.
+    /*!
+     \author Jason Watson
+     \version 1.0
+     \date May 9, 2010
+     */
+    class Fixed_db : public DB {
+    public:
+        //! Enumerator (Cursor).
+        /*!
+         \author Jason Watson
+         \version 1.0
+         \date May 20, 2010
+         */
+        class Enumerator {
+        public:
+            //! Enumerator direction
+            enum Direction
+            {
+                k_forward,  //!< Enumerate the database from the beginning to the end.
+                k_backward  //!< Enumerate the database from the end to the beginning.
+            };
+            
+            //! Constructor
+            Enumerator(TCFDB* db);
+            
+            //! Destructor.
+            ~Enumerator();
+            
+            //! Test for more records.
+            /*!
+             When more() returns false, it deletes the object.
+             */
+            bool more();
+            
+            //! Advance the Enumerator.
+            DB::value_t next();
+            
+            //! Get the next key.
+            uint64_t next_key();
+        private:
+            //! Hidden.
+            Enumerator(const Enumerator& o);
+            //! Hidden.
+            Enumerator& operator=(const Enumerator& o);
+            
+            uint64_t last_;
+            bool more_cache_;
+            TCFDB* db_;
+        };
+        
+        //! Type of the type function.
+        typedef void (*Tune_function_pointer)(TCFDB*, const void*);
+        
+        //! Fixed_db constructor
+        /*!
+         \par
+         Create a new Fixed length record database object.
+         \param filename The name of the file to open.
+         \param mode The mode to open the file with.
+         \param db_tune_func The function to use for tuning the database.
+         \param ptr Additional argument to the \c db_tune_func.
+         */
+        Fixed_db(const std::string& filename,
+                const int mode,
+                Tune_function_pointer db_tune_func,
+                const void* ptr);
+        
+        //! Fixed_db Destructor
+        virtual ~Fixed_db();
+        
+        virtual value_t at(const void* key,
+                           const size_t len);
+        virtual void place(const void* key,
+                           const size_t key_len,
+                           const void* const val, 
+                           const size_t val_len);
+        virtual void place_if_absent(const void* key, 
+                                     const size_t key_len, 
+                                     const void* const val,
+                                     const size_t val_len);
+        virtual void place_or_append(const void* key, 
+                                     const size_t key_len, 
+                                     const void* const val,
+                                     const size_t val_len);
+        virtual void remove(const void* key,
+                            const size_t len);        
+        virtual void start_writes();
+        virtual void save_writes();
+        virtual void abort_writes();
+        virtual long long count();
+        virtual void vanish();
+        virtual void copy(const std::string &target);
+        
+        //! Get an enumerator for touching every element.
+        virtual Fixed_db::Enumerator* enumerator();
+        
+    protected:
+        //! Get the database handle.
+        /*!
+         \return The pointer to the database object.
+         */
+        inline TCFDB* db()
+        {
+            return db_;
+        }
+    private:
+        //! Hiding to prevent use.
+        /*!
+         \param o Other.
+         */
+        Fixed_db(const Fixed_db& o);
+        
+        //! Hiding to prevent use.
+        /*!
+         \param o Other.
+         */
+        Fixed_db& operator=(const Fixed_db& o);
+        
+        //! Tokyo Hash Database handle.
+        TCFDB *db_;
     };
     
     //! Full text searcher.
