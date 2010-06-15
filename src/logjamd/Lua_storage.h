@@ -120,7 +120,7 @@ namespace logjamd
         /*!
          \return a reference to the storage object.
          */
-        inline lj::Storage &real_storage() { return *storage_; }
+        lj::Storage& real_storage();
     private:
         //! Hidden.
         Lua_storage(const Lua_storage&);
@@ -128,6 +128,6 @@ namespace logjamd
         //! Hidden.
         Lua_storage& operator=(const Lua_storage&);
         
-        lj::Storage* storage_;
+        std::string dbname_;
     };
 }; // namespace logjamd

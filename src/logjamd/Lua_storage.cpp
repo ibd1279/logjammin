@@ -58,15 +58,12 @@ namespace logjamd
     {0, 0, 0}
     };
     
-    Lua_storage::Lua_storage(const std::string& dbname) : storage_(NULL)
+    Lua_storage::Lua_storage(const std::string& dbname) : dbname_(dbname)
     {
-        storage_ = lj::Storage_factory::produce(dbname);
     }
     
-    Lua_storage::Lua_storage(lua_State* L) : storage_(NULL)
+    Lua_storage::Lua_storage(lua_State* L) : dbname_(lua_to_string(L, -1))
     {
-        std::string dbname(lua_to_string(L, -1));
-        storage_ = lj::Storage_factory::produce(dbname);
     }
     
     Lua_storage::~Lua_storage()
@@ -80,7 +77,7 @@ namespace logjamd
         
         // Build the command.
         std::string cmd("db.");
-        cmd.append(storage_->name()).append(":all()");
+        cmd.append(real_storage().name()).append(":all()");
         
         // Create the record set.
         lj::Bson* cost_data = new lj::Bson();
@@ -104,7 +101,7 @@ namespace logjamd
         
         // Build the command.
         std::string cmd("db.");
-        cmd.append(storage_->name()).append(":none()");
+        cmd.append(real_storage().name()).append(":none()");
         
         // Create the record set.
         lj::Bson* cost_data = new lj::Bson();
@@ -158,7 +155,7 @@ namespace logjamd
         }
         catch(lj::Exception* ex)
         {
-            luaL_error(L, "Unable to place content. %s", ex->to_string().c_str());
+            luaL_error(L, "Unable to place record. %s", ex->to_string().c_str());
         }
         
         timer.stop();
@@ -190,4 +187,10 @@ namespace logjamd
         
         return 0;
     }
+    
+    lj::Storage& Lua_storage::real_storage()
+    {
+        return *(lj::Storage_factory::produce(dbname_));
+    }
+    
 }; // namespace logjamd

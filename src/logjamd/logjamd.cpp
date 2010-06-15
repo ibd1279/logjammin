@@ -37,7 +37,7 @@
 
 //! Server main entry point.
 int main(int argc, char * const argv[]) {
-    lj::Log::debug.disable();
+    lj::Log::debug.enable();
     lj::Log::info.enable();
     
     try

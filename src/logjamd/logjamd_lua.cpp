@@ -310,9 +310,8 @@ namespace logjamd
         ptr->set_child("main/file", lj::bson_new_string(std::string("db.") + dbname + ".tcb"));
         ptr->set_child("main/backup_file", lj::bson_new_string(std::string("db.") + dbname + ".tcb.backup"));
         ptr->set_child("main/type", lj::bson_new_string("tree"));
-        ptr->set_child("journal/compare", lj::bson_new_string("int64"));
-        ptr->set_child("journal/file", lj::bson_new_string(std::string("journal.") + dbname + ".tcb"));
-        ptr->set_child("journal/type", lj::bson_new_string("tree"));
+        ptr->set_child("journal/file", lj::bson_new_string(std::string("journal.") + dbname + ".tcf"));
+        ptr->set_child("journal/type", lj::bson_new_string("fixed"));
         ptr->nav("main/unique");
         ptr->nav("index/tree");
         ptr->nav("index/text");
@@ -333,9 +332,9 @@ namespace logjamd
         
         // This should be moved somewhere for portability.
         int err = mkdir(dbfile.c_str(), S_IRWXU | S_IROTH | S_IXOTH | S_IRGRP | S_IXGRP);
-        if (0 != err && EEXIST != err)
+        if (0 != err && EEXIST != errno)
         {
-            return luaL_error(L, "Failed to create directory [%d][%s].", errno, strerror(errno));
+            return luaL_error(L, "Failed to create directory [%d][%d][%s].", EEXIST, errno, strerror(errno));
         }
         
         dbfile.append("/config");
