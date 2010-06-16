@@ -1,7 +1,8 @@
 role_cfg = sc_new("role")
-sc_add_index(role_cfg, "hash", "name", "name", "lex")
-sc_add_index(role_cfg, "text", "name", "name", "lex")
-sc_add_index(role_cfg, "tag", "allowed", "allowed", "lex")
+sc_add_index(role_cfg, "hash", "name", "lex")
+sc_add_index(role_cfg, "text", "name", "lex")
+sc_add_index(role_cfg, "tag", "allowed", "lex")
+sc_add_index(role_cfg, "tree", "create_by", "int64")
 sc_save("role", role_cfg)
 
 for i = 1, 10000 do

@@ -261,7 +261,7 @@ namespace lj
                     subfields.end() != subfields.find(iter->first) &&
                     allow_subfields)
                 {
-                    Log::debug.log("  Deindex [%d] from [%s] nested %s index.") << key << iter->first << indextype << Log::end;
+                    Log::debug.log("  index [%d] from [%s] nested %s index.") << key << iter->first << indextype << Log::end;
                     for (Linked_map<std::string, Bson*>::const_iterator iter2 = n->to_map().begin();
                          n->to_map().end() != iter2;
                          ++iter2)
@@ -271,7 +271,7 @@ namespace lj
                 }
                 else
                 {
-                    Log::debug.log("  Deindex [%d] from [%s] %s index.") << key << iter->first << indextype << Log::end;
+                    Log::debug.log("  index [%d] from [%s] %s index.") << key << iter->first << indextype << Log::end;
                     func(iter->second, n, key);
                 }
             }
@@ -445,7 +445,7 @@ namespace lj
             
             if (!val)
             {
-                Log::debug.log("  Repairing [%d].") << key << Log::end;
+                Log::info.log("  Repairing [%d].") << key << Log::end;
                 lj::Bson record;
                 at(key)->first(record);
                 deindex(record);
@@ -453,12 +453,12 @@ namespace lj
             }
         }
         
-        Log::debug.log("  Clearing journal.") << Log::end;
+        Log::info.log("  Clearing journal.") << Log::end;
         journal_->truncate();
         
         if (modified)
         {
-            Log::debug.log("  Backing up datafile.") << Log::end;
+            Log::info.log("  Backing up datafile.") << Log::end;
             struct timeval tv;
             gettimeofday(&tv, NULL);
             std::ostringstream target;
@@ -479,17 +479,16 @@ namespace lj
         
         Log::info.log("Rebuilding all indicies in [%s]") << directory() << Log::end;
         tokyo::Tree_db::Enumerator* e = db_->forward_enumerator();
+        lj::Bson record;
         while (e->more())
         {
             tokyo::DB::value_t v = e->next();
-            lj::Bson* record = new lj::Bson(lj::Bson::k_document,
-                                            static_cast<char*>(v.first));
+            record.set_value(lj::Bson::k_document,
+                             static_cast<char*>(v.first));
             free(v.first);
-            reindex(*record);
+            reindex(record);
         }
     }
-    
-    
     
     std::auto_ptr<Record_set> Storage::at(const unsigned long long key) const
     {
@@ -552,10 +551,12 @@ namespace lj
             Log::debug.log("Place in DB.") << Log::end;
             value.nav("__key").set_value(Bson::k_int64, reinterpret_cast<char*>(&key));
             char* bson = value.to_binary();
+            db_->start_writes();
             db_->place(&key,
                        sizeof(unsigned long long),
                        bson,
                        value.size());
+            db_->save_writes();
             delete[] bson;
             reindex(value);
             journal_end(key);
@@ -564,6 +565,14 @@ namespace lj
         {
             deindex(value);
             value.nav("__key").set_value(Bson::k_int64, reinterpret_cast<char *>(&original_key));
+            try
+            {
+                db_->abort_writes();
+            }
+            catch(Exception* ex2)
+            {
+                // Protect from bubbling up.
+            }
             reindex(value);
             journal_end(key);
             throw ex;
@@ -583,12 +592,15 @@ namespace lj
             {
                 journal_start(key);
                 deindex(value);
+                db_->start_writes();
                 db_->remove(&key, sizeof(unsigned long long));
+                db_->save_writes();
                 journal_end(key);
                 value.nav("__key").destroy();
             }
             catch (Exception* ex)
             {
+                db_->abort_writes();
                 reindex(value);
                 journal_end(key);
                 throw ex;
@@ -699,7 +711,7 @@ namespace lj
             return *this;
         }
         
-        Log::debug.log("Index [%d].") << key << Log::end;
+        Log::debug.log("Reindex [%d].") << key << Log::end;
         execute_all_indicies<tokyo::Tree_db>(fields_tree_,
                                              "tree",
                                              true,
@@ -777,6 +789,7 @@ namespace lj
         }
         db_->start_writes();
     }
+    
     void Storage::commit_transaction()
     {
         db_->save_writes();
@@ -793,6 +806,7 @@ namespace lj
             iter->second->save_writes();
         }
     }
+    
     void Storage::abort_transaction()
     {
         db_->abort_writes();
@@ -826,6 +840,9 @@ namespace lj
         dir.append("/").append(name());
         return dir;
     }
+    
+    //======================================================================
+    // Storage configuration methods.
     
     void storage_config_init(lj::Bson& cfg,
                              const std::string& name)

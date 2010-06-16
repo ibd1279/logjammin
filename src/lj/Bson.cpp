@@ -777,10 +777,6 @@ namespace lj {
                      b.to_map().end() != iter;
                      ++iter)
                 {
-                    if (!iter->second->exists())
-                    {
-                        continue;
-                    }
                     buf << "\"" << escape(iter->first) << "\":";
                     if (bson_type_is_quotable(iter->second->type()))
                     {
@@ -804,10 +800,6 @@ namespace lj {
                      b.to_map().end() != iter;
                      ++iter)
                 {
-                    if (!iter->second->exists())
-                    {
-                        continue;
-                    }
                     if (bson_type_is_quotable(iter->second->type()))
                     {
                         buf << "\"";
@@ -905,7 +897,7 @@ namespace lj {
                 {
                     return "[]";
                 }
-                buf << "[\n";
+                buf << "[ \n";
                 for (Linked_map<std::string, Bson*>::const_iterator iter = b.to_map().begin();
                      b.to_map().end() != iter;
                      ++iter)

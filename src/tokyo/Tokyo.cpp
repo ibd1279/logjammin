@@ -211,6 +211,7 @@ namespace tokyo
         if (cur_)
         {
             tcbdbcurdel(cur_);
+            cur_ = NULL;
         }
     }
     
