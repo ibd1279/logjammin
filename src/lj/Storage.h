@@ -201,10 +201,10 @@ namespace lj
         std::string name_;
         
         //! Remove a record from the indexed files.
-        Storage &deindex(const unsigned long long key);
+        Storage &deindex(const lj::Bson& record);
         
         //! Add a record to the indexed files.
-        Storage &reindex(const unsigned long long key);
+        Storage &reindex(const lj::Bson& record);
         
         //! Check that an existing record does not exist for a given value.
         Storage &check_unique(const Bson &n, const std::string &name, tokyo::DB *index);

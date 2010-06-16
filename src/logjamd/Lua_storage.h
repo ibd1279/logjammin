@@ -127,6 +127,9 @@ namespace logjamd
          */
         int add_index(lua_State* L);
         
+        //! Rebuild all the indices for the storage.
+        int rebuild(lua_State* L);
+        
         //! Get the real storage object.
         /*!
          \return a reference to the storage object.

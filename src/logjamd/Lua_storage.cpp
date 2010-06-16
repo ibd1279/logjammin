@@ -56,6 +56,7 @@ namespace logjamd
     LUNAR_MEMBER_METHOD(Lua_storage, remove),
     LUNAR_MEMBER_METHOD(Lua_storage, checkpoint),
     LUNAR_MEMBER_METHOD(Lua_storage, add_index),
+    LUNAR_MEMBER_METHOD(Lua_storage, rebuild),
     {0, 0, 0}
     };
     
@@ -205,6 +206,12 @@ namespace logjamd
         std::string storage_name = real_storage().name();
         lj::Storage* ptr = lj::Storage_factory::reproduce(storage_name);
         ptr->rebuild();
+        return 0;
+    }
+    
+    int Lua_storage::rebuild(lua_State* L)
+    {
+        real_storage().rebuild();
         return 0;
     }
     
