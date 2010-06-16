@@ -55,6 +55,7 @@ namespace logjamd
     LUNAR_MEMBER_METHOD(Lua_storage, place),
     LUNAR_MEMBER_METHOD(Lua_storage, remove),
     LUNAR_MEMBER_METHOD(Lua_storage, checkpoint),
+    LUNAR_MEMBER_METHOD(Lua_storage, add_index),
     {0, 0, 0}
     };
     
@@ -185,6 +186,25 @@ namespace logjamd
         
         timer.stop();
         
+        return 0;
+    }
+    
+    int Lua_storage::add_index(lua_State* L)
+    {
+        std::string indxcomp(lua_to_string(L, -1));
+        std::string indxfield(lua_to_string(L, -2));
+        std::string indxtype(lua_to_string(L, -3));
+        
+        lj::Bson* cfg = real_storage().configuration();
+        lj::storage_config_add_index(*cfg,
+                                     indxtype,
+                                     indxfield,
+                                     indxcomp);
+        lj::storage_config_save(*cfg);
+        
+        std::string storage_name = real_storage().name();
+        lj::Storage* ptr = lj::Storage_factory::reproduce(storage_name);
+        ptr->rebuild();
         return 0;
     }
     

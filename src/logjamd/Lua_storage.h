@@ -116,6 +116,17 @@ namespace logjamd
          */
         int checkpoint(lua_State* L);
         
+        //! Add an index to a running Storage object.
+        /*!
+         \code
+         db.role = Storage:new('role')
+         db.role:add_index('tree', 'some/field', 'lex')
+         \endcode
+         \param L The lua state.
+         \return 0
+         */
+        int add_index(lua_State* L);
+        
         //! Get the real storage object.
         /*!
          \return a reference to the storage object.

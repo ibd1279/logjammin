@@ -65,8 +65,15 @@ namespace lj
         Cache_map::iterator iter(cache_.find(name));
         if (cache_.end() != iter)
         {
+            cache_.erase(iter);
             delete (*iter).second;
         }
+    }
+    
+    Storage* Storage_factory::reproduce(const std::string& name)
+    {
+        recall(name);
+        return produce(name);
     }
     
     void Storage_factory::checkpoint_all()

@@ -86,6 +86,13 @@ namespace lj
          */
         static void recall(const std::string& name);
         
+        //! Recall and produce a storage object in a single call.
+        /*!
+         \param name The name of the Storage object.
+         \return Pointer to the storage object.
+         */
+        static Storage* reproduce(const std::string& name);
+        
         //! Checkpoint all databases.
         static void checkpoint_all();
     private:

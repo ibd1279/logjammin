@@ -172,7 +172,7 @@ namespace tokyo
         return (long long)tchdbrnum(db());
     }
     
-    void Hash_db::vanish()
+    void Hash_db::truncate()
     {
         if (!tchdbvanish(db()))
         {
@@ -582,7 +582,7 @@ namespace tokyo
         return new Tree_db::Enumerator(db(), Tree_db::Enumerator::k_backward);
     }
     
-    void Tree_db::vanish()
+    void Tree_db::truncate()
     {
         if (!tcbdbvanish(db()))
         {
@@ -763,7 +763,7 @@ namespace tokyo
         return (long long)tcfdbrnum(db());
     }
     
-    void Fixed_db::vanish()
+    void Fixed_db::truncate()
     {
         if (!tcfdbvanish(db()))
         {

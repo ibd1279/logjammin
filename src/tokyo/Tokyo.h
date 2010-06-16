@@ -114,7 +114,7 @@ namespace tokyo {
         virtual long long count() = 0;
         
         //! Delete all records from the database.
-        virtual void vanish() = 0;
+        virtual void truncate() = 0;
         
         //! Copy a file to a backup file.
         virtual void copy(const std::string &target) = 0;
@@ -155,6 +155,9 @@ namespace tokyo {
         //! Search for a document.
         virtual bool search(const std::string& query,
                             set_key_t& results) = 0;
+        
+        //! Erase the entire index.
+        virtual void truncate() = 0;
     };
     
     //! Hash DB Class.
@@ -205,7 +208,7 @@ namespace tokyo {
         virtual void save_writes();
         virtual void abort_writes();
         virtual long long count();
-        virtual void vanish();
+        virtual void truncate();
         virtual void copy(const std::string &target);
         
     protected:
@@ -351,7 +354,7 @@ namespace tokyo {
         virtual void save_writes();
         virtual void abort_writes();
         virtual long long count();
-        virtual void vanish();
+        virtual void truncate();
         virtual void copy(const std::string &target);
         
         //! Get all of the values between a start and end key.
@@ -499,7 +502,7 @@ namespace tokyo {
         virtual void save_writes();
         virtual void abort_writes();
         virtual long long count();
-        virtual void vanish();
+        virtual void truncate();
         virtual void copy(const std::string &target);
         
         //! Get an enumerator for touching every element.
@@ -564,11 +567,10 @@ namespace tokyo {
                             const value_t &txt);
         virtual bool search(const std::string &query,
                             set_key_t &results);
+        virtual void truncate();
+        
         //! optimize the searcher db.
         void optimize();
-        
-        //! empty the searcher db.
-        void truncate();
     };
     
     //! Tag searcher.
@@ -607,10 +609,12 @@ namespace tokyo {
                             const value_t &txt);
         virtual bool search(const std::string &query,
                             set_key_t &results);
+        virtual void truncate();
         
         //! index a key to multiple words/phrases.
         virtual void index(const key_t key,
                            const set_value_t &words);
+        
         //! remove a key from multiple words/phrases.
         virtual void remove(const key_t key,
                             const set_value_t &words);
@@ -618,7 +622,5 @@ namespace tokyo {
         //! optimize the server db.
         void optimize();
         
-        //! empty the searcher db.
-        void truncate();
     };
 };

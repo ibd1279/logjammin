@@ -44,6 +44,12 @@
 #include <sstream>
 #include <sys/time.h>
 
+// XXX This should be moved somewhere for portability.
+#include <cerrno>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+
 using tokyo::TextSearcher;
 using tokyo::TagSearcher;
 
@@ -309,7 +315,7 @@ namespace lj
         }
         
         Log::debug.log("  Clearing journal.") << Log::end;
-        journal_->vanish();
+        journal_->truncate();
         
         if (modified)
         {
@@ -433,7 +439,45 @@ namespace lj
         }
         return *this;
     }
-    
+
+    void Storage::rebuild()
+    {
+        for (std::map<std::string, tokyo::Tree_db*>::const_iterator iter = fields_tree_.begin();
+             fields_tree_.end() != iter;
+             ++iter)
+        {
+            (*iter).second->truncate();
+        }
+        for (std::map<std::string, tokyo::Hash_db*>::const_iterator iter = fields_hash_.begin();
+             fields_hash_.end() != iter;
+             ++iter)
+        {
+            (*iter).second->truncate();
+        }
+        for (std::map<std::string, tokyo::TextSearcher*>::const_iterator iter = fields_text_.begin();
+             fields_text_.end() != iter;
+             ++iter)
+        {
+            (*iter).second->truncate();
+        }
+        for (std::map<std::string, tokyo::TagSearcher*>::const_iterator iter = fields_tag_.begin();
+             fields_tag_.end() != iter;
+             ++iter)
+        {
+            (*iter).second->truncate();
+        }
+        tokyo::Tree_db::Enumerator* e = db_->forward_enumerator();
+        while (e->more())
+        {
+            tokyo::DB::value_t k = e->next_key();
+            tokyo::DB::value_t v = e->next();
+            unsigned long long key = *static_cast<unsigned long long*>(k.first);
+            free(v.first);
+            free(k.first);
+            reindex(key);
+        }
+    }
+
     Storage &Storage::check_unique(const Bson& n, const std::string& name, tokyo::DB* index)
     {
         if (Bson::k_document == n.type() &&
@@ -794,5 +838,109 @@ namespace lj
         std::string dir(DBDIR);
         dir.append("/").append(name());
         return dir;
+    }
+    
+    void storage_config_init(lj::Bson& cfg,
+                             const std::string& name)
+    {
+        cfg.set_child("main/name", lj::bson_new_string(name));
+        cfg.set_child("main/compare", lj::bson_new_string("int64"));
+        cfg.set_child("main/file", lj::bson_new_string(std::string("db.") + name + ".tcb"));
+        cfg.set_child("main/backup_file", lj::bson_new_string(std::string("db.") + name + ".tcb.backup"));
+        cfg.set_child("journal/file", lj::bson_new_string(std::string("journal.") + name + ".tcf"));
+        cfg.set_child("journal/type", lj::bson_new_string("fixed"));
+    }
+    
+    void storage_config_add_index(lj::Bson& cfg,
+                                  const std::string& type,
+                                  const std::string& field,
+                                  const std::string& comp)
+    {
+        std::string extension;
+        if (type.compare("tree") == 0)
+        {
+            extension = "tcb";
+        }
+        else if (type.compare("hash") == 0)
+        {
+            extension = "tch";
+        }
+        else if (type.compare("text") == 0)
+        {
+            extension = "tcq";
+        }
+        else if (type.compare("tag") == 0)
+        {
+            extension = "tcw";
+        }
+        else {
+            extension = type + ".tc";
+        }
+        
+        std::string name;
+        for (std::string::const_iterator iter = field.begin();
+             field.end() != iter;
+             ++iter)
+        {
+            if ('/' == *iter)
+            {
+                // We push an escae before the slash to avoid confusion in set_child.
+                name.push_back('~');
+            }
+            else
+            {
+                name.push_back(*iter);
+            }
+        }
+        
+        lj::Bson* index_cfg = new lj::Bson();
+        cfg.set_child(std::string("index/") + type + "/" + name,
+                                  index_cfg);
+        
+        index_cfg->set_child("compare", lj::bson_new_string(comp));
+        index_cfg->set_child("file", lj::bson_new_string(std::string("index.") + name + "." + extension));
+        index_cfg->set_child("type", lj::bson_new_string(type));
+        index_cfg->set_child("field", lj::bson_new_string(field));
+    }
+    
+    void storage_config_add_subfield(lj::Bson& cfg,
+                                     const std::string& field)
+    {
+        lj::Bson* ptr = cfg.path("main/nested");
+        std::set<std::string> allowed(lj::bson_as_value_string_set(*ptr));
+        allowed.insert(field);
+        
+        ptr->destroy();
+        for (std::set<std::string>::const_iterator iter = allowed.begin();
+             allowed.end() != iter;
+             ++iter)
+        {
+            ptr->push_child("", lj::bson_new_string(*iter));
+        }
+    }
+    
+    void storage_config_save(lj::Bson& cfg)
+    {
+        std::string dbname = lj::bson_as_string(cfg.nav("main/name"));
+        std::string dbfile(DBDIR);
+        dbfile.append("/").append(dbname);
+        
+        // XXX This should be moved somewhere for portability.
+        int err = mkdir(dbfile.c_str(), S_IRWXU | S_IROTH | S_IXOTH | S_IRGRP | S_IXGRP);
+        if (0 != err && EEXIST != errno)
+        {
+            throw new lj::Exception("StorageConfigSave", strerror(errno));
+        }
+        
+        dbfile.append("/config");
+        lj::bson_save(cfg, dbfile);
+    }
+    
+    lj::Bson* storage_config_load(const std::string& dbname)
+    {
+        std::string dbfile(DBDIR);
+        dbfile.append("/").append(dbname).append("/config");
+        lj::Bson* ptr = lj::bson_load(dbfile);
+        return ptr;
     }
 };

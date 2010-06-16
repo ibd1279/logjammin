@@ -148,6 +148,9 @@ namespace lj
          of the database is created.
          */
         void checkpoint();
+        
+        //! Delete all index files and rebuild.
+        void rebuild();
     protected:
         //! Open up a Storage engine.
         /*!
@@ -224,4 +227,16 @@ namespace lj
          */
         Storage& operator=(const Storage& o);
     };
+    
+    void storage_config_init(lj::Bson& cfg,
+                             const std::string& name);
+    void storage_config_add_index(lj::Bson& cfg,
+                                  const std::string& type,
+                                  const std::string& field,
+                                  const std::string& comp);
+    void storage_config_add_subfield(lj::Bson& cfg,
+                                     const std::string& field);
+    void storage_config_save(lj::Bson& cfg);
+    lj::Bson* storage_config_load(const std::string& dbname);
+    
 }; // namespace lj
