@@ -130,6 +130,9 @@ namespace logjamd
         //! Rebuild all the indices for the storage.
         int rebuild(lua_State* L);
         
+        //! Optimize the database and indices.
+        int optimize(lua_State* L);
+        
         //! Get the real storage object.
         /*!
          \return a reference to the storage object.

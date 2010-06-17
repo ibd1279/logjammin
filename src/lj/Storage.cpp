@@ -297,11 +297,32 @@ namespace lj
         void truncate_all_indicies(const std::map<std::string, T*>& m)
         {
             typedef typename std::map<std::string, T*>::const_iterator index_map_iter;
-            for (index_map_iter iter = m.begin();
-                 m.end() != iter;
-                 ++iter)
+            if (m.size())
             {
-                (*iter).second->truncate();
+                for (index_map_iter iter = m.begin();
+                     m.end() != iter;
+                     ++iter)
+                {
+                    (*iter).second->truncate();
+                }
+            }
+        }
+        
+        template<typename T>
+        void optimize_all_indices(const std::map<std::string, T*>& m,
+                                  const std::string& indextype)
+        {
+            typedef typename std::map<std::string, T*>::const_iterator index_map_iter;
+            if (m.size())
+            {
+                Log::info.log("Optimizing %s indices.") << indextype << Log::end;
+                for (index_map_iter iter = m.begin();
+                     m.end() != iter;
+                     ++iter)
+                {
+                    Log::info.log("  Optimizing %s index for field [%s].") << indextype << iter->first << Log::end;
+                    (*iter).second->optimize();
+                }
             }
         }
     }; // namespace
@@ -581,6 +602,14 @@ namespace lj
                                                      key,
                                                      &tag_reindex);
         }
+    }
+    
+    void Storage::optimize()
+    {
+        optimize_all_indices<tokyo::TagSearcher>(fields_tag_, "tag");
+        optimize_all_indices<tokyo::TextSearcher>(fields_text_, "text");
+        optimize_all_indices<tokyo::Hash_db>(fields_hash_, "hash");
+        optimize_all_indices<tokyo::Tree_db>(fields_tree_, "tree");
     }
     
     std::auto_ptr<Record_set> Storage::at(const unsigned long long key) const

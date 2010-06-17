@@ -188,6 +188,15 @@ namespace tokyo
         }
     }
     
+    void Hash_db::optimize()
+    {
+        long long bnum = count() * 2;
+        if (!tchdboptimize(db(), bnum, -1, -1, 0xFF))
+        {
+            throw new Exception("TokyoHashOptimize", tchdberrmsg(tchdbecode(db())));
+        }
+    }
+    
     //=====================================================================
     // Tree_db Implementation
     //=====================================================================
@@ -599,6 +608,14 @@ namespace tokyo
         }
     }
     
+    void Tree_db::optimize()
+    {
+        if (!tcbdboptimize(db(), -1, -1, -1, -1, -1, 0xFF))
+        {
+            throw new Exception("TokyoTreeOptimize", tcbdberrmsg(tcbdbecode(db())));
+        }
+    }
+    
     //=====================================================================
     // Fixed_db Implementation
     //=====================================================================
@@ -769,6 +786,14 @@ namespace tokyo
         if (!tcfdbvanish(db()))
         {
             throw new Exception("TokyoFixedVanish", tcfdberrmsg(tcfdbecode(db())));
+        }
+    }
+    
+    void Fixed_db::optimize()
+    {
+        if (!tcfdboptimize(db(), -1, -1))
+        {
+            throw new Exception("TokyoFixedOptimize", tcfdberrmsg(tcfdbecode(db())));
         }
     }
     

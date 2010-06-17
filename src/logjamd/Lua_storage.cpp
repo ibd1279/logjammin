@@ -57,6 +57,7 @@ namespace logjamd
     LUNAR_MEMBER_METHOD(Lua_storage, checkpoint),
     LUNAR_MEMBER_METHOD(Lua_storage, add_index),
     LUNAR_MEMBER_METHOD(Lua_storage, rebuild),
+    LUNAR_MEMBER_METHOD(Lua_storage, optimize),
     {0, 0, 0}
     };
     
@@ -212,6 +213,12 @@ namespace logjamd
     int Lua_storage::rebuild(lua_State* L)
     {
         real_storage().rebuild();
+        return 0;
+    }
+    
+    int Lua_storage::optimize(lua_State* L)
+    {
+        real_storage().optimize();
         return 0;
     }
     

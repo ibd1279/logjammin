@@ -154,6 +154,9 @@ namespace lj
         
         //! Rebuild a specific index.
         void rebuild_index(const std::string& index);
+        
+        //! Optimize all the indices.
+        void optimize();
     protected:
         //! Open up a Storage engine.
         /*!

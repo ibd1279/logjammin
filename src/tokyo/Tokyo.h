@@ -118,6 +118,9 @@ namespace tokyo {
         
         //! Copy a file to a backup file.
         virtual void copy(const std::string &target) = 0;
+        
+        //! Optimize the database.
+        virtual void optimize() = 0;
     protected:
         DB();
     };
@@ -158,6 +161,9 @@ namespace tokyo {
         
         //! Erase the entire index.
         virtual void truncate() = 0;
+        
+        //! Optimize the database.
+        virtual void optimize() = 0;
     };
     
     //! Hash DB Class.
@@ -210,6 +216,7 @@ namespace tokyo {
         virtual long long count();
         virtual void truncate();
         virtual void copy(const std::string &target);
+        virtual void optimize();
         
     protected:
         //! Get the database handle.
@@ -356,6 +363,7 @@ namespace tokyo {
         virtual long long count();
         virtual void truncate();
         virtual void copy(const std::string &target);
+        virtual void optimize();
         
         //! Get all of the values between a start and end key.
         virtual bool at_range(const void* start,
@@ -504,6 +512,7 @@ namespace tokyo {
         virtual long long count();
         virtual void truncate();
         virtual void copy(const std::string &target);
+        virtual void optimize();
         
         //! Get an enumerator for touching every element.
         virtual Fixed_db::Enumerator* enumerator();
@@ -568,9 +577,7 @@ namespace tokyo {
         virtual bool search(const std::string &query,
                             set_key_t &results);
         virtual void truncate();
-        
-        //! optimize the searcher db.
-        void optimize();
+        virtual void optimize();
     };
     
     //! Tag searcher.
@@ -610,6 +617,7 @@ namespace tokyo {
         virtual bool search(const std::string &query,
                             set_key_t &results);
         virtual void truncate();
+        virtual void optimize();
         
         //! index a key to multiple words/phrases.
         virtual void index(const key_t key,
@@ -618,9 +626,5 @@ namespace tokyo {
         //! remove a key from multiple words/phrases.
         virtual void remove(const key_t key,
                             const set_value_t &words);
-        
-        //! optimize the server db.
-        void optimize();
-        
     };
 };
