@@ -205,7 +205,7 @@ namespace logjamd
         
         std::string storage_name = real_storage().name();
         lj::Storage* ptr = lj::Storage_factory::reproduce(storage_name);
-        ptr->rebuild();
+        ptr->rebuild_index(indxfield);
         return 0;
     }
     

@@ -231,6 +231,22 @@ namespace lj
         }
         
         template<typename T>
+        T* get_index_by_field(const std::map<std::string, T*>& m,
+                              const std::string& index)
+        {
+            typedef typename std::map<std::string, T*>::const_iterator index_map_iter;
+            index_map_iter iter = m.find(index);
+            if (m.end() == iter)
+            {
+                return NULL;
+            }
+            else
+            {
+                return (*iter).second;
+            }
+        }
+        
+        template<typename T>
         void execute_all_indicies(const std::map<std::string, T*>& m,
                                   const std::string& indextype,
                                   const bool allow_subfields,
@@ -487,6 +503,83 @@ namespace lj
                              static_cast<char*>(v.first));
             free(v.first);
             reindex(record);
+        }
+    }
+    
+    void Storage::rebuild_index(const std::string& index)
+    {
+        tokyo::Tree_db* tree_ptr = get_index_by_field<tokyo::Tree_db>(fields_tree_, index);
+        std::map<std::string, tokyo::Tree_db*> tree_index_map;
+        if (tree_ptr)
+        {
+            tree_ptr->truncate();
+            tree_index_map.insert(std::pair<std::string, tokyo::Tree_db*>(index, tree_ptr));
+        }
+        
+        tokyo::Hash_db* hash_ptr = get_index_by_field<tokyo::Hash_db>(fields_hash_, index);
+        std::map<std::string, tokyo::Hash_db*> hash_index_map;
+        if (hash_ptr)
+        {
+            hash_ptr->truncate();
+            hash_index_map.insert(std::pair<std::string, tokyo::Hash_db*>(index, hash_ptr));
+        }
+        
+        tokyo::TextSearcher* text_ptr = get_index_by_field<tokyo::TextSearcher>(fields_text_, index);
+        std::map<std::string, tokyo::TextSearcher*> text_index_map;
+        if (text_ptr)
+        {
+            text_ptr->truncate();
+            text_index_map.insert(std::pair<std::string, tokyo::TextSearcher*>(index, text_ptr));
+        }
+        
+        tokyo::TagSearcher* tag_ptr = get_index_by_field<tokyo::TagSearcher>(fields_tag_, index);
+        std::map<std::string, tokyo::TagSearcher*> tag_index_map;
+        if (tag_ptr)
+        {
+            tag_ptr->truncate();
+            tag_index_map.insert(std::pair<std::string, tokyo::TagSearcher*>(index, tag_ptr));
+        }
+        
+        Log::info.log("Rebuilding [%s] indicies in [%s]") << index << directory() << Log::end;
+        tokyo::Tree_db::Enumerator* e = db_->forward_enumerator();
+        lj::Bson record;
+        while (e->more())
+        {
+            tokyo::DB::value_t k = e->next_key();
+            tokyo::DB::value_t v = e->next();
+            record.set_value(lj::Bson::k_document,
+                             static_cast<char*>(v.first));
+            unsigned long long key = *static_cast<unsigned long long*>(k.first);
+            free(k.first);
+            free(v.first);
+            execute_all_indicies<tokyo::Tree_db>(tree_index_map,
+                                                 "tree",
+                                                 true,
+                                                 nested_indexing_,
+                                                 record,
+                                                 key,
+                                                 &tree_reindex);
+            execute_all_indicies<tokyo::Hash_db>(hash_index_map,
+                                                 "hash",
+                                                 true,
+                                                 nested_indexing_,
+                                                 record,
+                                                 key,
+                                                 &hash_reindex);
+            execute_all_indicies<tokyo::TextSearcher>(text_index_map,
+                                                      "text",
+                                                      false,
+                                                      nested_indexing_,
+                                                      record,
+                                                      key,
+                                                      &text_reindex);
+            execute_all_indicies<tokyo::TagSearcher>(tag_index_map,
+                                                     "tag",
+                                                     false,
+                                                     nested_indexing_,
+                                                     record,
+                                                     key,
+                                                     &tag_reindex);
         }
     }
     

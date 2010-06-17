@@ -151,6 +151,9 @@ namespace lj
         
         //! Delete all index files and rebuild.
         void rebuild();
+        
+        //! Rebuild a specific index.
+        void rebuild_index(const std::string& index);
     protected:
         //! Open up a Storage engine.
         /*!
