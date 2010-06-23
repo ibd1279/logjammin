@@ -640,6 +640,7 @@ namespace lj
         
         try
         {
+            begin_transaction();
             Log::debug.log("Placing [%llu]") << key << Log::end;
             
             if (key)
@@ -673,28 +674,20 @@ namespace lj
             Log::debug.log("Place in DB.") << Log::end;
             value.nav("__key").set_value(Bson::k_int64, reinterpret_cast<char*>(&key));
             char* bson = value.to_binary();
-            db_->start_writes();
             db_->place(&key,
                        sizeof(unsigned long long),
                        bson,
                        value.size());
-            db_->save_writes();
             delete[] bson;
             reindex(value);
+            commit_transaction();
             journal_end(key);
         }
         catch(Exception* ex)
         {
             deindex(value);
             value.nav("__key").set_value(Bson::k_int64, reinterpret_cast<char *>(&original_key));
-            try
-            {
-                db_->abort_writes();
-            }
-            catch(Exception* ex2)
-            {
-                // Protect from bubbling up.
-            }
+            abort_transaction();
             reindex(value);
             journal_end(key);
             throw ex;
@@ -713,16 +706,17 @@ namespace lj
             try
             {
                 journal_start(key);
+                begin_transaction();
                 deindex(value);
-                db_->start_writes();
                 db_->remove(&key, sizeof(unsigned long long));
-                db_->save_writes();
+                commit_transaction();
                 journal_end(key);
                 value.nav("__key").destroy();
             }
             catch (Exception* ex)
             {
-                db_->abort_writes();
+                abort_transaction();
+                deindex(value);
                 reindex(value);
                 journal_end(key);
                 throw ex;
