@@ -240,6 +240,9 @@ namespace lj
                                   const std::string& type,
                                   const std::string& field,
                                   const std::string& comp);
+    void storage_config_remove_index(lj::Bson& cfg,
+                                     const std::string& type,
+                                     const std::string& field);
     void storage_config_add_subfield(lj::Bson& cfg,
                                      const std::string& field);
     void storage_config_save(lj::Bson& cfg);

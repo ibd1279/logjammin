@@ -67,17 +67,17 @@ namespace lj
             if (lj::bson_as_string(bn->nav("compare")).compare("lex") == 0)
             {
                 tcbdbsetcmpfunc(db, tcbdbcmplexical, NULL);
-                Log::info.log("Using lexical for compares") << Log::end;
+                Log::info.log("  Using lexical for compares") << Log::end;
             }
             else if (lj::bson_as_string(bn->nav("compare")).compare("int32") == 0)
             {
                 tcbdbsetcmpfunc(db, tcbdbcmpint32, NULL);
-                Log::info.log("Using int32 for compares") << Log::end;
+                Log::info.log("  Using int32 for compares") << Log::end;
             }
             else
             {
                 tcbdbsetcmpfunc(db, tcbdbcmpint64, NULL);
-                Log::info.log("Using int64 for compares") << Log::end;
+                Log::info.log("  Using int64 for compares") << Log::end;
             }
             tcbdbtune(db, 256, 512, 65498, 9, 11, BDBTLARGE | BDBTBZIP);
         }
@@ -123,6 +123,12 @@ namespace lj
                  cfg.end() != iter;
                  ++iter)
             {
+                if (!(*iter).second->exists())
+                {
+                    Log::debug.log("  Unable to open index [%s] because it has been deleted.") << (*iter).first << Log::end; 
+                    continue;
+                }
+                
                 if (!(*iter).second->nav("file").exists() ||
                     !(*iter).second->nav("field").exists())
                 {
@@ -1021,6 +1027,30 @@ namespace lj
         index_cfg->set_child("file", lj::bson_new_string(std::string("index.") + name + "." + extension));
         index_cfg->set_child("type", lj::bson_new_string(type));
         index_cfg->set_child("field", lj::bson_new_string(field));
+    }
+    
+    void storage_config_remove_index(lj::Bson& cfg,
+                                     const std::string& type,
+                                     const std::string& field)
+    {
+        std::string name;
+        for (std::string::const_iterator iter = field.begin();
+             field.end() != iter;
+             ++iter)
+        {
+            if ('/' == *iter)
+            {
+                // We push an escae before the slash to avoid confusion in set_child.
+                name.push_back('~');
+            }
+            else
+            {
+                name.push_back(*iter);
+            }
+        }
+        
+        lj::Bson* index_cfg = cfg.path(std::string("index/") + type + "/" + name);
+        index_cfg->destroy();
     }
     
     void storage_config_add_subfield(lj::Bson& cfg,

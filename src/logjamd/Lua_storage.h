@@ -127,6 +127,18 @@ namespace logjamd
          */
         int add_index(lua_State* L);
         
+        //! Remove an index from a running storage object.
+        /*!
+         \code
+         db.role = Storage:new('role')
+         db.role:remove_index('tree', 'some/field')
+         \endcode
+         \param L The lua state.
+         \return 0
+         \sa add_index(lua_State*)
+         */
+        int remove_index(lua_State* L);
+        
         //! Rebuild all the indices for the storage.
         int rebuild(lua_State* L);
         
