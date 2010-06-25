@@ -51,65 +51,6 @@ using lj::Log;
 
 namespace
 {
-    struct Function_buffer
-    {
-        char* const buf;
-        char* cur;
-        char* const max;
-        size_t size;
-        
-        Function_buffer(size_t sz) : buf(new char[sz + 1]), cur(buf), max(buf + sz + 1)
-        {
-        }
-        
-        ~Function_buffer()
-        {
-            delete[] buf;
-        }
-        
-        int copy(const void* source, size_t sz)
-        {
-            if (cur + sz >= max)
-            {
-                return 1;
-            }
-            
-            memcpy(cur, source, sz);
-            cur += sz;
-            return 0;
-        }
-    private:
-        Function_buffer(const Function_buffer&);
-    };
-    
-    int function_writer(lua_State*,
-                        const void* p,
-                        size_t sz,
-                        void* ud)
-    {
-        Function_buffer* ptr = static_cast<Function_buffer*>(ud);
-        return ptr->copy(p, sz);
-    }
-
-    const char* function_reader(lua_State* L,
-                                void* ud,
-                                size_t* sz)
-    {
-        Function_buffer* ptr = static_cast<Function_buffer*>(ud);
-        if (ptr->cur >= ptr->max)
-        {
-            *sz = 0;
-            return 0;
-        }
-        else
-        {
-            const char* bytes = ptr->buf;
-            *sz = ptr->cur - ptr->buf;
-            ptr->cur = ptr->max;
-            return bytes;
-        }
-    }
-    
     lj::Bson* get_connection_config()
     {
         std::string dbfile(DBDIR);
@@ -141,27 +82,26 @@ namespace
                  handlers->to_map().end() != iter2;
                  ++iter2)
             {
+                if (!iter2->second->exists())
+                {
+                    Log::debug.log("Skipping [%s] for [%s]") << iter2->first << dbname << Log::end;
+                    continue;
+                }
+                
                 std::string event_name(dbname);
                 event_name.append("__").append(iter2->first);
                 lua_pushstring(L, event_name.c_str());
 
-                Function_buffer state(iter2->second->size());
-                if (lj::Bson::k_string == iter2->second->type())
-                {
-                    std::string tmp(lj::bson_as_string(*(iter2->second)));
-                    state.copy(tmp.c_str(), tmp.size());
-                }
-                else
-                {
-                    uint32_t sz = 0;
-                    lj::Bson::Binary_type t = lj::Bson::k_bin_function;
-                    const char* tmp = lj::bson_as_binary(*(iter2->second),
-                                                         &t,
-                                                         &sz);
-                    state.copy(tmp, sz);
-                }
+                logjamd::Function_buffer state(iter2->second->size());
+
+                uint32_t sz = 0;
+                lj::Bson::Binary_type t = lj::Bson::k_bin_function;
+                const char* tmp = lj::bson_as_binary(*(iter2->second),
+                                                     &t,
+                                                     &sz);
+                state.copy(tmp, sz);
                 
-                if (lua_load(L, &function_reader, &state, event_name.c_str()))
+                if (lua_load(L, &logjamd::function_reader, &state, event_name.c_str()))
                 {
                     Log::critical.log("Error %s") << lua_to_string(L, -1) << Log::end;
                     lua_pop(L, 2);
@@ -179,6 +119,34 @@ namespace
 
 namespace logjamd
 {
+    int function_writer(lua_State*,
+                        const void* p,
+                        size_t sz,
+                        void* ud)
+    {
+        Function_buffer* ptr = static_cast<Function_buffer*>(ud);
+        return ptr->copy(p, sz);
+    }
+    
+    const char* function_reader(lua_State* L,
+                                void* ud,
+                                size_t* sz)
+    {
+        Function_buffer* ptr = static_cast<Function_buffer*>(ud);
+        if (ptr->cur >= ptr->max)
+        {
+            *sz = 0;
+            return 0;
+        }
+        else
+        {
+            const char* bytes = ptr->buf;
+            *sz = ptr->cur - ptr->buf;
+            ptr->cur = ptr->max;
+            return bytes;
+        }
+    }
+
     int sc_new(lua_State* L)
     {
         std::string dbname(lua_to_string(L, -1));
@@ -374,6 +342,16 @@ namespace logjamd
             }
         }
         return 0;
+    }
+    
+    void get_event(lua_State* L, const std::string& db_name, const std::string& event)
+    {
+        std::string event_key(db_name);
+        event_key.append("__").append(event);
+        lua_getglobal(L, "db_events");
+        lua_pushstring(L, event_key.c_str());
+        lua_gettable(L, -2); // db_events, func.
+        lua_remove(L, -2); // func
     }
         
     int storage_config_load(lua_State* L) {

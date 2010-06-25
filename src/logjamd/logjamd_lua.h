@@ -41,6 +41,49 @@ extern "C" {
 #include <string>
 
 namespace logjamd {
+    
+    //! Function buffer for reading and writing lua functions.
+    struct Function_buffer
+    {
+        char* const buf;
+        char* cur;
+        char* const max;
+        size_t size;
+        
+        Function_buffer(size_t sz) : buf(new char[sz + 1]), cur(buf), max(buf + sz + 1)
+        {
+        }
+        
+        ~Function_buffer()
+        {
+            delete[] buf;
+        }
+        
+        int copy(const void* source, size_t sz)
+        {
+            if (cur + sz >= max)
+            {
+                return 1;
+            }
+            
+            memcpy(cur, source, sz);
+            cur += sz;
+            return 0;
+        }
+    private:
+        Function_buffer(const Function_buffer&);
+    };
+    
+    //! Method for writing a function.
+    int function_writer(lua_State*,
+                        const void* p,
+                        size_t sz,
+                        void* ud);
+    
+    //! Method for reading a function.
+    const char* function_reader(lua_State* L,
+                                void* ud,
+                                size_t* sz);
     //! Initialize the lua state for the server process.
     /*!
      \param L The lua state.
@@ -93,6 +136,9 @@ namespace logjamd {
      \return 0
      */
     int connection_config_remove_default_storage(lua_State* L);
+    
+    //! Execute an event.
+    void get_event(lua_State* L, const std::string& db_name, const std::string& event);
     
     //! Put a result set on the response.
     /*!

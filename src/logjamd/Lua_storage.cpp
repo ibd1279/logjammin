@@ -38,6 +38,7 @@
 #include "logjamd/Lua_bson.h"
 #include "logjamd/Lua_record_set.h"
 #include "logjamd/logjamd_lua.h"
+#include "lj/Logger.h"
 #include "lj/Storage_factory.h"
 #include "lj/Time_tracker.h"
 #include "build/default/config.h"
@@ -57,6 +58,8 @@ namespace logjamd
     LUNAR_MEMBER_METHOD(Lua_storage, checkpoint),
     LUNAR_MEMBER_METHOD(Lua_storage, add_index),
     LUNAR_MEMBER_METHOD(Lua_storage, remove_index),
+    LUNAR_MEMBER_METHOD(Lua_storage, add_event),
+    LUNAR_MEMBER_METHOD(Lua_storage, remove_event),
     LUNAR_MEMBER_METHOD(Lua_storage, rebuild),
     LUNAR_MEMBER_METHOD(Lua_storage, optimize),
     {0, 0, 0}
@@ -152,6 +155,28 @@ namespace logjamd
         lj::Time_tracker timer;
         timer.start();
         
+        get_event(L, real_storage().name(), "pre_place");
+        if (!lua_isnil(L, -1))
+        {
+            lua_pushvalue(L, -2);
+            lua_pushnil(L);
+            lua_call(L, 2, 1);
+        }
+        else
+        {
+            lua_pushboolean(L, true);
+        }
+        
+        if (!lua_toboolean(L, -1))
+        {
+            lj::Log::debug.log("Not placing record.");
+            return 0;
+        }
+        else
+        {
+            lua_pop(L, 1);
+        }
+        
         Lua_bson* ptr = Lunar<Lua_bson>::check(L, -1);
         try
         {
@@ -160,6 +185,18 @@ namespace logjamd
         catch(lj::Exception* ex)
         {
             luaL_error(L, "Unable to place record. %s", ex->to_string().c_str());
+        }
+        
+        get_event(L, real_storage().name(), "post_place");
+        if (!lua_isnil(L, -1))
+        {
+            lua_pushvalue(L, -2);
+            lua_pushnil(L);
+            lua_call(L, 2, 0);
+        }
+        else
+        {
+            lua_pop(L, 1);
         }
         
         timer.stop();
@@ -224,6 +261,63 @@ namespace logjamd
         
         std::string storage_name = real_storage().name();
         lj::Storage_factory::reproduce(storage_name);
+        return 0;
+    }
+    
+    int Lua_storage::add_event(lua_State* L)
+    {
+        lj::Bson* cfg = real_storage().configuration();
+        std::string event("handler/");
+        event.append(lua_to_string(L, -2));
+        
+        std::string event_key(real_storage().name());
+        event_key.append("__").append(lua_to_string(L, -2));
+        
+        if (lua_isfunction(L, -1) && !lua_iscfunction(L, -1))
+        {
+            Function_buffer buffer(10 * 1024);
+            lua_dump(L, &function_writer, &buffer);
+            // {func, de, key, func}
+            
+            lj::Bson* function = lj::bson_new_binary(buffer.buf,
+                                                     buffer.cur - buffer.buf,
+                                                     lj::Bson::k_bin_function);
+            cfg->set_child(event, function);
+        }
+        else
+        {
+            lua_pop(L, 3);
+            luaL_argerror(L, -1, "Expected string of lua, or a lua function.");
+        }
+        
+        lua_getglobal(L, "db_events");
+        lua_pushstring(L, event_key.c_str());
+        lua_pushvalue(L, -3);
+        lua_settable(L, -3);
+        
+        lj::storage_config_save(*cfg);
+        
+        return 0;
+    }
+    
+    int Lua_storage::remove_event(lua_State* L)
+    {
+        lj::Bson* cfg = real_storage().configuration();
+        std::string event("handler/");
+        event.append(lua_to_string(L, -1));
+        
+        std::string event_key(real_storage().name());
+        event_key.append("__").append(lua_to_string(L, -1));
+        
+        cfg->nav(event).destroy();
+        
+        lua_getglobal(L, "db_events");
+        lua_pushstring(L, event_key.c_str());
+        lua_pushnil(L);
+        lua_settable(L, -3);
+        
+        lj::storage_config_save(*cfg);
+        
         return 0;
     }
     
