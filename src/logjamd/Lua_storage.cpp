@@ -62,6 +62,7 @@ namespace logjamd
     LUNAR_MEMBER_METHOD(Lua_storage, remove_event),
     LUNAR_MEMBER_METHOD(Lua_storage, rebuild),
     LUNAR_MEMBER_METHOD(Lua_storage, optimize),
+    LUNAR_MEMBER_METHOD(Lua_storage, recall),
     {0, 0, 0}
     };
     
@@ -164,6 +165,7 @@ namespace logjamd
         }
         else
         {
+            lua_pop(L, 1);
             lua_pushboolean(L, true);
         }
         
@@ -209,8 +211,43 @@ namespace logjamd
         lj::Time_tracker timer;
         timer.start();
         
+        get_event(L, real_storage().name(), "pre_remove");
+        if (!lua_isnil(L, -1))
+        {
+            lua_pushvalue(L, -2);
+            lua_pushnil(L);
+            lua_call(L, 2, 1);
+        }
+        else
+        {
+            lua_pop(L, 1);
+            lua_pushboolean(L, true);
+        }
+        
+        if (!lua_toboolean(L, -1))
+        {
+            lj::Log::debug.log("Not removing record.");
+            return 0;
+        }
+        else
+        {
+            lua_pop(L, 1);
+        }
+        
         Lua_bson* ptr = Lunar<Lua_bson>::check(L, -1);
         real_storage().remove(ptr->real_node());
+        
+        get_event(L, real_storage().name(), "post_remove");
+        if (!lua_isnil(L, -1))
+        {
+            lua_pushvalue(L, -2);
+            lua_pushnil(L);
+            lua_call(L, 2, 0);
+        }
+        else
+        {
+            lua_pop(L, 1);
+        }        
         
         timer.stop();
         
@@ -330,6 +367,12 @@ namespace logjamd
     int Lua_storage::optimize(lua_State* L)
     {
         real_storage().optimize();
+        return 0;
+    }
+    
+    int Lua_storage::recall(lua_State* L)
+    {
+        lj::Storage_factory::recall(real_storage().name());
         return 0;
     }
     

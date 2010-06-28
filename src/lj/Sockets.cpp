@@ -266,6 +266,7 @@ namespace lj
                         if (0 == nbytes)
                         {
                             Log::info.log("Broken connection.") << Log::end;
+                            iter->second->set_bad(errno);
                         }
                         else
                         {

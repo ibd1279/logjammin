@@ -149,6 +149,9 @@ namespace logjamd
         //! Optimize the database and indices.
         int optimize(lua_State* L);
         
+        //! Close the pooled DB and re-open.  Primary used for debugging.
+        int recall(lua_State* L);
+        
         //! Get the real storage object.
         /*!
          \return a reference to the storage object.
