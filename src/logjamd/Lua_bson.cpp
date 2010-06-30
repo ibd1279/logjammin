@@ -9,6 +9,7 @@
 
 #include "Lua_bson.h"
 #include <iostream>
+
 namespace logjamd
 {
     const char Lua_bson::LUNAR_CLASS_NAME[] = "Bson";
@@ -24,30 +25,39 @@ namespace logjamd
     {0, 0, 0}
     };
     
-    Lua_bson::Lua_bson(lj::Bson *ptr, bool gc) : node_(ptr), gc_(gc)
+    Lua_bson::Lua_bson(lj::Bson *ptr, bool gc) : root_(ptr), node_(ptr), gc_(gc), path_("")
     {
     }
     
     Lua_bson::~Lua_bson()
     {
+        root_ = NULL;
         if (gc_ && node_)
         {
             delete node_;
         }
     }
     
-    Lua_bson::Lua_bson(lua_State *L) : node_(NULL), gc_(true)
+    Lua_bson::Lua_bson(lua_State *L) : root_(NULL), node_(NULL), gc_(true), path_("")
     {
         if (lua_gettop(L) > 0)
         {
             Lua_bson* ptr = Lunar<Lua_bson>::check(L, -1);
             node_ = new lj::Bson(*ptr->node_);
+            root_ = node_;
         }
         else
         {
             node_ = new lj::Bson();
+            root_ = node_;
         }
     }
+    
+    Lua_bson::Lua_bson(lj::Bson* root, const std::string& path, bool gc) : root_(root), node_(NULL), gc_(gc), path_(path)
+    {
+        node_ = root->path(path_);
+    }
+
     
     int Lua_bson::nav(lua_State *L)
     {
@@ -55,7 +65,8 @@ namespace logjamd
         // XXX This could be a possible source of memory coruption if 
         // XXX the root was GC'd but the user tried to continue using the
         // XXX the returned node.
-        Lunar<Lua_bson>::push(L, new Lua_bson(&node_->nav(path), false), true);
+        Lua_bson* ptr = new Lua_bson(root_, path_ + "/" + path, false);
+        Lunar<Lua_bson>::push(L, ptr, true);
         return 1;
     }
     
@@ -63,6 +74,7 @@ namespace logjamd
     {
         int h = 0;
         lj::Bson* ptr;
+        record_delta();
         switch (lua_type(L, -1))
         {
             case LUA_TSTRING:
@@ -111,6 +123,7 @@ namespace logjamd
     {
         int h = 0;
         lj::Bson* ptr;
+        record_delta();
         switch (lua_type(L, -1))
         {
             case LUA_TSTRING:
@@ -221,6 +234,17 @@ namespace logjamd
             lua_pop(L, 2);
             return 1;
         }
+    }
+    
+    void Lua_bson::record_delta()
+    {
+        if(!lj::bson_as_boolean(root_->nav("__dirty")))
+        {
+            root_->set_child("__dirty", lj::bson_new_boolean(true));
+            root_->nav("__delta").destroy();
+        }
+        root_->nav("__delta").set_child(lj::bson_escape_path(path_),
+                                        lj::bson_new_null());
     }
     
 }; // namespace logjamd

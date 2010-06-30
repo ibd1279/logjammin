@@ -136,7 +136,8 @@ namespace logjamd
 
         // Build the command executed.
         std::ostringstream cmd_builder;
-        cmd_builder << "include(" << key << ")";
+        cmd_builder << "db." << real_storage().name();
+        cmd_builder << ":at(" << key << ")";
         
         lj::Bson* cost_data = new lj::Bson();
         lj::Record_set* ptr = real_storage().at(key).release();
@@ -182,7 +183,16 @@ namespace logjamd
         Lua_bson* ptr = Lunar<Lua_bson>::check(L, -1);
         try
         {
+            lua_getglobal(L, "server_id");
+            std::string server_id(lua_to_string(L, -1));
+            lj::bson_increment(ptr->real_node().nav("__clock").nav(server_id), 1);
+            ptr->real_node().set_child("__dirty", lj::bson_new_boolean(false));
+            lua_pop(L, 1);
+            
             real_storage().place(ptr->real_node());
+            
+            const std::string replication_name(push_replication_record(L, ptr->real_node()));
+            push_replication_command(L, "place", dbname_, replication_name);
         }
         catch(lj::Exception* ex)
         {
@@ -235,7 +245,24 @@ namespace logjamd
         }
         
         Lua_bson* ptr = Lunar<Lua_bson>::check(L, -1);
-        real_storage().remove(ptr->real_node());
+        
+        try
+        {
+            lua_getglobal(L, "server_id");
+            std::string server_id(lua_to_string(L, -1));
+            lj::bson_increment(ptr->real_node().nav("__clock").nav(server_id), 1);
+            ptr->real_node().set_child("__dirty", lj::bson_new_boolean(false));
+            lua_pop(L, 1);
+            
+            real_storage().remove(ptr->real_node());
+            
+            const std::string replication_name(push_replication_record(L, ptr->real_node()));
+            push_replication_command(L, "remove", dbname_, replication_name);
+        }
+        catch(lj::Exception* ex)
+        {
+            luaL_error(L, "Unable to remove record. %s", ex->to_string().c_str());
+        }
         
         get_event(L, real_storage().name(), "post_remove");
         if (!lua_isnil(L, -1))

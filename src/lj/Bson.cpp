@@ -86,7 +86,7 @@ namespace lj {
                 Bson* new_child = new Bson(static_cast<Bson::Type>(t), ptr);
                 if (Bson::k_document == parent_t)
                 {
-                    node.set_child(name, new_child);
+                    node.set_child(lj::bson_escape_path(name), new_child);
                 }
                 else if(Bson::k_array == parent_t)
                 {
@@ -326,7 +326,7 @@ namespace lj {
                  ++iter)
             {
                 Bson *ptr = new Bson(*(iter->second));
-                set_child(iter->first, ptr);
+                set_child(lj::bson_escape_path(iter->first), ptr);
             }
         }
         else if (k_array == o.type())
@@ -596,6 +596,22 @@ namespace lj {
                 break;
         }
         return sz;
+    }
+    
+    std::string bson_escape_path(const std::string& input)
+    {
+        std::string name;
+        for (std::string::const_iterator iter = input.begin();
+             input.end() != iter;
+             ++iter)
+        {
+            if ('/' == *iter)
+            {
+                name.push_back('\\');
+            }
+            name.push_back(*iter);
+        }
+        return name;
     }
     
     Bson* bson_new_string(const std::string& str)
@@ -1123,6 +1139,13 @@ namespace lj {
         memcpy(sz, v, 4);
         memcpy(t, v + 4, 1);
         return v + 5;
+    }
+    
+    void bson_increment(lj::Bson& b, int amount)
+    {
+        int64_t v = lj::bson_as_int64(b) + amount;
+        b.set_value(lj::Bson::k_int64,
+                    reinterpret_cast<const char*> (&v));
     }
     
     void bson_save(const Bson& b, const std::string& path)

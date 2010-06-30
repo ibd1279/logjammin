@@ -414,6 +414,13 @@ namespace lj
                 t == Bson::k_null);
     }
     
+    //! Escape slashes for bson keys.
+    /*!
+     \param input The string to escape.
+     \return The escaped string.
+     */
+    std::string bson_escape_path(const std::string& input);
+    
     //! Create a new Bson string object.
     /*!
      \par
@@ -614,6 +621,15 @@ namespace lj
      \return pointer to a string of bytes, NULL otherwise.
      */
     const char* bson_as_binary(const Bson& b, Bson::Binary_type* t, uint32_t* sz);
+    
+    //! Increment the value of a bson object.
+    /*!
+     \par
+     converts a value to an integer if it is not already.
+     \param b The bson object to modify.
+     \param amount The amount to increment a value. May be negative.
+     */
+    void bson_increment(lj::Bson& b, int amount);
     
     //! Save a Bson object.
     /*!

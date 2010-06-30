@@ -155,7 +155,11 @@ namespace logjamd
         // Load the closure.
         Lua_bson wrapped_node(&b, false);
         Lunar<Lua_bson>::push(L, &wrapped_node, false);
-        lua_setglobal(L, "response");
+        lua_setglobal(L, "__response");
+        Lua_bson replication_log(new lj::Bson(), true);
+        replication_log.real_node().set_child("cmd", lj::bson_new_string(""));
+        Lunar<Lua_bson>::push(L, &replication_log, false);
+        lua_setglobal(L, "__replication");
         lua_pushstring(L, ip_.c_str());
         lua_setglobal(L, "connection_id");
         luaL_loadbuffer(L,

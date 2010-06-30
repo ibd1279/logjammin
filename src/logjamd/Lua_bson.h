@@ -69,6 +69,9 @@ namespace logjamd
          \param gc True if the wrapper should delete the referenced object.
          */
         Lua_bson(lj::Bson* ptr, bool gc);
+
+        //! Create a new Lua_bson child.
+        Lua_bson(lj::Bson* root, const std::string& path, bool gc);
         
         //! Destructor.
         ~Lua_bson();
@@ -163,8 +166,12 @@ namespace logjamd
             return *node_;
         }
     private:
-        lj::Bson *node_;
-        bool gc_;        
+        void record_delta();
+        
+        lj::Bson* root_;
+        lj::Bson* node_;
+        const bool gc_;
+        const std::string path_;
     };
     
 }; // namespace logjamd
