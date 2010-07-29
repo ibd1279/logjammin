@@ -190,7 +190,7 @@ namespace logjamd
     Lua_record_set::Lua_record_set(lua_State* L) : filter_(NULL), costs_(NULL)
     {
         Lua_storage *ptr = Lunar<Lua_storage>::check(L, -1);
-        filter_ = ptr->real_storage().none().release();
+        filter_ = ptr->real_storage(L).none().release();
         costs_ = new lj::Bson();
     }
 

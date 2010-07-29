@@ -42,14 +42,15 @@ namespace lj
 {
     std::map<std::string, Storage*> Storage_factory::cache_;
 
-    Storage* Storage_factory::produce(const std::string& name)
+    Storage* Storage_factory::produce(const std::string& name,
+                                      const lj::Bson& server_config)
     {
         Storage* tmp = 0;
         Cache_map::iterator iter(cache_.find(name));
         if (cache_.end() == iter)
         {
             Log::debug.log("Producing storage [%s].") << name << Log::end;
-            tmp = new Storage(name);
+            tmp = new Storage(name, server_config);
             cache_.insert(Cache_map::value_type(name, tmp));
         }
         else
@@ -60,7 +61,8 @@ namespace lj
         return tmp;
     }
     
-    void Storage_factory::recall(const std::string& name)
+    void Storage_factory::recall(const std::string& name,
+                                 const lj::Bson& server_config)
     {
         Cache_map::iterator iter(cache_.find(name));
         if (cache_.end() != iter)
@@ -70,10 +72,11 @@ namespace lj
         }
     }
     
-    Storage* Storage_factory::reproduce(const std::string& name)
+    Storage* Storage_factory::reproduce(const std::string& name,
+                                        const lj::Bson& server_config)
     {
-        recall(name);
-        return produce(name);
+        recall(name, server_config);
+        return produce(name, server_config);
     }
     
     void Storage_factory::checkpoint_all()

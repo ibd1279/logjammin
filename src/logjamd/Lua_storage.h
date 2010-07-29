@@ -154,9 +154,17 @@ namespace logjamd
         
         //! Get the real storage object.
         /*!
-         \return a reference to the storage object.
+         \param L The Lua state to get the server configuration from.
+         \return A reference to the storage object.
          */
-        lj::Storage& real_storage();
+        lj::Storage& real_storage(lua_State* L);
+        
+        //! Get the real storage object.
+        /*!
+         \param server_config The configuration required for production.
+         \return A reference to the storage object.
+         */
+        lj::Storage& real_storage(const lj::Bson& server_config);
     private:
         //! Hidden.
         Lua_storage(const Lua_storage&);

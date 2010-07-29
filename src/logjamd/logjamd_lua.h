@@ -90,8 +90,9 @@ namespace logjamd {
     //! Initialize the lua state for the server process.
     /*!
      \param L The lua state.
+     \param data_directory The data directory.
      */
-    void logjam_lua_init(lua_State *L);
+    void logjam_lua_init(lua_State* L, const std::string& data_directory);
     
     //! Initialize the lua state for the server process.
     /*!

@@ -34,6 +34,7 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "lj/bson.h"
 #include <string>
 #include <map>
 
@@ -53,45 +54,26 @@ namespace lj
     public:
         //! Produce a Storage object.
         /*!
-         \par
-         The settings information for this storage engine is loaded from
-         \c DBDIR \c + \c "/" \c + \c dir. The settings file can be created by
-         executing the logjam shell command. The following is an example of a
-         storage engine configuration:
-         \code
-         role_cfg = sc_new("role")
-         sc_add_index(role_cfg, "hash", "name", "name", "lex")
-         sc_add_index(role_cfg, "tree", "allowed", "allowed", "lex")
-         sc_add_index(role_cfg, "text", "allowed", "allowed", "lex")
-         sc_add_index(role_cfg, "text", "name", "name", "lex")
-         sc_add_index(role_cfg, "tag", "allowed", "allowed", "lex")
-         sc_add_index(role_cfg, "tag", "name", "name", "lex")
-         sc_add_nested(role_cfg, "allowed")
-         sc_save("role", role_cfg)         
-         \endcode
          \param name The name of the Storage object.
-         \return Pointer to the storage object.
+         \param server_config The server configuration.
+         \return Reference to the storage object.
          */
-        static Storage* produce(const std::string& name);
+        static Storage* produce(const std::string& name, const lj::Bson& server_config);
         
         //! Force a specific Storage object to be re-produced.
         /*!
-         \par
-         All existing Storage object pointers for the \c name Storage object
-         will become invalid.
-         \todo
-         Some type of abstraction layer to allow "reconnecting" after a recall
-         would make this much more useful.
          \param name The name of the Storage object.
+         \param server_config The server configuration.
          */
-        static void recall(const std::string& name);
+        static void recall(const std::string& name, const lj::Bson& server_config);
         
         //! Recall and produce a storage object in a single call.
         /*!
          \param name The name of the Storage object.
+         \param server_config The server configuration.
          \return Pointer to the storage object.
          */
-        static Storage* reproduce(const std::string& name);
+        static Storage* reproduce(const std::string& name, const lj::Bson& server_config);
         
         //! Checkpoint all databases.
         static void checkpoint_all();

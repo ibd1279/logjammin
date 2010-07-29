@@ -34,15 +34,25 @@
 
 #include "logjamd/logjamd_net.h"
 #include "lj/Logger.h"
+#include "build/default/config.h"
 
 //! Server main entry point.
 int main(int argc, char * const argv[]) {
     lj::Log::debug.enable();
     lj::Log::info.enable();
-    
+        
     try
     {
-        lj::Socket_selector::instance().bind_port(27754, new logjamd::Service_dispatch());
+        int port = 27754;
+        std::string directory(DBDIR);
+        
+        if (argc > 2)
+        {
+            port = atoi(argv[1]);
+            directory.assign(argv[2]);
+        }
+        
+        lj::Socket_selector::instance().bind_port(port, new logjamd::Service_dispatch(directory));
         lj::Socket_selector::instance().loop();
     }
     catch(lj::Exception* e)

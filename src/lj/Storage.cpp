@@ -49,416 +49,237 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-
 using tokyo::TextSearcher;
 using tokyo::TagSearcher;
 
+// ====================================================================
+// Opening a storage object.
+// ====================================================================
+namespace
+{
+    inline std::string root_data_directory(const lj::Bson& server_config)
+    {
+        return lj::bson_as_string(server_config.nav("data_directory"));
+    }
+    
+    inline std::string storage_config_path(const lj::Bson& server_config,
+                                           const std::string& name)
+    {
+        return root_data_directory(server_config) + "/" + name + "/config";
+    }
+    
+    inline std::string storage_database_path(const lj::Bson& server_config,
+                                             const std::string& name,
+                                             const lj::Bson& config,
+                                             const std::string& config_key)
+    {
+        const std::string& r = root_data_directory(server_config);
+        const std::string& p = lj::bson_as_string(config.nav(config_key));
+        assert(p.size() > 0);
+        return (p.at(0) == '/') ? p : (r + "/" + name + "/" + p);
+    }
+                                             
+    
+    void tune_hash_index(TCHDB* db, const void* ptr)
+    {
+        //const Bson *bn = static_cast<const Bson *>(ptr);
+        tchdbtune(db, 514229, 8, 11, HDBTLARGE | HDBTBZIP);
+        
+        // XXX config other things like compression type.
+    }
+    
+    void tune_tree_index(TCBDB* db, const void* ptr)
+    {
+        const lj::Bson* bn = static_cast<const lj::Bson*>(ptr);
+        if (lj::bson_as_string(bn->nav("compare")).compare("lex") == 0)
+        {
+            tcbdbsetcmpfunc(db, tcbdbcmplexical, NULL);
+            lj::Log::info.log("  Using lexical for compares") << lj::Log::end;
+        }
+        else if (lj::bson_as_string(bn->nav("compare")).compare("int32") == 0)
+        {
+            tcbdbsetcmpfunc(db, tcbdbcmpint32, NULL);
+            lj::Log::info.log("  Using int32 for compares") << lj::Log::end;
+        }
+        else
+        {
+            tcbdbsetcmpfunc(db, tcbdbcmpint64, NULL);
+            lj::Log::info.log("  Using int64 for compares") << lj::Log::end;
+        }
+        tcbdbtune(db, 256, 512, 65498, 9, 11, BDBTLARGE | BDBTBZIP);
+    }
+    
+    void tune_text_index(TCQDB* db, const void* ptr)
+    {
+        //const Bson *bn = static_cast<const Bson *>(ptr);
+        tcqdbtune(db, 10000000, QDBTLARGE | QDBTBZIP);
+        
+        // XXX config other things like compression type.
+    }
+    
+    // XXX Add configuration method for tags
+    void tune_word_index(TCWDB* db, const void* ptr)
+    {
+        //const Bson *bn = static_cast<const Bson *>(ptr);
+        tcwdbtune(db, 10000000, WDBTLARGE | WDBTBZIP);
+        
+        // XXX config other things like compression type.
+    }
+    
+    void tune_fixed_index(TCFDB* db, const void* ptr)
+    {
+        tcfdbtune(db, sizeof(bool), -1);
+    }
+    
+    template<typename T>
+    void open_indices(const lj::Bson& server_config,
+                      const std::string& name,
+                      const lj::Bson& indices,
+                      int open_flags,
+                      typename T::Tune_function_pointer tune_function,
+                      std::map<std::string, T*>& dest)
+    {
+        const std::string& dir = root_data_directory(server_config);
+        
+        lj::Log::info.log("Opening %s indices under [%s].") << T::k_db_type << dir << lj::Log::end;
+        for (lj::Linked_map<std::string, lj::Bson*>::const_iterator iter = indices.to_map().begin();
+             indices.to_map().end() != iter;
+             ++iter)
+        {
+            const std::string& index_name = (*iter).first;
+            lj::Bson* cfg = (*iter).second;
+            if (!cfg->exists())
+            {
+                lj::Log::debug.log("  Unable to open index [%s] because it has been deleted.") << index_name << lj::Log::end; 
+                continue;
+            }
+            
+            if (!cfg->nav("file").exists() ||
+                !cfg->nav("field").exists())
+            {
+                lj::Log::error.log("Unable to open index [%s] because file or field is not set.") << index_name << lj::Log::end; 
+                continue;
+            }
+            
+            const std::string& indexfile = storage_database_path(server_config,
+                                                                 name,
+                                                                 *cfg,
+                                                                 "file");
+            const std::string& field(lj::bson_as_string(cfg->nav("field")));
+            
+            lj::Log::debug.log("  Opening [%s] for [%s]") << indexfile << field << lj::Log::end;
+            T* db = new T(indexfile,
+                          open_flags,
+                          tune_function,
+                          cfg);
+            dest.insert(std::pair<std::string, T*>(field, db));
+        }
+    }
+    
+    template<typename T>
+    void close_indices(const lj::Bson& server_config,
+                       const std::string& name,
+                       const std::map<std::string, T*>& indices)
+    {
+        const std::string& dir = root_data_directory(server_config);
+        if (indices.size())
+        {
+            lj::Log::info.log("Closing %s indicies under [%s/%s].") << T::k_db_type << dir << name << lj::Log::end;
+            typedef typename std::map<std::string, T*>::const_iterator Index_map_iter;
+            for (Index_map_iter iter = indices.begin();
+                 indices.end() != iter;
+                 ++iter)
+            {
+                lj::Log::info.log("Closing %s index for field [%s].") << T::k_db_type << iter->first << lj::Log::end;
+                delete iter->second;
+            }
+        }
+    }
+}; // namespace
+
 namespace lj
 {
-    //=====================================================================
-    // Storage Implementation.
-    //=====================================================================
-    
-    namespace
+    Storage::Storage(const std::string &name, const lj::Bson& server_config) : db_(NULL), fields_tree_(), fields_hash_(), fields_text_(), fields_tag_(), config_(NULL), server_config_(server_config), name_(name)
     {
-        void storage_tree_cfg(TCBDB* db, const void* ptr)
-        {
-            const Bson* bn = static_cast<const Bson*>(ptr);
-            if (lj::bson_as_string(bn->nav("compare")).compare("lex") == 0)
-            {
-                tcbdbsetcmpfunc(db, tcbdbcmplexical, NULL);
-                Log::info.log("  Using lexical for compares") << Log::end;
-            }
-            else if (lj::bson_as_string(bn->nav("compare")).compare("int32") == 0)
-            {
-                tcbdbsetcmpfunc(db, tcbdbcmpint32, NULL);
-                Log::info.log("  Using int32 for compares") << Log::end;
-            }
-            else
-            {
-                tcbdbsetcmpfunc(db, tcbdbcmpint64, NULL);
-                Log::info.log("  Using int64 for compares") << Log::end;
-            }
-            tcbdbtune(db, 256, 512, 65498, 9, 11, BDBTLARGE | BDBTBZIP);
-        }
-        
-        void storage_hash_cfg(TCHDB* db, const void* ptr)
-        {
-            //const Bson *bn = static_cast<const Bson *>(ptr);
-            tchdbtune(db, 514229, 8, 11, HDBTLARGE | HDBTBZIP);
-            
-            // XXX config other things like compression type.
-        }
-        
-        void storage_text_cfg(TCQDB* db, const void* ptr)
-        {
-            //const Bson *bn = static_cast<const Bson *>(ptr);
-            tcqdbtune(db, 10000000, QDBTLARGE | QDBTBZIP);
-            
-            // XXX config other things like compression type.
-        }
-        
-        // XXX Add configuration method for tags
-        void storage_tag_cfg(TCWDB* db, const void* ptr)
-        {
-            //const Bson *bn = static_cast<const Bson *>(ptr);
-            tcwdbtune(db, 10000000, WDBTLARGE | WDBTBZIP);
-            
-            // XXX config other things like compression type.
-        }
-        
-        void storage_journal_cfg(TCFDB* db, const void* ptr)
-        {
-            tcfdbtune(db, sizeof(bool), -1);
-        }
-        
-        template<typename T>
-        void open_storage_index(const std::string& dir,
-                                const Linked_map<std::string, Bson*>& cfg,
-                                int open_flags,
-                                typename T::Tune_function_pointer tune_function,
-                                std::map<std::string, T*>& dest)
-        {
-            for (lj::Linked_map<std::string, Bson*>::const_iterator iter = cfg.begin();
-                 cfg.end() != iter;
-                 ++iter)
-            {
-                if (!(*iter).second->exists())
-                {
-                    Log::debug.log("  Unable to open index [%s] because it has been deleted.") << (*iter).first << Log::end; 
-                    continue;
-                }
-                
-                if (!(*iter).second->nav("file").exists() ||
-                    !(*iter).second->nav("field").exists())
-                {
-                    Log::error.log("Unable to open index [%s] because file or field is not set.") << (*iter).first << Log::end; 
-                    continue;
-                }
-                std::string indexfile(dir + "/" + bson_as_string((*iter).second->nav("file")));
-                std::string field = bson_as_string((*iter).second->nav("field"));
-                Log::debug.log("  Opening [%s] for [%s]") << indexfile << field << Log::end;
-                T* db = new T(indexfile,
-                              open_flags,
-                              tune_function,
-                              (*iter).second);
-                dest.insert(std::pair<std::string, T*>(field, db));
-            }
-        }
-        
-        std::pair<int, int> bson_to_storage_delta(const lj::Bson* ptr)
-        {
-            if(lj::bson_type_is_quotable(ptr->type()))
-            {
-                return std::pair<int, int>(4,5);
-            }
-            else
-            {
-                return std::pair<int, int>(0,0);
-            }
-        }
-        
-        void tree_deindex(tokyo::Tree_db* db,
-                          const lj::Bson* n,
-                          const unsigned long long key)
-        {
-            char* bson = n->to_binary();
-            std::pair<int, int> delta(bson_to_storage_delta(n));
-            db->remove_from_existing(bson + delta.first,
-                                     n->size() - delta.second,
-                                     &key,
-                                     sizeof(unsigned long long));
-            delete[] bson;
-        }
-        
-        void tree_reindex(tokyo::Tree_db* db,
-                          const lj::Bson* n,
-                          const unsigned long long key)
-        {
-            char* bson = n->to_binary();
-            std::pair<int, int> delta(bson_to_storage_delta(n));
-            db->remove_from_existing(bson + delta.first,
-                                     n->size() - delta.second,
-                                     &key,
-                                     sizeof(unsigned long long));
-            delete[] bson;
-        }
-        
-        void hash_deindex(tokyo::Hash_db* db,
-                          const lj::Bson* n,
-                          const unsigned long long key)
-        {
-            char* bson = n->to_binary();
-            std::pair<int, int> delta(bson_to_storage_delta(n));
-            db->remove(bson + delta.first,
-                       n->size() - delta.second);
-            delete[] bson;
-        }
-        
-        void hash_reindex(tokyo::Hash_db* db,
-                          const lj::Bson* n,
-                          const unsigned long long key)
-        {
-            char* bson = n->to_binary();
-            std::pair<int, int> delta(bson_to_storage_delta(n));
-            db->place(bson + delta.first,
-                      n->size() - delta.second,
-                      &key,
-                      sizeof(unsigned long long));
-            delete[] bson;
-        }
-        
-        void text_deindex(tokyo::TextSearcher* db,
-                          const lj::Bson* n,
-                          const unsigned long long key)
-        {
-            db->remove(key, lj::bson_as_string(*n));
-        }
-        
-        void text_reindex(tokyo::TextSearcher* db,
-                          const lj::Bson* n,
-                          const unsigned long long key)
-        {
-            db->index(key, bson_as_string(*n));
-        }
-        
-        void tag_deindex(tokyo::TagSearcher* db,
-                         const lj::Bson* n,
-                         const unsigned long long key)
-        {
-            db->remove(key, bson_as_value_string_set(*n));
-        }
-        
-        void tag_reindex(tokyo::TagSearcher* db,
-                         const lj::Bson* n,
-                         const unsigned long long key)
-        {
-            db->index(key, bson_as_value_string_set(*n));
-        }
-        
-        template<typename T>
-        T* get_index_by_field(const std::map<std::string, T*>& m,
-                              const std::string& index)
-        {
-            typedef typename std::map<std::string, T*>::const_iterator index_map_iter;
-            index_map_iter iter = m.find(index);
-            if (m.end() == iter)
-            {
-                return NULL;
-            }
-            else
-            {
-                return (*iter).second;
-            }
-        }
-        
-        template<typename T>
-        void execute_all_indicies(const std::map<std::string, T*>& m,
-                                  const std::string& indextype,
-                                  const bool allow_subfields,
-                                  const std::set<std::string>& subfields,
-                                  const lj::Bson& record,
-                                  const unsigned long long key,
-                                  void (*func)(T* db,
-                                               const lj::Bson* n,
-                                               const unsigned long long key))
-        {
-            typedef typename std::map<std::string, T*>::const_iterator index_map_iter;
-            // Remove from tree index entries.
-            for (index_map_iter iter = m.begin();
-                 m.end() != iter;
-                 ++iter)
-            {
-                const lj::Bson* n = record.path(iter->first);
-                if (!n)
-                {
-                    continue;
-                }
-                if (!n->exists())
-                {
-                    continue;
-                }
-                
-                if (lj::bson_type_is_nested(n->type()) && 
-                    subfields.end() != subfields.find(iter->first) &&
-                    allow_subfields)
-                {
-                    Log::debug.log("  index [%d] from [%s] nested %s index.") << key << iter->first << indextype << Log::end;
-                    for (Linked_map<std::string, Bson*>::const_iterator iter2 = n->to_map().begin();
-                         n->to_map().end() != iter2;
-                         ++iter2)
-                    {
-                        func(iter->second, iter2->second, key);
-                    }
-                }
-                else
-                {
-                    Log::debug.log("  index [%d] from [%s] %s index.") << key << iter->first << indextype << Log::end;
-                    func(iter->second, n, key);
-                }
-            }
-        }
-        
-        template<typename T>
-        void truncate_all_indicies(const std::map<std::string, T*>& m)
-        {
-            typedef typename std::map<std::string, T*>::const_iterator index_map_iter;
-            if (m.size())
-            {
-                for (index_map_iter iter = m.begin();
-                     m.end() != iter;
-                     ++iter)
-                {
-                    (*iter).second->truncate();
-                }
-            }
-        }
-        
-        template<typename T>
-        void optimize_all_indices(const std::map<std::string, T*>& m,
-                                  const std::string& indextype)
-        {
-            typedef typename std::map<std::string, T*>::const_iterator index_map_iter;
-            if (m.size())
-            {
-                Log::info.log("Optimizing %s indices.") << indextype << Log::end;
-                for (index_map_iter iter = m.begin();
-                     m.end() != iter;
-                     ++iter)
-                {
-                    Log::info.log("  Optimizing %s index for field [%s].") << indextype << iter->first << Log::end;
-                    (*iter).second->optimize();
-                }
-            }
-        }
-    }; // namespace
-    
-    Storage::Storage(const std::string &name) : db_(NULL), fields_tree_(), fields_hash_(), fields_text_(), fields_tag_(), nested_indexing_(), config_(NULL), name_(name)
-    {
-        std::string dir(directory());
-        std::string configfile(dir + "/config");
+        const std::string& dir = root_data_directory(server_config_);
+        const std::string& configfile = storage_config_path(server_config_, name_);
         
         Log::info.log("Loading configuration from [%s].") << configfile << Log::end;
         config_ = bson_load(configfile);
-        Log::info.log("Loaded Settings [%s].") << lj::bson_as_pretty_string(*config_) << Log::end;
+        Log::debug.log("Loaded Settings [%s].") << bson_as_pretty_string(*config_) << Log::end;
         
-        std::string dbfile(dir + "/" + lj::bson_as_string(config_->nav("main/file")));
+        const std::string& dbfile = storage_database_path(server_config_,
+                                                          name_,
+                                                          *config_,
+                                                          "main/file");
         Log::info.log("Opening database [%s].") << dbfile << Log::end;
         db_ = new tokyo::Tree_db(dbfile,
-                                 BDBOREADER | BDBOWRITER | BDBOCREAT,
-                                 &storage_tree_cfg,
+                                 BDBOREADER | BDBOWRITER | BDBOCREAT | BDBOLCKNB,
+                                 &tune_tree_index,
                                  config_->path("main"));
         
-        std::string journalfile(dir + "/" + lj::bson_as_string(config_->nav("journal/file")));
+        const std::string& journalfile = storage_database_path(server_config_,
+                                                               name_,
+                                                               *config_,
+                                                               "journal/file");
         Log::info.log("Opening journal [%s].") << journalfile << Log::end;
         journal_ = new tokyo::Fixed_db(journalfile,
-                                       FDBOREADER | FDBOWRITER | FDBOCREAT,
-                                       &storage_journal_cfg,
+                                       FDBOREADER | FDBOWRITER | FDBOCREAT | FDBOLCKNB,
+                                       &tune_fixed_index,
                                        config_->path("journal"));
         
-        Log::info.log("Opening tree indices under [%s].") << dir << Log::end;
-        open_storage_index<tokyo::Tree_db>(dir,
-                                           config_->nav("index/tree").to_map(),
-                                           BDBOREADER | BDBOWRITER | BDBOCREAT,
-                                           &storage_tree_cfg,
-                                           fields_tree_);
+        open_indices<tokyo::Hash_db>(server_config_,
+                                     name_,
+                                     config_->nav("index/hash"),
+                                     HDBOREADER | HDBOWRITER | HDBOCREAT | HDBOLCKNB,
+                                     &tune_hash_index,
+                                     fields_hash_);
         
-        Log::info.log("Opening hash indices under [%s].") << dir << Log::end;
-        open_storage_index<tokyo::Hash_db>(dir,
-                                           config_->nav("index/hash").to_map(),
-                                           HDBOREADER | HDBOWRITER | HDBOCREAT,
-                                           &storage_hash_cfg,
-                                           fields_hash_);
+        open_indices<tokyo::Tree_db>(server_config_,
+                                     name_,
+                                     config_->nav("index/tree"),
+                                     BDBOREADER | BDBOWRITER | BDBOCREAT | BDBOLCKNB,
+                                     &tune_tree_index,
+                                     fields_tree_);
         
-        Log::info.log("Opening text indices under [%s].") << dir << Log::end;
-        open_storage_index<TextSearcher>(dir,
-                                         config_->nav("index/text").to_map(),
-                                         QDBOREADER | QDBOWRITER | QDBOCREAT,
-                                         &storage_text_cfg,
-                                         fields_text_);
+        open_indices<TextSearcher>(server_config_,
+                                   name,
+                                   config_->nav("index/text"),
+                                   QDBOREADER | QDBOWRITER | QDBOCREAT | QDBOLCKNB,
+                                   &tune_text_index,
+                                   fields_text_);
         
-        Log::info.log("Opening tag indices under [%s].") << dir << Log::end;
-        open_storage_index<TagSearcher>(dir,
-                                        config_->nav("index/tag").to_map(),
-                                        WDBOREADER | WDBOWRITER | WDBOCREAT,
-                                        &storage_tag_cfg,
-                                        fields_tag_);
+        open_indices<TagSearcher>(server_config_,
+                                  name,
+                                  config_->nav("index/tag"),
+                                  WDBOREADER | WDBOWRITER | WDBOCREAT | WDBOLCKNB,
+                                  &tune_word_index,
+                                  fields_tag_);
         
-        Log::info.log("Registering nested indexing from [%s].") << dir << Log::end;
-        Bson *nested_fields = config_->path("main/nested");
-        for (Linked_map<std::string, Bson*>::const_iterator iter = nested_fields->to_map().begin();
-             nested_fields->to_map().end() != iter;
-             ++iter)
-        {
-            Log::info.log("Adding nested field [%s].") << lj::bson_as_string(*iter->second) << Log::end;
-            nested_indexing_.insert(lj::bson_as_string(*iter->second));
-        }
-        
-        Log::info.log("Checkpointing after startup.") << Log::end;
+        Log::info.log("Checkpointing [%s] after startup.") << dir << Log::end;
         checkpoint();
     }
     
     Storage::~Storage()
     {
-        Log::info.log("Checkpointing before shutdown.") << Log::end;
+        const std::string& dir = root_data_directory(server_config_);
+        
+        Log::info.log("Checkpointing [%s/%s] before shutdown.") << dir << name_ << Log::end;
         checkpoint();
         
-        std::string dir(directory());
-        if (fields_tag_.size())
-        {
-            Log::info.log("Closing tag indicies under [%s].") << dir << Log::end;
-            for (std::map<std::string, TagSearcher *>::const_iterator iter = fields_tag_.begin();
-                 fields_tag_.end() != iter;
-                 ++iter)
-            {
-                Log::info.log("Closing tag index for field [%s].") << iter->first << Log::end;
-                delete iter->second;
-            }
-        }
+        close_indices<TagSearcher>(server_config_, name_, fields_tag_);
+        close_indices<TextSearcher>(server_config_, name_, fields_text_);
+        close_indices<tokyo::Tree_db>(server_config_, name_, fields_tree_);
+        close_indices<tokyo::Hash_db>(server_config_, name_, fields_hash_);
         
-        if (fields_text_.size())
-        {
-            Log::info.log("Closing text indicies under [%s].") << dir << Log::end;
-            for (std::map<std::string, TextSearcher *>::const_iterator iter = fields_text_.begin();
-                 fields_text_.end() != iter;
-                 ++iter)
-            {
-                Log::info.log("Closing text index for field [%s].") << iter->first << Log::end;
-                delete iter->second;
-            }
-        }
-        
-        if (fields_hash_.size())
-        {
-            Log::info.log("Closing hash indicies under [%s].") << dir << Log::end;
-            for (std::map<std::string, tokyo::Hash_db*>::const_iterator iter = fields_hash_.begin();
-                 fields_hash_.end() != iter;
-                 ++iter)
-            {
-                Log::info.log("Closing hash index for field [%s].") << iter->first << Log::end;
-                delete iter->second;
-            }
-        }
-        
-        if (fields_tree_.size())
-        {
-            Log::info.log("Closing tree indicies under [%s].") << dir << Log::end;
-            for(std::map<std::string, tokyo::Tree_db *>::const_iterator iter = fields_tree_.begin();
-                iter != fields_tree_.end();
-                ++iter) {
-                Log::info.log("Closing tree index for field [%s].") << iter->first << Log::end;
-                delete iter->second;
-            }
-        }
-        
-        Log::info.log("Closing journal for [%s].") << dir << Log::end;
+        Log::info.log("Closing journal for [%s/%s].") << dir << name_ << Log::end;
         if (journal_)
         {
             delete journal_;
             journal_ = 0;
         }
         
-        Log::info.log("Closing database for [%s].") << dir << Log::end;
+        Log::info.log("Closing database for [%s/%s].") << dir << name_ << Log::end;
         if (db_)
         {
             delete db_;
@@ -471,7 +292,404 @@ namespace lj
             config_ = 0;
         }
     }
+}; // namespace lj
+
+// ====================================================================
+// indexing/deindexing a record in a storage object.
+// ====================================================================
+namespace
+{
+    std::pair<int, int> bson_to_storage_delta(const lj::Bson& ptr)
+    {
+        if(lj::bson_type_is_quotable(ptr.type()))
+        {
+            return std::pair<int, int>(4,5);
+        }
+        else
+        {
+            return std::pair<int, int>(0,0);
+        }
+    }
     
+    template<typename T>
+    T* get_index_by_field(const std::map<std::string, T*>& m,
+                          const std::string& index)
+    {
+        typedef typename std::map<std::string, T*>::const_iterator Index_map_iter;
+        Index_map_iter iter = m.find(index);
+        if (m.end() == iter)
+        {
+            return NULL;
+        }
+        else
+        {
+            return (*iter).second;
+        }
+    }
+    
+    void hash_deindex(tokyo::Hash_db& db,
+                      const lj::Bson& n,
+                      const unsigned long long key)
+    {
+        char* bson = n.to_binary();
+        std::pair<int, int> delta(bson_to_storage_delta(n));
+        db.remove(bson + delta.first,
+                  n.size() - delta.second);
+        delete[] bson;
+    }
+    
+    void hash_reindex(tokyo::Hash_db& db,
+                      const lj::Bson& n,
+                      const unsigned long long key)
+    {
+        char* bson = n.to_binary();
+        std::pair<int, int> delta(bson_to_storage_delta(n));
+        db.place(bson + delta.first,
+                 n.size() - delta.second,
+                 &key,
+                 sizeof(unsigned long long));
+        delete[] bson;
+    }
+    
+    void tree_deindex(tokyo::Tree_db& db,
+                      const lj::Bson& n,
+                      const unsigned long long key)
+    {
+        char* bson = n.to_binary();
+        std::pair<int, int> delta(bson_to_storage_delta(n));
+        db.remove_from_existing(bson + delta.first,
+                                n.size() - delta.second,
+                                &key,
+                                sizeof(unsigned long long));
+        delete[] bson;
+    }
+    
+    void tree_reindex(tokyo::Tree_db& db,
+                      const lj::Bson& n,
+                      const unsigned long long key)
+    {
+        char* bson = n.to_binary();
+        std::pair<int, int> delta(bson_to_storage_delta(n));
+        db.remove_from_existing(bson + delta.first,
+                                n.size() - delta.second,
+                                &key,
+                                sizeof(unsigned long long));
+        delete[] bson;
+    }
+    
+    void text_deindex(tokyo::TextSearcher& db,
+                      const lj::Bson& n,
+                      const unsigned long long key)
+    {
+        db.remove(key, lj::bson_as_string(n));
+    }
+    
+    void text_reindex(tokyo::TextSearcher& db,
+                      const lj::Bson& n,
+                      const unsigned long long key)
+    {
+        db.index(key, lj::bson_as_string(n));
+    }
+    
+    void word_deindex(tokyo::TagSearcher& db,
+                      const lj::Bson& n,
+                      const unsigned long long key)
+    {
+        db.remove(key, lj::bson_as_value_string_set(n));
+    }
+    
+    void word_reindex(tokyo::TagSearcher& db,
+                      const lj::Bson& n,
+                      const unsigned long long key)
+    {
+        db.index(key, lj::bson_as_value_string_set(n));
+    }
+    
+    template<typename T>
+    void perform_on_index(const std::string field_name,
+                          T& index,
+                          const bool allow_subfields,
+                          const std::set<std::string>& subfields,
+                          const lj::Bson& record,
+                          const unsigned long long key,
+                          void (*func)(T& db,
+                                       const lj::Bson& n,
+                                       const unsigned long long key))
+    {
+        const lj::Bson* n = record.path(field_name);
+        if (!n)
+        {
+            return;
+        }
+        if (!n->exists())
+        {
+            return;
+        }
+        
+        if (lj::bson_type_is_nested(n->type()) && 
+            subfields.end() != subfields.find(field_name) &&
+            allow_subfields)
+        {
+            lj::Log::debug.log("  index [%d] from [%s] nested %s index.") << key << field_name << T::k_db_type << lj::Log::end;
+            for (lj::Linked_map<std::string, lj::Bson*>::const_iterator iter = n->to_map().begin();
+                 n->to_map().end() != iter;
+                 ++iter)
+            {
+                func(index, *iter->second, key);
+            }
+        }
+        else
+        {
+            lj::Log::debug.log("  index [%d] from [%s] %s index.") << key << field_name << T::k_db_type << lj::Log::end;
+            func(index, *n, key);
+        }
+    }
+    
+    template<typename T>
+    void perform_on_indices(const std::map<std::string, T*>& m,
+                            const bool allow_subfields,
+                            const std::set<std::string>& subfields,
+                            const lj::Bson& record,
+                            const unsigned long long key,
+                            void (*func)(T& db,
+                                         const lj::Bson& n,
+                                         const unsigned long long key))
+    {
+        typedef typename std::map<std::string, T*>::const_iterator Index_map_iter;
+        
+        // Loop over all the indicies of this type.
+        for (Index_map_iter iter = m.begin();
+             m.end() != iter;
+             ++iter)
+        {
+            perform_on_index<T>(iter->first,
+                                *(iter->second),
+                                allow_subfields,
+                                subfields,
+                                record,
+                                key,
+                                func);
+        }
+    }
+}; // namespace
+
+namespace lj
+{
+    Storage &Storage::deindex(const lj::Bson& record)
+    {
+        const lj::Bson* key_node = record.path("__key");
+        if (!key_node)
+        {
+            return *this;
+        }
+        
+        unsigned long long key = bson_as_int64(*key_node);
+        if (!key)
+        {
+            return *this;
+        }
+        
+        Log::debug.log("Deindex [%d].") << key << Log::end;
+        perform_on_indices<tokyo::Tree_db>(fields_tree_,
+                                           true,
+                                           nested_indexing_,
+                                           record,
+                                           key,
+                                           &tree_deindex);
+        
+        perform_on_indices<tokyo::Hash_db>(fields_hash_,
+                                           true,
+                                           nested_indexing_,
+                                           record,
+                                           key,
+                                           &hash_deindex);
+        
+        perform_on_indices<tokyo::TextSearcher>(fields_text_,
+                                                false,
+                                                nested_indexing_,
+                                                record,
+                                                key,
+                                                &text_deindex);
+        perform_on_indices<tokyo::TagSearcher>(fields_tag_,
+                                               false,
+                                               nested_indexing_,
+                                               record,
+                                               key,
+                                               &word_deindex);
+        return *this;
+    }
+    
+    Storage &Storage::reindex(const lj::Bson& record)
+    {
+        const lj::Bson* key_node = record.path("__key");
+        if (!key_node)
+        {
+            return *this;
+        }
+        
+        unsigned long long key = bson_as_int64(*key_node);
+        if (!key)
+        {
+            return *this;
+        }
+        
+        Log::debug.log("Reindex [%d].") << key << Log::end;
+        perform_on_indices<tokyo::Tree_db>(fields_tree_,
+                                           true,
+                                           nested_indexing_,
+                                           record,
+                                           key,
+                                           &tree_reindex);
+        
+        perform_on_indices<tokyo::Hash_db>(fields_hash_,
+                                           true,
+                                           nested_indexing_,
+                                           record,
+                                           key,
+                                           &hash_reindex);
+        
+        perform_on_indices<tokyo::TextSearcher>(fields_text_,
+                                                false,
+                                                nested_indexing_,
+                                                record,
+                                                key,
+                                                &text_reindex);
+        perform_on_indices<tokyo::TagSearcher>(fields_tag_,
+                                               false,
+                                               nested_indexing_,
+                                               record,
+                                               key,
+                                               &word_reindex);
+        return *this;
+    }
+    
+    void Storage::rebuild_field_index(const std::string& index)
+    {
+        tokyo::Tree_db* tree_ptr = get_index_by_field<tokyo::Tree_db>(fields_tree_, index);
+        if (tree_ptr)
+        {
+            tree_ptr->truncate();
+        }
+        
+        tokyo::Hash_db* hash_ptr = get_index_by_field<tokyo::Hash_db>(fields_hash_, index);
+        if (hash_ptr)
+        {
+            hash_ptr->truncate();
+        }
+        
+        tokyo::TextSearcher* text_ptr = get_index_by_field<tokyo::TextSearcher>(fields_text_, index);
+        if (text_ptr)
+        {
+            text_ptr->truncate();
+        }
+        
+        tokyo::TagSearcher* word_ptr = get_index_by_field<tokyo::TagSearcher>(fields_tag_, index);
+        if (word_ptr)
+        {
+            word_ptr->truncate();
+        }
+        
+        const std::string& dir = root_data_directory(server_config_);
+        Log::info.log("Rebuilding [%s] indices in [%s/%s]") << index << dir << name_ << Log::end;
+        tokyo::Tree_db::Enumerator* e = db_->forward_enumerator();
+        lj::Bson record;
+        while (e->more())
+        {
+            tokyo::DB::value_t k = e->next_key();
+            tokyo::DB::value_t v = e->next();
+            record.set_value(lj::Bson::k_document,
+                             static_cast<char*>(v.first));
+            unsigned long long key = *static_cast<unsigned long long*>(k.first);
+            free(k.first);
+            free(v.first);
+            perform_on_index<tokyo::Tree_db>(index,
+                                             *tree_ptr,
+                                             true,
+                                             nested_indexing_,
+                                             record,
+                                             key,
+                                             &tree_reindex);
+            perform_on_index<tokyo::Hash_db>(index,
+                                             *hash_ptr,
+                                             true,
+                                             nested_indexing_,
+                                             record,
+                                             key,
+                                             &hash_reindex);
+            perform_on_index<tokyo::TextSearcher>(index,
+                                                  *text_ptr,
+                                                  false,
+                                                  nested_indexing_,
+                                                  record,
+                                                  key,
+                                                  &text_reindex);
+            perform_on_index<tokyo::TagSearcher>(index,
+                                                 *word_ptr,
+                                                 false,
+                                                 nested_indexing_,
+                                                 record,
+                                                 key,
+                                                 &word_reindex);
+        }
+    }
+}; // namespace lj
+
+// ====================================================================
+// Utility functions for a storage object.
+// ====================================================================
+namespace
+{
+    template<typename T>
+    void truncate_index(const std::string& field_name, T* index)
+    {
+        lj::Log::info.log("  Truncating %s index for field [%s].") << T::k_db_type << field_name << lj::Log::end;
+        index->truncate();
+    }
+    
+    template<typename T>
+    void truncate_indices(const std::map<std::string, T*>& m)
+    {
+        typedef typename std::map<std::string, T*>::const_iterator Index_map_iter;
+        if (m.size())
+        {
+            lj::Log::info.log("Truncating %s indices.") << T::k_db_type << lj::Log::end;
+            for (Index_map_iter iter = m.begin();
+                 m.end() != iter;
+                 ++iter)
+            {
+                truncate_index<T>((*iter).first,
+                                 (*iter).second);
+            }
+        }
+    }
+    
+    template<typename T>
+    void optimize_index(const std::string& field_name, T* index)
+    {
+        lj::Log::info.log("  Optimizing %s index for field [%s].") << T::k_db_type << field_name << lj::Log::end;
+        index->optimize();
+    }
+    
+    template<typename T>
+    void optimize_indices(const std::map<std::string, T*>& m)
+    {
+        typedef typename std::map<std::string, T*>::const_iterator Index_map_iter;
+        if (m.size())
+        {
+            lj::Log::info.log("Optimizing %s indices.") << T::k_db_type << lj::Log::end;
+            for (Index_map_iter iter = m.begin();
+                 m.end() != iter;
+                 ++iter)
+            {
+                optimize_index<T>((*iter).first,
+                                  (*iter).second);
+            }
+        }
+    }
+}; // namespace
+
+namespace lj
+{
     void Storage::checkpoint()
     {
         tokyo::Fixed_db::Enumerator* e = journal_->enumerator();
@@ -505,22 +723,25 @@ namespace lj
             struct timeval tv;
             gettimeofday(&tv, NULL);
             std::ostringstream target;
-            target << directory() << "/";
-            target << lj::bson_as_string(config_->nav("main/file")) << ".backup";
-            target << "." << (tv.tv_sec);
+            target << storage_database_path(server_config_,
+                                            name_,
+                                            *config_,
+                                            "main/file");
+            target << ".backup" << "." << (tv.tv_sec);
             db_->copy(target.str());
         }
     }
     
     void Storage::rebuild()
     {
-        Log::info.log("Truncating all indicies in [%s]") << directory() << Log::end;
-        truncate_all_indicies<tokyo::Tree_db>(fields_tree_);
-        truncate_all_indicies<tokyo::Hash_db>(fields_hash_);
-        truncate_all_indicies<tokyo::TextSearcher>(fields_text_);
-        truncate_all_indicies<tokyo::TagSearcher>(fields_tag_);
+        const std::string dir = root_data_directory(server_config_);
+        Log::info.log("Truncating all indicies in [%s/%s]") << dir << name_ << Log::end;
+        truncate_indices<tokyo::Tree_db>(fields_tree_);
+        truncate_indices<tokyo::Hash_db>(fields_hash_);
+        truncate_indices<tokyo::TextSearcher>(fields_text_);
+        truncate_indices<tokyo::TagSearcher>(fields_tag_);
         
-        Log::info.log("Rebuilding all indicies in [%s]") << directory() << Log::end;
+        Log::info.log("Rebuilding all indicies in [%s/%s]") << dir << name_ << Log::end;
         tokyo::Tree_db::Enumerator* e = db_->forward_enumerator();
         lj::Bson record;
         while (e->more())
@@ -533,89 +754,12 @@ namespace lj
         }
     }
     
-    void Storage::rebuild_index(const std::string& index)
-    {
-        tokyo::Tree_db* tree_ptr = get_index_by_field<tokyo::Tree_db>(fields_tree_, index);
-        std::map<std::string, tokyo::Tree_db*> tree_index_map;
-        if (tree_ptr)
-        {
-            tree_ptr->truncate();
-            tree_index_map.insert(std::pair<std::string, tokyo::Tree_db*>(index, tree_ptr));
-        }
-        
-        tokyo::Hash_db* hash_ptr = get_index_by_field<tokyo::Hash_db>(fields_hash_, index);
-        std::map<std::string, tokyo::Hash_db*> hash_index_map;
-        if (hash_ptr)
-        {
-            hash_ptr->truncate();
-            hash_index_map.insert(std::pair<std::string, tokyo::Hash_db*>(index, hash_ptr));
-        }
-        
-        tokyo::TextSearcher* text_ptr = get_index_by_field<tokyo::TextSearcher>(fields_text_, index);
-        std::map<std::string, tokyo::TextSearcher*> text_index_map;
-        if (text_ptr)
-        {
-            text_ptr->truncate();
-            text_index_map.insert(std::pair<std::string, tokyo::TextSearcher*>(index, text_ptr));
-        }
-        
-        tokyo::TagSearcher* tag_ptr = get_index_by_field<tokyo::TagSearcher>(fields_tag_, index);
-        std::map<std::string, tokyo::TagSearcher*> tag_index_map;
-        if (tag_ptr)
-        {
-            tag_ptr->truncate();
-            tag_index_map.insert(std::pair<std::string, tokyo::TagSearcher*>(index, tag_ptr));
-        }
-        
-        Log::info.log("Rebuilding [%s] indicies in [%s]") << index << directory() << Log::end;
-        tokyo::Tree_db::Enumerator* e = db_->forward_enumerator();
-        lj::Bson record;
-        while (e->more())
-        {
-            tokyo::DB::value_t k = e->next_key();
-            tokyo::DB::value_t v = e->next();
-            record.set_value(lj::Bson::k_document,
-                             static_cast<char*>(v.first));
-            unsigned long long key = *static_cast<unsigned long long*>(k.first);
-            free(k.first);
-            free(v.first);
-            execute_all_indicies<tokyo::Tree_db>(tree_index_map,
-                                                 "tree",
-                                                 true,
-                                                 nested_indexing_,
-                                                 record,
-                                                 key,
-                                                 &tree_reindex);
-            execute_all_indicies<tokyo::Hash_db>(hash_index_map,
-                                                 "hash",
-                                                 true,
-                                                 nested_indexing_,
-                                                 record,
-                                                 key,
-                                                 &hash_reindex);
-            execute_all_indicies<tokyo::TextSearcher>(text_index_map,
-                                                      "text",
-                                                      false,
-                                                      nested_indexing_,
-                                                      record,
-                                                      key,
-                                                      &text_reindex);
-            execute_all_indicies<tokyo::TagSearcher>(tag_index_map,
-                                                     "tag",
-                                                     false,
-                                                     nested_indexing_,
-                                                     record,
-                                                     key,
-                                                     &tag_reindex);
-        }
-    }
-    
     void Storage::optimize()
     {
-        optimize_all_indices<tokyo::TagSearcher>(fields_tag_, "tag");
-        optimize_all_indices<tokyo::TextSearcher>(fields_text_, "text");
-        optimize_all_indices<tokyo::Hash_db>(fields_hash_, "hash");
-        optimize_all_indices<tokyo::Tree_db>(fields_tree_, "tree");
+        optimize_indices<tokyo::TagSearcher>(fields_tag_);
+        optimize_indices<tokyo::TextSearcher>(fields_text_);
+        optimize_indices<tokyo::Hash_db>(fields_hash_);
+        optimize_indices<tokyo::Tree_db>(fields_tree_);
     }
     
     std::auto_ptr<Record_set> Storage::at(const unsigned long long key) const
@@ -743,7 +887,7 @@ namespace lj
                  ++iter)
             {
                 char* bson = iter->second->to_binary();
-                std::pair<int, int> delta(bson_to_storage_delta(iter->second));
+                std::pair<int, int> delta(bson_to_storage_delta(*(iter->second)));
                 tokyo::DB::value_t existing = index->at(bson + delta.first,
                                                         iter->second->size() - delta.second);
                 delete[] bson;
@@ -758,7 +902,7 @@ namespace lj
         {
             Log::debug.log("Checking value of [%s].") << name << Log::end;
             char *bson = n.to_binary();
-            std::pair<int, int> delta(bson_to_storage_delta(&n));
+            std::pair<int, int> delta(bson_to_storage_delta(n));
             tokyo::DB::value_t existing = index->at(bson + delta.first,
                                                     n.size() - delta.second);
             delete[] bson;
@@ -768,102 +912,6 @@ namespace lj
                                     std::string("Unable to place record because of unique constraint [").append(name).append("]."));
             }
         }
-        return *this;
-    }
-    
-    Storage &Storage::deindex(const lj::Bson& record)
-    {
-        const lj::Bson* key_node = record.path("__key");
-        if (!key_node)
-        {
-            return *this;
-        }
-        
-        unsigned long long key = bson_as_int64(*key_node);
-        if (!key)
-        {
-            return *this;
-        }
-        
-        Log::debug.log("Deindex [%d].") << key << Log::end;
-        execute_all_indicies<tokyo::Tree_db>(fields_tree_,
-                                             "tree",
-                                             true,
-                                             nested_indexing_,
-                                             record,
-                                             key,
-                                             &tree_deindex);
-        
-        execute_all_indicies<tokyo::Hash_db>(fields_hash_,
-                                             "hash",
-                                             true,
-                                             nested_indexing_,
-                                             record,
-                                             key,
-                                             &hash_deindex);
-        
-        execute_all_indicies<tokyo::TextSearcher>(fields_text_,
-                                                  "text",
-                                                  false,
-                                                  nested_indexing_,
-                                                  record,
-                                                  key,
-                                                  &text_deindex);
-        execute_all_indicies<tokyo::TagSearcher>(fields_tag_,
-                                                 "word",
-                                                 false,
-                                                 nested_indexing_,
-                                                 record,
-                                                 key,
-                                                 &tag_deindex);
-        return *this;
-    }
-    
-    Storage &Storage::reindex(const lj::Bson& record)
-    {
-        const lj::Bson* key_node = record.path("__key");
-        if (!key_node)
-        {
-            return *this;
-        }
-        
-        unsigned long long key = bson_as_int64(*key_node);
-        if (!key)
-        {
-            return *this;
-        }
-        
-        Log::debug.log("Reindex [%d].") << key << Log::end;
-        execute_all_indicies<tokyo::Tree_db>(fields_tree_,
-                                             "tree",
-                                             true,
-                                             nested_indexing_,
-                                             record,
-                                             key,
-                                             &tree_reindex);
-        
-        execute_all_indicies<tokyo::Hash_db>(fields_hash_,
-                                             "hash",
-                                             true,
-                                             nested_indexing_,
-                                             record,
-                                             key,
-                                             &hash_reindex);
-        
-        execute_all_indicies<tokyo::TextSearcher>(fields_text_,
-                                                  "text",
-                                                  false,
-                                                  nested_indexing_,
-                                                  record,
-                                                  key,
-                                                  &text_reindex);
-        execute_all_indicies<tokyo::TagSearcher>(fields_tag_,
-                                                 "word",
-                                                 false,
-                                                 nested_indexing_,
-                                                 record,
-                                                 key,
-                                                 &tag_reindex);
         return *this;
     }
     
@@ -954,13 +1002,6 @@ namespace lj
     const std::string& Storage::name() const
     {
         return name_;
-    }
-    
-    std::string Storage::directory()
-    {
-        std::string dir(DBDIR);
-        dir.append("/").append(name());
-        return dir;
     }
     
     //======================================================================
@@ -1069,10 +1110,11 @@ namespace lj
         }
     }
     
-    void storage_config_save(lj::Bson& cfg)
+    void storage_config_save(const lj::Bson& cfg, const lj::Bson& server_config)
     {
-        std::string dbname = lj::bson_as_string(cfg.nav("main/name"));
-        std::string dbfile(DBDIR);
+        std::string dbfile(root_data_directory(server_config));
+        
+        const std::string& dbname = lj::bson_as_string(cfg.nav("main/name"));
         dbfile.append("/").append(dbname);
         
         // XXX This should be moved somewhere for portability.
@@ -1086,9 +1128,8 @@ namespace lj
         lj::bson_save(cfg, dbfile);
     }
     
-    lj::Bson* storage_config_load(const std::string& dbname)
+    lj::Bson* storage_config_load(const std::string& dbname, std::string dbfile)
     {
-        std::string dbfile(DBDIR);
         dbfile.append("/").append(dbname).append("/config");
         lj::Bson* ptr = lj::bson_load(dbfile);
         return ptr;

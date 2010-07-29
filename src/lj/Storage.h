@@ -153,7 +153,7 @@ namespace lj
         void rebuild();
         
         //! Rebuild a specific index.
-        void rebuild_index(const std::string& index);
+        void rebuild_field_index(const std::string& index);
         
         //! Optimize all the indices.
         void optimize();
@@ -165,13 +165,8 @@ namespace lj
          \sa lj::Storage_factory
          \param dir The document repository name.
          */
-        Storage(const std::string &dir);
+        Storage(const std::string &dir, const lj::Bson& server_config);
         
-        //! Get the directory to use for the storage engine.
-        /*!
-         \return Directory path.
-         */
-        std::string directory();
     private:
         //! Primary database.
         /*!
@@ -202,6 +197,9 @@ namespace lj
         
         //! Configuration.
         lj::Bson* config_;
+        
+        //! Server configuration;
+        const lj::Bson& server_config_;
         
         //! name of the storage object.
         std::string name_;
@@ -245,7 +243,7 @@ namespace lj
                                      const std::string& field);
     void storage_config_add_subfield(lj::Bson& cfg,
                                      const std::string& field);
-    void storage_config_save(lj::Bson& cfg);
-    lj::Bson* storage_config_load(const std::string& dbname);
+    void storage_config_save(const lj::Bson& cfg, const lj::Bson& server_config);
+    lj::Bson* storage_config_load(const std::string& dbname, std::string dbfile);
     
 }; // namespace lj

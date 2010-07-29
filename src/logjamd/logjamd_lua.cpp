@@ -51,9 +51,8 @@ using lj::Log;
 
 namespace
 {
-    lj::Bson* get_connection_config()
+    lj::Bson* get_connection_config(std::string dbfile)
     {
-        std::string dbfile(DBDIR);
         dbfile.append("/config");
         lj::Bson* ptr = lj::bson_load(dbfile);
         return ptr;
@@ -77,7 +76,7 @@ namespace
             lua_settable(L, db_table);
             
             // Add some logic to load the event handlers.
-            lj::Bson* handlers = db_ptr->real_storage().configuration()->path("handler");
+            lj::Bson* handlers = db_ptr->real_storage(*config).configuration()->path("handler");
             for (lj::Linked_map<std::string, lj::Bson*>::const_iterator iter2 = handlers->to_map().begin();
                  handlers->to_map().end() != iter2;
                  ++iter2)
@@ -179,15 +178,26 @@ namespace logjamd
     
     int sc_save(lua_State* L)
     {
+        // Get the data directory.
+        lua_getglobal(L, "lj__config");
+        lj::Bson& server_config = Lunar<Lua_bson>::check(L, -1)->real_node();
+        lua_pop(L, 1);
+        
         Lua_bson* ptr = Lunar<Lua_bson>::check(L, -1);
-        lj::storage_config_save(ptr->real_node());
+        lj::storage_config_save(ptr->real_node(), server_config);
         return 0;
     }
     
     int sc_load(lua_State* L)
     {
+        // Get the data directory.
+        lua_getglobal(L, "lj__config");
+        lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
+        lua_pop(L, 1);
+        lj::Bson& tmp = config.nav("data_directory");
+        
         std::string name(lua_to_string(L, -1));
-        lj::Bson* ptr = lj::storage_config_load(name);
+        lj::Bson* ptr = lj::storage_config_load(name, lj::bson_as_string(tmp));
         Lunar<Lua_bson>::push(L, new Lua_bson(ptr, true), true);
         return 1;
     }
@@ -229,7 +239,7 @@ namespace logjamd
         return 0;
     }
     
-    void logjam_lua_init(lua_State *L) {
+    void logjam_lua_init(lua_State *L, const std::string& data_dir) {
         // Load object model.
         Lunar<logjamd::Lua_bson>::Register(L);
         Lunar<logjamd::Lua_record_set>::Register(L);
@@ -253,19 +263,19 @@ namespace logjamd
         lua_register(L, "sc_remove_handler", &sc_remove_handler);
         
         // load standard query functions.
-        lua_pushcfunction(L, &send_set);
-        lua_setglobal(L, "send_set");
-        lua_pushcfunction(L, &send_item);
-        lua_setglobal(L, "send_item");
-        
+        lua_register(L, "send_set", &send_set);
+        lua_register(L, "send_item", &send_item);
+
         // load the default storage.
-        lj::Bson* config = get_connection_config();
+        lj::Bson* config = get_connection_config(data_dir);
+        config->set_child("data_directory", lj::bson_new_string(data_dir));
+        Lunar<logjamd::Lua_bson>::push(L, new Lua_bson(config, true), true);
+        lua_setglobal(L, "lj__config");
+
+        // Build the default storage object.
         push_default_storage(L, config);
         
-        // push the config into the global scope.
-        Lunar<logjamd::Lua_bson>::push(L, new Lua_bson(config, true), true);
-        lua_setglobal(L, "connection_config");
-        
+        // Server ID.
         lua_pushinteger(L, rand());
         lua_setglobal(L, "server_id");
     }
@@ -305,15 +315,29 @@ namespace logjamd
     
     int connection_config_load(lua_State* L)
     {
-        lj::Bson* ptr = get_connection_config();
+        // Get the data directory.
+        lua_getglobal(L, "lj__config");
+        lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
+        lua_pop(L, 1);
+        lj::Bson& tmp = config.nav("data_directory");
+
+        // Load the config.
+        lj::Bson* ptr = get_connection_config(lj::bson_as_string(tmp));
         Lunar<Lua_bson>::push(L, new Lua_bson(ptr, true), true);
         return 1;
     }
     
     int connection_config_save(lua_State* L)
     {
+        // Get the data directory.
+        lua_getglobal(L, "lj__config");
+        lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
+        lua_pop(L, 1);
+        lj::Bson& tmp = config.nav("data_directory");
+        
+        // Load the config.
         Lua_bson* ptr = Lunar<Lua_bson>::check(L, -1);
-        std::string dbfile(DBDIR);
+        std::string dbfile(lj::bson_as_string(tmp));
         dbfile.append("/config");
         lj::bson_save(ptr->real_node(), dbfile);
         return 0;
@@ -357,19 +381,6 @@ namespace logjamd
         lua_remove(L, -2); // func
     }
         
-    int storage_config_load(lua_State* L) {
-        std::string dbname(lua_to_string(L, -1));
-        std::string dbfile(DBDIR);
-        if(dbname.size() > 1 && dbname[dbname.size() - 1] == '/')
-            dbfile.append(dbname);
-        else
-            dbfile.append("/").append(dbname);
-        dbfile.append("/config");
-        lj::Bson* ptr = lj::bson_load(dbfile);
-        Lunar<Lua_bson>::push(L, new Lua_bson(ptr, true), true);
-        return 1;
-    }
-    
     const std::string push_replication_record(lua_State* L, const lj::Bson& b)
     {
         lua_pushstring(L, "o");

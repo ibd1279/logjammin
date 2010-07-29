@@ -49,7 +49,7 @@ extern "C" {
 
 namespace logjamd
 {
-    Service_dispatch::Service_dispatch() : ip_(), in_(0), in_offset_(0), in_sz_(4), in_post_length_(false), lua_(0)
+    Service_dispatch::Service_dispatch(const std::string& data_directory) : ip_(), in_(0), in_offset_(0), in_sz_(4), in_post_length_(false), lua_(0), data_dir_(data_directory)
     {
     }
     
@@ -72,12 +72,12 @@ namespace logjamd
         {
             lua_ = luaL_newstate();
             luaL_openlibs(lua_);
-            logjam_lua_init(lua_);
+            logjam_lua_init(lua_, data_dir_);
         }
         
         logjam_lua_init_connection(lua_, buffer);
         lua_pop(lua_, 1);
-        Service_dispatch* sd = new Service_dispatch();
+        Service_dispatch* sd = new Service_dispatch(data_dir_);
         sd->set_socket(socket);
         sd->set_mode(Socket_dispatch::k_communicate);
         sd->ip_ = buffer;

@@ -85,11 +85,11 @@ namespace logjamd
         
         // Build the command.
         std::string cmd("db.");
-        cmd.append(real_storage().name()).append(":all()");
+        cmd.append(dbname_).append(":all()");
         
         // Create the record set.
         lj::Bson* cost_data = new lj::Bson();
-        lj::Record_set* ptr = real_storage().all().release();
+        lj::Record_set* ptr = real_storage(L).all().release();
         Lua_record_set* wrapper = new Lua_record_set(ptr, cost_data);
         Lunar<Lua_record_set>::push(L, wrapper, true);
         
@@ -109,11 +109,11 @@ namespace logjamd
         
         // Build the command.
         std::string cmd("db.");
-        cmd.append(real_storage().name()).append(":none()");
+        cmd.append(dbname_).append(":none()");
         
         // Create the record set.
         lj::Bson* cost_data = new lj::Bson();
-        lj::Record_set* ptr = real_storage().none().release();
+        lj::Record_set* ptr = real_storage(L).none().release();
         Lua_record_set* wrapper = new Lua_record_set(ptr, cost_data);
         Lunar<Lua_record_set>::push(L, wrapper, true);
         
@@ -136,11 +136,11 @@ namespace logjamd
 
         // Build the command executed.
         std::ostringstream cmd_builder;
-        cmd_builder << "db." << real_storage().name();
+        cmd_builder << "db." << dbname_;
         cmd_builder << ":at(" << key << ")";
         
         lj::Bson* cost_data = new lj::Bson();
-        lj::Record_set* ptr = real_storage().at(key).release();
+        lj::Record_set* ptr = real_storage(L).at(key).release();
         Lua_record_set* wrapper = new Lua_record_set(ptr, cost_data);
         Lunar<Lua_record_set>::push(L, wrapper, true);
         
@@ -157,7 +157,7 @@ namespace logjamd
         lj::Time_tracker timer;
         timer.start();
         
-        get_event(L, real_storage().name(), "pre_place");
+        get_event(L, dbname_, "pre_place");
         if (!lua_isnil(L, -1))
         {
             lua_pushvalue(L, -2);
@@ -185,11 +185,11 @@ namespace logjamd
         {
             lua_getglobal(L, "server_id");
             std::string server_id(lua_to_string(L, -1));
+            lua_pop(L, 1);
             lj::bson_increment(ptr->real_node().nav("__clock").nav(server_id), 1);
             ptr->real_node().set_child("__dirty", lj::bson_new_boolean(false));
-            lua_pop(L, 1);
             
-            real_storage().place(ptr->real_node());
+            real_storage(L).place(ptr->real_node());
             
             const std::string replication_name(push_replication_record(L, ptr->real_node()));
             push_replication_command(L, "place", dbname_, replication_name);
@@ -199,7 +199,7 @@ namespace logjamd
             luaL_error(L, "Unable to place record. %s", ex->to_string().c_str());
         }
         
-        get_event(L, real_storage().name(), "post_place");
+        get_event(L, dbname_, "post_place");
         if (!lua_isnil(L, -1))
         {
             lua_pushvalue(L, -2);
@@ -221,7 +221,7 @@ namespace logjamd
         lj::Time_tracker timer;
         timer.start();
         
-        get_event(L, real_storage().name(), "pre_remove");
+        get_event(L, dbname_, "pre_remove");
         if (!lua_isnil(L, -1))
         {
             lua_pushvalue(L, -2);
@@ -237,6 +237,7 @@ namespace logjamd
         if (!lua_toboolean(L, -1))
         {
             lj::Log::debug.log("Not removing record.");
+            lua_pop(L, 2);
             return 0;
         }
         else
@@ -250,11 +251,11 @@ namespace logjamd
         {
             lua_getglobal(L, "server_id");
             std::string server_id(lua_to_string(L, -1));
-            lj::bson_increment(ptr->real_node().nav("__clock").nav(server_id), 1);
-            ptr->real_node().set_child("__dirty", lj::bson_new_boolean(false));
             lua_pop(L, 1);
             
-            real_storage().remove(ptr->real_node());
+            lj::bson_increment(ptr->real_node().nav("__clock").nav(server_id), 1);
+            ptr->real_node().set_child("__dirty", lj::bson_new_boolean(false));
+            real_storage(L).remove(ptr->real_node());
             
             const std::string replication_name(push_replication_record(L, ptr->real_node()));
             push_replication_command(L, "remove", dbname_, replication_name);
@@ -264,7 +265,7 @@ namespace logjamd
             luaL_error(L, "Unable to remove record. %s", ex->to_string().c_str());
         }
         
-        get_event(L, real_storage().name(), "post_remove");
+        get_event(L, dbname_, "post_remove");
         if (!lua_isnil(L, -1))
         {
             lua_pushvalue(L, -2);
@@ -286,7 +287,7 @@ namespace logjamd
         lj::Time_tracker timer;
         timer.start();
         
-        real_storage().checkpoint();
+        real_storage(L).checkpoint();
         
         timer.stop();
         
@@ -295,46 +296,61 @@ namespace logjamd
     
     int Lua_storage::add_index(lua_State* L)
     {
+        // Get the data directory.
+        lua_getglobal(L, "lj__config");
+        const lj::Bson& server_config = Lunar<Lua_bson>::check(L, -1)->real_node();
+        lua_pop(L, 1);
+        
+        // Function args.
         std::string indxcomp(lua_to_string(L, -1));
         std::string indxfield(lua_to_string(L, -2));
         std::string indxtype(lua_to_string(L, -3));
         
-        lj::Bson* cfg = real_storage().configuration();
+        lj::Bson* cfg = real_storage(server_config).configuration();
         lj::storage_config_add_index(*cfg,
                                      indxtype,
                                      indxfield,
                                      indxcomp);
-        lj::storage_config_save(*cfg);
-        
-        std::string storage_name = real_storage().name();
-        lj::Storage* ptr = lj::Storage_factory::reproduce(storage_name);
-        ptr->rebuild_index(indxfield);
+        lj::storage_config_save(*cfg, server_config);
+        lj::Storage* ptr = lj::Storage_factory::reproduce(dbname_,
+                                                          server_config);
+        ptr->rebuild_field_index(indxfield);
         return 0;
     }
     
     int Lua_storage::remove_index(lua_State* L)
     {
+        // Get the data directory.
+        lua_getglobal(L, "lj__config");
+        const lj::Bson& server_config = Lunar<Lua_bson>::check(L, -1)->real_node();
+        lua_pop(L, 1);
+        
+        // Function args
         std::string indxfield(lua_to_string(L, -1));
         std::string indxtype(lua_to_string(L, -2));
         
-        lj::Bson* cfg = real_storage().configuration();
+        lj::Bson* cfg = real_storage(server_config).configuration();
         lj::storage_config_remove_index(*cfg,
                                         indxtype,
                                         indxfield);
-        lj::storage_config_save(*cfg);
-        
-        std::string storage_name = real_storage().name();
-        lj::Storage_factory::reproduce(storage_name);
+        lj::storage_config_save(*cfg, server_config);
+        lj::Storage_factory::reproduce(dbname_, server_config);
         return 0;
     }
     
     int Lua_storage::add_event(lua_State* L)
     {
-        lj::Bson* cfg = real_storage().configuration();
+        // Get the data directory.
+        lua_getglobal(L, "lj__config");
+        lj::Bson& server_config = Lunar<Lua_bson>::check(L, -1)->real_node();
+        lua_pop(L, 1);
+        
+        // Function args.
+        lj::Bson* cfg = real_storage(server_config).configuration();
         std::string event("handler/");
         event.append(lua_to_string(L, -2));
         
-        std::string event_key(real_storage().name());
+        std::string event_key(dbname_);
         event_key.append("__").append(lua_to_string(L, -2));
         
         if (lua_isfunction(L, -1) && !lua_iscfunction(L, -1))
@@ -359,18 +375,23 @@ namespace logjamd
         lua_pushvalue(L, -3);
         lua_settable(L, -3);
         
-        lj::storage_config_save(*cfg);
-        
+        lj::storage_config_save(*cfg, server_config);
         return 0;
     }
     
     int Lua_storage::remove_event(lua_State* L)
     {
-        lj::Bson* cfg = real_storage().configuration();
+        // Get the data directory.
+        lua_getglobal(L, "lj__config");
+        lj::Bson& server_config = Lunar<Lua_bson>::check(L, -1)->real_node();
+        lua_pop(L, 1);
+        
+        // Function args.
+        lj::Bson* cfg = real_storage(server_config).configuration();
         std::string event("handler/");
         event.append(lua_to_string(L, -1));
         
-        std::string event_key(real_storage().name());
+        std::string event_key(dbname_);
         event_key.append("__").append(lua_to_string(L, -1));
         
         cfg->nav(event).destroy();
@@ -380,32 +401,47 @@ namespace logjamd
         lua_pushnil(L);
         lua_settable(L, -3);
         
-        lj::storage_config_save(*cfg);
+        lj::storage_config_save(*cfg, server_config);
         
         return 0;
     }
     
     int Lua_storage::rebuild(lua_State* L)
     {
-        real_storage().rebuild();
+        real_storage(L).rebuild();
         return 0;
     }
     
     int Lua_storage::optimize(lua_State* L)
     {
-        real_storage().optimize();
+        real_storage(L).optimize();
         return 0;
     }
     
     int Lua_storage::recall(lua_State* L)
     {
-        lj::Storage_factory::recall(real_storage().name());
+        // Get the data directory.
+        lua_getglobal(L, "lj__config");
+        lj::Bson& server_config = Lunar<Lua_bson>::check(L, -1)->real_node();
+        lua_pop(L, 1);
+        
+        lj::Storage_factory::recall(dbname_, server_config);
         return 0;
     }
     
-    lj::Storage& Lua_storage::real_storage()
+    lj::Storage& Lua_storage::real_storage(lua_State* L)
     {
-        return *(lj::Storage_factory::produce(dbname_));
+        // Get the data directory.
+        lua_getglobal(L, "lj__config");
+        lj::Bson& server_config = Lunar<Lua_bson>::check(L, -1)->real_node();
+        lua_pop(L, 1);
+        
+        return *(lj::Storage_factory::produce(dbname_, server_config));
+    }
+    
+    lj::Storage& Lua_storage::real_storage(const lj::Bson& server_config)
+    {
+        return *(lj::Storage_factory::produce(dbname_, server_config));
     }
     
 }; // namespace logjamd

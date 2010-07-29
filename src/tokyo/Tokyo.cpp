@@ -71,6 +71,8 @@ namespace tokyo
     //=====================================================================
     // Hash_db Implementation
     //=====================================================================
+    const std::string Hash_db::k_db_type("Hash");
+    
     Hash_db::Hash_db(const std::string& filename,
                      const int mode,
                      Hash_db::Tune_function_pointer db_tune_func,
@@ -200,6 +202,7 @@ namespace tokyo
     //=====================================================================
     // Tree_db Implementation
     //=====================================================================
+    const std::string Tree_db::k_db_type("Tree");
     
     Tree_db::Enumerator::Enumerator(TCBDB *db,
                                     Tree_db::Enumerator::Direction dir) : dir_(dir), cur_(0), more_cache_(false)
@@ -619,6 +622,8 @@ namespace tokyo
     //=====================================================================
     // Fixed_db Implementation
     //=====================================================================
+    const std::string Fixed_db::k_db_type("Fixed");
+    
     Fixed_db::Enumerator::Enumerator(TCFDB *db) : last_(0), more_cache_(true), db_(db)
     {
         tcfdbiterinit(db_);
@@ -813,7 +818,8 @@ namespace tokyo
     //=====================================================================
     // TextSearcher Implementation
     //=====================================================================
-    
+    const std::string TextSearcher::k_db_type("Text");
+
     TextSearcher::TextSearcher(const std::string &filename,
                                const int mode,
                                TextSearcher::Tune_function_pointer db_tune_func,
@@ -869,7 +875,8 @@ namespace tokyo
     //=====================================================================
     // TagSearcher Implementation
     //=====================================================================
-    
+    const std::string TagSearcher::k_db_type("Word");
+
     TagSearcher::TagSearcher(const std::string &filename,
                              const int mode,
                              TagSearcher::Tune_function_pointer db_tune_func,
