@@ -37,6 +37,7 @@
 #include "lj/Linked_map.h"
 #include <set>
 #include <string>
+#include <stdint.h>
 
 namespace lj
 {

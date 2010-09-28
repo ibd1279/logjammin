@@ -39,6 +39,10 @@ def configure(ctx):
         includes=['/usr/local/include', '/opt/local/include/'],
         mandatory=True
     )
+    ctx.check_cxx(
+        header_name='sys/types.h',
+        define_name='HAVE_SYS_TYPES_H'
+    )
     ctx.write_config_header('config.h')
 
 def make_data_dir(ctx):

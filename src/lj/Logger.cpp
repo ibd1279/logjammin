@@ -36,6 +36,7 @@
 
 #include <cstdarg>
 #include <cstdio>
+#include <cstring>
 #include <iostream>
 #include <list>
 #include <memory>

@@ -38,6 +38,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <cstdlib>
 #include <fstream>
 #include <list>
 #include <sstream>
