@@ -38,6 +38,7 @@
 #include "lj/Logger.h"
 #include "lj/Bson.h"
 
+#include <cstring>
 #include <sstream>
 #include <list>
 

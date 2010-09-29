@@ -40,6 +40,20 @@ def configure(ctx):
         mandatory=True
     )
     ctx.check_cxx(
+        header_name='lua.h',
+        lib=['lua5.1'],
+        libpath=['/usr/local/lib', '/opt/local/lib/', '/usr/lib'],
+        includes=[
+            '/usr/local/include',
+            '/opt/local/include',
+            '/usr/include',
+            '/usr/local/include/lua5.1',
+            '/opt/local/include/lua5.1',
+            '/usr/include/lua5.1'
+        ],
+        mandatory=True
+    )
+    ctx.check_cxx(
         header_name='sys/types.h',
         define_name='HAVE_SYS_TYPES_H'
     )
@@ -83,10 +97,9 @@ def build(ctx):
                 ,'/opt/local/include'
                 ,'/usr/include']
         ,cxxflags = ['-O0', '-Wall', '-g']
-        ,lib = ['lua']
         ,libpath = ['/usr/local/lib/', '/opt/local/lib/', '/usr/lib']
         ,linkflags = ['-g']
-        ,uselib = ['TCUTIL.H', 'DYSTOPIA.H']
+        ,uselib = ['TCUTIL.H', 'DYSTOPIA.H', 'LUA.H']
     )
 
     logjam = ctx(
@@ -108,7 +121,6 @@ def build(ctx):
                 ,'/opt/local/include'
                 ,'/usr/include']
         ,cxxflags = ['-O0', '-Wall', '-g']
-        ,lib = ['lua']
         ,libpath = ['/usr/local/lib/', '/opt/local/lib/', '/usr/lib']
         ,linkflags = ['-g']
         ,uselib = ['HISTEDIT.H']

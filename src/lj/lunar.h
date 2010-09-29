@@ -1,4 +1,4 @@
-#pragma once;
+#pragma once
 
 /*
  Taken from http://lua-users.org/wiki/SimplerCppBinding with slight modifications.

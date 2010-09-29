@@ -34,6 +34,9 @@
  */
 
 #include <map>
+#include <string>
+
+#include <sys/time.h>
 
 namespace lj
 {
@@ -72,7 +75,7 @@ namespace lj
         /*!
          \param timeout How long to poll.
          */
-        void select(struct timeval* timeout);
+        void select(struct ::timeval* timeout);
         
         //! Perform a select operation on all open sockets.
         void loop();
@@ -99,14 +102,6 @@ namespace lj
          \return The object.
          */
         Socket_selector& operator=(const Socket_selector& o);
-        
-        //! Populate the selector sets.
-        /*!
-         \param r The read socket set to populate.
-         \param w The write socket set to populate.
-         \return The max socket id.
-         */
-        int populate_sets(fd_set* r, fd_set* w);
         
         //! map for relating user data to socket handles.
         std::map<int, Socket_dispatch*> ud_;

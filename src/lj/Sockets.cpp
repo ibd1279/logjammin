@@ -38,7 +38,10 @@
 #include "lj/Logger.h"
 
 #include <arpa/inet.h>
+#include <cassert>
 #include <cerrno>
+#include <cstdlib>
+#include <cstring>
 #include <list>
 #include <netdb.h>
 #include <sstream>
@@ -74,6 +77,41 @@ namespace
                                 gai_strerror(status));
         }
         return info;
+    }
+
+        
+    //! Populate the selector sets.
+    /*!
+     \param r The read socket set to populate.
+     \param w The write socket set to populate.
+     \return The max socket id.
+     */
+    int populate_sets(fd_set* rs, fd_set* ws, std::map<int, lj::Socket_dispatch*>& data_map)
+    {
+        FD_ZERO(rs);
+        FD_ZERO(ws);
+        
+        int mx = 0;
+        // Populate the sets correctly.
+        for (std::map<int, lj::Socket_dispatch*>::const_iterator iter = data_map.begin();
+             data_map.end() != iter;
+             ++iter)
+        {
+            if(iter->second->is_writing())
+            {
+                FD_SET(iter->first, ws);
+            }
+            else
+            {
+                FD_SET(iter->first, rs);
+            }
+            
+            if (iter->first > mx)
+            {
+                mx = iter->first;
+            }
+        }
+        return mx;
     }
 };
 
@@ -177,42 +215,14 @@ namespace lj
         ud_.insert(std::pair<int, Socket_dispatch*>(sock, dispatch));        
     }
     
-    int Socket_selector::populate_sets(fd_set* rs, fd_set* ws)
-    {
-        FD_ZERO(rs);
-        FD_ZERO(ws);
-        
-        int mx = 0;
-        // Populate the sets correctly.
-        for (std::map<int, Socket_dispatch*>::iterator iter = ud_.begin();
-             ud_.end() != iter;
-             ++iter)
-        {
-            if(iter->second->is_writing())
-            {
-                FD_SET(iter->first, ws);
-            }
-            else
-            {
-                FD_SET(iter->first, rs);
-            }
-            
-            if (iter->first > mx)
-            {
-                mx = iter->first;
-            }
-        }
-        return mx;
-    }
-    
-    void Socket_selector::select(struct timeval* timeout)
+    void Socket_selector::select(struct ::timeval* timeout)
     {
         fd_set rs;
         fd_set ws;
         
         Log::debug.log("Entering select") << Log::end;
         
-        int mx = populate_sets(&rs, &ws);
+        int mx = populate_sets(&rs, &ws, ud_);
         
         if (-1 == ::select(mx + 1, &rs, &ws, NULL, timeout))
         {

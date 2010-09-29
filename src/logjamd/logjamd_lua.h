@@ -41,6 +41,7 @@ extern "C" {
 #include "lauxlib.h"
 }
 
+#include <cstring>
 #include <string>
 
 namespace logjamd {

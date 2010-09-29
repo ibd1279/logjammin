@@ -36,6 +36,8 @@
 #include "lj/Logger.h"
 #include "build/default/config.h"
 
+#include <cstdlib>
+
 //! Server main entry point.
 int main(int argc, char * const argv[]) {
     lj::Log::debug.enable();

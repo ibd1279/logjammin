@@ -849,10 +849,11 @@ namespace tokyo
     bool TextSearcher::search(const std::string &query,
                               set_key_t &results) {
         int sz = 0;
-        key_t *ptr = tcqdbsearch(db(),
-                                 query.c_str(),
-                                 QDBSSUBSTR,
-                                 &sz);
+        //key_t *ptr = tcqdbsearch(db(),
+        uint64_t *ptr = tcqdbsearch(db(),
+                                    query.c_str(),
+                                    QDBSSUBSTR,
+                                    &sz);
         if(!ptr)
             return false;
         
@@ -939,9 +940,10 @@ namespace tokyo
     bool TagSearcher::search(const std::string &query,
                              set_key_t &results) {
         int sz = 0;
-        unsigned long long *ptr = tcwdbsearch(db(),
-                                              query.c_str(),
-                                              &sz);
+        //unsigned long long *ptr = tcwdbsearch(db(),
+        uint64_t *ptr = tcwdbsearch(db(),
+                                    query.c_str(),
+                                    &sz);
         if(!ptr)
             return false;
         

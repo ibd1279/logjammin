@@ -34,7 +34,8 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "lj/bson.h"
+#include "lj/Bson.h"
+
 #include <string>
 #include <map>
 

@@ -38,7 +38,7 @@
 #include "logjamd/Lua_bson.h"
 #include "logjamd/Lua_record_set.h"
 #include "logjamd/Lua_storage.h"
-#include "lj/base64.h"
+#include "lj/Base64.h"
 #include "lj/Logger.h"
 #include "lj/Storage.h"
 #include "lj/Time_tracker.h"

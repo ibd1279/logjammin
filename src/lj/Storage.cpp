@@ -42,6 +42,7 @@
 #include "lj/Standard_record_set.h"
 
 #include <cassert>
+#include <cstring>
 #include <sstream>
 #include <sys/time.h>
 
