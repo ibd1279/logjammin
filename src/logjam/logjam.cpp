@@ -88,7 +88,7 @@ namespace {
     }
 #ifdef HAVE_EDITLINE
     char *editline_prompt(EditLine *e) {
-        return ">";
+        return const_cast<char *>(">");
     }
     void input_loop(lj::Client* dispatch)
     {

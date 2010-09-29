@@ -41,6 +41,7 @@
 #include "lj/Logger.h"
 #include "lj/Standard_record_set.h"
 
+#include <cassert>
 #include <sstream>
 #include <sys/time.h>
 
