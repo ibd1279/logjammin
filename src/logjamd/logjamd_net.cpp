@@ -148,6 +148,11 @@ namespace logjamd
         timer.start();
         
         std::string cmd = lj::bson_as_string(request.nav("command"));
+
+        // Get the global server configuration.
+        lua_getglobal(lua_, "lj__config");
+        lj::Bson& server_config = Lunar<Lua_bson>::check(lua_, -1)->real_node();
+        lua_pop(lua_, 1);
         
         // Create the thread.
         lua_State *L = lua_newthread(lua_);
@@ -185,6 +190,7 @@ namespace logjamd
         logjam_lua_init_connection(L, ip_);
         lua_setfenv(L, -2);
         
+        // Execute the commands received.
         int error;
         while (true)
         {
@@ -197,6 +203,7 @@ namespace logjamd
             }
         }
         
+        // Process the response/deal with errors.
         if (error)
         {
             const char* error_string = lua_tostring(L, -1);
@@ -208,12 +215,16 @@ namespace logjamd
         {
             response.set_child("is_ok", lj::bson_new_boolean(true));
         }
+        // Clear off the stack and stop time tracking.
         lua_pop(L, 1);
         timer.stop();
         
+        // Record server performance metrics.
         response.set_child("time/elapsed_usecs", lj::bson_new_uint64(timer.elapsed()));
 
-        lj::Log::info.log("Replication Log: %s") << lj::bson_as_pretty_string(log) << lj::Log::end;
+        lj::Log::info.log("Replication Log for %s: %s")
+                << lj::bson_as_pretty_string(server_config.nav("replication/peers"))
+                << lj::bson_as_pretty_string(log) << lj::Log::end;
         
         char* buffer = response.to_binary();
         add_bytes(buffer, response.size());

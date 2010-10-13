@@ -252,6 +252,10 @@ namespace logjamd
                      &connection_config_add_default_storage);
         lua_register(L, "cc_remove_default_storage",
                      &connection_config_remove_default_storage);
+        lua_register(L, "cc_add_replication_peer",
+                     &connection_config_add_replication_peer);
+        lua_register(L, "cc_remove_replication_peer",
+                     &connection_config_remove_replication_peer);
         
         // load storage config functions.
         lua_register(L, "sc_new", &sc_new);
@@ -370,6 +374,48 @@ namespace logjamd
         }
         return 0;
     }
+
+    int connection_config_add_replication_peer(lua_State* L)
+    {
+        lj::Bson* peer = new lj::Bson();
+        peer->set_child("host", lj::bson_new_string(lua_to_string(L, -3)));
+        peer->set_child("port", lj::bson_new_uint64(lua_tointeger(L, -2)));
+        Lua_bson* wrapped_config = Lunar<Lua_bson>::check(L, -1);
+        lj::Bson& config = wrapped_config->real_node();
+
+        lj::Bson& replication_config = config.nav("replication/peers");
+        if (lj::bson_as_value_string_set(replication_config).count(lj::bson_as_string(*peer)) == 0)
+        {
+            replication_config.push_child("", peer);
+        }
+        else
+        {
+            delete peer;
+        }
+        return 0;
+    }
+
+    int connection_config_remove_replication_peer(lua_State* L)
+    {
+        lj::Bson* peer = new lj::Bson();
+        peer->set_child("host", lj::bson_new_string(lua_to_string(L, -3)));
+        peer->set_child("port", lj::bson_new_uint64(lua_tointeger(L, -2)));
+        Lua_bson* wrapped_config = Lunar<Lua_bson>::check(L, -1);
+        lj::Bson& config = wrapped_config->real_node();
+
+        lj::Bson& replication_config = config.nav("replication/peers");
+        for (lj::Linked_map<std::string, lj::Bson*>::const_iterator iter = replication_config.to_map().begin();
+             replication_config.to_map().end() != iter;
+             ++iter)
+        {
+            if (lj::bson_as_string(*(iter->second)).compare(lj::bson_as_string(*peer)) == 0)
+            {
+                replication_config.set_child(iter->first, NULL);
+            }
+        }
+        return 0;
+    }
+
     
     void get_event(lua_State* L, const std::string& db_name, const std::string& event)
     {

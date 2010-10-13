@@ -88,8 +88,12 @@ namespace logjamd {
     const char* function_reader(lua_State* L,
                                 void* ud,
                                 size_t* sz);
+
     //! Initialize the lua state for the server process.
     /*!
+     \par
+     This is primarily responsible for getting the cached environment for
+     a connection, and leaving it ontop of the stack.
      \param L The lua state.
      \param data_directory The data directory.
      */
@@ -141,6 +145,42 @@ namespace logjamd {
      \return 0
      */
     int connection_config_remove_default_storage(lua_State* L);
+
+    //! Add a replication peer to the server configuration.
+    /*!
+     \verbatim
+     cc = cc_load()
+     cc_add_replication_peer('localhost', 1234, cc)
+     cc_save(cc)
+     \endverbatim
+     \par
+     Pops the peer host name (Lua string) off the stack.
+     \par
+     Pops the peer port (integer) off the stack.
+     \par
+     Pops the connection configuration (Lua_bson) off the stack.
+     \param L The lua state.
+     \return 0
+     */
+    int connection_config_add_replication_peer(lua_State* L);
+
+    //! Remove a replication peer from the server configuration.
+    /*!
+     \verbatim
+     cc = cc_load()
+     cc_remove_replication_peer('localhost', 1234, cc)
+     cc_save(cc)
+     \endverbatim
+     \par
+     Pops the peer host name (Lua string) off the stack.
+     \par
+     Pops the peer port (integer) off the stack.
+     \par
+     Pops the connection configuration (Lua_bson) off the stack.
+     \param L The lua state.
+     \return 0
+     */
+    int connection_config_remove_replication_peer(lua_State* L);
     
     //! Execute an event.
     void get_event(lua_State* L, const std::string& db_name, const std::string& event);
