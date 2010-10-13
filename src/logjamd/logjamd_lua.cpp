@@ -266,7 +266,7 @@ namespace logjamd
         lua_register(L, "send_set", &send_set);
         lua_register(L, "send_item", &send_item);
 
-        // load the default storage.
+        // load the configuration file into the lua context.
         lj::Bson* config = get_connection_config(data_dir);
         config->set_child("data_directory", lj::bson_new_string(data_dir));
         Lunar<logjamd::Lua_bson>::push(L, new Lua_bson(config, true), true);

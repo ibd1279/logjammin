@@ -142,26 +142,40 @@ namespace logjamd
         }
     }
     
-    void Service_dispatch::logic(lj::Bson& b)
+    void Service_dispatch::logic(lj::Bson& request)
     {
         lj::Time_tracker timer;
         timer.start();
         
-        std::string cmd = lj::bson_as_string(b.nav("command"));
+        std::string cmd = lj::bson_as_string(request.nav("command"));
         
         // Create the thread.
         lua_State *L = lua_newthread(lua_);
         
-        // Load the closure.
-        Lua_bson wrapped_node(&b, false);
-        Lunar<Lua_bson>::push(L, &wrapped_node, false);
+        // Load the request object.
+        Lua_bson wrapped_request(&request, false);
+        Lunar<Lua_bson>::push(L, &wrapped_request, false);
+        lua_setglobal(L, "__request");
+
+        // Load the response object.
+        lj::Bson response;
+        Lua_bson wrapped_response(&response, false);
+        Lunar<Lua_bson>::push(L, &wrapped_response, false);
         lua_setglobal(L, "__response");
-        Lua_bson replication_log(new lj::Bson(), true);
-        replication_log.real_node().set_child("cmd", lj::bson_new_string(""));
-        Lunar<Lua_bson>::push(L, &replication_log, false);
+
+        // Load the replication log.
+        lj::Bson log;
+        Lua_bson wrapped_log(&log, false);
+        Lunar<Lua_bson>::push(L, &wrapped_log, false);
         lua_setglobal(L, "__replication");
+        log.set_child("cmd", lj::bson_new_string(""));
+        log.set_child("dirty", lj::bson_new_boolean(false));
+
+        // Load some connection specific variables.
         lua_pushstring(L, ip_.c_str());
         lua_setglobal(L, "connection_id");
+
+        // Load the closure.
         luaL_loadbuffer(L,
                         cmd.c_str(),
                         cmd.size(),
@@ -177,7 +191,7 @@ namespace logjamd
             error = lua_resume(L, 0);
             if (LUA_YIELD != error)
             {
-                // force yields to return instantly.
+                // Yields loop, all other cases break.
                 // this is incase I decide to do something more co-operative later.
                 break;
             }
@@ -187,20 +201,22 @@ namespace logjamd
         {
             const char* error_string = lua_tostring(L, -1);
             lj::Log::warning.log("Lua error: %s") << error_string << lj::Log::end;
-            b.set_child("error", lj::bson_new_string(error_string));
-            b.set_child("is_ok", lj::bson_new_boolean(false));
+            response.set_child("error", lj::bson_new_string(error_string));
+            response.set_child("is_ok", lj::bson_new_boolean(false));
         }
         else
         {
-            b.set_child("is_ok", lj::bson_new_boolean(true));
+            response.set_child("is_ok", lj::bson_new_boolean(true));
         }
         lua_pop(L, 1);
         timer.stop();
         
-        b.set_child("time/elapsed_usecs", lj::bson_new_uint64(timer.elapsed()));
+        response.set_child("time/elapsed_usecs", lj::bson_new_uint64(timer.elapsed()));
+
+        lj::Log::info.log("Replication Log: %s") << lj::bson_as_pretty_string(log) << lj::Log::end;
         
-        char* buffer = b.to_binary();
-        add_bytes(buffer, b.size());
+        char* buffer = response.to_binary();
+        add_bytes(buffer, response.size());
         delete[] buffer;
         set_writing(true);
     }

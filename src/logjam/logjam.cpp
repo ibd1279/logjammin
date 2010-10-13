@@ -126,7 +126,11 @@ namespace {
             if (edit_line(line))
             {
                 char* ed = getenv("EDITOR");
-                if (ed)
+                if (!ed)
+                {
+                    std::cout << "EDITOR must be set to use this feature." << std::endl;
+                }
+                else
                 {
                     std::string editor(ed);
                     char fn_tmp[L_tmpnam];
@@ -162,12 +166,8 @@ namespace {
                     }
                     else
                     {
-                        std::cout << "Unable to make temp filename.";
+                        std::cout << "Unable to make temp filename." << std::endl;
                     }
-                }
-                else
-                {
-                    std::cout << "EDITOR must be set to use this feature.";
                 }
             }
             else if (exit_line(line))
