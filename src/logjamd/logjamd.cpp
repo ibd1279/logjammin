@@ -53,6 +53,11 @@ int main(int argc, char * const argv[]) {
             port = atoi(argv[1]);
             directory.assign(argv[2]);
         }
+
+        lj::Log::info.log("Using port:[%d] and data directory: [%s]")
+                << port
+                << directory
+                << lj::Log::end;
         
         lj::Socket_selector::instance().bind_port(port, new logjamd::Service_dispatch(directory));
         lj::Socket_selector::instance().loop();
