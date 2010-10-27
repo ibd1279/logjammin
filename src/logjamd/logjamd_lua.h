@@ -99,13 +99,6 @@ namespace logjamd {
      */
     void logjam_lua_init(lua_State* L, const std::string& data_directory);
     
-    //! Initialize the lua state for the server process.
-    /*!
-     \param L The lua state.
-     \param name The connection identifier.
-     */
-    void logjam_lua_init_connection(lua_State *L, const std::string& name);
-        
     //! Load the connection configuration.
     /*!
      \par

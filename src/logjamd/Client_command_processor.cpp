@@ -56,9 +56,7 @@ namespace logjamd
         timer.start();
         
         std::string command(lj::bson_as_string(request.nav("lj__command")));
-
-        // Create the client's Lua thread.
-        lua_State *L = lua_newthread(connection.lua());
+        lua_State *L = connection.lua();
 
         // Copy the global server configuration to prevent modification.
         lj::Bson server_config(connection.server_config());
@@ -85,19 +83,11 @@ namespace logjamd
         replication.set_child("lj__command", lj::bson_new_string(""));
         replication.set_child("lj__dirty", lj::bson_new_boolean(false));
 
-        // Load some connection specific variables.
-        lua_pushstring(L, connection.ip().c_str());
-        lua_setglobal(L, "connection_id");
-
         // Load the closure.
         luaL_loadbuffer(L,
                         command.c_str(),
                         command.size(),
                         connection.ip().c_str());
-        
-        // Hide the global environment.
-        logjam_lua_init_connection(L, connection.ip());
-        lua_setfenv(L, -2);
         
         // Execute the commands received.
         int error;
@@ -124,6 +114,7 @@ namespace logjamd
         {
             response.set_child("is_ok", lj::bson_new_boolean(true));
         }
+
         // Clear off the stack and stop time tracking.
         lua_pop(L, 1);
         timer.stop();

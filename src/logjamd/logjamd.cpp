@@ -32,7 +32,7 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjamd/logjamd_net.h"
+#include "logjamd/Server.h"
 #include "lj/Logger.h"
 #include "build/default/config.h"
 
@@ -59,7 +59,7 @@ int main(int argc, char * const argv[]) {
                 << directory
                 << lj::Log::end;
         
-        lj::Socket_selector::instance().bind_port(port, new logjamd::Service_dispatch(directory));
+        lj::Socket_selector::instance().bind_port(port, new logjamd::Server(directory));
         lj::Socket_selector::instance().loop();
     }
     catch(lj::Exception* e)

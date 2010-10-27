@@ -41,10 +41,10 @@
 namespace logjamd
 {
     //! request and connection dispatcher for the logjamd server.
-    class Service_dispatch : public lj::Socket_dispatch {
+    class Server : public lj::Socket_dispatch {
     public:
-        Service_dispatch(const std::string& data_directory);
-        virtual ~Service_dispatch();
+        Server(const std::string& data_directory);
+        virtual ~Server();
         virtual lj::Socket_dispatch* accept(int socket, const std::string& buffer);
         virtual void read(const char* buffer, int sz);
     private:
@@ -56,6 +56,7 @@ namespace logjamd
         int in_sz_;
         bool in_post_length_;
         lua_State* lua_;
+        lj::Bson* config_;
         const std::string& data_dir_;
     };
 };

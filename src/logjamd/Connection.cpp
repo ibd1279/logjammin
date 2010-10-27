@@ -32,7 +32,7 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjamd/logjamd_net.h"
+#include "logjamd/Connection.h"
 
 #include "logjamd/Client_auth_processor.h"
 #include "lj/Bson.h"
