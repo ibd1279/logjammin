@@ -82,6 +82,10 @@ namespace logjamd
         lua_setglobal(L, "lj__replication");
         replication.set_child("lj__command", lj::bson_new_string(""));
         replication.set_child("lj__dirty", lj::bson_new_boolean(false));
+    
+        // Load some connection specific variables.
+        lua_pushstring(L, connection.ip().c_str());
+        lua_setglobal(L, "connection_id");
 
         // Load the closure.
         luaL_loadbuffer(L,
