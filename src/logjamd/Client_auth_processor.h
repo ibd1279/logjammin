@@ -63,7 +63,7 @@ namespace logjamd
              identity='admin',
              token='insecure'
          }
-         \endocde
+         \endcode
          If the document does not contain the four required keys,
          authentication will fail.
          \par
