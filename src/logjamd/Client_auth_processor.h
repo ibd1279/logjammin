@@ -44,7 +44,8 @@ namespace logjamd
      \version 1.0
      \date October 26, 2010
      */
-    class Client_auth_processor : public Client_processor {
+    class Client_auth_processor : public Client_processor
+    {
     public:
         //! Default constructor.
         Client_auth_processor();

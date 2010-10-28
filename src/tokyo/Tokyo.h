@@ -176,6 +176,8 @@ namespace tokyo {
     public:
         //! Type of the type function.
         typedef void (*Tune_function_pointer)(TCHDB*, const void*);
+
+        //! String name of the type. \c Hash
         static const std::string k_db_type;
         
         //! Hash_db constructor
@@ -299,6 +301,7 @@ namespace tokyo {
         //! Type of the type function.
         typedef void (*Tune_function_pointer)(TCBDB*, const void*);
         
+        //! String name of the type. \c Tree
         static const std::string k_db_type;
         
         //! Tree DB Constructor.
@@ -476,6 +479,7 @@ namespace tokyo {
         //! Type of the type function.
         typedef void (*Tune_function_pointer)(TCFDB*, const void*);
         
+        //! String name of the type. \c Fixed
         static const std::string k_db_type;
         
         //! Fixed_db constructor
@@ -569,6 +573,7 @@ namespace tokyo {
         //! Type of the type function.
         typedef void (*Tune_function_pointer)(TCQDB*, const void*);
 
+        //! String name of the type. \c Text
         static const std::string k_db_type;
         
         //! Create a new searcher.
@@ -608,6 +613,7 @@ namespace tokyo {
         //! Type of the type function.
         typedef void (*Tune_function_pointer)(TCWDB*, const void*);
         
+        //! String name of the type. \c Word
         static const std::string k_db_type;
         
         //! Type of lists of values.

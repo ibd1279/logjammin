@@ -43,7 +43,8 @@ namespace logjamd
      \version 1.0
      \date October 26, 2010
      */
-    class Client_command_processor : public Client_processor {
+    class Client_command_processor : public Client_processor
+    {
     public:
         //! Default constructor.
         Client_command_processor();
@@ -59,7 +60,7 @@ namespace logjamd
          {
              lj__command='<lua script>'
          }
-         \endocde
+         \endcode
          \param request The request document to process.
          \return The processor to use for the next request.
          */
