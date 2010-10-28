@@ -54,13 +54,22 @@ namespace logjamd
      \version 1.0
      \date October 26, 2010
      */
-    class Connection : public lj::Socket_dispatch
-    {
+    class Connection : public lj::Socket_dispatch {
     public:
+
+        //! Create a new connection object.
+        /*!
+         \param client_ip The ip address of the client.
+         \param client_lua The lua state for the client.
+         \param server_config The server configuration.
+         \param data_directory The data directory.
+         */
         Connection(const std::string& client_ip,
-                   lua_State* server_lua,
-                   lj::Bson* server_config,
+                   lua_State* client_lua,
+                   const lj::Bson* server_config,
                    const std::string& data_directory);
+
+        //! Destructor.
         virtual ~Connection();
         virtual lj::Socket_dispatch* accept(int socket,
                                             const std::string& buffer);
@@ -83,9 +92,9 @@ namespace logjamd
         int in_sz_;
         bool in_post_length_;
 
-        std::string ip_;
+        const std::string ip_;
         lua_State* lua_;
-        lj::Bson* server_config_;
+        const lj::Bson* server_config_;
         const std::string& data_dir_;
 
         Client_processor* processor_;

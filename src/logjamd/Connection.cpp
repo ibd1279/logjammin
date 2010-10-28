@@ -48,11 +48,11 @@
 namespace logjamd
 {
     Connection::Connection(const std::string& client_ip,
-                           lua_State* server_lua,
-                           lj::Bson* server_config,
+                           lua_State* client_lua,
+                           const lj::Bson* server_config,
                            const std::string& data_directory) :
             in_(0), in_offset_(0), in_sz_(4), in_post_length_(false),
-            ip_(client_ip), lua_(server_lua), server_config_(server_config),
+            ip_(client_ip), lua_(client_lua), server_config_(server_config),
             data_dir_(data_directory), processor_(0)
     {
         processor_ = new Client_auth_processor();

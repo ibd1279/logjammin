@@ -49,8 +49,7 @@ namespace logjamd
      \version 1.0
      \date October 26, 2010
      */
-    class Client_processor
-    {
+    class Client_processor {
     public:
         //! Method representing the logic of the processor.
         /*!
