@@ -43,6 +43,11 @@ namespace logjamd
     //! request and connection dispatcher for the logjamd server.
     class Server : public lj::Socket_dispatch {
     public:
+        //! Constructor
+        /*!
+         \param data_directory The directory to load the configuration
+         from.
+         */
         Server(const std::string& data_directory);
         virtual ~Server();
         virtual lj::Socket_dispatch* accept(int socket, const std::string& buffer);
