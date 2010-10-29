@@ -126,7 +126,7 @@ namespace logjamd
         lua_pushstring(L, "lj__response"); // {t, str}
         Lunar<Lua_bson>::push(L, &wrapped_response, false); // {t, str, val}
         lua_settable(L, -3); // {t}
-        lua_pushstring(L, "lj__response"); // {t, str}
+        lua_pushstring(L, "lj__replication"); // {t, str}
         Lunar<Lua_bson>::push(L, &wrapped_replication, false); // {t, str, val}
         lua_settable(L, -3); // {t}
         lua_pushstring(L, "lj__client_id"); // {t, str}
