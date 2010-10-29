@@ -1,6 +1,6 @@
 /*!
- \file Client_processor.cpp
- \brief Logjam server client implementation.
+ \file Stage.cpp
+ \brief Logjam server stage abstract base implementation.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -32,14 +32,14 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjamd/Client_processor.h"
+#include "logjamd/Stage.h"
 
 namespace logjamd
 {
-    Client_processor::Client_processor()
+    Stage::Stage()
     {
     }
-    Client_processor::~Client_processor()
+    Stage::~Stage()
     {
     }
 }

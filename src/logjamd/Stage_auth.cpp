@@ -1,5 +1,5 @@
 /*!
- \file Client_auth_processor.cpp
+ \file Stage_auth.cpp
  \brief Logjam server client authentication implementation.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
@@ -32,8 +32,8 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjamd/Client_auth_processor.h"
-#include "logjamd/Client_command_processor.h"
+#include "logjamd/Stage_auth.h"
+#include "logjamd/Stage_execute.h"
 
 #include "lj/Logger.h"
 
@@ -41,15 +41,15 @@
 
 namespace logjamd
 {
-    Client_auth_processor::Client_auth_processor() : Client_processor::Client_processor(), attempt_(0)
+    Stage_auth::Stage_auth() : Stage::Stage(), attempt_(0)
     {
     }
 
-    Client_auth_processor::~Client_auth_processor()
+    Stage_auth::~Stage_auth()
     {
     }
 
-    Client_processor* Client_auth_processor::logic(lj::Bson& request, Connection& connection)
+    Stage* Stage_auth::logic(lj::Bson& request, Connection& connection)
     {
         // increment the authentication attempt count.
         attempt_++;
@@ -91,7 +91,7 @@ namespace logjamd
                         connection.set_writing(true);
 
                         // Return the next processor.
-                        return new Client_command_processor();
+                        return new Stage_execute();
                     }
                 }
             }

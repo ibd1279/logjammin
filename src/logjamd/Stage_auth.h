@@ -1,7 +1,7 @@
 #pragma once
 /*!
- \file Client_command_processor.h
- \brief Logjam server client command definition.
+ \file Stage_auth.h
+ \brief Logjam server authentication stage definition.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -33,24 +33,24 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjamd/Client_processor.h"
+#include "logjamd/Stage.h"
 
 namespace logjamd
 {
-    //! Client command processor.
+    //! Client authentication processor.
     /*!
      \author Jason Watson
      \version 1.0
      \date October 26, 2010
      */
-    class Client_command_processor : public Client_processor
+    class Stage_auth : public Stage
     {
     public:
         //! Default constructor.
-        Client_command_processor();
+        Stage_auth();
 
         //! Virtual destructor.
-        virtual ~Client_command_processor();
+        virtual ~Stage_auth();
 
         //! Method representing the logic of the processor.
         /*!
@@ -58,20 +58,31 @@ namespace logjamd
          currently expects the following document:
          \code
          {
-             lj__command='<lua script>'
+             method='fake'
+             provider='local'
+             identity='admin',
+             token='insecure'
          }
          \endcode
+         If the document does not contain the four required keys,
+         authentication will fail.
+         \par
+         On failure, authentication returns \c this. On success, a
+         new command processor is returned.
          \param request The request document to process.
          \return The processor to use for the next request.
          */
-        virtual Client_processor* logic(lj::Bson& request, Connection& connection);
+        virtual Stage* logic(lj::Bson& request, Connection& connection);
 
     private:
         //! Hidden copy constructor.
         /*!
          \param orig Original object.
          */
-        Client_command_processor(const Client_processor& orig);
+        Stage_auth(const Stage_auth& orig);
+
+        //! attempt count.
+        unsigned char attempt_;
     };
 };
 

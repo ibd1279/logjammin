@@ -1,7 +1,7 @@
 #pragma once
 /*!
- \file Client_processor.h
- \brief Logjam server client definition.
+ \file Stage.h
+ \brief Logjam server stage abstract base definition.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -38,37 +38,38 @@
 
 namespace logjamd
 {
-    //! Client processor base class.
+    //! Stage command base class.
     /*!
      \par
      Base class represents the interface used by different stages in the
      client connection.
      \par
-     The Client_processor::logic(lj::Bson&) method must be implemented by concrete implementations.
+     The \c Stage::logic(lj::Bson&,Connection&) method must be implemented by concrete implementations.
      \author Jason Watson
      \version 1.0
      \date October 26, 2010
      */
-    class Client_processor {
+    class Stage {
     public:
-        //! Method representing the logic of the processor.
+        //! Method representing the logic of the current stage.
         /*!
          \param request The request document to process.
          \param connection The client connection
          \return The processor to use for the next request. Null to terminate
          the connection.
          */
-        virtual Client_processor* logic(lj::Bson& request, Connection& connection) = 0;
+        virtual Stage* logic(lj::Bson& request, Connection& connection) = 0;
+
+        //! Virtual destructor.
+        virtual ~Stage();
     protected:
         //! Default constructor.
-        Client_processor();
-        //! Virtual destructor.
-        virtual ~Client_processor();
+        Stage();
     private:
         //! Hidden copy constructor.
         /*!
          \param orig Original object.
          */
-        Client_processor(const Client_processor& orig);
+        Stage(const Stage& orig);
     };
 };

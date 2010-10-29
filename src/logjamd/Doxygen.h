@@ -37,5 +37,6 @@
 /*!
  \namespace logjamd
  \brief The logjamd server library
+ \par
  The logjamd server code.
  */

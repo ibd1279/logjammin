@@ -1,5 +1,5 @@
 /*!
- \file Client_command_processor.cpp
+ \file Stage_execute.cpp
  \brief Logjam server client command implementation.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
@@ -32,7 +32,7 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjamd/Client_command_processor.h"
+#include "logjamd/Stage_execute.h"
 
 #include "logjamd/logjamd_lua.h"
 #include "logjamd/Lua_bson.h"
@@ -42,15 +42,15 @@
 
 namespace logjamd
 {
-    Client_command_processor::Client_command_processor() : Client_processor::Client_processor()
+    Stage_execute::Stage_execute() : Stage::Stage()
     {
     }
 
-    Client_command_processor::~Client_command_processor()
+    Stage_execute::~Stage_execute()
     {
     }
 
-    Client_processor* Client_command_processor::logic(lj::Bson& request, Connection& connection)
+    Stage* Stage_execute::logic(lj::Bson& request, Connection& connection)
     {
         lj::Log::debug.log("Starting command.") << lj::Log::end;
         lj::Time_tracker timer;

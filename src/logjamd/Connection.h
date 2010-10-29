@@ -42,8 +42,8 @@ extern "C" {
 
 namespace logjamd
 {
-    // forward declare Client_processor
-    class Client_processor;
+    // forward declare Stage
+    class Stage;
 
     //! Server to client connection.
     /*!
@@ -97,7 +97,7 @@ namespace logjamd
         const lj::Bson* server_config_;
         const std::string& data_dir_;
 
-        Client_processor* processor_;
+        Stage* stage_;
     };
 };
 

@@ -34,7 +34,7 @@
 
 #include "logjamd/Connection.h"
 
-#include "logjamd/Client_auth_processor.h"
+#include "logjamd/Stage_auth.h"
 #include "lj/Bson.h"
 #include "lj/Logger.h"
 #include "lj/Time_tracker.h"
@@ -53,9 +53,9 @@ namespace logjamd
                            const std::string& data_directory) :
             in_(0), in_offset_(0), in_sz_(4), in_post_length_(false),
             ip_(client_ip), lua_(client_lua), server_config_(server_config),
-            data_dir_(data_directory), processor_(0)
+            data_dir_(data_directory), stage_(0)
     {
-        processor_ = new Client_auth_processor();
+        stage_ = new Stage_auth();
     }
     
     Connection::~Connection()
@@ -63,6 +63,10 @@ namespace logjamd
         if (in_)
         {
             delete[] in_;
+        }
+        if (stage_)
+        {
+            delete stage_;
         }
     }
     
@@ -116,9 +120,9 @@ namespace logjamd
         {
             lj::Bson b(lj::Bson::k_document, in_);
             
-            processor_ = processor_->logic(b, *this);
+            stage_ = stage_->logic(b, *this);
 
-            if (!processor_)
+            if (!stage_)
             {
                 close();
             }

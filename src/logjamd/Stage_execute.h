@@ -1,7 +1,7 @@
 #pragma once
 /*!
- \file Client_auth_processor.h
- \brief Logjam server client authentication definition.
+ \file Stage_execute.h
+ \brief Logjam server client command execution stage definition.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -33,25 +33,24 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjamd/Client_processor.h"
-#include "logjamd/Connection.h"
+#include "logjamd/Stage.h"
 
 namespace logjamd
 {
-    //! Client authentication processor.
+    //! Client command processor.
     /*!
      \author Jason Watson
      \version 1.0
      \date October 26, 2010
      */
-    class Client_auth_processor : public Client_processor
+    class Stage_execute : public Stage
     {
     public:
         //! Default constructor.
-        Client_auth_processor();
+        Stage_execute();
 
         //! Virtual destructor.
-        virtual ~Client_auth_processor();
+        virtual ~Stage_execute();
 
         //! Method representing the logic of the processor.
         /*!
@@ -59,31 +58,20 @@ namespace logjamd
          currently expects the following document:
          \code
          {
-             method='fake'
-             provider='local'
-             identity='admin',
-             token='insecure'
+             lj__command='<lua script>'
          }
          \endcode
-         If the document does not contain the four required keys,
-         authentication will fail.
-         \par
-         On failure, authentication returns \c this. On success, a
-         new command processor is returned.
          \param request The request document to process.
          \return The processor to use for the next request.
          */
-        virtual Client_processor* logic(lj::Bson& request, Connection& connection);
+        virtual Stage* logic(lj::Bson& request, Connection& connection);
 
     private:
         //! Hidden copy constructor.
         /*!
          \param orig Original object.
          */
-        Client_auth_processor(const Client_processor& orig);
-
-        //! attempt count.
-        unsigned char attempt_;
+        Stage_execute(const Stage_execute& orig);
     };
 };
 
