@@ -43,7 +43,7 @@ namespace lj
 {
     Standard_record_set::Standard_record_set(const Storage* storage,
                                              const std::set<unsigned long long>& keys,
-                                             const Record_set::Operation op) : storage_(storage), keys_(0), op_(op)
+                                             const Record_set::Operation op) : storage_(storage), keys_(0), op_(op), raw_size_(0)
     {
         keys_ = new std::set<unsigned long long>(keys);
     }
