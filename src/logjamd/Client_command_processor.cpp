@@ -40,44 +40,6 @@
 #include "lj/Logger.h"
 #include "lj/Time_tracker.h"
 
-namespace
-{
-    //! Put the environment table for this identifier ontop of the stack.
-    /*!
-     \param L The Root lua state.
-     \param identifier The connection id.
-     */
-    int push_sandbox(lua_State* L,
-                     const std::string& identifier)
-    {
-        lua_getglobal(L, "environment_cache"); // {ec}
-        if (lua_isnil(L, -1))
-        {
-            lua_pop(L, 1); // {}
-            lua_newtable(L); // {ec}
-            lua_pushvalue(L, -1); // {ec, ec}
-            lua_setglobal(L, "environment_cache"); // {ec}
-        }
-        lua_pushstring(L, identifier.c_str()); // {ec, name}
-        lua_gettable(L, -2); // {ec, t}
-        if (lua_isnil(L, -1))
-        {
-            lua_pop(L, 1); // {ec}
-            lua_newtable(L); // {ec, t}
-            lua_pushstring(L, identifier.c_str()); // {ec, t, name}
-            lua_pushvalue(L, -2); // {ec, t, name, t}
-            lua_settable(L, -4); // {ec, t}
-            lua_pushvalue(L, -1); // {ec, t, t}
-            lua_pushstring(L, "__index"); // {ec, t, t, __index}
-            lua_pushvalue(L, LUA_GLOBALSINDEX); // {ec, t, t, __index, _G}
-            lua_settable(L, -3); // {ec, t, t}
-            lua_setmetatable(L, -2); // {ec, t}
-        }
-        lua_replace(L, -2); // {t}
-        return 1;
-    }
-} // namespace
-
 namespace logjamd
 {
     Client_command_processor::Client_command_processor() : Client_processor::Client_processor()
@@ -116,7 +78,7 @@ namespace logjamd
         replication.set_child("lj__dirty", lj::bson_new_boolean(false));
 
         // Populate the lua environment.
-        push_sandbox(L, connection.ip()); // {t}
+        sandbox_push(L); // {t}
         lua_pushstring(L, "lj__config"); // {t, str}
         Lunar<Lua_bson>::push(L, &wrapper_config, false); // {t, str, val}
         lua_settable(L, -3); // {t}

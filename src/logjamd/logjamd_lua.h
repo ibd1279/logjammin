@@ -45,6 +45,22 @@ extern "C" {
 #include <string>
 
 namespace logjamd {
+    //! Put the environment table for this identifier ontop of the stack.
+    /*!
+     Creates the environment if it doesn't already exist.
+     \param L The lua closure associated with the sandbox.
+     \return number of items added to the top of the stack -- always 1.
+     */
+    int sandbox_push(lua_State* L);
+
+    //! Get a value from the sandbox environment.
+    /*!
+     returns nil if the value does not exist.
+     \param L The lua closure associated with the sandbox.
+     \param key The key of the value to load.
+     \return number of items added to the top of the stack -- always 1.
+     */
+    int sandbox_get(lua_State* L, const std::string& key);
     
     //! Function buffer for reading and writing lua functions.
     struct Function_buffer

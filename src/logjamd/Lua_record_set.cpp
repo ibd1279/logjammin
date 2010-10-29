@@ -97,19 +97,24 @@ namespace
         
         // Execute the filtering operation.
         lj::Record_set* ptr;
-        if (lua_isstring(L, -1) && !lua_isnumber(L, -1))
-        {
-            // Is a string that is not also a number.
-            std::string val(lua_to_string(L, -1));
-            cmd_builder << "'" << val << "'";
-            ptr = (real_set.*f)(field, val.c_str(), val.size()).release();
-        }
-        else if (lua_isnumber(L, -1))
+        lj::Log::info.log("doing a compare on string %d number %d")
+                << lua_isstring(L, -1)
+                << lua_isnumber(L, -1)
+                << lj::Log::end;
+
+        if (lua_isnumber(L, -1))
         {
             // Is a number or convertable to a number.
             long long val = luaL_checkint(L, -1);
             cmd_builder << val;
             ptr = (real_set.*f)(field, &val, sizeof(long long)).release();
+        }
+        else if (lua_isstring(L, -1) && !lua_isnumber(L, -1))
+        {
+            // Is a string that is not also a number.
+            std::string val(lua_to_string(L, -1));
+            cmd_builder << "'" << val << "'";
+            ptr = (real_set.*f)(field, val.c_str(), val.size()).release();
         }
         else
         {
