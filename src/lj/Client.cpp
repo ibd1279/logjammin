@@ -138,7 +138,7 @@ namespace lj
     lj::Bson* Client::send_command(const std::string& cmd)
     {
         lj::Bson b;
-        b.set_child("command", lj::bson_new_string(cmd));
+        b.set_child("lj__command", lj::bson_new_string(cmd));
         return send_command(&b);
     }
     

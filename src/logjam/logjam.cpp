@@ -245,6 +245,14 @@ int main(int argc, char * const argv[]) {
     try
     {
         sb = lj::Client::connect("127.0.0.1", 27754);
+
+        lj::Bson auth;
+        auth.set_child("method", lj::bson_new_string("fake"));
+        auth.set_child("provider", lj::bson_new_string("local"));
+        auth.set_child("identity", lj::bson_new_string("admin"));
+        auth.set_child("token", lj::bson_new_string("insecure"));
+        sb->send_command(&auth);
+
         input_loop(sb);
     }
     catch(lj::Exception* ex)

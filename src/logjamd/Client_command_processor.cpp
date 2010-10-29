@@ -40,6 +40,44 @@
 #include "lj/Logger.h"
 #include "lj/Time_tracker.h"
 
+namespace
+{
+    //! Put the environment table for this identifier ontop of the stack.
+    /*!
+     \param L The Root lua state.
+     \param identifier The connection id.
+     */
+    int push_sandbox(lua_State* L,
+                     const std::string& identifier)
+    {
+        lua_getglobal(L, "environment_cache"); // {ec}
+        if (lua_isnil(L, -1))
+        {
+            lua_pop(L, 1); // {}
+            lua_newtable(L); // {ec}
+            lua_pushvalue(L, -1); // {ec, ec}
+            lua_setglobal(L, "environment_cache"); // {ec}
+        }
+        lua_pushstring(L, identifier.c_str()); // {ec, name}
+        lua_gettable(L, -2); // {ec, t}
+        if (lua_isnil(L, -1))
+        {
+            lua_pop(L, 1); // {ec}
+            lua_newtable(L); // {ec, t}
+            lua_pushstring(L, identifier.c_str()); // {ec, t, name}
+            lua_pushvalue(L, -2); // {ec, t, name, t}
+            lua_settable(L, -4); // {ec, t}
+            lua_pushvalue(L, -1); // {ec, t, t}
+            lua_pushstring(L, "__index"); // {ec, t, t, __index}
+            lua_pushvalue(L, LUA_GLOBALSINDEX); // {ec, t, t, __index, _G}
+            lua_settable(L, -3); // {ec, t, t}
+            lua_setmetatable(L, -2); // {ec, t}
+        }
+        lua_replace(L, -2); // {t}
+        return 1;
+    }
+} // namespace
+
 namespace logjamd
 {
     Client_command_processor::Client_command_processor() : Client_processor::Client_processor()
@@ -52,52 +90,64 @@ namespace logjamd
 
     Client_processor* Client_command_processor::logic(lj::Bson& request, Connection& connection)
     {
+        lj::Log::debug.log("Starting command.") << lj::Log::end;
         lj::Time_tracker timer;
         timer.start();
         
-        std::string command(lj::bson_as_string(request.nav("lj__command")));
+        // Get the lua state.
         lua_State *L = connection.lua();
+
+        // Get the command from the request.
+        std::string command(lj::bson_as_string(request.nav("lj__command")));
 
         // Copy the global server configuration to prevent modification.
         lj::Bson server_config(connection.server_config());
         Lua_bson wrapper_config(&server_config, false);
-        Lunar<Lua_bson>::push(L, &wrapper_config, false);
-        lua_setglobal(L, "lj__config");
-        
-        // Load the request object.
-        Lua_bson wrapped_request(&request, false);
-        Lunar<Lua_bson>::push(L, &wrapped_request, false);
-        lua_setglobal(L, "lj__request");
 
-        // Load the response object.
+        // Prepare the request and the response.
         lj::Bson response;
         Lua_bson wrapped_response(&response, false);
-        Lunar<Lua_bson>::push(L, &wrapped_response, false);
-        lua_setglobal(L, "lj__response");
+        Lua_bson wrapped_request(&request, false);
 
         // Load the replication log.
         lj::Bson replication;
         Lua_bson wrapped_replication(&replication, false);
-        Lunar<Lua_bson>::push(L, &wrapped_replication, false);
-        lua_setglobal(L, "lj__replication");
         replication.set_child("lj__command", lj::bson_new_string(""));
         replication.set_child("lj__dirty", lj::bson_new_boolean(false));
-    
-        // Load some connection specific variables.
-        lua_pushstring(L, connection.ip().c_str());
-        lua_setglobal(L, "connection_id");
 
-        // Load the closure.
+        // Populate the lua environment.
+        push_sandbox(L, connection.ip()); // {t}
+        lua_pushstring(L, "lj__config"); // {t, str}
+        Lunar<Lua_bson>::push(L, &wrapper_config, false); // {t, str, val}
+        lua_settable(L, -3); // {t}
+        lua_pushstring(L, "lj__request"); // {t, str}
+        Lunar<Lua_bson>::push(L, &wrapped_request, false); // {t, str, val}
+        lua_settable(L, -3); // {t}
+        lua_pushstring(L, "lj__response"); // {t, str}
+        Lunar<Lua_bson>::push(L, &wrapped_response, false); // {t, str, val}
+        lua_settable(L, -3); // {t}
+        lua_pushstring(L, "lj__response"); // {t, str}
+        Lunar<Lua_bson>::push(L, &wrapped_replication, false); // {t, str, val}
+        lua_settable(L, -3); // {t}
+        lua_pushstring(L, "lj__client_id"); // {t, str}
+        lua_pushstring(L, connection.ip().c_str()); // {t, str, str}
+        lua_settable(L, -3); // {t}
+
+
+        // Load the closure and hide the real global env.
+        lua_pushvalue(L, -1); // {t, t}
         luaL_loadbuffer(L,
                         command.c_str(),
                         command.size(),
-                        connection.ip().c_str());
+                        connection.ip().c_str()); // {t, t, script}
+        lua_replace(L, -3); // {script, t}
+        lua_setfenv(L, -2); // {script}
         
         // Execute the commands received.
         int error;
         while (true)
         {
-            error = lua_resume(L, 0);
+            error = lua_resume(L, 0); // {result/error}
             if (LUA_YIELD != error)
             {
                 // Yields loop, all other cases break.
@@ -120,7 +170,7 @@ namespace logjamd
         }
 
         // Clear off the stack and stop time tracking.
-        lua_pop(L, 1);
+        lua_pop(L, 1); // {}
         timer.stop();
         
         // Record server performance metrics.

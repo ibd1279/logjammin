@@ -35,6 +35,8 @@
 #include "logjamd/Client_auth_processor.h"
 #include "logjamd/Client_command_processor.h"
 
+#include "lj/Logger.h"
+
 #include <string>
 
 namespace logjamd
@@ -52,6 +54,8 @@ namespace logjamd
         // increment the authentication attempt count.
         attempt_++;
 
+        lj::Log::info.log("Login attempt %d") << attempt_ << lj::Log::end;
+
         // Create response document
         lj::Bson response;
         response.set_child("is_ok", lj::bson_new_boolean(false));
@@ -60,17 +64,23 @@ namespace logjamd
         std::string method(lj::bson_as_string(request.nav("method")));
         std::string provider(lj::bson_as_string(request.nav("provider")));
         std::string identity(lj::bson_as_string(request.nav("identity")));
-        std::string proof(lj::bson_as_string(request.nav("token")));
+        std::string token(lj::bson_as_string(request.nav("token")));
 
         // perform authentication
+        lj::Log::info.log("  method %s") << method << lj::Log::end;
         if (method.compare("fake") == 0)
         {
+            lj::Log::info.log("  provider %s") << provider << lj::Log::end;
             if (provider.compare("local") == 0)
             {
+                lj::Log::info.log("  identity %s") << identity << lj::Log::end;
                 if (identity.compare("admin") == 0)
                 {
-                    if (identity.compare("insecure") == 0)
+                    lj::Log::info.log("  token %s") << token << lj::Log::end;
+                    if (token.compare("insecure") == 0)
                     {
+                        lj::Log::info.log("login successful") << lj::Log::end;
+
                         // Create a successful response
                         response.set_child("is_ok", lj::bson_new_boolean(true));
 
@@ -86,6 +96,7 @@ namespace logjamd
                 }
             }
         }
+        lj::Log::info.log("login failure.") << lj::Log::end;
 
         // send response.
         char* buffer = response.to_binary();
