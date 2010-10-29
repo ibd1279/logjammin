@@ -408,7 +408,7 @@ namespace logjamd
         std::string name(lua_to_string(L, -1));
         lua_pop(L, 1);
 
-        lua_getglobal(L, "__replication");
+        lua_getglobal(L, "lj__replication");
         Lua_bson* ptr = Lunar<Lua_bson>::check(L, -1);
         lua_pop(L, 1);
         ptr->real_node().set_child(name, new lj::Bson(b));
@@ -421,7 +421,7 @@ namespace logjamd
                                   const std::string& dbname,
                                   const std::string& obj)
     {
-        lua_getglobal(L, "__replication");
+        lua_getglobal(L, "lj__replication");
         Lua_bson* ptr = Lunar<Lua_bson>::check(L, -1);
         lua_pop(L, 1);
         
@@ -471,7 +471,7 @@ namespace logjamd
         result->set_child("items", items);
 
         // Put it on the response.
-        lua_getglobal(L, "__response");
+        lua_getglobal(L, "lj__response");
         Lua_bson* node = Lunar<Lua_bson>::check(L, -1);
         lua_pop(L, 1);
         node->real_node().push_child("results", result);
@@ -488,7 +488,7 @@ namespace logjamd
     int send_item(lua_State* L)
     {        
         Lua_bson* item = Lunar<Lua_bson>::check(L, -1);
-        lua_getglobal(L, "__response");
+        lua_getglobal(L, "lj__response");
         Lua_bson* response = Lunar<Lua_bson>::check(L, -1);
         lua_pop(L, 1);
         
