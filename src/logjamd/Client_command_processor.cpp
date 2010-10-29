@@ -95,7 +95,7 @@ namespace logjamd
         timer.start();
         
         // Get the lua state.
-        lua_State *L = connection.lua();
+        lua_State* L = lua_newthread(connection.lua());
 
         // Get the command from the request.
         std::string command(lj::bson_as_string(request.nav("lj__command")));

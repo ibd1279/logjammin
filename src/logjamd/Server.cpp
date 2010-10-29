@@ -71,8 +71,7 @@ namespace logjamd
     
     lj::Socket_dispatch* Server::accept(int socket, const std::string& remote_ip)
     {
-        lua_State* L = lua_newthread(lua_);
-        Connection* client = new Connection(remote_ip, L, config_, data_dir_);
+        Connection* client = new Connection(remote_ip, lua_, config_, data_dir_);
         client->set_socket(socket);
         client->set_mode(Socket_dispatch::k_communicate);
         return client;
