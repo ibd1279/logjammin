@@ -408,7 +408,14 @@ namespace logjamd
     
     int Lua_storage::rebuild(lua_State* L)
     {
-        real_storage(L).rebuild();
+        try
+        {
+            real_storage(L).rebuild();
+        }
+        catch (lj::Exception* ex)
+        {
+            lj::Log::error.log("%s") << ex->to_string() << lj::Log::end;
+        }
         return 0;
     }
     
@@ -421,7 +428,7 @@ namespace logjamd
     int Lua_storage::recall(lua_State* L)
     {
         // Get the data directory.
-        lua_getglobal(L, "lj__config");
+        sandbox_get(L, "lj__config");
         lj::Bson& server_config = Lunar<Lua_bson>::check(L, -1)->real_node();
         lua_pop(L, 1);
         
@@ -432,7 +439,7 @@ namespace logjamd
     lj::Storage& Lua_storage::real_storage(lua_State* L)
     {
         // Get the data directory.
-        lua_getglobal(L, "lj__config");
+        sandbox_get(L, "lj__config");
         lj::Bson& server_config = Lunar<Lua_bson>::check(L, -1)->real_node();
         lua_pop(L, 1);
         
