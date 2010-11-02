@@ -414,14 +414,25 @@ namespace logjamd
         }
         catch (lj::Exception* ex)
         {
-            lj::Log::error.log("%s") << ex->to_string() << lj::Log::end;
+            std::string msg(ex->to_string());
+            delete ex;
+            return luaL_error(L, "Unable to rebuild indicies. %s", msg.c_str());
         }
         return 0;
     }
     
     int Lua_storage::optimize(lua_State* L)
     {
-        real_storage(L).optimize();
+        try
+        {
+            real_storage(L).optimize();
+        }
+        catch (lj::Exception* ex)
+        {
+            std::string msg(ex->to_string());
+            delete ex;
+            return luaL_error(L, "Unable to optimize storage. %s", msg.c_str());
+        }
         return 0;
     }
     
