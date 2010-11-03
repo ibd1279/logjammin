@@ -50,17 +50,16 @@ extern "C" {
 
 namespace logjamd
 {
-    Server::Server(const std::string& data_directory) : lua_(0), config_(0), data_dir_(data_directory)
+    Server::Server(const std::string& server_type, lj::Bson* config) : lua_(0), config_(config)
     {
         set_mode(Socket_dispatch::k_listen);
 
         // prepare lua.
         lua_ = luaL_newstate();
         luaL_openlibs(lua_);
-        logjam_lua_init(lua_, data_dir_);
 
-        // Load configuration.
-        config_ = lj::bson_load(data_dir_ + "/config");
+        // This needs to change to be specific for the server type.
+        logjam_lua_init(lua_, config);
     }
     
     Server::~Server()
@@ -71,7 +70,7 @@ namespace logjamd
     
     lj::Socket_dispatch* Server::accept(int socket, const std::string& remote_ip)
     {
-        Connection* client = new Connection(remote_ip, lua_, config_, data_dir_);
+        Connection* client = new Connection(remote_ip, lua_, config_);
         client->set_socket(socket);
         client->set_mode(Socket_dispatch::k_communicate);
         return client;

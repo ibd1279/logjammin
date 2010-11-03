@@ -37,29 +37,123 @@
 #include "build/default/config.h"
 
 #include <cstdlib>
+#include <cstring>
+
+
+int usage()
+{
+    std::cerr << "LogJam Distributed Storage Server (Version 1.0)" << std::endl << std::endl;
+    std::cerr << "Copyright (C) 2010 Jason Watson <jwatson@slashopt.net>" << std::endl;
+    std::cerr << "usage: logjamd mode configfile" << std::endl;
+    std::cerr << "  mode is either \"config\", \"readonly\", or \"readwrite\"" << std::endl;
+    std::cerr << "    config is for creating and modifying the configfile." << std::endl;
+    std::cerr << "    readonly prevents storage modification." << std::endl;
+    std::cerr << "    readwrite enabled storage modification." << std::endl;
+    return 1;
+}
+
+void populate_config(lj::Bson* config)
+{
+    config->set_child("server/port", lj::bson_new_int64(27754));
+    config->set_child("server/directory", lj::bson_new_string(DBDIR));
+    config->set_child("server/id", lj::bson_new_int64(1));
+    config->set_child("replication/enabled", lj::bson_new_boolean(false));
+    config->set_child("logging/debug", lj::bson_new_boolean(false));
+    config->set_child("logging/info", lj::bson_new_boolean(true));
+    config->set_child("logging/notice", lj::bson_new_boolean(true));
+    config->set_child("logging/warning", lj::bson_new_boolean(true));
+    config->set_child("logging/error", lj::bson_new_boolean(true));
+    config->set_child("logging/critical", lj::bson_new_boolean(true));
+    config->set_child("logging/alert", lj::bson_new_boolean(true));
+    config->set_child("logging/emergency", lj::bson_new_boolean(true));
+}
+
+void set_loglevel(lj::Log& log, const bool enable)
+{
+    if (enable)
+    {
+        log.enable();
+    }
+    else
+    {
+        log.disable();
+    }
+}
 
 //! Server main entry point.
-int main(int argc, char * const argv[]) {
-    lj::Log::debug.enable();
-    lj::Log::info.enable();
-        
+int main(int argc, char* const argv[]) {
+
+    // Check that we have atleast two arguments.
+    if (argc != 2)
+    {
+        return usage();
+    }
+
+    // Load the configuration from disk
+    lj::Bson* mutable_config;
+    std::string server_type(argv[1]);
     try
     {
-        int port = 27754;
-        std::string directory(DBDIR);
-        
-        if (argc > 2)
+        mutable_config = lj::bson_load(argv[2]);
+    }
+    catch (lj::Exception* e)
+    {
+        if (server_type.compare("config") == 0)
         {
-            port = atoi(argv[1]);
-            directory.assign(argv[2]);
+            // We couldn't load a config, but we want to edit config anyway.
+            // Create a new default configuration file and let the server
+            // go ahead and start.
+            std::cerr << "creating default configuration in ["
+                    << argv[2] << "]" << std::endl;
+            mutable_config = new lj::Bson();
+            populate_config(mutable_config);
+            lj::bson_save(*mutable_config, argv[2]);
         }
+        else
+        {
+            // We aren't trying to start in config mode, so abort and
+            // shutdown.
+            std::cerr << "unable to load configuration from ["
+                    << argv[2] << "]" << std::endl
+                    << e->to_string() << std::endl;
+            delete e;
+            return 2;
+        }
+    }
 
-        lj::Log::info.log("Using port:[%d] and data directory: [%s]")
-                << port
-                << directory
-                << lj::Log::end;
+    // Get the values we need to startup from the configuration.
+    try
+    {
+        // We hade the real config in a const Bson* to error out when
+        // paths are not found in the configuration object. accidently
+        // creating a port value of 0 would be less than useful.
+        const lj::Bson* config = const_cast<const lj::Bson*>(mutable_config);
+        int port = lj::bson_as_int32(config->nav("server/port"));
+
+        // set the logging levels.
+        set_loglevel(lj::Log::debug,
+                     lj::bson_as_boolean(config->nav("logging/debug")));
+        set_loglevel(lj::Log::info,
+                     lj::bson_as_boolean(config->nav("logging/info")));
+        set_loglevel(lj::Log::notice,
+                     lj::bson_as_boolean(config->nav("logging/notice")));
+        set_loglevel(lj::Log::warning,
+                     lj::bson_as_boolean(config->nav("logging/warning")));
+        set_loglevel(lj::Log::error,
+                     lj::bson_as_boolean(config->nav("logging/error")));
+        set_loglevel(lj::Log::critical,
+                     lj::bson_as_boolean(config->nav("logging/critical")));
+        set_loglevel(lj::Log::alert,
+                     lj::bson_as_boolean(config->nav("logging/alert")));
+        set_loglevel(lj::Log::emergency,
+                     lj::bson_as_boolean(config->nav("logging/emergency")));
+
+        // Create the right dispatchers based on the mode.
+        lj::Socket_dispatch* dispatcher = new logjamd::Server(server_type,
+                                                              mutable_config);
         
-        lj::Socket_selector::instance().bind_port(port, new logjamd::Server(directory));
+        // Bind the sockets, and loop for connections.
+        lj::Socket_selector::instance().bind_port(port, dispatcher);
         lj::Socket_selector::instance().loop();
     }
     catch(lj::Exception* e)

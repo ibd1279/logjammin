@@ -45,23 +45,18 @@ namespace logjamd
     public:
         //! Constructor
         /*!
-         \param data_directory The directory to load the configuration
+         \par The \c server_type parameter decides if the config, readonly,
+         or readwrite lua libraries are made available.
+         \param server_type The type of server to startup.
+         \param config The server configuration.
          from.
          */
-        Server(const std::string& data_directory);
+        Server(const std::string& server_type, lj::Bson* config);
         virtual ~Server();
         virtual lj::Socket_dispatch* accept(int socket, const std::string& buffer);
         virtual void read(const char* buffer, int sz);
     private:
-        void logic(lj::Bson& b);
-        
-        std::string ip_;
-        char * in_;
-        int in_offset_;
-        int in_sz_;
-        bool in_post_length_;
         lua_State* lua_;
         lj::Bson* config_;
-        const std::string& data_dir_;
     };
 };

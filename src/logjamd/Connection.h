@@ -62,12 +62,10 @@ namespace logjamd
          \param client_ip The ip address of the client.
          \param client_lua The lua state for the client.
          \param server_config The server configuration.
-         \param data_directory The data directory.
          */
         Connection(const std::string& client_ip,
                    lua_State* client_lua,
-                   const lj::Bson* server_config,
-                   const std::string& data_directory);
+                   const lj::Bson* server_config);
 
         //! Destructor.
         virtual ~Connection();

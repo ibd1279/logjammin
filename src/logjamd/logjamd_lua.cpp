@@ -282,10 +282,48 @@ namespace logjamd
         ptr->real_node().nav(event).destroy();
         return 0;
     }
-    
-    void logjam_lua_init(lua_State *L, const std::string& data_dir) {
-        // Load object model.
+
+    namespace lua
+    {
+        int send_item(lua_State* L)
+        {        
+            // {item}
+            sandbox_get(L, "lj__response"); // {item, response}
+            Lua_bson* response = Lunar<Lua_bson>::check(L, -1);
+            Lua_bson* item = Lunar<Lua_bson>::check(L, -2);
+            lua_pop(L, 2); // {}
+            response->real_node().push_child("item", new lj::Bson(item->real_node()));
+            return 0;
+        }
+
+        int print(lua_State* L)
+        {
+            // {item}
+            sandbox_get(L, "lj__response"); // {arg, response}
+            Lua_bson* response = Lunar<Lua_bson>::check(L, -1);
+            std::string arg = lua_to_string(L, -2);
+            lua_pop(L, 2); // {}
+            response->real_node().push_child("lj__output", lj::bson_new_string(arg));
+            return 0;
+        }
+    }; // namespace lua
+
+    void register_config_api(lua_State* L)
+    {
+        // Load the Bson class into lua.
         Lunar<logjamd::Lua_bson>::Register(L);
+        
+        // load standard lj functions.
+        lua_register(L, "send_set", &send_set);
+        lua_register(L, "send_item", &logjamd::lua::send_item);
+        lua_register(L, "print", &logjamd::lua::print);
+    }
+
+    void logjam_lua_init(lua_State* L, lj::Bson* config) {
+        // register the configuration api.
+        register_config_api(L);
+
+        // Register the object model.
         Lunar<logjamd::Lua_record_set>::Register(L);
         Lunar<logjamd::Lua_storage>::Register(L);
         
@@ -310,14 +348,8 @@ namespace logjamd
         lua_register(L, "sc_add_handler", &sc_add_handler);
         lua_register(L, "sc_remove_handler", &sc_remove_handler);
         
-        // load standard query functions.
-        lua_register(L, "send_set", &send_set);
-        lua_register(L, "send_item", &send_item);
-
         // load the configuration file into the lua context.
-        lj::Bson* config = get_connection_config(data_dir);
-        config->set_child("data_directory", lj::bson_new_string(data_dir));
-        Lunar<logjamd::Lua_bson>::push(L, new Lua_bson(config, true), true);
+        Lunar<logjamd::Lua_bson>::push(L, new Lua_bson(config, false), true);
         lua_setglobal(L, "lj__config");
 
         // Build the default storage object.
@@ -531,17 +563,6 @@ namespace logjamd
                                                     timer.elapsed(),
                                                     filter->real_set().size(),
                                                     filter->real_set().size()));
-        return 0;
-    }
-    
-    int send_item(lua_State* L)
-    {        
-        // {item}
-        sandbox_get(L, "lj__response"); // {item, response}
-        Lua_bson* response = Lunar<Lua_bson>::check(L, -1);
-        Lua_bson* item = Lunar<Lua_bson>::check(L, -2);
-        lua_pop(L, 2); // {}
-        response->real_node().push_child("item", new lj::Bson(item->real_node()));
         return 0;
     }
 };

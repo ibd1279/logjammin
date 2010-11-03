@@ -111,9 +111,9 @@ namespace logjamd {
      This is primarily responsible for getting the cached environment for
      a connection, and leaving it ontop of the stack.
      \param L The lua state.
-     \param data_directory The data directory.
+     \param config The data directory.
      */
-    void logjam_lua_init(lua_State* L, const std::string& data_directory);
+    void logjam_lua_init(lua_State* L, lj::Bson* config);
     
     //! Load the connection configuration.
     /*!
@@ -212,15 +212,4 @@ namespace logjamd {
      \return 0
      */
     int send_set(lua_State* L);
-    
-    //! Put one item on the response.
-    /*!
-     \par
-     populates the item field on the response with a single item.
-     \par
-     Expects a Lua_bson object on top of the stack.
-     \param L The lua state.
-     \return 0
-     */
-    int send_item(lua_State* L);
 };

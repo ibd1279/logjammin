@@ -49,11 +49,11 @@ namespace logjamd
 {
     Connection::Connection(const std::string& client_ip,
                            lua_State* client_lua,
-                           const lj::Bson* server_config,
-                           const std::string& data_directory) :
+                           const lj::Bson* server_config) :
             in_(0), in_offset_(0), in_sz_(4), in_post_length_(false),
             ip_(client_ip), lua_(client_lua), server_config_(server_config),
-            data_dir_(data_directory), stage_(0)
+            data_dir_(lj::bson_as_string(server_config->nav("server/directory"))),
+            stage_(0)
     {
         stage_ = new Stage_auth();
     }
