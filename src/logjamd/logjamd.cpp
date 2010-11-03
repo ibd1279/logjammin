@@ -83,8 +83,8 @@ void set_loglevel(lj::Log& log, const bool enable)
 //! Server main entry point.
 int main(int argc, char* const argv[]) {
 
-    // Check that we have atleast two arguments.
-    if (argc != 2)
+    // Check that we have two arguments.
+    if (argc != 3)
     {
         return usage();
     }
@@ -95,12 +95,8 @@ int main(int argc, char* const argv[]) {
     try
     {
         mutable_config = lj::bson_load(argv[2]);
-    }
-    catch (lj::Exception* e)
-    {
-        if (server_type.compare("config") == 0)
+        if (!mutable_config->exists() && server_type.compare("config") == 0)
         {
-            // We couldn't load a config, but we want to edit config anyway.
             // Create a new default configuration file and let the server
             // go ahead and start.
             std::cerr << "creating default configuration in ["
@@ -109,16 +105,18 @@ int main(int argc, char* const argv[]) {
             populate_config(mutable_config);
             lj::bson_save(*mutable_config, argv[2]);
         }
-        else
-        {
-            // We aren't trying to start in config mode, so abort and
-            // shutdown.
-            std::cerr << "unable to load configuration from ["
-                    << argv[2] << "]" << std::endl
-                    << e->to_string() << std::endl;
-            delete e;
-            return 2;
-        }
+
+        // force the configfile setting to reference the one loaded.
+        mutable_config->set_child("server/configfile", lj::bson_new_string(argv[2]));
+    }
+    catch (lj::Exception* e)
+    {
+        // abort and shutdown.
+        std::cerr << "unable to load configuration from ["
+                << argv[2] << "]" << std::endl
+                << e->to_string() << std::endl;
+        delete e;
+        return 2;
     }
 
     // Get the values we need to startup from the configuration.

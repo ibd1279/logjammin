@@ -285,6 +285,193 @@ namespace logjamd
 
     namespace lua
     {
+        int server_port(lua_State* L)
+        {
+            // {arg}
+            sandbox_get(L, "lj__config"); // {arg, config}
+            lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
+            int port = lua_tointeger(L, -2);
+            lua_pop(L, 2); // {}
+
+            // where do we save this file when done?
+            lj::Bson& configfile = config.nav("server/configfile");
+
+            // Set the new value.
+            config.set_child("server/port", lj::bson_new_int64(port));
+
+            // Save the config file to disk.
+            lj::bson_save(config, lj::bson_as_string(configfile));
+
+            // Write a log entry for the config change.
+            lj::Log::alert.log("[%s] config setting changed to [%d]. New setting will take effect when the server is restarted.")
+                    << "server/port" << port << lj::Log::end;
+            return 0;
+        }
+
+        int server_directory(lua_State* L)
+        {
+            // {arg}
+            sandbox_get(L, "lj__config"); // {arg, config}
+            lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
+            std::string directory = lua_to_string(L, -2);
+            lua_pop(L, 2); // {}
+
+            // where do we save this file when done?
+            lj::Bson& configfile = config.nav("server/configfile");
+
+            // Set the new value.
+            config.set_child("server/directory", lj::bson_new_string(directory));
+
+            // Save the config file to disk.
+            lj::bson_save(config, lj::bson_as_string(configfile));
+
+            // Write a log entry for the config change.
+            lj::Log::alert.log("[%s] config setting changed to [%s]. New setting will take effect when the server is restarted.")
+                    << "server/directory" << directory << lj::Log::end;
+            return 0;
+        }
+
+        int server_id(lua_State* L)
+        {
+            // {arg}
+            sandbox_get(L, "lj__config"); // {arg, config}
+            lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
+            std::string server_id = lua_to_string(L, -2);
+            lua_pop(L, 2); // {}
+
+            // where do we save this file when done?
+            lj::Bson& configfile = config.nav("server/configfile");
+
+            // Set the new value.
+            config.set_child("server/id", lj::bson_new_string(server_id));
+
+            // Save the config file to disk.
+            lj::bson_save(config, lj::bson_as_string(configfile));
+
+            // Write a log entry for the config change.
+            lj::Log::alert.log("[%s] config setting changed to [%s]. New setting will take effect when the server is restarted.")
+                    << "server/id" << server_id << lj::Log::end;
+            return 0;
+        }
+
+        int storage_autoload(lua_State* L)
+        {
+            // {cmd, storage}
+            sandbox_get(L, "lj__config"); // {cmd, storage, config}
+            lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
+            std::string storage = lua_to_string(L, -2);
+            std::string command = lua_to_string(L, -3);
+            lua_pop(L, 3); // {}
+
+            // where do we save this file when done?
+            lj::Bson& configfile = config.nav("server/configfile");
+
+            // create a pointer into the config for ease of reference.
+            lj::Bson* ptr = config.path("storage/autoload");
+
+            if (command.compare("rm") == 0)
+            {
+                // loop over the bson list and remove this
+                // value if you find it.
+                for (lj::Linked_map<std::string, lj::Bson*>::const_iterator iter = ptr->to_map().begin();
+                     ptr->to_map().end() != iter;
+                     ++iter)
+                {
+                    if (lj::bson_as_string(*(iter->second)).compare(storage) == 0)
+                    {
+                        ptr->set_child(iter->first, NULL);
+                    }
+                }
+            }
+            else if (command.compare("add") == 0)
+            {
+                // Only add the storage if it doesn't already exist.
+                if (lj::bson_as_value_string_set(*ptr).count(storage) == 0)
+                {
+                    ptr->push_child("", lj::bson_new_string(storage));
+                }
+            }
+
+            // Save the config file to disk.
+            lj::bson_save(config, lj::bson_as_string(configfile));
+
+            // Write a log entry for the config change.
+            lj::Log::alert.log("[%s] config setting changed to [%s %s]. New setting will take effect when the server is restarted.")
+                    << "storage/autoload" << command << storage << lj::Log::end;
+            return 0;
+        }
+
+        int replication_peer(lua_State* L)
+        {
+            // {cmd, peer}
+            sandbox_get(L, "lj__config"); // {cmd, peer, config}
+            lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
+            std::string peer = lua_to_string(L, -2);
+            std::string command = lua_to_string(L, -3);
+            lua_pop(L, 3); // {}
+
+            // where do we save this file when done?
+            lj::Bson& configfile = config.nav("server/configfile");
+
+            // create a pointer into the config for ease of reference.
+            lj::Bson* ptr = config.path("replication/peer");
+
+            if (command.compare("rm") == 0)
+            {
+                // loop over the bson list and remove this
+                // value if you find it.
+                for (lj::Linked_map<std::string, lj::Bson*>::const_iterator iter = ptr->to_map().begin();
+                     ptr->to_map().end() != iter;
+                     ++iter)
+                {
+                    if (lj::bson_as_string(*(iter->second)).compare(peer) == 0)
+                    {
+                        ptr->set_child(iter->first, NULL);
+                    }
+                }
+            }
+            else if (command.compare("add") == 0)
+            {
+                // Only add the storage if it doesn't already exist.
+                if (lj::bson_as_value_string_set(*ptr).count(peer) == 0)
+                {
+                    ptr->push_child("", lj::bson_new_string(peer));
+                }
+            }
+
+            // Save the config file to disk.
+            lj::bson_save(config, lj::bson_as_string(configfile));
+
+            // Write a log entry for the config change.
+            lj::Log::alert.log("[%s] config setting changed to [%s %s]. New setting will take effect when the server is restarted.")
+                    << "replication/peer" << command << peer << lj::Log::end;
+            return 0;
+        }
+
+        int logging_level(lua_State* L)
+        {
+            // {cmd, peer}
+            sandbox_get(L, "lj__config"); // {cmd, peer, config}
+            lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
+            bool enabled = lua_toboolean(L, -2);
+            std::string level = lua_to_string(L, -3);
+            lua_pop(L, 3); // {}
+
+            // where do we save this file when done?
+            lj::Bson& configfile = config.nav("server/configfile");
+
+            // set the value.
+            config.nav("logging").set_child(level, lj::bson_new_boolean(enabled));
+
+            // Save the config file to disk.
+            lj::bson_save(config, lj::bson_as_string(configfile));
+
+            // Write a log entry for the config change.
+            lj::Log::alert.log("[%s/%s] config setting changed to [%s]. New setting will take effect when the server is restarted.")
+                    << "logging" << level << enabled << lj::Log::end;
+            return 0;
+        }
+
         int send_item(lua_State* L)
         {        
             // {item}
@@ -314,9 +501,26 @@ namespace logjamd
         Lunar<logjamd::Lua_bson>::Register(L);
         
         // load standard lj functions.
-        lua_register(L, "send_set", &send_set);
-        lua_register(L, "send_item", &logjamd::lua::send_item);
-        lua_register(L, "print", &logjamd::lua::print);
+        lua_register(L, "send_set",
+                     &send_set);
+        lua_register(L, "send_item",
+                     &logjamd::lua::send_item);
+        lua_register(L, "print",
+                     &logjamd::lua::print);
+
+        // load the storage configuration functions.
+        lua_register(L, "lj__server_port",
+                     &logjamd::lua::server_port);
+        lua_register(L, "lj__server_directory",
+                     &logjamd::lua::server_directory);
+        lua_register(L, "lj__server_id",
+                     &logjamd::lua::server_id);
+        lua_register(L, "lj__storage_autoload",
+                     &logjamd::lua::storage_autoload);
+        lua_register(L, "lj__replication_peer",
+                     &logjamd::lua::replication_peer);
+        lua_register(L, "lj__logging_level",
+                     &logjamd::lua::logging_level);
     }
 
     void logjam_lua_init(lua_State* L, lj::Bson* config) {
@@ -326,18 +530,6 @@ namespace logjamd
         // Register the object model.
         Lunar<logjamd::Lua_record_set>::Register(L);
         Lunar<logjamd::Lua_storage>::Register(L);
-        
-        // load connection config functions.
-        lua_register(L, "cc_load", &connection_config_load);
-        lua_register(L, "cc_save", &connection_config_save);
-        lua_register(L, "cc_add_default_storage",
-                     &connection_config_add_default_storage);
-        lua_register(L, "cc_remove_default_storage",
-                     &connection_config_remove_default_storage);
-        lua_register(L, "cc_add_replication_peer",
-                     &connection_config_add_replication_peer);
-        lua_register(L, "cc_remove_replication_peer",
-                     &connection_config_remove_replication_peer);
         
         // load storage config functions.
         lua_register(L, "sc_new", &sc_new);
@@ -365,36 +557,6 @@ namespace logjamd
     // logjam global functions.
     //=====================================================================
     
-    
-    int connection_config_load(lua_State* L)
-    {
-        // Get the data directory.
-        lua_getglobal(L, "lj__config");
-        lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
-        lua_pop(L, 1);
-        lj::Bson& tmp = config.nav("data_directory");
-
-        // Load the config.
-        lj::Bson* ptr = get_connection_config(lj::bson_as_string(tmp));
-        Lunar<Lua_bson>::push(L, new Lua_bson(ptr, true), true);
-        return 1;
-    }
-    
-    int connection_config_save(lua_State* L)
-    {
-        // Get the data directory.
-        lua_getglobal(L, "lj__config");
-        lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
-        lua_pop(L, 1);
-        lj::Bson& tmp = config.nav("data_directory");
-        
-        // Load the config.
-        Lua_bson* ptr = Lunar<Lua_bson>::check(L, -1);
-        std::string dbfile(lj::bson_as_string(tmp));
-        dbfile.append("/config");
-        lj::bson_save(ptr->real_node(), dbfile);
-        return 0;
-    }
     
     int connection_config_add_default_storage(lua_State* L)
     {
