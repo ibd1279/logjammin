@@ -285,22 +285,34 @@ namespace logjamd
 
     namespace lua
     {
+        namespace {
+            void persist_configuration(lua_State* L, const lj::Bson& config)
+            {
+                // Disk save first, incase of failure.
+                const lj::Bson& configfile = config.nav("server/configfile");
+                lj::bson_save(config, lj::bson_as_string(configfile));
+
+                // environment next
+                logjamd::Lua_bson* wrapped_config = new logjamd::Lua_bson(new lj::Bson(config), true);
+                sandbox_push(L); // {env}
+                Lunar<logjamd::Lua_bson>::push(L, wrapped_config, true); // {env, cfg}
+                lua_setfield(L, -2, "lj__config"); // {env}
+                lua_pop(L, 1); // {}
+            }
+        }; // namespace logjamd::lua::(anonymous)
+
         int server_port(lua_State* L)
         {
             // {arg}
-            sandbox_get(L, "lj__config"); // {arg, config}
-            lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
-            int port = lua_tointeger(L, -2);
-            lua_pop(L, 2); // {}
-
-            // where do we save this file when done?
-            lj::Bson& configfile = config.nav("server/configfile");
+            lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+            int port = lua_tointeger(L, -1);
+            lua_pop(L, 1); // {}
 
             // Set the new value.
             config.set_child("server/port", lj::bson_new_int64(port));
 
-            // Save the config file to disk.
-            lj::bson_save(config, lj::bson_as_string(configfile));
+            // Save the config to disk, and update env.
+            persist_configuration(L, config);
 
             // Write a log entry for the config change.
             lj::Log::alert.log("[%s] config setting changed to [%d]. New setting will take effect when the server is restarted.")
@@ -311,19 +323,15 @@ namespace logjamd
         int server_directory(lua_State* L)
         {
             // {arg}
-            sandbox_get(L, "lj__config"); // {arg, config}
-            lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
-            std::string directory = lua_to_string(L, -2);
-            lua_pop(L, 2); // {}
-
-            // where do we save this file when done?
-            lj::Bson& configfile = config.nav("server/configfile");
+            lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+            std::string directory = lua_to_string(L, -1);
+            lua_pop(L, 1); // {}
 
             // Set the new value.
             config.set_child("server/directory", lj::bson_new_string(directory));
 
             // Save the config file to disk.
-            lj::bson_save(config, lj::bson_as_string(configfile));
+            persist_configuration(L, config);
 
             // Write a log entry for the config change.
             lj::Log::alert.log("[%s] config setting changed to [%s]. New setting will take effect when the server is restarted.")
@@ -495,7 +503,7 @@ namespace logjamd
         }
     }; // namespace lua
 
-    void register_config_api(lua_State* L)
+    void register_config_api(lua_State* L, lj::Bson* config)
     {
         // Load the Bson class into lua.
         Lunar<logjamd::Lua_bson>::Register(L);
@@ -508,11 +516,16 @@ namespace logjamd
         lua_register(L, "print",
                      &logjamd::lua::print);
 
+        // Push the configuration onto the stack for closures.
+        Lunar<logjamd::Lua_bson>::push(L, new logjamd::Lua_bson(config, false), true); // {cfg}
+
         // load the storage configuration functions.
-        lua_register(L, "lj__server_port",
-                     &logjamd::lua::server_port);
-        lua_register(L, "lj__server_directory",
-                     &logjamd::lua::server_directory);
+        lua_pushvalue(L, -1); // {cfg, cfg}
+        lua_pushcclosure(L, &logjamd::lua::server_port, 1); // {cfg, func}
+        lua_setglobal(L, "lj__server_port"); // {cfg}
+        lua_pushvalue(L, -1); // {cfg, cfg}
+        lua_pushcclosure(L, &logjamd::lua::server_directory, 1); // {cfg, func}
+        lua_setglobal(L, "lj__server_directory"); // {cfg}
         lua_register(L, "lj__server_id",
                      &logjamd::lua::server_id);
         lua_register(L, "lj__storage_autoload",
@@ -525,7 +538,7 @@ namespace logjamd
 
     void logjam_lua_init(lua_State* L, lj::Bson* config) {
         // register the configuration api.
-        register_config_api(L);
+        register_config_api(L, config);
 
         // Register the object model.
         Lunar<logjamd::Lua_record_set>::Register(L);
