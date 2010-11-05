@@ -342,19 +342,15 @@ namespace logjamd
         int server_id(lua_State* L)
         {
             // {arg}
-            sandbox_get(L, "lj__config"); // {arg, config}
-            lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
-            std::string server_id = lua_to_string(L, -2);
-            lua_pop(L, 2); // {}
-
-            // where do we save this file when done?
-            lj::Bson& configfile = config.nav("server/configfile");
+            lj::Bson& config = Lunar<Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+            std::string server_id = lua_to_string(L, -1);
+            lua_pop(L, 1); // {}
 
             // Set the new value.
             config.set_child("server/id", lj::bson_new_string(server_id));
 
             // Save the config file to disk.
-            lj::bson_save(config, lj::bson_as_string(configfile));
+            persist_configuration(L, config);
 
             // Write a log entry for the config change.
             lj::Log::alert.log("[%s] config setting changed to [%s]. New setting will take effect when the server is restarted.")
@@ -365,14 +361,10 @@ namespace logjamd
         int storage_autoload(lua_State* L)
         {
             // {cmd, storage}
-            sandbox_get(L, "lj__config"); // {cmd, storage, config}
-            lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
-            std::string storage = lua_to_string(L, -2);
-            std::string command = lua_to_string(L, -3);
-            lua_pop(L, 3); // {}
-
-            // where do we save this file when done?
-            lj::Bson& configfile = config.nav("server/configfile");
+            lj::Bson& config = Lunar<Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+            std::string storage = lua_to_string(L, -1);
+            std::string command = lua_to_string(L, -2);
+            lua_pop(L, 2); // {}
 
             // create a pointer into the config for ease of reference.
             lj::Bson* ptr = config.path("storage/autoload");
@@ -401,7 +393,7 @@ namespace logjamd
             }
 
             // Save the config file to disk.
-            lj::bson_save(config, lj::bson_as_string(configfile));
+            persist_configuration(L, config);
 
             // Write a log entry for the config change.
             lj::Log::alert.log("[%s] config setting changed to [%s %s]. New setting will take effect when the server is restarted.")
@@ -412,14 +404,10 @@ namespace logjamd
         int replication_peer(lua_State* L)
         {
             // {cmd, peer}
-            sandbox_get(L, "lj__config"); // {cmd, peer, config}
-            lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
-            std::string peer = lua_to_string(L, -2);
-            std::string command = lua_to_string(L, -3);
-            lua_pop(L, 3); // {}
-
-            // where do we save this file when done?
-            lj::Bson& configfile = config.nav("server/configfile");
+            lj::Bson& config = Lunar<Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+            std::string peer = lua_to_string(L, -1);
+            std::string command = lua_to_string(L, -2);
+            lua_pop(L, 2); // {}
 
             // create a pointer into the config for ease of reference.
             lj::Bson* ptr = config.path("replication/peer");
@@ -448,7 +436,7 @@ namespace logjamd
             }
 
             // Save the config file to disk.
-            lj::bson_save(config, lj::bson_as_string(configfile));
+            persist_configuration(L, config);
 
             // Write a log entry for the config change.
             lj::Log::alert.log("[%s] config setting changed to [%s %s]. New setting will take effect when the server is restarted.")
@@ -458,21 +446,17 @@ namespace logjamd
 
         int logging_level(lua_State* L)
         {
-            // {cmd, peer}
-            sandbox_get(L, "lj__config"); // {cmd, peer, config}
-            lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
-            bool enabled = lua_toboolean(L, -2);
-            std::string level = lua_to_string(L, -3);
-            lua_pop(L, 3); // {}
-
-            // where do we save this file when done?
-            lj::Bson& configfile = config.nav("server/configfile");
+            // {level, enabled}
+            lj::Bson& config = Lunar<Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+            bool enabled = lua_toboolean(L, -1);
+            std::string level = lua_to_string(L, -2);
+            lua_pop(L, 2); // {}
 
             // set the value.
             config.nav("logging").set_child(level, lj::bson_new_boolean(enabled));
 
             // Save the config file to disk.
-            lj::bson_save(config, lj::bson_as_string(configfile));
+            persist_configuration(L, config);
 
             // Write a log entry for the config change.
             lj::Log::alert.log("[%s/%s] config setting changed to [%s]. New setting will take effect when the server is restarted.")
@@ -526,14 +510,20 @@ namespace logjamd
         lua_pushvalue(L, -1); // {cfg, cfg}
         lua_pushcclosure(L, &logjamd::lua::server_directory, 1); // {cfg, func}
         lua_setglobal(L, "lj__server_directory"); // {cfg}
-        lua_register(L, "lj__server_id",
-                     &logjamd::lua::server_id);
-        lua_register(L, "lj__storage_autoload",
-                     &logjamd::lua::storage_autoload);
-        lua_register(L, "lj__replication_peer",
-                     &logjamd::lua::replication_peer);
-        lua_register(L, "lj__logging_level",
-                     &logjamd::lua::logging_level);
+        lua_pushvalue(L, -1); // {cfg, cfg}
+        lua_pushcclosure(L, &logjamd::lua::server_id, 1); // {cfg, func}
+        lua_setglobal(L, "lj__server_id"); // {cfg}
+        lua_pushvalue(L, -1); // {cfg, cfg}
+        lua_pushcclosure(L, &logjamd::lua::storage_autoload, 1); // {cfg, func}
+        lua_setglobal(L, "lj__storage_autoload"); // {cfg}
+        lua_pushvalue(L, -1); // {cfg, cfg}
+        lua_pushcclosure(L, &logjamd::lua::replication_peer, 1); // {cfg, func}
+        lua_setglobal(L, "lj__replication_peer"); // {cfg}
+        lua_pushvalue(L, -1); // {cfg, cfg}
+        lua_pushcclosure(L, &logjamd::lua::logging_level, 1); // {cfg, func}
+        lua_setglobal(L, "lj__logging_level"); // {cfg}
+
+        lua_pop(L, 1); // {}
     }
 
     void logjam_lua_init(lua_State* L, lj::Bson* config) {
