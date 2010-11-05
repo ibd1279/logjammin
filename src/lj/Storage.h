@@ -244,6 +244,6 @@ namespace lj
     void storage_config_add_subfield(lj::Bson& cfg,
                                      const std::string& field);
     void storage_config_save(const lj::Bson& cfg, const lj::Bson& server_config);
-    lj::Bson* storage_config_load(const std::string& dbname, std::string dbfile);
+    lj::Bson* storage_config_load(const std::string& dbname, const lj::Bson& server_config);
     
 }; // namespace lj

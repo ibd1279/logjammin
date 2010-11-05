@@ -61,7 +61,7 @@ namespace
 {
     inline std::string root_data_directory(const lj::Bson& server_config)
     {
-        return lj::bson_as_string(server_config.nav("data_directory"));
+        return lj::bson_as_string(server_config.nav("server/directory"));
     }
     
     inline std::string storage_config_path(const lj::Bson& server_config,
@@ -1130,10 +1130,9 @@ namespace lj
         lj::bson_save(cfg, dbfile);
     }
     
-    lj::Bson* storage_config_load(const std::string& dbname, std::string dbfile)
+    lj::Bson* storage_config_load(const std::string& dbname, const lj::Bson& server_config)
     {
-        dbfile.append("/").append(dbname).append("/config");
-        lj::Bson* ptr = lj::bson_load(dbfile);
+        lj::Bson* ptr = lj::bson_load(storage_config_path(server_config, dbname));
         return ptr;
     }
 };
