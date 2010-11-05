@@ -59,12 +59,14 @@ namespace logjamd
 
         //! Create a new connection object.
         /*!
+         \par
+         The \c server_lua is used to generate the client threads.
          \param client_ip The ip address of the client.
-         \param client_lua The lua state for the client.
+         \param server_lua The lua state of the server.
          \param server_config The server configuration.
          */
         Connection(const std::string& client_ip,
-                   lua_State* client_lua,
+                   lua_State* server_lua,
                    const lj::Bson* server_config);
 
         //! Destructor.

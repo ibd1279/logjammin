@@ -48,10 +48,10 @@
 namespace logjamd
 {
     Connection::Connection(const std::string& client_ip,
-                           lua_State* client_lua,
+                           lua_State* server_lua,
                            const lj::Bson* server_config) :
             in_(0), in_offset_(0), in_sz_(4), in_post_length_(false),
-            ip_(client_ip), lua_(client_lua), server_config_(server_config),
+            ip_(client_ip), lua_(server_lua), server_config_(server_config),
             data_dir_(lj::bson_as_string(server_config->nav("server/directory"))),
             stage_(0)
     {
