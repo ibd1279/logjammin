@@ -58,8 +58,6 @@ namespace logjamd
     LUNAR_MEMBER_METHOD(Lua_storage, checkpoint),
     LUNAR_MEMBER_METHOD(Lua_storage, add_index),
     LUNAR_MEMBER_METHOD(Lua_storage, remove_index),
-    LUNAR_MEMBER_METHOD(Lua_storage, add_event),
-    LUNAR_MEMBER_METHOD(Lua_storage, remove_event),
     LUNAR_MEMBER_METHOD(Lua_storage, rebuild),
     LUNAR_MEMBER_METHOD(Lua_storage, optimize),
     LUNAR_MEMBER_METHOD(Lua_storage, recall),
@@ -335,74 +333,6 @@ namespace logjamd
                                         indxfield);
         lj::storage_config_save(*cfg, server_config);
         lj::Storage_factory::reproduce(dbname_, server_config);
-        return 0;
-    }
-    
-    int Lua_storage::add_event(lua_State* L)
-    {
-        // Get the data directory.
-        lua_getglobal(L, "lj__config");
-        lj::Bson& server_config = Lunar<Lua_bson>::check(L, -1)->real_node();
-        lua_pop(L, 1);
-        
-        // Function args.
-        lj::Bson* cfg = real_storage(server_config).configuration();
-        std::string event("handler/");
-        event.append(lua_to_string(L, -2));
-        
-        std::string event_key(dbname_);
-        event_key.append("__").append(lua_to_string(L, -2));
-        
-        if (lua_isfunction(L, -1) && !lua_iscfunction(L, -1))
-        {
-            Function_buffer buffer(10 * 1024);
-            lua_dump(L, &function_writer, &buffer);
-            // {func, de, key, func}
-            
-            lj::Bson* function = lj::bson_new_binary(buffer.buf,
-                                                     buffer.cur - buffer.buf,
-                                                     lj::Bson::k_bin_function);
-            cfg->set_child(event, function);
-        }
-        else
-        {
-            lua_pop(L, 3);
-            luaL_argerror(L, -1, "Expected string of lua, or a lua function.");
-        }
-        
-        lua_getglobal(L, "db_events");
-        lua_pushstring(L, event_key.c_str());
-        lua_pushvalue(L, -3);
-        lua_settable(L, -3);
-        
-        lj::storage_config_save(*cfg, server_config);
-        return 0;
-    }
-    
-    int Lua_storage::remove_event(lua_State* L)
-    {
-        // Get the data directory.
-        lua_getglobal(L, "lj__config");
-        lj::Bson& server_config = Lunar<Lua_bson>::check(L, -1)->real_node();
-        lua_pop(L, 1);
-        
-        // Function args.
-        lj::Bson* cfg = real_storage(server_config).configuration();
-        std::string event("handler/");
-        event.append(lua_to_string(L, -1));
-        
-        std::string event_key(dbname_);
-        event_key.append("__").append(lua_to_string(L, -1));
-        
-        cfg->nav(event).destroy();
-        
-        lua_getglobal(L, "db_events");
-        lua_pushstring(L, event_key.c_str());
-        lua_pushnil(L);
-        lua_settable(L, -3);
-        
-        lj::storage_config_save(*cfg, server_config);
-        
         return 0;
     }
     

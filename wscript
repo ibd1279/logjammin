@@ -90,6 +90,7 @@ def build(ctx):
                 ,'src/logjamd/Stage_execute.cpp'
                 ,'src/logjamd/logjamd.cpp'
                 ,'src/logjamd/logjamd_lua.cpp'
+                ,'src/logjamd/lua_config.cpp'
                 ,'src/tokyo/Tokyo.cpp'
                 ]
         ,target = 'logjamd'

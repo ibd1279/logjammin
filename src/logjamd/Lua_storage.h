@@ -139,10 +139,6 @@ namespace logjamd
          */
         int remove_index(lua_State* L);
         
-        int add_event(lua_State* L);
-        
-        int remove_event(lua_State* L);
-        
         //! Rebuild all the indices for the storage.
         int rebuild(lua_State* L);
         

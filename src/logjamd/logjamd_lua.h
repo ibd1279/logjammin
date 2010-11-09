@@ -62,48 +62,6 @@ namespace logjamd {
      */
     int sandbox_get(lua_State* L, const std::string& key);
     
-    //! Function buffer for reading and writing lua functions.
-    struct Function_buffer
-    {
-        char* const buf;
-        char* cur;
-        char* const max;
-        size_t size;
-        
-        Function_buffer(size_t sz) : buf(new char[sz + 1]), cur(buf), max(buf + sz + 1)
-        {
-        }
-        
-        ~Function_buffer()
-        {
-            delete[] buf;
-        }
-        
-        int copy(const void* source, size_t sz)
-        {
-            if (cur + sz >= max)
-            {
-                return 1;
-            }
-            
-            memcpy(cur, source, sz);
-            cur += sz;
-            return 0;
-        }
-    private:
-        Function_buffer(const Function_buffer&);
-    };
-    
-    //! Method for writing a function.
-    int function_writer(lua_State*,
-                        const void* p,
-                        size_t sz,
-                        void* ud);
-    
-    //! Method for reading a function.
-    const char* function_reader(lua_State* L,
-                                void* ud,
-                                size_t* sz);
 
     //! Initialize the lua state for the server process.
     /*!
@@ -114,82 +72,6 @@ namespace logjamd {
      \param config The data directory.
      */
     void logjam_lua_init(lua_State* L, lj::Bson* config);
-    
-    //! Load the connection configuration.
-    /*!
-     \par
-     Returns the Lua_bson connection configuration object.
-     \param L The lua state.
-     \return 1
-     */
-    int connection_config_load(lua_State* L);
-    
-    //! Save the connection configuration.
-    /*!
-     \par
-     Pops the connection configuration (Lua_bson) off the stack.
-     \param L The lua state.
-     \return 0
-     */
-    int connection_config_save(lua_State* L);
-    
-    //! Add a default storage engine.
-    /*!
-     \par
-     Pops the storage name (Lua string) off the stack.
-     \par
-     Pops the connection configuration (Lua_bson) off the stack.
-     \param L The lua state.
-     \return 0
-     */
-    int connection_config_add_default_storage(lua_State* L);
-    
-    //! Remove a default storage engine.
-    /*!
-     \par
-     Pops the storage name (Lua string) off the stack.
-     \par
-     Pops the connection configuration (Lua_bson) off the stack.
-     \param L The lua state.
-     \return 0
-     */
-    int connection_config_remove_default_storage(lua_State* L);
-
-    //! Add a replication peer to the server configuration.
-    /*!
-     \verbatim
-     cc = cc_load()
-     cc_add_replication_peer('localhost', 1234, cc)
-     cc_save(cc)
-     \endverbatim
-     \par
-     Pops the peer host name (Lua string) off the stack.
-     \par
-     Pops the peer port (integer) off the stack.
-     \par
-     Pops the connection configuration (Lua_bson) off the stack.
-     \param L The lua state.
-     \return 0
-     */
-    int connection_config_add_replication_peer(lua_State* L);
-
-    //! Remove a replication peer from the server configuration.
-    /*!
-     \verbatim
-     cc = cc_load()
-     cc_remove_replication_peer('localhost', 1234, cc)
-     cc_save(cc)
-     \endverbatim
-     \par
-     Pops the peer host name (Lua string) off the stack.
-     \par
-     Pops the peer port (integer) off the stack.
-     \par
-     Pops the connection configuration (Lua_bson) off the stack.
-     \param L The lua state.
-     \return 0
-     */
-    int connection_config_remove_replication_peer(lua_State* L);
     
     //! Execute an event.
     void get_event(lua_State* L, const std::string& db_name, const std::string& event);
