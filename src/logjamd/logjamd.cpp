@@ -32,6 +32,7 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "logjamd/logjamd_lua.h"
 #include "logjamd/Server.h"
 #include "lj/Logger.h"
 #include "build/default/config.h"
@@ -68,18 +69,6 @@ void populate_config(lj::Bson* config)
     config->set_child("logging/emergency", lj::bson_new_boolean(true));
 }
 
-void set_loglevel(lj::Log& log, const bool enable)
-{
-    if (enable)
-    {
-        log.enable();
-    }
-    else
-    {
-        log.disable();
-    }
-}
-
 //! Server main entry point.
 int main(int argc, char* const argv[]) {
 
@@ -91,11 +80,11 @@ int main(int argc, char* const argv[]) {
 
     // Load the configuration from disk
     lj::Bson* mutable_config;
-    std::string server_type(argv[1]);
+    std::string server_mutable_mode(argv[1]);
     try
     {
         mutable_config = lj::bson_load(argv[2]);
-        if (!mutable_config->exists() && server_type.compare("config") == 0)
+        if (!mutable_config->exists() && server_mutable_mode.compare("config") == 0)
         {
             // Create a new default configuration file and let the server
             // go ahead and start.
@@ -129,25 +118,11 @@ int main(int argc, char* const argv[]) {
         int port = lj::bson_as_int32(config->nav("server/port"));
 
         // set the logging levels.
-        set_loglevel(lj::Log::debug,
-                     lj::bson_as_boolean(config->nav("logging/debug")));
-        set_loglevel(lj::Log::info,
-                     lj::bson_as_boolean(config->nav("logging/info")));
-        set_loglevel(lj::Log::notice,
-                     lj::bson_as_boolean(config->nav("logging/notice")));
-        set_loglevel(lj::Log::warning,
-                     lj::bson_as_boolean(config->nav("logging/warning")));
-        set_loglevel(lj::Log::error,
-                     lj::bson_as_boolean(config->nav("logging/error")));
-        set_loglevel(lj::Log::critical,
-                     lj::bson_as_boolean(config->nav("logging/critical")));
-        set_loglevel(lj::Log::alert,
-                     lj::bson_as_boolean(config->nav("logging/alert")));
-        set_loglevel(lj::Log::emergency,
-                     lj::bson_as_boolean(config->nav("logging/emergency")));
+        logjamd::set_logging_levels(*config);
 
         // Create the right dispatchers based on the mode.
-        lj::Socket_dispatch* dispatcher = new logjamd::Server(server_type,
+        mutable_config->set_child("server/mode", lj::bson_new_string(server_mutable_mode));
+        lj::Socket_dispatch* dispatcher = new logjamd::Server(server_mutable_mode,
                                                               mutable_config);
         
         // Bind the sockets, and loop for connections.

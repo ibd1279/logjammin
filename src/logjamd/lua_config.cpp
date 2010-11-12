@@ -47,6 +47,8 @@
 
 namespace
 {
+    const std::string k_delayed_effect_log_message("[%s] changed to [%s]. Change will not apply until the server is restarted.");
+
     //! Function buffer for reading and writing lua functions.
     struct Function_buffer
     {
@@ -124,8 +126,6 @@ namespace
         lua_pop(L, 1); // {}
     }
 
-    const std::string k_delayed_effect_log_message("[%s] changed to [%s]. Change will not apply until the server is restarted.");
-
     int server_port(lua_State* L)
     {
         // {arg}
@@ -133,6 +133,7 @@ namespace
         int port = lua_tointeger(L, -1);
         lua_pop(L, 1); // {}
 
+        // Test that config commands are currently allowed.
         if (!logjamd::lua::is_mutable_config(config, __FUNCTION__))
         {
             return 0;
@@ -159,6 +160,12 @@ namespace
         std::string directory = lua_to_string(L, -1);
         lua_pop(L, 1); // {}
 
+        // Test that config commands are currently allowed.
+        if (!logjamd::lua::is_mutable_config(config, __FUNCTION__))
+        {
+            return 0;
+        }
+
         // Set the new value.
         config.set_child("server/directory", lj::bson_new_string(directory));
 
@@ -166,8 +173,10 @@ namespace
         util_persist_config(L, config);
 
         // Write a log entry for the config change.
-        lj::Log::alert.log("[%s] config setting changed to [%s]. New setting will take effect when the server is restarted.")
-                << "server/directory" << directory << lj::Log::end;
+        lj::Log::alert.log(k_delayed_effect_log_message)
+                << "server/directory"
+                << directory
+                << lj::Log::end;
         return 0;
     }
 
@@ -178,6 +187,12 @@ namespace
         std::string server_id = lua_to_string(L, -1);
         lua_pop(L, 1); // {}
 
+        // Test that config commands are currently allowed.
+        if (!logjamd::lua::is_mutable_config(config, __FUNCTION__))
+        {
+            return 0;
+        }
+
         // Set the new value.
         config.set_child("server/id", lj::bson_new_string(server_id));
 
@@ -185,8 +200,10 @@ namespace
         util_persist_config(L, config);
 
         // Write a log entry for the config change.
-        lj::Log::alert.log("[%s] config setting changed to [%s]. New setting will take effect when the server is restarted.")
-                << "server/id" << server_id << lj::Log::end;
+        lj::Log::alert.log(k_delayed_effect_log_message)
+                << "server/id"
+                << server_id
+                << lj::Log::end;
         return 0;
     }
 
@@ -197,6 +214,12 @@ namespace
         std::string storage = lua_to_string(L, -1);
         std::string command = lua_to_string(L, -2);
         lua_pop(L, 2); // {}
+
+        // Test that config commands are currently allowed.
+        if (!logjamd::lua::is_mutable_config(config, __FUNCTION__))
+        {
+            return 0;
+        }
 
         // create a pointer into the config for ease of reference.
         lj::Bson* ptr = config.path("storage/autoload");
@@ -228,8 +251,12 @@ namespace
         util_persist_config(L, config);
 
         // Write a log entry for the config change.
-        lj::Log::alert.log("[%s] config setting changed to [%s %s]. New setting will take effect when the server is restarted.")
-                << "storage/autoload" << command << storage << lj::Log::end;
+        command.push_back(' ');
+        command.append(storage);
+        lj::Log::alert.log(k_delayed_effect_log_message)
+                << "storage/autoload"
+                << command
+                << lj::Log::end;
         return 0;
     }
 
@@ -240,6 +267,12 @@ namespace
         std::string peer = lua_to_string(L, -1);
         std::string command = lua_to_string(L, -2);
         lua_pop(L, 2); // {}
+
+        // Test that config commands are currently allowed.
+        if (!logjamd::lua::is_mutable_config(config, __FUNCTION__))
+        {
+            return 0;
+        }
 
         // create a pointer into the config for ease of reference.
         lj::Bson* ptr = config.path("replication/peer");
@@ -271,8 +304,12 @@ namespace
         util_persist_config(L, config);
 
         // Write a log entry for the config change.
-        lj::Log::alert.log("[%s] config setting changed to [%s %s]. New setting will take effect when the server is restarted.")
-                << "replication/peer" << command << peer << lj::Log::end;
+        command.push_back(' ');
+        command.append(peer);
+        lj::Log::alert.log(k_delayed_effect_log_message)
+                << "replication/peer"
+                << command
+                << lj::Log::end;
         return 0;
     }
 
@@ -287,12 +324,23 @@ namespace
         // set the value.
         config.nav("logging").set_child(level, lj::bson_new_boolean(enabled));
 
-        // Save the config file to disk.
-        util_persist_config(L, config);
+        // Logging level can be changed even when not in a configurable state.
+        // the difference is that the configuration change will not be saved
+        // unless we are in a configurable mode.
+        if (logjamd::lua::is_mutable_config(config, __FUNCTION__))
+        {
+            // Save the config file to disk.
+            util_persist_config(L, config);
+        }
+
+        // modify the current logging levels.
+        logjamd::set_logging_levels(config);
 
         // Write a log entry for the config change.
-        lj::Log::alert.log("[%s/%s] config setting changed to [%s]. New setting will take effect when the server is restarted.")
-                << "logging" << level << enabled << lj::Log::end;
+        lj::Log::alert.log("[logging/%s] changed to [%s].")
+                << level
+                << enabled
+                << lj::Log::end;
         return 0;
     }
 
@@ -302,6 +350,12 @@ namespace
         lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
         std::string storage_name = lua_to_string(L, -1);
         lua_pop(L, 1); // {}
+
+        // Test that write commands are currently allowed.
+        if (!logjamd::lua::is_mutable_write(config, __FUNCTION__))
+        {
+            return 0;
+        }
 
         lj::Bson storage_config;
         lj::storage_config_init(storage_config, storage_name);
@@ -320,6 +374,12 @@ namespace
         std::string index_field(lua_to_string(L, -3));
         std::string storage_name(lua_to_string(L, -4));
         lua_pop(L, 4); // {}
+
+        // Test that write commands are currently allowed.
+        if (!logjamd::lua::is_mutable_write(config, __FUNCTION__))
+        {
+            return 0;
+        }
 
         lj::Bson* storage_config = lj::storage_config_load(storage_name, config);
         lj::storage_config_add_index(*storage_config,
@@ -340,6 +400,12 @@ namespace
         std::string field(lua_to_string(L, -1));
         std::string storage_name(lua_to_string(L, -2));
         lua_pop(L, 2); // {}
+
+        // Test that write commands are currently allowed.
+        if (!logjamd::lua::is_mutable_write(config, __FUNCTION__))
+        {
+            return 0;
+        }
 
         lj::Bson* storage_config = lj::storage_config_load(storage_name, config);
         lj::storage_config_add_subfield(*storage_config, field);
@@ -368,6 +434,12 @@ namespace
         std::string storage_name = lua_to_string(L, -3);
         lua_pop(L, 3);
 
+        // Test that write commands are currently allowed.
+        if (!logjamd::lua::is_mutable_write(config, __FUNCTION__))
+        {
+            return 0;
+        }
+
         // create a pointer into the config for ease of reference.
         lj::Bson* storage_config = lj::storage_config_load(storage_name, config);
 
@@ -394,6 +466,12 @@ namespace
         std::string storage_name(lua_to_string(L, -1));
         lua_pop(L, 1); // {}
         
+        // Test that write commands are currently allowed.
+        if (!logjamd::lua::is_mutable_read(config, __FUNCTION__))
+        {
+            return 0;
+        }
+
         lj::Bson* ptr = lj::storage_config_load(storage_name, config);
         Lunar<logjamd::Lua_bson>::push(L, new logjamd::Lua_bson(ptr, true), true);
         return 1;

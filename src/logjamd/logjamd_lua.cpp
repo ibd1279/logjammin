@@ -51,8 +51,43 @@
 
 using lj::Log;
 
+namespace
+{
+    void set_loglevel(lj::Log& log, const bool enable)
+    {
+        if (enable)
+        {
+            log.enable();
+        }
+        else
+        {
+            log.disable();
+        }
+    }
+}; // namespace (anonymous)
+
 namespace logjamd
 {
+    void set_logging_levels(const lj::Bson& config)
+    {
+        set_loglevel(lj::Log::debug,
+                     lj::bson_as_boolean(config.nav("logging/debug")));
+        set_loglevel(lj::Log::info,
+                     lj::bson_as_boolean(config.nav("logging/info")));
+        set_loglevel(lj::Log::notice,
+                     lj::bson_as_boolean(config.nav("logging/notice")));
+        set_loglevel(lj::Log::warning,
+                     lj::bson_as_boolean(config.nav("logging/warning")));
+        set_loglevel(lj::Log::error,
+                     lj::bson_as_boolean(config.nav("logging/error")));
+        set_loglevel(lj::Log::critical,
+                     lj::bson_as_boolean(config.nav("logging/critical")));
+        set_loglevel(lj::Log::alert,
+                     lj::bson_as_boolean(config.nav("logging/alert")));
+        set_loglevel(lj::Log::emergency,
+                     lj::bson_as_boolean(config.nav("logging/emergency")));
+    }
+
     namespace lua
     {
         bool check_mutable_mode(const lj::Bson& config, const Mutable_mode mode)

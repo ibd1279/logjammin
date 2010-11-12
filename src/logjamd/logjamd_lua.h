@@ -45,7 +45,9 @@ extern "C" {
 #include <cstring>
 #include <string>
 
-namespace logjamd {
+namespace logjamd
+{
+    void set_logging_levels(const lj::Bson& config);
 
     namespace lua
     {
