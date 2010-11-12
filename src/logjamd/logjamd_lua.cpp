@@ -51,12 +51,17 @@
 
 using lj::Log;
 
-namespace
-{
-}; // namespace
-
 namespace logjamd
 {
+    namespace lua
+    {
+        bool check_mutable_mode(const lj::Bson& config, const Mutable_mode mode)
+        {
+            const lj::Bson& tmp = config.nav("server/mode");
+            return (mode == static_cast<Mutable_mode>(lj::bson_as_int64(tmp)));
+        }
+    }; // namespace logjamd::lua
+
     //! Put the environment table for this identifier ontop of the stack.
     /*!
      \param L The Root lua state.

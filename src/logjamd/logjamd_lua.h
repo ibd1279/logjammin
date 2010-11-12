@@ -35,6 +35,7 @@
  */
 
 #include "lj/Bson.h"
+#include "lj/Logger.h"
 
 extern "C" {
 #include "lua.h"
@@ -45,6 +46,72 @@ extern "C" {
 #include <string>
 
 namespace logjamd {
+
+    namespace lua
+    {
+        //! Enumeration of mutable modes.
+        /*!
+         \par
+         These mutable modes are used by the lua functions to check
+         the permisibility of actions.
+         */
+        enum Mutable_mode {
+            k_config,     //!< Configration mutable mode.
+            k_readonly,   //!< Read only mutable mode. No writes allowed.
+            k_readwrite   //!< Read write mutable mode. All actions allowed.
+        };
+
+        //! Check to see if the configuration is in a given mutable mode.
+        /*!
+         \param config The config file to test.
+         \param mode The mode to test.
+         \return true if the mode matches, false otherwise.
+         */
+        bool check_mutable_mode(const lj::Bson& config, const Mutable_mode mode);
+
+        //! Shortcut to checking for the configurable mode.
+        inline bool is_mutable_config(const lj::Bson& config, const std::string& action)
+        {
+            bool test = (check_mutable_mode(config, k_config) ||
+                         check_mutable_mode(config, k_readonly) ||
+                         check_mutable_mode(config, k_readwrite));
+            if (!test)
+            {
+                lj::Log::notice.log("Configurable test when not in a config mode for [%s].")
+                        << action << lj::Log::end;
+            }
+
+            return test;
+        }
+
+        //! Shortcut to checking the readable mode.
+        inline bool is_mutable_read(const lj::Bson& config, const std::string& action)
+        {
+            bool test = (check_mutable_mode(config, k_readonly) ||
+                         check_mutable_mode(config, k_readwrite));
+            if (!test)
+            {
+                lj::Log::notice.log("Readable test when not in a read mode for [%s].")
+                        << action << lj::Log::end;
+            }
+
+            return test;
+        }
+
+        //! Shortcut to checking the writable mode.
+        inline bool is_mutable_write(const lj::Bson& config, const std::string& action)
+        {
+            bool test = (check_mutable_mode(config, k_readonly) ||
+                         check_mutable_mode(config, k_readwrite));
+            if (!test)
+            {
+                lj::Log::notice.log("Writable test when not in a write mode for [%s].")
+                        << action << lj::Log::end;
+            }
+
+            return test;
+        }
+    };
     //! Put the environment table for this identifier ontop of the stack.
     /*!
      Creates the environment if it doesn't already exist.

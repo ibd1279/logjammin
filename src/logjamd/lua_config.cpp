@@ -33,8 +33,9 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjamd/logjamd_lua.h"
+#include "logjamd/lua_config.h"
 
+#include "logjamd/logjamd_lua.h"
 #include "logjamd/Lua_bson.h"
 #include "logjamd/Lua_storage.h"
 #include "lj/Logger.h"
@@ -107,300 +108,302 @@ namespace
             return bytes;
         }
     }
+
+    //! Utility method for persisting configuration.
+    void util_persist_config(lua_State* L, const lj::Bson& config)
+    {
+        // Disk save first, incase of failure.
+        const lj::Bson& configfile = config.nav("server/configfile");
+        lj::bson_save(config, lj::bson_as_string(configfile));
+
+        // environment next
+        logjamd::Lua_bson* wrapped_config = new logjamd::Lua_bson(new lj::Bson(config), true);
+        logjamd::sandbox_push(L); // {env}
+        Lunar<logjamd::Lua_bson>::push(L, wrapped_config, true); // {env, cfg}
+        lua_setfield(L, -2, "lj__config"); // {env}
+        lua_pop(L, 1); // {}
+    }
+
+    const std::string k_delayed_effect_log_message("[%s] changed to [%s]. Change will not apply until the server is restarted.");
+
+    int server_port(lua_State* L)
+    {
+        // {arg}
+        lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+        int port = lua_tointeger(L, -1);
+        lua_pop(L, 1); // {}
+
+        if (!logjamd::lua::is_mutable_config(config, __FUNCTION__))
+        {
+            return 0;
+        }
+
+        // Set the new value.
+        config.set_child("server/port", lj::bson_new_int64(port));
+
+        // Save the config to disk, and update env.
+        util_persist_config(L, config);
+
+        // Write a log entry for the config change.
+        lj::Log::alert.log(k_delayed_effect_log_message)
+                << "server/port"
+                << port
+                << lj::Log::end;
+        return 0;
+    }
+
+    int server_directory(lua_State* L)
+    {
+        // {arg}
+        lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+        std::string directory = lua_to_string(L, -1);
+        lua_pop(L, 1); // {}
+
+        // Set the new value.
+        config.set_child("server/directory", lj::bson_new_string(directory));
+
+        // Save the config file to disk.
+        util_persist_config(L, config);
+
+        // Write a log entry for the config change.
+        lj::Log::alert.log("[%s] config setting changed to [%s]. New setting will take effect when the server is restarted.")
+                << "server/directory" << directory << lj::Log::end;
+        return 0;
+    }
+
+    int server_id(lua_State* L)
+    {
+        // {arg}
+        lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+        std::string server_id = lua_to_string(L, -1);
+        lua_pop(L, 1); // {}
+
+        // Set the new value.
+        config.set_child("server/id", lj::bson_new_string(server_id));
+
+        // Save the config file to disk.
+        util_persist_config(L, config);
+
+        // Write a log entry for the config change.
+        lj::Log::alert.log("[%s] config setting changed to [%s]. New setting will take effect when the server is restarted.")
+                << "server/id" << server_id << lj::Log::end;
+        return 0;
+    }
+
+    int storage_autoload(lua_State* L)
+    {
+        // {cmd, storage}
+        lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+        std::string storage = lua_to_string(L, -1);
+        std::string command = lua_to_string(L, -2);
+        lua_pop(L, 2); // {}
+
+        // create a pointer into the config for ease of reference.
+        lj::Bson* ptr = config.path("storage/autoload");
+
+        if (command.compare("rm") == 0)
+        {
+            // loop over the bson list and remove this
+            // value if you find it.
+            for (lj::Linked_map<std::string, lj::Bson*>::const_iterator iter = ptr->to_map().begin();
+                 ptr->to_map().end() != iter;
+                 ++iter)
+            {
+                if (lj::bson_as_string(*(iter->second)).compare(storage) == 0)
+                {
+                    ptr->set_child(iter->first, NULL);
+                }
+            }
+        }
+        else if (command.compare("add") == 0)
+        {
+            // Only add the storage if it doesn't already exist.
+            if (lj::bson_as_value_string_set(*ptr).count(storage) == 0)
+            {
+                ptr->push_child("", lj::bson_new_string(storage));
+            }
+        }
+
+        // Save the config file to disk.
+        util_persist_config(L, config);
+
+        // Write a log entry for the config change.
+        lj::Log::alert.log("[%s] config setting changed to [%s %s]. New setting will take effect when the server is restarted.")
+                << "storage/autoload" << command << storage << lj::Log::end;
+        return 0;
+    }
+
+    int replication_peer(lua_State* L)
+    {
+        // {cmd, peer}
+        lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+        std::string peer = lua_to_string(L, -1);
+        std::string command = lua_to_string(L, -2);
+        lua_pop(L, 2); // {}
+
+        // create a pointer into the config for ease of reference.
+        lj::Bson* ptr = config.path("replication/peer");
+
+        if (command.compare("rm") == 0)
+        {
+            // loop over the bson list and remove this
+            // value if you find it.
+            for (lj::Linked_map<std::string, lj::Bson*>::const_iterator iter = ptr->to_map().begin();
+                 ptr->to_map().end() != iter;
+                 ++iter)
+            {
+                if (lj::bson_as_string(*(iter->second)).compare(peer) == 0)
+                {
+                    ptr->set_child(iter->first, NULL);
+                }
+            }
+        }
+        else if (command.compare("add") == 0)
+        {
+            // Only add the storage if it doesn't already exist.
+            if (lj::bson_as_value_string_set(*ptr).count(peer) == 0)
+            {
+                ptr->push_child("", lj::bson_new_string(peer));
+            }
+        }
+
+        // Save the config file to disk.
+        util_persist_config(L, config);
+
+        // Write a log entry for the config change.
+        lj::Log::alert.log("[%s] config setting changed to [%s %s]. New setting will take effect when the server is restarted.")
+                << "replication/peer" << command << peer << lj::Log::end;
+        return 0;
+    }
+
+    int logging_level(lua_State* L)
+    {
+        // {level, enabled}
+        lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+        bool enabled = lua_toboolean(L, -1);
+        std::string level = lua_to_string(L, -2);
+        lua_pop(L, 2); // {}
+
+        // set the value.
+        config.nav("logging").set_child(level, lj::bson_new_boolean(enabled));
+
+        // Save the config file to disk.
+        util_persist_config(L, config);
+
+        // Write a log entry for the config change.
+        lj::Log::alert.log("[%s/%s] config setting changed to [%s]. New setting will take effect when the server is restarted.")
+                << "logging" << level << enabled << lj::Log::end;
+        return 0;
+    }
+
+    int storage_init(lua_State* L)
+    {
+        // {name}
+        lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+        std::string storage_name = lua_to_string(L, -1);
+        lua_pop(L, 1); // {}
+
+        lj::Bson storage_config;
+        lj::storage_config_init(storage_config, storage_name);
+        lj::storage_config_save(storage_config, config);
+        lj::Storage_factory::recall(storage_name, config);
+
+        return 0;
+    }
+
+    int storage_index(lua_State* L)
+    {
+        // {storage, field, type, compare}
+        lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+        std::string index_comparison(lua_to_string(L, -1));
+        std::string index_type(lua_to_string(L, -2));
+        std::string index_field(lua_to_string(L, -3));
+        std::string storage_name(lua_to_string(L, -4));
+        lua_pop(L, 4); // {}
+
+        lj::Bson* storage_config = lj::storage_config_load(storage_name, config);
+        lj::storage_config_add_index(*storage_config,
+                                     index_type,
+                                     index_field,
+                                     index_comparison);
+        lj::storage_config_save(*storage_config, config);
+        lj::Storage_factory::recall(storage_name, config);
+        delete storage_config;
+
+        return 0;
+    }
+
+    int storage_subfield(lua_State* L)
+    {
+        // {storage, field}
+        lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+        std::string field(lua_to_string(L, -1));
+        std::string storage_name(lua_to_string(L, -2));
+        lua_pop(L, 2); // {}
+
+        lj::Bson* storage_config = lj::storage_config_load(storage_name, config);
+        lj::storage_config_add_subfield(*storage_config, field);
+        lj::storage_config_save(*storage_config, config);
+        lj::Storage_factory::recall(storage_name, config);
+        delete storage_config;
+
+        return 0;
+    }
+
+    int storage_event(lua_State* L)
+    {
+        // {storage, event, function}
+        lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+        lj::Bson* function = 0;
+        if (lua_isfunction(L, -1) && !lua_iscfunction(L, -1))
+        {
+            // dump the function to bson.
+            Function_buffer buffer(10 * 1024);
+            lua_dump(L, &function_writer, &buffer);
+            function = lj::bson_new_binary(buffer.buf,
+                                           buffer.cur - buffer.buf,
+                                           lj::Bson::k_bin_function);
+        }
+        std::string event_name = lua_to_string(L, -2);
+        std::string storage_name = lua_to_string(L, -3);
+        lua_pop(L, 3);
+
+        // create a pointer into the config for ease of reference.
+        lj::Bson* storage_config = lj::storage_config_load(storage_name, config);
+
+        // Construct the configuration path
+        std::string handler_path("handler/");
+        handler_path.append(event_name);
+
+        // Sets the event handler to the value of function.
+        // This depends on the behavior of set_child when
+        // value is null (which is to remove the child).
+        storage_config->set_child(handler_path, function);
+
+        // Save the config file to disk.
+        lj::storage_config_save(*storage_config, config);
+        lj::Storage_factory::recall(storage_name, config);
+        delete storage_config;
+        return 0;
+    }
+
+    int storage_config(lua_State* L)
+    {
+        // {storage}
+        lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+        std::string storage_name(lua_to_string(L, -1));
+        lua_pop(L, 1); // {}
+        
+        lj::Bson* ptr = lj::storage_config_load(storage_name, config);
+        Lunar<logjamd::Lua_bson>::push(L, new logjamd::Lua_bson(ptr, true), true);
+        return 1;
+    }
 } // namespace (anonymous)
 
 namespace logjamd
 {
     namespace lua
     {
-        namespace {
-            void util_persist_config(lua_State* L, const lj::Bson& config)
-            {
-                // Disk save first, incase of failure.
-                const lj::Bson& configfile = config.nav("server/configfile");
-                lj::bson_save(config, lj::bson_as_string(configfile));
-
-                // environment next
-                logjamd::Lua_bson* wrapped_config = new logjamd::Lua_bson(new lj::Bson(config), true);
-                sandbox_push(L); // {env}
-                Lunar<logjamd::Lua_bson>::push(L, wrapped_config, true); // {env, cfg}
-                lua_setfield(L, -2, "lj__config"); // {env}
-                lua_pop(L, 1); // {}
-            }
-
-            std::string util_server_dir(const lj::Bson& config)
-            {
-                const lj::Bson& directory = config.nav("server/directory");
-                return lj::bson_as_string(directory);
-            }
-        }; // namespace logjamd::lua::(anonymous)
-
-        int server_port(lua_State* L)
-        {
-            // {arg}
-            lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
-            int port = lua_tointeger(L, -1);
-            lua_pop(L, 1); // {}
-
-            // Set the new value.
-            config.set_child("server/port", lj::bson_new_int64(port));
-
-            // Save the config to disk, and update env.
-            util_persist_config(L, config);
-
-            // Write a log entry for the config change.
-            lj::Log::alert.log("[%s] config setting changed to [%d]. New setting will take effect when the server is restarted.")
-                    << "server/port" << port << lj::Log::end;
-            return 0;
-        }
-
-        int server_directory(lua_State* L)
-        {
-            // {arg}
-            lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
-            std::string directory = lua_to_string(L, -1);
-            lua_pop(L, 1); // {}
-
-            // Set the new value.
-            config.set_child("server/directory", lj::bson_new_string(directory));
-
-            // Save the config file to disk.
-            util_persist_config(L, config);
-
-            // Write a log entry for the config change.
-            lj::Log::alert.log("[%s] config setting changed to [%s]. New setting will take effect when the server is restarted.")
-                    << "server/directory" << directory << lj::Log::end;
-            return 0;
-        }
-
-        int server_id(lua_State* L)
-        {
-            // {arg}
-            lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
-            std::string server_id = lua_to_string(L, -1);
-            lua_pop(L, 1); // {}
-
-            // Set the new value.
-            config.set_child("server/id", lj::bson_new_string(server_id));
-
-            // Save the config file to disk.
-            util_persist_config(L, config);
-
-            // Write a log entry for the config change.
-            lj::Log::alert.log("[%s] config setting changed to [%s]. New setting will take effect when the server is restarted.")
-                    << "server/id" << server_id << lj::Log::end;
-            return 0;
-        }
-
-        int storage_autoload(lua_State* L)
-        {
-            // {cmd, storage}
-            lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
-            std::string storage = lua_to_string(L, -1);
-            std::string command = lua_to_string(L, -2);
-            lua_pop(L, 2); // {}
-
-            // create a pointer into the config for ease of reference.
-            lj::Bson* ptr = config.path("storage/autoload");
-
-            if (command.compare("rm") == 0)
-            {
-                // loop over the bson list and remove this
-                // value if you find it.
-                for (lj::Linked_map<std::string, lj::Bson*>::const_iterator iter = ptr->to_map().begin();
-                     ptr->to_map().end() != iter;
-                     ++iter)
-                {
-                    if (lj::bson_as_string(*(iter->second)).compare(storage) == 0)
-                    {
-                        ptr->set_child(iter->first, NULL);
-                    }
-                }
-            }
-            else if (command.compare("add") == 0)
-            {
-                // Only add the storage if it doesn't already exist.
-                if (lj::bson_as_value_string_set(*ptr).count(storage) == 0)
-                {
-                    ptr->push_child("", lj::bson_new_string(storage));
-                }
-            }
-
-            // Save the config file to disk.
-            util_persist_config(L, config);
-
-            // Write a log entry for the config change.
-            lj::Log::alert.log("[%s] config setting changed to [%s %s]. New setting will take effect when the server is restarted.")
-                    << "storage/autoload" << command << storage << lj::Log::end;
-            return 0;
-        }
-
-        int replication_peer(lua_State* L)
-        {
-            // {cmd, peer}
-            lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
-            std::string peer = lua_to_string(L, -1);
-            std::string command = lua_to_string(L, -2);
-            lua_pop(L, 2); // {}
-
-            // create a pointer into the config for ease of reference.
-            lj::Bson* ptr = config.path("replication/peer");
-
-            if (command.compare("rm") == 0)
-            {
-                // loop over the bson list and remove this
-                // value if you find it.
-                for (lj::Linked_map<std::string, lj::Bson*>::const_iterator iter = ptr->to_map().begin();
-                     ptr->to_map().end() != iter;
-                     ++iter)
-                {
-                    if (lj::bson_as_string(*(iter->second)).compare(peer) == 0)
-                    {
-                        ptr->set_child(iter->first, NULL);
-                    }
-                }
-            }
-            else if (command.compare("add") == 0)
-            {
-                // Only add the storage if it doesn't already exist.
-                if (lj::bson_as_value_string_set(*ptr).count(peer) == 0)
-                {
-                    ptr->push_child("", lj::bson_new_string(peer));
-                }
-            }
-
-            // Save the config file to disk.
-            util_persist_config(L, config);
-
-            // Write a log entry for the config change.
-            lj::Log::alert.log("[%s] config setting changed to [%s %s]. New setting will take effect when the server is restarted.")
-                    << "replication/peer" << command << peer << lj::Log::end;
-            return 0;
-        }
-
-        int logging_level(lua_State* L)
-        {
-            // {level, enabled}
-            lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
-            bool enabled = lua_toboolean(L, -1);
-            std::string level = lua_to_string(L, -2);
-            lua_pop(L, 2); // {}
-
-            // set the value.
-            config.nav("logging").set_child(level, lj::bson_new_boolean(enabled));
-
-            // Save the config file to disk.
-            util_persist_config(L, config);
-
-            // Write a log entry for the config change.
-            lj::Log::alert.log("[%s/%s] config setting changed to [%s]. New setting will take effect when the server is restarted.")
-                    << "logging" << level << enabled << lj::Log::end;
-            return 0;
-        }
-
-        int storage_init(lua_State* L)
-        {
-            // {name}
-            lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
-            std::string storage_name = lua_to_string(L, -1);
-            lua_pop(L, 1); // {}
-
-            lj::Bson storage_config;
-            lj::storage_config_init(storage_config, storage_name);
-            lj::storage_config_save(storage_config, config);
-            lj::Storage_factory::recall(storage_name, config);
-
-            return 0;
-        }
-
-        int storage_index(lua_State* L)
-        {
-            // {storage, field, type, compare}
-            lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
-            std::string index_comparison(lua_to_string(L, -1));
-            std::string index_type(lua_to_string(L, -2));
-            std::string index_field(lua_to_string(L, -3));
-            std::string storage_name(lua_to_string(L, -4));
-            lua_pop(L, 4); // {}
-
-            lj::Bson* storage_config = lj::storage_config_load(storage_name, config);
-            lj::storage_config_add_index(*storage_config,
-                                         index_type,
-                                         index_field,
-                                         index_comparison);
-            lj::storage_config_save(*storage_config, config);
-            lj::Storage_factory::recall(storage_name, config);
-            delete storage_config;
-
-            return 0;
-        }
-
-        int storage_subfield(lua_State* L)
-        {
-            // {storage, field}
-            lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
-            std::string field(lua_to_string(L, -1));
-            std::string storage_name(lua_to_string(L, -2));
-            lua_pop(L, 2); // {}
-
-            lj::Bson* storage_config = lj::storage_config_load(storage_name, config);
-            lj::storage_config_add_subfield(*storage_config, field);
-            lj::storage_config_save(*storage_config, config);
-            lj::Storage_factory::recall(storage_name, config);
-            delete storage_config;
-
-            return 0;
-        }
-
-        int storage_event(lua_State* L)
-        {
-            // {storage, event, function}
-            lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
-            lj::Bson* function = 0;
-            if (lua_isfunction(L, -1) && !lua_iscfunction(L, -1))
-            {
-                // dump the function to bson.
-                Function_buffer buffer(10 * 1024);
-                lua_dump(L, &function_writer, &buffer);
-                function = lj::bson_new_binary(buffer.buf,
-                                               buffer.cur - buffer.buf,
-                                               lj::Bson::k_bin_function);
-            }
-            std::string event_name = lua_to_string(L, -2);
-            std::string storage_name = lua_to_string(L, -3);
-            lua_pop(L, 3);
-
-            // create a pointer into the config for ease of reference.
-            lj::Bson* storage_config = lj::storage_config_load(storage_name, config);
-
-            // Construct the configuration path
-            std::string handler_path("handler/");
-            handler_path.append(event_name);
-
-            // Sets the event handler to the value of function.
-            // This depends on the behavior of set_child when
-            // value is null (which is to remove the child).
-            storage_config->set_child(handler_path, function);
-
-            // Save the config file to disk.
-            lj::storage_config_save(*storage_config, config);
-            lj::Storage_factory::recall(storage_name, config);
-            delete storage_config;
-            return 0;
-        }
-
-        int storage_config(lua_State* L)
-        {
-            // {storage}
-            lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
-            std::string storage_name(lua_to_string(L, -1));
-            lua_pop(L, 1); // {}
-            
-            lj::Bson* ptr = lj::storage_config_load(storage_name, config);
-            Lunar<Lua_bson>::push(L, new Lua_bson(ptr, true), true);
-            return 1;
-        }
-        
         void register_config_api(lua_State* L, lj::Bson* config)
         {
             // Push the configuration onto the stack for closures.
@@ -408,39 +411,39 @@ namespace logjamd
 
             // load the server configuration functions.
             lua_pushvalue(L, -1); // {cfg, cfg}
-            lua_pushcclosure(L, &logjamd::lua::server_port, 1); // {cfg, func}
+            lua_pushcclosure(L, &server_port, 1); // {cfg, func}
             lua_setglobal(L, "lj__server_port"); // {cfg}
             lua_pushvalue(L, -1); // {cfg, cfg}
-            lua_pushcclosure(L, &logjamd::lua::server_directory, 1); // {cfg, func}
+            lua_pushcclosure(L, &server_directory, 1); // {cfg, func}
             lua_setglobal(L, "lj__server_directory"); // {cfg}
             lua_pushvalue(L, -1); // {cfg, cfg}
-            lua_pushcclosure(L, &logjamd::lua::server_id, 1); // {cfg, func}
+            lua_pushcclosure(L, &server_id, 1); // {cfg, func}
             lua_setglobal(L, "lj__server_id"); // {cfg}
             lua_pushvalue(L, -1); // {cfg, cfg}
-            lua_pushcclosure(L, &logjamd::lua::storage_autoload, 1); // {cfg, func}
+            lua_pushcclosure(L, &storage_autoload, 1); // {cfg, func}
             lua_setglobal(L, "lj__storage_autoload"); // {cfg}
             lua_pushvalue(L, -1); // {cfg, cfg}
-            lua_pushcclosure(L, &logjamd::lua::replication_peer, 1); // {cfg, func}
+            lua_pushcclosure(L, &replication_peer, 1); // {cfg, func}
             lua_setglobal(L, "lj__replication_peer"); // {cfg}
             lua_pushvalue(L, -1); // {cfg, cfg}
-            lua_pushcclosure(L, &logjamd::lua::logging_level, 1); // {cfg, func}
+            lua_pushcclosure(L, &logging_level, 1); // {cfg, func}
             lua_setglobal(L, "lj__logging_level"); // {cfg}
 
             // load the storage configuration functions.
             lua_pushvalue(L, -1); // {cfg, cfg}
-            lua_pushcclosure(L, &logjamd::lua::storage_init, 1); // {cfg, func}
+            lua_pushcclosure(L, &storage_init, 1); // {cfg, func}
             lua_setglobal(L, "lj_storage_init"); // {cfg}
             lua_pushvalue(L, -1); // {cfg, cfg}
-            lua_pushcclosure(L, &logjamd::lua::storage_index, 1); // {cfg, func}
+            lua_pushcclosure(L, &storage_index, 1); // {cfg, func}
             lua_setglobal(L, "lj_storage_index"); // {cfg}
             lua_pushvalue(L, -1); // {cfg, cfg}
-            lua_pushcclosure(L, &logjamd::lua::storage_subfield, 1); // {cfg, func}
+            lua_pushcclosure(L, &storage_subfield, 1); // {cfg, func}
             lua_setglobal(L, "lj_storage_subfield"); // {cfg}
             lua_pushvalue(L, -1); // {cfg, cfg}
-            lua_pushcclosure(L, &logjamd::lua::storage_event, 1); // {cfg, func}
+            lua_pushcclosure(L, &storage_event, 1); // {cfg, func}
             lua_setglobal(L, "lj_storage_event"); // {cfg}
             lua_pushvalue(L, -1); // {cfg, cfg}
-            lua_pushcclosure(L, &logjamd::lua::storage_config, 1); // {cfg, func}
+            lua_pushcclosure(L, &storage_config, 1); // {cfg, func}
             lua_setglobal(L, "lj_storage_config"); // {cfg}
 
             lua_pop(L, 1); // {}
