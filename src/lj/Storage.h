@@ -58,14 +58,15 @@ namespace lj
      The Storage class loads configuration information from the DBDIR macro.
      The value of this macro can be set during build configuration:
      \code
-     ./waf configure --dbdir=
+     ./waf configure
      \endcode.
      \author Jason Watson
      \version 1.0
      \date April 19, 2010
      \sa lj::Record_set
      */
-    class Storage {
+    class Storage
+    {
         friend class Storage_factory;
         friend class Record_set;
     public:
@@ -165,7 +166,8 @@ namespace lj
          \sa lj::Storage_factory
          \param dir The document repository name.
          */
-        Storage(const std::string &dir, const lj::Bson& server_config);
+        Storage(const std::string &dir,
+                const lj::Bson& server_config);
         
     private:
         //! Primary database.
@@ -211,7 +213,9 @@ namespace lj
         Storage &reindex(const lj::Bson& record);
         
         //! Check that an existing record does not exist for a given value.
-        Storage &check_unique(const Bson &n, const std::string &name, tokyo::DB *index);
+        Storage &check_unique(const Bson &n,
+                              const std::string &name,
+                              tokyo::DB *index);
         
         //! Write a journal entry at the start of a modification action.
         void journal_start(const unsigned long long key);
@@ -223,13 +227,13 @@ namespace lj
         /*!
          \param o Copy from object.
          */
-        Storage(const Storage& o);
+        Storage(const Storage& o) = delete;
         
         //! Hidden assignment operator.
         /*!
          \param o Copy from object.
          */
-        Storage& operator=(const Storage& o);
+        Storage& operator=(const Storage& o) = delete;
     };
     
     void storage_config_init(lj::Bson& cfg,
@@ -243,7 +247,9 @@ namespace lj
                                      const std::string& field);
     void storage_config_add_subfield(lj::Bson& cfg,
                                      const std::string& field);
-    void storage_config_save(const lj::Bson& cfg, const lj::Bson& server_config);
-    lj::Bson* storage_config_load(const std::string& dbname, const lj::Bson& server_config);
+    void storage_config_save(const lj::Bson& cfg,
+                             const lj::Bson& server_config);
+    lj::Bson* storage_config_load(const std::string& dbname,
+                                  const lj::Bson& server_config);
     
 }; // namespace lj

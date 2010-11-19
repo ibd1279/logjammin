@@ -39,7 +39,8 @@
 namespace lj
 {
     //! Utility class to track elapsed time.
-    class Time_tracker {
+    class Time_tracker
+    {
     public:
         //! Constructor.
         Time_tracker();
@@ -61,5 +62,5 @@ namespace lj
     private:
         std::pair<unsigned long long, unsigned long long> start_;
         unsigned long long elapsed_;
-    };
+    }; // class Time_tracker
 }; // namespace lj

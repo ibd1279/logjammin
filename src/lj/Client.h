@@ -41,7 +41,8 @@ namespace lj
     class Bson;
     
     //! Logjam client Socket_dispatch implementation.
-    class Client : public Socket_dispatch {
+    class Client : public Socket_dispatch
+    {
     public:
         //! Destructor
         virtual ~Client();
@@ -85,5 +86,5 @@ namespace lj
         int in_sz_;
         bool in_post_length_;
         lj::Bson* response_;
-    };
-};
+    }; // class Client
+}; // namespace lj

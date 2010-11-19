@@ -65,6 +65,10 @@ namespace lj
         
         //! Destructor.
         virtual ~All_record_set();
+
+        //! Delete the assignment operator.
+        Record_set& operator=(const All_record_set& o) = delete;
+        
         virtual Record_set& set_operation(const Record_set::Operation op);
         virtual bool is_included(const unsigned long long key) const;
         virtual std::unique_ptr<Record_set> include_keys(const std::set<unsigned long long>& keys);
@@ -72,18 +76,18 @@ namespace lj
         virtual std::unique_ptr<Record_set> exclude_keys(const std::set<unsigned long long> &keys);
         virtual std::unique_ptr<Record_set> exclude_key(const unsigned long long key);
         virtual std::unique_ptr<Record_set> equal(const std::string& indx,
-                                                const void* const val,
-                                                const size_t len) const;
-        virtual std::unique_ptr<Record_set> greater(const std::string& indx,
                                                   const void* const val,
                                                   const size_t len) const;
+        virtual std::unique_ptr<Record_set> greater(const std::string& indx,
+                                                    const void* const val,
+                                                    const size_t len) const;
         virtual std::unique_ptr<Record_set> lesser(const std::string& indx,
-                                                 const void* const val,
-                                                 const size_t len) const;
+                                                   const void* const val,
+                                                   const size_t len) const;
         virtual std::unique_ptr<Record_set> contains(const std::string& indx,
-                                                   const std::string& term) const;
+                                                     const std::string& term) const;
         virtual std::unique_ptr<Record_set> tagged(const std::string& indx,
-                                                 const std::string& word) const;
+                                                   const std::string& word) const;
         virtual long long size() const;
         virtual bool items(std::list<Bson>& records) const;
         virtual bool items(std::list<Bson*>& records) const;
@@ -95,9 +99,6 @@ namespace lj
     private:
         const Storage *storage_;
         Record_set::Operation op_;
-        
-        //! Hidden.
-        Record_set& operator=(const All_record_set& o);
         
         //! Get all of the keys in the universe.
         /*!

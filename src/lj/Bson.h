@@ -71,7 +71,8 @@ namespace lj
      \version 1.0
      \date April 19, 2010
      */
-    class Bson {
+    class Bson
+    {
     public:
         //! Enumeration of Bson Types.
         enum Type
@@ -176,7 +177,7 @@ namespace lj
          \param o The original Bson object.
          \sa Bson::copy_from()
          */
-        void operator=(const Bson& o)
+        inline void operator=(const Bson& o)
         {
             copy_from(o);
         }
@@ -226,7 +227,10 @@ namespace lj
             const Bson* ptr = path(p);
             if (!ptr)
             {
-                throw new Exception("Bson", "Unable to navigate to path.");
+                std::string msg("Unable to navigate to path [");
+                msg.append(p);
+                msg.append("].");
+                throw new Exception("Bson", msg);
             }
             return *ptr;
         }
@@ -325,7 +329,7 @@ namespace lj
         }
 
         //! Get the type of the document node.
-        Bson::Type type() const
+        inline Bson::Type type() const
         {
             return type_;
         }

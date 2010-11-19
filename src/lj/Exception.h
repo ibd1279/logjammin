@@ -46,7 +46,8 @@ namespace lj
      \version 1.0
      \date July 3, 2009
      */
-    class Exception {
+    class Exception
+    {
     public:
         //! Create a new exception object.
         /*!
@@ -62,6 +63,18 @@ namespace lj
         {
         }
         
+        //! Declared to disable copying.
+        /*!
+         \param o Other.
+         */
+        Exception(const Exception& o) = delete;
+        
+        //! Declared to disable copying.
+        /*!
+         \param o Other.
+         */
+        Exception& operator=(const Exception& o) = delete;
+
         //! Convert the exception to a string.
         /*!
          \return String for the exception.
@@ -71,17 +84,6 @@ namespace lj
             return std::string(label_).append(": ").append(msg_);
         }
     private:
-        //! Declared to disable copying.
-        /*!
-         \param o Other.
-         */
-        Exception(const Exception& o);
-        
-        //! Declared to disable copying.
-        /*!
-         \param o Other.
-         */
-        Exception& operator=(const Exception& o);
         
         //! Exception message.
         std::string msg_;

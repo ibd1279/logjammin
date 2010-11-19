@@ -148,8 +148,8 @@ namespace lj
          \return A Record_set.
          */
         virtual std::unique_ptr<Record_set> equal(const std::string& indx,
-                                                const void* const val,
-                                                const size_t len) const = 0;
+                                                  const void* const val,
+                                                  const size_t len) const = 0;
         
         //! Perform operation against this Record_set and another new Record_set.
         /*!
@@ -165,8 +165,8 @@ namespace lj
          \return A Record_set.
          */
         virtual std::unique_ptr<Record_set> greater(const std::string& indx,
-                                                  const void* const val,
-                                                  const size_t len) const = 0;
+                                                    const void* const val,
+                                                    const size_t len) const = 0;
         
         //! Perform operation against this Record_set and another new Record_set.
         /*!
@@ -182,8 +182,8 @@ namespace lj
          \return A Record_set.
          */
         virtual std::unique_ptr<Record_set> lesser(const std::string& indx,
-                                                 const void* const val,
-                                                 const size_t len) const = 0;
+                                                   const void* const val,
+                                                   const size_t len) const = 0;
         
         //! Perform operation against this Record_set and another new Record_set.
         /*!
@@ -198,7 +198,7 @@ namespace lj
          \return A Record_set.
          */
         virtual std::unique_ptr<Record_set> contains(const std::string& indx,
-                                                   const std::string& term) const = 0;
+                                                     const std::string& term) const = 0;
         
         //! Perform operation against this Record_set and another new Record_set.
         /*!
@@ -213,7 +213,7 @@ namespace lj
          \return A Record_set.
          */
         virtual std::unique_ptr<Record_set> tagged(const std::string& indx,
-                                                 const std::string& word) const = 0;
+                                                   const std::string& word) const = 0;
         
         //! Record_set size.
         /*!

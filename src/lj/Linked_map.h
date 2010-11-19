@@ -513,7 +513,7 @@ namespace lj
                                        t_->prev_,
                                        t_);
             std::pair<typename std::map<K, iterator*>::iterator, bool> i = m_.insert(std::pair<K, iterator*>(v.first, w));
-            if(!i.second)
+            if (!i.second)
             {
                 delete w->val_;
                 delete w;
@@ -531,7 +531,7 @@ namespace lj
         void clear()
         {
             iterator *current = h_;
-            while(current->next_ != t_)
+            while (current->next_ != t_)
             {
                 current = current->next_;
                 delete current->val_;
