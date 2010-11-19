@@ -134,7 +134,7 @@ namespace lj
         {
             if (-1 == (sock = ::socket(iter->ai_family, iter->ai_socktype, iter->ai_protocol)))
             {
-                sock = NULL;
+                sock = 0;
                 Log::warning.log("Unable to open socket: [%d][%s].") << errno << strerror(errno) << Log::end;
                 continue;
             }
@@ -149,7 +149,7 @@ namespace lj
             if (-1 == ::bind(sock, iter->ai_addr, iter->ai_addrlen))
             {
                 ::close(sock);
-                sock = NULL;
+                sock = 0;
                 Log::emergency.log("Unable to bind: [%d][%s].") << errno << strerror(errno) << Log::end;
                 continue;
             }
@@ -186,7 +186,7 @@ namespace lj
         {
             if (-1 == (sock = ::socket(iter->ai_family, iter->ai_socktype, iter->ai_protocol)))
             {
-                sock = NULL;
+                sock = 0;
                 Log::warning.log("Unable to open socket: [%d][%s].") << errno << strerror(errno) << Log::end;
                 continue;
             }
@@ -194,7 +194,7 @@ namespace lj
             if (-1 == ::connect(sock, iter->ai_addr, iter->ai_addrlen))
             {
                 ::close(sock);
-                sock = NULL;
+                sock = 0;
                 Log::emergency.log("Unable to connect: [%d][%s].") << errno << strerror(errno) << Log::end;
                 continue;
             }

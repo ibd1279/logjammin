@@ -67,38 +67,38 @@ namespace lj
         return true;
     }
     
-    std::auto_ptr<Record_set> All_record_set::include_keys(const std::set<unsigned long long>& keys)
+    std::unique_ptr<Record_set> All_record_set::include_keys(const std::set<unsigned long long>& keys)
     {
-        return std::auto_ptr<Record_set>(new All_record_set(*this));
+        return std::unique_ptr<Record_set>(new All_record_set(*this));
     }
     
-    std::auto_ptr<Record_set> All_record_set::include_key(const unsigned long long key)
+    std::unique_ptr<Record_set> All_record_set::include_key(const unsigned long long key)
     {
-        return std::auto_ptr<Record_set>(new All_record_set(*this));
+        return std::unique_ptr<Record_set>(new All_record_set(*this));
     }
     
-    std::auto_ptr<Record_set> All_record_set::exclude_keys(const std::set<unsigned long long> &keys)
+    std::unique_ptr<Record_set> All_record_set::exclude_keys(const std::set<unsigned long long> &keys)
     {
         std::set<unsigned long long>* real_keys = new std::set<unsigned long long>();
         get_all_keys(real_keys);
-        std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_,
+        std::unique_ptr<Record_set> ptr(new Standard_record_set(storage_,
                                                               real_keys,
                                                               op_));
         return ptr->exclude_keys(keys);
     }
     
-    std::auto_ptr<Record_set> All_record_set::exclude_key(const unsigned long long key)
+    std::unique_ptr<Record_set> All_record_set::exclude_key(const unsigned long long key)
     {
         std::set<unsigned long long> tmp;
         tmp.insert(key);
         return exclude_keys(tmp);
     }
     
-    std::auto_ptr<Record_set> All_record_set::equal(const std::string& indx,
+    std::unique_ptr<Record_set> All_record_set::equal(const std::string& indx,
                                                     const void* const val,
                                                     const size_t len) const
     {
-        std::auto_ptr<Record_set> ptr;
+        std::unique_ptr<Record_set> ptr;
         if (Record_set::k_union == op_)
         {
             ptr.reset(new All_record_set(*this));
@@ -122,11 +122,11 @@ namespace lj
         return ptr;
     }
     
-    std::auto_ptr<Record_set> All_record_set::greater(const std::string& indx,
+    std::unique_ptr<Record_set> All_record_set::greater(const std::string& indx,
                                                       const void* const val,
                                                       const size_t len) const
     {
-        std::auto_ptr<Record_set> ptr;
+        std::unique_ptr<Record_set> ptr;
         if (Record_set::k_union == op_)
         {
             ptr.reset(new All_record_set(*this));
@@ -150,11 +150,11 @@ namespace lj
         return ptr;
     }
     
-    std::auto_ptr<Record_set> All_record_set::lesser(const std::string& indx,
+    std::unique_ptr<Record_set> All_record_set::lesser(const std::string& indx,
                                                      const void* const val,
                                                      const size_t len) const
     {
-        std::auto_ptr<Record_set> ptr;
+        std::unique_ptr<Record_set> ptr;
         if (Record_set::k_union == op_)
         {
             ptr.reset(new All_record_set(*this));
@@ -178,10 +178,10 @@ namespace lj
         return ptr;
     }
     
-    std::auto_ptr<Record_set> All_record_set::contains(const std::string& indx,
+    std::unique_ptr<Record_set> All_record_set::contains(const std::string& indx,
                                                        const std::string& term) const
     {
-        std::auto_ptr<Record_set> ptr;
+        std::unique_ptr<Record_set> ptr;
         if (Record_set::k_union == op_)
         {
             ptr.reset(new All_record_set(*this));
@@ -205,10 +205,10 @@ namespace lj
         return ptr;
     }
     
-    std::auto_ptr<Record_set> All_record_set::tagged(const std::string& indx,
+    std::unique_ptr<Record_set> All_record_set::tagged(const std::string& indx,
                                                      const std::string& word) const
     {
-        std::auto_ptr<Record_set> ptr;
+        std::unique_ptr<Record_set> ptr;
         if (Record_set::k_union == op_)
         {
             ptr.reset(new All_record_set(*this));

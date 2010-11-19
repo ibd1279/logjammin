@@ -51,7 +51,7 @@ namespace
 {
     void text_filter(lua_State* L,
                      lj::Record_set& real_set,
-                     std::auto_ptr<lj::Record_set> (lj::Record_set::*f)(const std::string&, const std::string&) const,
+                     std::unique_ptr<lj::Record_set> (lj::Record_set::*f)(const std::string&, const std::string&) const,
                      const std::string& cmd,
                      lj::Bson* cost_data)
     {
@@ -80,7 +80,7 @@ namespace
     }
     void filter(lua_State* L, 
                 lj::Record_set& real_set,
-                std::auto_ptr<lj::Record_set> (lj::Record_set::*f)(const std::string&, const void* const, const size_t) const,
+                std::unique_ptr<lj::Record_set> (lj::Record_set::*f)(const std::string&, const void* const, const size_t) const,
                 const std::string& cmd,
                 lj::Bson* cost_data)
     {

@@ -79,23 +79,23 @@ namespace lj
         return keys_->end() != keys_->find(key);
     }
     
-    std::auto_ptr<Record_set> Standard_record_set::include_keys(const std::set<unsigned long long>& keys)
+    std::unique_ptr<Record_set> Standard_record_set::include_keys(const std::set<unsigned long long>& keys)
     {
         Standard_record_set* ptr = new Standard_record_set(*this);
         ptr->keys_->insert(keys.begin(), keys.end());
         ptr->set_raw_size(size());
-        return std::auto_ptr<Record_set>(ptr);
+        return std::unique_ptr<Record_set>(ptr);
     }
     
-    std::auto_ptr<Record_set> Standard_record_set::include_key(const unsigned long long key)
+    std::unique_ptr<Record_set> Standard_record_set::include_key(const unsigned long long key)
     {
         Standard_record_set* ptr = new Standard_record_set(*this);
         ptr->keys_->insert(key);
         ptr->set_raw_size(size());
-        return std::auto_ptr<Record_set>(ptr);
+        return std::unique_ptr<Record_set>(ptr);
     }
     
-    std::auto_ptr<Record_set> Standard_record_set::exclude_keys(const std::set<unsigned long long>& keys)
+    std::unique_ptr<Record_set> Standard_record_set::exclude_keys(const std::set<unsigned long long>& keys)
     {
         Standard_record_set* ptr = new Standard_record_set(*this);
         for (std::set<unsigned long long>::const_iterator iter = keys.begin();
@@ -105,17 +105,17 @@ namespace lj
             ptr->keys_->erase(*iter);
         }
         ptr->set_raw_size(size());
-        return std::auto_ptr<Record_set>(ptr);
+        return std::unique_ptr<Record_set>(ptr);
     }
     
-    std::auto_ptr<Record_set> Standard_record_set::exclude_key(const unsigned long long key)
+    std::unique_ptr<Record_set> Standard_record_set::exclude_key(const unsigned long long key)
     {
         Standard_record_set* ptr = new Standard_record_set(*this);
         ptr->keys_->erase(key);
-        return std::auto_ptr<Record_set>(ptr);
+        return std::unique_ptr<Record_set>(ptr);
     }
     
-    std::auto_ptr<Record_set> Standard_record_set::equal(const std::string& indx,
+    std::unique_ptr<Record_set> Standard_record_set::equal(const std::string& indx,
                                                          const void* const val,
                                                          const size_t len) const
     {
@@ -134,7 +134,7 @@ namespace lj
         }
         else
         {
-            return std::auto_ptr<Record_set>(new Standard_record_set(*this));
+            return std::unique_ptr<Record_set>(new Standard_record_set(*this));
         }
         
         std::set<unsigned long long> storage_keys;
@@ -142,12 +142,12 @@ namespace lj
         std::set<unsigned long long>* output = Record_set::operate_on_sets<std::set<unsigned long long> >(op_, *keys_, storage_keys);
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
         
-        std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
+        std::unique_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
         ptr->set_raw_size(storage_keys.size());
         return ptr;
     }
     
-    std::auto_ptr<Record_set> Standard_record_set::greater(const std::string& indx,
+    std::unique_ptr<Record_set> Standard_record_set::greater(const std::string& indx,
                                                            const void* const val,
                                                            const size_t len) const
     {
@@ -168,7 +168,7 @@ namespace lj
         }
         else
         {
-            return std::auto_ptr<Record_set>(new Standard_record_set(*this));
+            return std::unique_ptr<Record_set>(new Standard_record_set(*this));
         }
         
         std::set<unsigned long long> storage_keys;
@@ -176,12 +176,12 @@ namespace lj
         std::set<unsigned long long>* output = Record_set::operate_on_sets<std::set<unsigned long long> >(op_, *keys_, storage_keys);
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
         
-        std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
+        std::unique_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
         ptr->set_raw_size(storage_keys.size());
         return ptr;
     }    
     
-    std::auto_ptr<Record_set> Standard_record_set::lesser(const std::string& indx,
+    std::unique_ptr<Record_set> Standard_record_set::lesser(const std::string& indx,
                                                           const void* const val,
                                                           const size_t len) const
     {
@@ -202,7 +202,7 @@ namespace lj
         }
         else
         {
-            return std::auto_ptr<Record_set>(new Standard_record_set(*this));
+            return std::unique_ptr<Record_set>(new Standard_record_set(*this));
         }
         
         std::set<unsigned long long> storage_keys;
@@ -210,12 +210,12 @@ namespace lj
         std::set<unsigned long long>* output = Record_set::operate_on_sets<std::set<unsigned long long> >(op_, *keys_, storage_keys);
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
         
-        std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
+        std::unique_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
         ptr->set_raw_size(storage_keys.size());
         return ptr;
     }
     
-    std::auto_ptr<Record_set> Standard_record_set::contains(const std::string& indx,
+    std::unique_ptr<Record_set> Standard_record_set::contains(const std::string& indx,
                                                             const std::string& term) const
     {
         Log::debug.log("Contains on [%s] with [%s]") << indx << term << Log::end;
@@ -228,18 +228,18 @@ namespace lj
         }
         else
         {
-            return std::auto_ptr<Record_set>(new Standard_record_set(*this));
+            return std::unique_ptr<Record_set>(new Standard_record_set(*this));
         }
         
         std::set<unsigned long long>* output = Record_set::operate_on_sets<std::set<unsigned long long> >(op_, *keys_, searcher_values);
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
         
-        std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
+        std::unique_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
         ptr->set_raw_size(searcher_values.size());
         return ptr;
     }
     
-    std::auto_ptr<Record_set> Standard_record_set::tagged(const std::string& indx,
+    std::unique_ptr<Record_set> Standard_record_set::tagged(const std::string& indx,
                                                           const std::string& word) const
     {
         Log::debug.log("Tagged on [%s] with [%s]") << indx << word << Log::end;
@@ -252,13 +252,13 @@ namespace lj
         }
         else
         {
-            return std::auto_ptr<Record_set>(new Standard_record_set(*this));
+            return std::unique_ptr<Record_set>(new Standard_record_set(*this));
         }
         
         std::set<unsigned long long>* output = Record_set::operate_on_sets<std::set<unsigned long long> >(op_, *keys_, searcher_values);
         Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
         
-        std::auto_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
+        std::unique_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
         ptr->set_raw_size(searcher_values.size());
         return ptr;
     }
@@ -334,18 +334,18 @@ namespace lj
         return *storage_;
     }
     
-    std::auto_ptr<Bson> Standard_record_set::doc_at(unsigned long long pkey,
+    std::unique_ptr<Bson> Standard_record_set::doc_at(unsigned long long pkey,
                                                     bool marshall) const
     {
         tokyo::Tree_db* db = Record_set::storage_db(storage_);
         tokyo::DB::value_t p = db->at(&pkey, sizeof(unsigned long long));
         if (!p.first)
         {
-            return std::auto_ptr<Bson>(new Bson());
+            return std::unique_ptr<Bson>(new Bson());
         }
         Bson* ptr = new Bson(marshall ? Bson::k_document : Bson::k_binary_document,
                              static_cast<char *>(p.first));
         free(p.first);
-        return std::auto_ptr<Bson>(ptr);
+        return std::unique_ptr<Bson>(ptr);
     }
 }; // namespace lj

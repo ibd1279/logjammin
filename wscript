@@ -101,7 +101,7 @@ def build(ctx):
                 ,'/usr/local/include'
                 ,'/opt/local/include'
                 ,'/usr/include']
-        ,cxxflags = ['-O0', '-Wall', '-g']
+        ,cxxflags = ['-O0', '-Wall', '-g', '-std=c++0x']
         ,libpath = ['/usr/local/lib/', '/opt/local/lib/', '/usr/lib']
         ,linkflags = ['-g']
         ,uselib = ['TCUTIL.H', 'DYSTOPIA.H', 'LUA.H']
@@ -125,7 +125,7 @@ def build(ctx):
                 ,'/usr/local/include'
                 ,'/opt/local/include'
                 ,'/usr/include']
-        ,cxxflags = ['-O0', '-Wall', '-g']
+        ,cxxflags = ['-O0', '-Wall', '-g', '-std=c++0x']
         ,libpath = ['/usr/local/lib/', '/opt/local/lib/', '/usr/lib']
         ,linkflags = ['-g']
         ,uselib = ['HISTEDIT.H']

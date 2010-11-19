@@ -764,25 +764,25 @@ namespace lj
         optimize_indices<tokyo::Tree_db>(fields_tree_);
     }
     
-    std::auto_ptr<Record_set> Storage::at(const unsigned long long key) const
+    std::unique_ptr<Record_set> Storage::at(const unsigned long long key) const
     {
-        std::auto_ptr<Record_set> ptr = none();
+        std::unique_ptr<Record_set> ptr = none();
         return ptr->include_key(key);
     }
     
-    std::auto_ptr<Record_set> Storage::all() const
+    std::unique_ptr<Record_set> Storage::all() const
     {
-        return std::auto_ptr<Record_set>(new All_record_set(this,
+        return std::unique_ptr<Record_set>(new All_record_set(this,
                                                             Record_set::k_intersection));
     }
     
-    std::auto_ptr<Record_set> Storage::none() const
+    std::unique_ptr<Record_set> Storage::none() const
     {
         Standard_record_set* ptr = new Standard_record_set(this,
                                                            new std::set<unsigned long long>(),
                                                            Record_set::k_union);
         ptr->set_raw_size(0);
-        return std::auto_ptr<Record_set>(ptr);
+        return std::unique_ptr<Record_set>(ptr);
     }
     
     Storage &Storage::place(Bson &value)

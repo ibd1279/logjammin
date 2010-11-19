@@ -110,28 +110,28 @@ namespace lj
          \param keys The keys to add.
          \return The modified Record_set object.
          */
-        virtual std::auto_ptr<Record_set> include_keys(const std::set<unsigned long long>& keys) = 0;
+        virtual std::unique_ptr<Record_set> include_keys(const std::set<unsigned long long>& keys) = 0;
         
         //! Add a key to the Record_set.
         /*!
          \param key The key to add.
          \return The modified Record_set object.
          */
-        virtual std::auto_ptr<Record_set> include_key(const unsigned long long key) = 0;
+        virtual std::unique_ptr<Record_set> include_key(const unsigned long long key) = 0;
         
         //! Remove keys from the Record_set.
         /*!
          \param keys The keys to exclude.
          \return The modified Record_set object.
          */
-        virtual std::auto_ptr<Record_set> exclude_keys(const std::set<unsigned long long> &keys) = 0;
+        virtual std::unique_ptr<Record_set> exclude_keys(const std::set<unsigned long long> &keys) = 0;
         
         //! Remove a key from the Record_set.
         /*!
          \param key The key to remove.
          \return The modified Record_set object.
          */
-        virtual std::auto_ptr<Record_set> exclude_key(const unsigned long long key) = 0;
+        virtual std::unique_ptr<Record_set> exclude_key(const unsigned long long key) = 0;
         
         //! Perform operation against this Record_set and another new Record_set.
         /*!
@@ -147,7 +147,7 @@ namespace lj
          \param len The length of the value.
          \return A Record_set.
          */
-        virtual std::auto_ptr<Record_set> equal(const std::string& indx,
+        virtual std::unique_ptr<Record_set> equal(const std::string& indx,
                                                 const void* const val,
                                                 const size_t len) const = 0;
         
@@ -164,7 +164,7 @@ namespace lj
          \param len The length of the value.
          \return A Record_set.
          */
-        virtual std::auto_ptr<Record_set> greater(const std::string& indx,
+        virtual std::unique_ptr<Record_set> greater(const std::string& indx,
                                                   const void* const val,
                                                   const size_t len) const = 0;
         
@@ -181,7 +181,7 @@ namespace lj
          \param len The length of the value.
          \return A Record_set.
          */
-        virtual std::auto_ptr<Record_set> lesser(const std::string& indx,
+        virtual std::unique_ptr<Record_set> lesser(const std::string& indx,
                                                  const void* const val,
                                                  const size_t len) const = 0;
         
@@ -197,7 +197,7 @@ namespace lj
          \param term The value to search for.
          \return A Record_set.
          */
-        virtual std::auto_ptr<Record_set> contains(const std::string& indx,
+        virtual std::unique_ptr<Record_set> contains(const std::string& indx,
                                                    const std::string& term) const = 0;
         
         //! Perform operation against this Record_set and another new Record_set.
@@ -212,7 +212,7 @@ namespace lj
          \param word The value to search for.
          \return A Record_set.
          */
-        virtual std::auto_ptr<Record_set> tagged(const std::string& indx,
+        virtual std::unique_ptr<Record_set> tagged(const std::string& indx,
                                                  const std::string& word) const = 0;
         
         //! Record_set size.

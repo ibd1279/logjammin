@@ -82,7 +82,7 @@ namespace lj
          \param key The key to populate the Record_set with.
          \return A new Record_set object.
          */
-        std::auto_ptr<Record_set> at(const unsigned long long key) const;
+        std::unique_ptr<Record_set> at(const unsigned long long key) const;
         
         //! Get a Record_set containing all keys.
         /*!
@@ -90,7 +90,7 @@ namespace lj
          The default operation for the all Record_set is \c lj::set::k_intersection.
          \return All keys.
          */
-        std::auto_ptr<Record_set> all() const;
+        std::unique_ptr<Record_set> all() const;
         
         //! Get an empty Record_set.
         /*!
@@ -98,7 +98,7 @@ namespace lj
          The default operation for the none Record_set is \c lj::set::k_union.
          \return No keys.
          */
-        std::auto_ptr<Record_set> none() const;
+        std::unique_ptr<Record_set> none() const;
         
         //! Store a document
         /*!

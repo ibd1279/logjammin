@@ -83,22 +83,22 @@ namespace lj
         virtual ~Standard_record_set();
         virtual Record_set& set_operation(const Record_set::Operation op);
         virtual bool is_included(const unsigned long long key) const;
-        virtual std::auto_ptr<Record_set> include_keys(const std::set<unsigned long long>& keys);
-        virtual std::auto_ptr<Record_set> include_key(const unsigned long long key);
-        virtual std::auto_ptr<Record_set> exclude_keys(const std::set<unsigned long long> &keys);
-        virtual std::auto_ptr<Record_set> exclude_key(const unsigned long long key);
-        virtual std::auto_ptr<Record_set> equal(const std::string& indx,
+        virtual std::unique_ptr<Record_set> include_keys(const std::set<unsigned long long>& keys);
+        virtual std::unique_ptr<Record_set> include_key(const unsigned long long key);
+        virtual std::unique_ptr<Record_set> exclude_keys(const std::set<unsigned long long> &keys);
+        virtual std::unique_ptr<Record_set> exclude_key(const unsigned long long key);
+        virtual std::unique_ptr<Record_set> equal(const std::string& indx,
                                                 const void* const val,
                                                 const size_t len) const;
-        virtual std::auto_ptr<Record_set> greater(const std::string& indx,
+        virtual std::unique_ptr<Record_set> greater(const std::string& indx,
                                                   const void* const val,
                                                   const size_t len) const;
-        virtual std::auto_ptr<Record_set> lesser(const std::string& indx,
+        virtual std::unique_ptr<Record_set> lesser(const std::string& indx,
                                                  const void* const val,
                                                  const size_t len) const;
-        virtual std::auto_ptr<Record_set> contains(const std::string& indx,
+        virtual std::unique_ptr<Record_set> contains(const std::string& indx,
                                                    const std::string& term) const;
-        virtual std::auto_ptr<Record_set> tagged(const std::string& indx,
+        virtual std::unique_ptr<Record_set> tagged(const std::string& indx,
                                                  const std::string& word) const;
         virtual long long size() const;
         virtual bool items(std::list<Bson>& records) const;
@@ -123,6 +123,6 @@ namespace lj
          \param marshall True to parse the record into a full structure. False
          to leave the records as an array of bytes.
          */
-        std::auto_ptr<Bson> doc_at(unsigned long long pkey, bool marshall) const;
+        std::unique_ptr<Bson> doc_at(unsigned long long pkey, bool marshall) const;
     };
 }; // namespace lj
