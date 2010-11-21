@@ -149,12 +149,14 @@ namespace
         {
             if (parts_.size() > 0)
             {
-                char *buffer = new char[64 + parts_.front().size()];
+                char *buffer = new char[512 + parts_.front().size()];
                 sprintf(buffer, parts_.front().c_str(), msg);
                 buffer_ << buffer;
                 parts_.pop_front();
                 delete[] buffer;
-            } else {
+            }
+            else
+            {
                 buffer_ << msg;
             }
         }
@@ -225,13 +227,15 @@ namespace
             return *this;
         }
         virtual Log &operator<<(void* msg) {
-            char *buffer = new char[64 + parts_.front().size()];
+            char *buffer = new char[512 + parts_.front().size()];
             if (parts_.size() > 0)
             {
                 sprintf(buffer, parts_.front().c_str(), msg);
                 buffer_ << buffer;
                 parts_.pop_front();
-            } else {
+            }
+            else
+            {
                 sprintf(buffer, "%p", msg);
                 buffer_ << msg;
             }
@@ -240,9 +244,7 @@ namespace
         }
         virtual void operator<<(const Log::End &msg)
         {
-            for(std::list<std::string>::const_iterator iter = parts_.begin();
-                iter != parts_.end();
-                ++iter)
+            for (auto iter = parts_.begin(); iter != parts_.end(); ++iter)
             {
                 buffer_ << "..." << (*iter);
             }
@@ -280,26 +282,24 @@ namespace lj
         }
     }
     
-    void Log::operator()(const std::string &fmt, ...)
+    void Log::operator()(const std::string& fmt, ...)
     {
         if (enabled_)
         {
+            char ptr[8192];
             va_list vl;
             va_start(vl, fmt);
-            char *ptr = new char[(fmt.size() * 2) + 64];
-            vsprintf(ptr, fmt.c_str(), vl);
+            vsnprintf(ptr, 8191, fmt.c_str(), vl);
             va_end(vl);
             
             Real_logger* logger = new Real_logger(stream_, level_, std::string(ptr));
             (*logger) << end;
-            
-            delete[] ptr;
         }
     }
     
-    Log &Log::log(const std::string &fmt)
+    Log &Log::log(const std::string& fmt)
     {
-        if(enabled_)
+        if (enabled_)
         {
             return *(new Real_logger(stream_, level_, fmt));
         }
