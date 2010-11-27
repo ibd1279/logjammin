@@ -80,7 +80,7 @@ namespace
         }
     private:
         Function_buffer(const Function_buffer&);
-    };
+    }; // struct (anonymous)::Function_buffer
     
     //! Method for writing a function.
     int function_writer(lua_State*,

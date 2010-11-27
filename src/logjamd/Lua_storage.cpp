@@ -154,61 +154,84 @@ namespace logjamd
     
     int Lua_storage::place(lua_State* L)
     {
+        // {record}
         lj::Time_tracker timer;
         timer.start();
-        
-        get_event(L, dbname_, "pre_place");
-        if (!lua_isnil(L, -1))
+
+        // Get the configuration from the environment.
+        logjamd::lua::sandbox_get(L, "lj__config"); // {record, config}
+        const lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
+        lua_pop(L, 1); // {record}
+
+        // Test the writable mode.
+        if (logjamd::lua::is_mutable_write(config, __FUNCTION__))
         {
-            lua_pushvalue(L, -2);
-            lua_pushnil(L);
-            lua_call(L, 2, 1);
-        }
-        else
-        {
-            lua_pop(L, 1);
-            lua_pushboolean(L, true);
-        }
-        
-        if (!lua_toboolean(L, -1))
-        {
-            lj::Log::debug.log("Not placing record.");
-            return 0;
-        }
-        else
-        {
-            lua_pop(L, 1);
-        }
-        
-        Lua_bson* ptr = Lunar<Lua_bson>::check(L, -1);
-        try
-        {
-            lua_getglobal(L, "server_id");
-            std::string server_id(lua_to_string(L, -1));
-            lua_pop(L, 1);
-            lj::bson_increment(ptr->real_node().nav("__clock").nav(server_id), 1);
-            ptr->real_node().set_child("__dirty", lj::bson_new_boolean(false));
+            // We can write, so lets execute the write logic.
+            // starting with the pre-place event logic.
+            get_event(L, dbname_, "pre_place"); // {record, event}
+            if (!lua_isnil(L, -1))
+            {
+                lua_pushvalue(L, -2); // {record, event, record}
+                lua_pushnil(L); // {record, event, record, nil}
+                lua_call(L, 2, 1); // {record, bool}
+            }
+            else
+            {
+                lua_pop(L, 1); // {record}
+                lua_pushboolean(L, true); // {record, bool}
+            }
             
-            real_storage(L).place(ptr->real_node());
+            // Test the event result.
+            if (!lua_toboolean(L, -1))
+            {
+                lua_pop(L, 2); // {}
+                lj::Log::debug.log("Not placing record.");
+                timer.stop();
+                // XXX this should update the costs array.
+                return 0;
+            }
+            else
+            {
+                lua_pop(L, 1); // {record}
+            }
             
-            const std::string replication_name(push_replication_record(L, ptr->real_node()));
-            push_replication_command(L, "place", dbname_, replication_name);
-        }
-        catch(lj::Exception* ex)
-        {
-            luaL_error(L, "Unable to place record. %s", ex->to_string().c_str());
-        }
-        
-        get_event(L, dbname_, "post_place");
-        if (!lua_isnil(L, -1))
-        {
-            lua_pushvalue(L, -2);
-            lua_pushnil(L);
-            lua_call(L, 2, 0);
+            // Try to place the record.
+            lj::Bson& record = Lunar<Lua_bson>::check(L, -1)->real_node();
+            try
+            {
+                std::string server_id(lj::bson_as_string(config.nav("server/id")));
+                lj::bson_increment(record.nav("__clock").nav(server_id), 1);
+                record.set_child("__dirty", lj::bson_new_boolean(false));
+                
+                real_storage(L).place(record);
+                
+                const std::string replication_name(push_replication_record(L, record));
+                push_replication_command(L, "place", dbname_, replication_name);
+            }
+            catch(lj::Exception* ex)
+            {
+                luaL_error(L, "Unable to place record. %s", ex->to_string().c_str());
+            }
+            
+            // post place event logic.
+            get_event(L, dbname_, "post_place"); // {record, event}
+            if (!lua_isnil(L, -1))
+            {
+                lua_pushvalue(L, -2); // {record, event, record}
+                lua_pushnil(L); // {record, event, record, nil}
+                lua_call(L, 2, 0); // {record}
+            }
+            else
+            {
+                lua_pop(L, 1); // {record}
+            }
+
+            lua_pop(L, 1); // {}
         }
         else
         {
-            lua_pop(L, 1);
+            // Not in a writable state. error out.
+            luaL_error(L, "Unable to place record. Server is not in a writable mode.");
         }
         
         timer.stop();

@@ -49,6 +49,12 @@ namespace logjamd
         //! Default constructor.
         Stage_execute();
 
+        //! Hidden copy constructor.
+        /*!
+         \param orig Original object.
+         */
+        Stage_execute(const Stage_execute& orig) = delete;
+
         //! Virtual destructor.
         virtual ~Stage_execute();
 
@@ -67,11 +73,6 @@ namespace logjamd
         virtual Stage* logic(lj::Bson& request, Connection& connection);
 
     private:
-        //! Hidden copy constructor.
-        /*!
-         \param orig Original object.
-         */
-        Stage_execute(const Stage_execute& orig);
     };
 };
 
