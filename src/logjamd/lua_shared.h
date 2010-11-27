@@ -1,7 +1,7 @@
 #pragma once
 /*!
- \file logjamd_lua.h
- \brief Logjam server lua functions header.
+ \file lua_shared.h
+ \brief Logjam server shared lua functions header.
  \author Jason Watson
  
  Copyright (c) 2010, Jason Watson
