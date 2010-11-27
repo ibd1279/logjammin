@@ -34,8 +34,9 @@
 
 #include "logjamd/Stage_execute.h"
 
-#include "logjamd/logjamd_lua.h"
 #include "logjamd/Lua_bson.h"
+#include "logjamd/logjamd_lua.h"
+#include "logjamd/lua_shared.h"
 #include "lj/Bson.h"
 #include "lj/Logger.h"
 #include "lj/Time_tracker.h"
@@ -78,7 +79,7 @@ namespace logjamd
         replication.set_child("lj__dirty", lj::bson_new_boolean(false));
 
         // Populate the lua environment.
-        sandbox_push(L); // {t}
+        logjamd::lua::sandbox_push(L); // {t}
         lua_pushstring(L, "lj__config"); // {t, str}
         Lunar<Lua_bson>::push(L, &wrapper_config, false); // {t, str, val}
         lua_settable(L, -3); // {t}

@@ -91,6 +91,7 @@ def build(ctx):
                 ,'src/logjamd/logjamd.cpp'
                 ,'src/logjamd/logjamd_lua.cpp'
                 ,'src/logjamd/lua_config.cpp'
+                ,'src/logjamd/lua_shared.cpp'
                 ,'src/tokyo/Tokyo.cpp'
                 ]
         ,target = 'logjamd'

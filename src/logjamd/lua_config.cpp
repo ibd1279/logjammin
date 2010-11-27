@@ -35,9 +35,10 @@
 
 #include "logjamd/lua_config.h"
 
-#include "logjamd/logjamd_lua.h"
 #include "logjamd/Lua_bson.h"
 #include "logjamd/Lua_storage.h"
+#include "logjamd/logjamd_lua.h"
+#include "logjamd/lua_shared.h"
 #include "lj/Logger.h"
 #include "lj/Storage.h"
 #include "lj/Storage_factory.h"
@@ -120,7 +121,7 @@ namespace
 
         // environment next
         logjamd::Lua_bson* wrapped_config = new logjamd::Lua_bson(new lj::Bson(config), true);
-        logjamd::sandbox_push(L); // {env}
+        logjamd::lua::sandbox_push(L); // {env}
         Lunar<logjamd::Lua_bson>::push(L, wrapped_config, true); // {env, cfg}
         lua_setfield(L, -2, "lj__config"); // {env}
         lua_pop(L, 1); // {}

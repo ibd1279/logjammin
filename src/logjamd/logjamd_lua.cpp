@@ -35,6 +35,7 @@
 
 #include "logjamd/logjamd_lua.h"
 #include "logjamd/lua_config.h"
+#include "logjamd/lua_shared.h"
 
 #include "logjamd/Lua_bson.h"
 #include "logjamd/Lua_record_set.h"
@@ -86,59 +87,6 @@ namespace logjamd
                      lj::bson_as_boolean(config.nav("logging/alert")));
         set_loglevel(lj::Log::emergency,
                      lj::bson_as_boolean(config.nav("logging/emergency")));
-    }
-
-    namespace lua
-    {
-        bool check_mutable_mode(const lj::Bson& config, const Mutable_mode mode)
-        {
-            const lj::Bson& tmp = config.nav("server/mode");
-            return (mode == static_cast<Mutable_mode>(lj::bson_as_int64(tmp)));
-        }
-    }; // namespace logjamd::lua
-
-    //! Put the environment table for this identifier ontop of the stack.
-    /*!
-     \param L The Root lua state.
-     \param identifier The connection id.
-     */
-    int sandbox_push(lua_State* L)
-    {
-        lua_getglobal(L, "environment_cache"); // {ec}
-        if (lua_isnil(L, -1))
-        {
-            lua_pop(L, 1); // {}
-            lua_newtable(L); // {ec}
-            lua_pushvalue(L, -1); // {ec, ec}
-            lua_setglobal(L, "environment_cache"); // {ec}
-        }
-        lua_pushthread(L); // {ec, thread}
-        lua_gettable(L, -2); // {ec, t}
-        if (lua_isnil(L, -1))
-        {
-            lua_pop(L, 1); // {ec}
-            lua_newtable(L); // {ec, t}
-            lua_pushthread(L); // {ec, t, thread}
-            lua_pushvalue(L, -2); // {ec, t, name, t}
-            lua_settable(L, -4); // {ec, t}
-            lua_pushvalue(L, -1); // {ec, t, t}
-            lua_pushstring(L, "__index"); // {ec, t, t, __index}
-            lua_pushvalue(L, LUA_GLOBALSINDEX); // {ec, t, t, __index, _G}
-            lua_settable(L, -3); // {ec, t, t}
-            lua_setmetatable(L, -2); // {ec, t}
-        }
-        lua_replace(L, -2); // {t}
-        return 1;
-    }
-
-    int sandbox_get(lua_State* L, const std::string& key)
-    {
-        // {}
-        sandbox_push(L); // {sandbox}
-        lua_pushlstring(L, key.c_str(), key.size()); // {sandbox, key}
-        lua_gettable(L, -2); // {sandbox, value}
-        lua_replace(L, -2); // {value}
-        return 1;
     }
 
     namespace lua
@@ -218,7 +166,7 @@ namespace logjamd
         std::string name(lua_to_string(L, -1));
         lua_pop(L, 1); // {}
 
-        sandbox_get(L, "lj__replication"); // {replication}
+        logjamd::lua::sandbox_get(L, "lj__replication"); // {replication}
         Lua_bson* ptr = Lunar<Lua_bson>::check(L, -1);
         lua_pop(L, 1); // {}
         ptr->real_node().set_child(name, new lj::Bson(b));
@@ -231,7 +179,7 @@ namespace logjamd
                                   const std::string& dbname,
                                   const std::string& obj)
     {
-        sandbox_get(L, "lj__replication"); // {replication}
+        logjamd::lua::sandbox_get(L, "lj__replication"); // {replication}
         Lua_bson* ptr = Lunar<Lua_bson>::check(L, -1);
         lua_pop(L, 1); // {}
         
@@ -254,7 +202,7 @@ namespace logjamd
         lj::Time_tracker timer;
         timer.start();
 
-        sandbox_get(L, "lj__response"); // {record_set, response}
+        logjamd::lua::sandbox_get(L, "lj__response"); // {record_set, response}
 
         // Get what we need from lua's stack
         Lua_record_set* filter = Lunar<Lua_record_set>::check(L, -2);

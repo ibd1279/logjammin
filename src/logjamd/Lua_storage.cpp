@@ -38,6 +38,8 @@
 #include "logjamd/Lua_bson.h"
 #include "logjamd/Lua_record_set.h"
 #include "logjamd/logjamd_lua.h"
+#include "logjamd/lua_shared.h"
+#include "logjamd/lua_shared.h"
 #include "lj/Logger.h"
 #include "lj/Storage_factory.h"
 #include "lj/Time_tracker.h"
@@ -369,7 +371,7 @@ namespace logjamd
     int Lua_storage::recall(lua_State* L)
     {
         // Get the data directory.
-        sandbox_get(L, "lj__config");
+        logjamd::lua::sandbox_get(L, "lj__config");
         lj::Bson& server_config = Lunar<Lua_bson>::check(L, -1)->real_node();
         lua_pop(L, 1);
         
@@ -380,7 +382,7 @@ namespace logjamd
     lj::Storage& Lua_storage::real_storage(lua_State* L)
     {
         // Get the data directory.
-        sandbox_get(L, "lj__config");
+        logjamd::lua::sandbox_get(L, "lj__config");
         lj::Bson& server_config = Lunar<Lua_bson>::check(L, -1)->real_node();
         lua_pop(L, 1);
         
