@@ -33,6 +33,7 @@
  */
 
 #include "logjamd/logjamd_lua.h"
+#include "logjamd/lua_shared.h"
 #include "logjamd/Server.h"
 #include "lj/Logger.h"
 #include "build/default/config.h"
@@ -69,6 +70,24 @@ void populate_config(lj::Bson* config)
     config->set_child("logging/emergency", lj::bson_new_boolean(true));
 }
 
+logjamd::lua::Mutable_mode string_to_mutable_mode(const std::string& m)
+{
+    if (m.compare("config") == 0)
+    {
+        return logjamd::lua::Mutable_mode::k_config;
+    }
+    if (m.compare("readonly") == 0)
+    {
+        return logjamd::lua::Mutable_mode::k_readonly;
+    }
+    if (m.compare("readwrite") == 0)
+    {
+        return logjamd::lua::Mutable_mode::k_readwrite;
+    }
+
+    return logjamd::lua::Mutable_mode::k_readonly;
+}
+
 //! Server main entry point.
 int main(int argc, char* const argv[]) {
 
@@ -80,16 +99,23 @@ int main(int argc, char* const argv[]) {
 
     // Load the configuration from disk
     lj::Bson* mutable_config;
-    std::string server_mutable_mode(argv[1]);
+    logjamd::lua::Mutable_mode server_mutable_mode = string_to_mutable_mode(argv[1]);
+    std::cerr << "starting server in "
+              << static_cast<int64_t>(server_mutable_mode)
+              << " mode."
+              << std::endl;
     try
     {
         mutable_config = lj::bson_load(argv[2]);
-        if (!mutable_config->exists() && server_mutable_mode.compare("config") == 0)
+        if (!mutable_config->exists() &&
+            logjamd::lua::Mutable_mode::k_config == server_mutable_mode)
         {
             // Create a new default configuration file and let the server
             // go ahead and start.
             std::cerr << "creating default configuration in ["
-                    << argv[2] << "]" << std::endl;
+                      << argv[2]
+                      << "]"
+                      << std::endl;
             mutable_config = new lj::Bson();
             populate_config(mutable_config);
             lj::bson_save(*mutable_config, argv[2]);
@@ -102,8 +128,11 @@ int main(int argc, char* const argv[]) {
     {
         // abort and shutdown.
         std::cerr << "unable to load configuration from ["
-                << argv[2] << "]" << std::endl
-                << e->to_string() << std::endl;
+                  << argv[2]
+                  << "]"
+                  << std::endl
+                  << e->to_string()
+                  << std::endl;
         delete e;
         return 2;
     }
@@ -121,9 +150,9 @@ int main(int argc, char* const argv[]) {
         logjamd::set_logging_levels(*config);
 
         // Create the right dispatchers based on the mode.
-        mutable_config->set_child("server/mode", lj::bson_new_string(server_mutable_mode));
-        lj::Socket_dispatch* dispatcher = new logjamd::Server(server_mutable_mode,
-                                                              mutable_config);
+        mutable_config->set_child("server/mode",
+                                  lj::bson_new_int64(static_cast<int64_t>(server_mutable_mode)));
+        lj::Socket_dispatch* dispatcher = new logjamd::Server(mutable_config);
         
         // Bind the sockets, and loop for connections.
         lj::Socket_selector::instance().bind_port(port, dispatcher);

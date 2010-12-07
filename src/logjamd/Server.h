@@ -47,11 +47,10 @@ namespace logjamd
         /*!
          \par The \c server_type parameter decides if the config, readonly,
          or readwrite lua libraries are made available.
-         \param server_type The type of server to startup.
          \param config The server configuration.
          from.
          */
-        Server(const std::string& server_type, lj::Bson* config);
+        Server(lj::Bson* config);
         virtual ~Server();
         virtual lj::Socket_dispatch* accept(int socket, const std::string& buffer);
         virtual void read(const char* buffer, int sz);

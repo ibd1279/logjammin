@@ -1,9 +1,8 @@
-role_cfg = sc_new("role")
-sc_add_index(role_cfg, "hash", "name", "lex")
-sc_add_index(role_cfg, "text", "name", "lex")
-sc_add_index(role_cfg, "tag", "allowed", "lex")
-sc_add_index(role_cfg, "tree", "create_by", "int64")
-sc_save("role", role_cfg)
+lj_storage_init('role')
+lj_storage_index('role', 'name', 'hash', 'lex')
+lj_storage_index('role', 'name', 'text', 'lex')
+lj_storage_index('role', 'allowed', 'tag', 'lex')
+lj_storage_index('role', 'create/by', 'tree', 'int64')
 
 for i = 1, 10000 do
     r = Bson:new()
@@ -21,3 +20,4 @@ for i = 1, 10000 do
     db.role:place(r)
 end
 
+send_set(db.role:none():contains('name', 'role 100'):mode_and():tagged('allowed', 'action/1000'))

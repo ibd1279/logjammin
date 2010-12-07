@@ -50,7 +50,7 @@ extern "C" {
 
 namespace logjamd
 {
-    Server::Server(const std::string& server_type, lj::Bson* config) : lua_(0), config_(config)
+    Server::Server(lj::Bson* config) : lua_(0), config_(config)
     {
         set_mode(Socket_dispatch::k_listen);
 
