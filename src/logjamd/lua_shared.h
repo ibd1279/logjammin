@@ -36,6 +36,7 @@
 
 #include "lj/Bson.h"
 #include "lj/Logger.h"
+#include "lj/Time_tracker.h"
 
 extern "C" {
 #include "lua.h"
@@ -126,5 +127,29 @@ namespace logjamd
          \return number of items added to the top of the stack -- always 1.
          */
         int sandbox_get(lua_State* L, const std::string& key);
+
+        //! Push cost data into the response object.
+        /*!
+         Gets the response object from the current sandbox, appends
+         the new result.
+         \note The memory associated with \c cost_data
+         and \c items becomes owned by the result.
+         \param L The lua closure associated with the sandbox.
+         \param full_cmd The command that generated this result.
+         \param current_cmd The command that caused result_push to be called.
+         \param cost_data The cost of generating this result. Cost data
+         will be allocated if \c cost_data is \c NULL.
+         \param items The items of the result. Results will be ommited
+         if \c items is an empty lj::Bson or \c NULL.
+         \param timer The timer to use for tracking the cost of "pushing
+         the result".
+         \return number of items added to the top of the stack -- always 0.
+         */
+        int result_push(lua_State* L,
+                        const std::string& full_cmd,
+                        const std::string& current_cmd,
+                        lj::Bson* cost_data,
+                        lj::Bson* items,
+                        lj::Time_tracker& timer);
     }; // namespace logjamd::lua
 }; // namespace logjamd

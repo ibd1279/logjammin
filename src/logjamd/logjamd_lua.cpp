@@ -202,12 +202,9 @@ namespace logjamd
         lj::Time_tracker timer;
         timer.start();
 
-        logjamd::lua::sandbox_get(L, "lj__response"); // {record_set, response}
-
         // Get what we need from lua's stack
-        Lua_record_set* filter = Lunar<Lua_record_set>::check(L, -2);
-        Lua_bson* response = Lunar<Lua_bson>::check(L, -1);
-        lua_pop(L, 2); // {}
+        Lua_record_set* filter = Lunar<Lua_record_set>::check(L, -1);
+        lua_pop(L, 1); // {}
         
         // Put the command parts together to make a full string.
         // String is used for recording the cost in the response.
@@ -228,21 +225,9 @@ namespace logjamd
         lj::Bson* items = new lj::Bson();
         filter->real_set().items_raw(*items);
         
-        // Put it all together.
-        lj::Bson* result = new lj::Bson();
-        result->set_child("cmd", lj::bson_new_string(cmd));
-        result->set_child("costs", cost_data);
-        result->set_child("items", items);
-
-        // Put it on the response.
-        response->real_node().push_child("results", result);
+        // Push the result.
+        logjamd::lua::result_push(L, cmd, "send_set", cost_data, items, timer);
         
-        // Add the last cost
-        timer.stop();
-        cost_data->push_child("", lj::bson_new_cost("send_set",
-                                                    timer.elapsed(),
-                                                    filter->real_set().size(),
-                                                    filter->real_set().size()));
         return 0;
     }
 };

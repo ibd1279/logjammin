@@ -39,7 +39,6 @@
 #include "logjamd/Lua_record_set.h"
 #include "logjamd/logjamd_lua.h"
 #include "logjamd/lua_shared.h"
-#include "logjamd/lua_shared.h"
 #include "lj/Logger.h"
 #include "lj/Storage_factory.h"
 #include "lj/Time_tracker.h"
@@ -158,6 +157,14 @@ namespace logjamd
         lj::Time_tracker timer;
         timer.start();
 
+        // Create the command name.
+        const std::string k_command(std::string("db.") +
+                                    dbname_ +
+                                    ".place(<record>)");
+
+        // validate the input before we even begin.
+        Lua_bson* wrapped_record = Lunar<Lua_bson>::check(L, -1);
+
         // Get the configuration from the environment.
         logjamd::lua::sandbox_get(L, "lj__config"); // {record, config}
         const lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
@@ -167,16 +174,25 @@ namespace logjamd
         if (logjamd::lua::is_mutable_write(config, __FUNCTION__))
         {
             // We can write, so lets execute the write logic.
-            // starting with the pre-place event logic.
+            lj::Log::info("Place record in storage [%s].",
+                          dbname_.c_str());
+
+            // Start by protecting the original object.
+            lj::Bson& original_record = wrapped_record->real_node();
+            lj::Bson record(original_record);
+
+            // Invoke the pre-placement event.
             get_event(L, dbname_, "pre_place"); // {record, event}
             if (!lua_isnil(L, -1))
             {
+                lj::Log::debug(".. Found pre-placement event. Executing.");
                 lua_pushvalue(L, -2); // {record, event, record}
                 lua_pushnil(L); // {record, event, record, nil}
                 lua_call(L, 2, 1); // {record, bool}
             }
             else
             {
+                lj::Log::debug(".. No pre-placement event found.");
                 lua_pop(L, 1); // {record}
                 lua_pushboolean(L, true); // {record, bool}
             }
@@ -185,57 +201,108 @@ namespace logjamd
             if (!lua_toboolean(L, -1))
             {
                 lua_pop(L, 2); // {}
-                lj::Log::debug.log("Not placing record.");
+                lj::Log::debug(".. Pre-palcement returned false. Not placing record.");
                 timer.stop();
-                // XXX this should update the costs array.
-                return 0;
+                logjamd::lua::result_push(L,
+                                          k_command,
+                                          k_command, 
+                                          NULL,
+                                          NULL,
+                                          timer);
+
+                luaL_error(L, "Unable to place record. Pre-placement returned false.");
             }
             else
             {
                 lua_pop(L, 1); // {record}
+                lj::Log::debug(".. Finished pre-palcement events. continuing.");
             }
             
             // Try to place the record.
-            lj::Bson& record = Lunar<Lua_bson>::check(L, -1)->real_node();
             try
             {
+                // Modify internal structures on the object prior to placing.
+                lj::Log::debug(".. preparing record.");
                 std::string server_id(lj::bson_as_string(config.nav("server/id")));
                 lj::bson_increment(record.nav("__clock").nav(server_id), 1);
                 record.set_child("__dirty", lj::bson_new_boolean(false));
-                
+
+                lj::Log::debug(".. executing placement.");
                 real_storage(L).place(record);
                 
+                lj::Log::debug(".. recording replication information.");
                 const std::string replication_name(push_replication_record(L, record));
                 push_replication_command(L, "place", dbname_, replication_name);
+
+                lj::Log::debug(".. placement complete.");
             }
             catch(lj::Exception* ex)
             {
-                luaL_error(L, "Unable to place record. %s", ex->to_string().c_str());
+                // Clean things up.
+                std::string msg(ex->to_string());
+                delete ex;
+                lua_pop(L, 1); // {}
+
+                // XXX need some rollback logic on the replication stuff.
+
+                lj::Log::info.log("Unable to place record: [%s].\n%s")
+                        << msg
+                        << lj::bson_as_pretty_string(record)
+                        << lj::Log::end;
+                
+                logjamd::lua::result_push(L,
+                                          k_command,
+                                          k_command, 
+                                          NULL,
+                                          NULL,
+                                          timer);
+
+                luaL_error(L, "Unable to place record: [%s].", msg.c_str());
             }
             
-            // post place event logic.
+            lj::Log::debug(".. updating record.");
+            original_record.copy_from(record);
+
+            // post placement event logic.
             get_event(L, dbname_, "post_place"); // {record, event}
             if (!lua_isnil(L, -1))
             {
+                lj::Log::debug(".. Found post-placement event. Executing.");
                 lua_pushvalue(L, -2); // {record, event, record}
                 lua_pushnil(L); // {record, event, record, nil}
                 lua_call(L, 2, 0); // {record}
             }
             else
             {
+                lj::Log::debug(".. No post-placement event found.");
                 lua_pop(L, 1); // {record}
             }
 
             lua_pop(L, 1); // {}
+
+            lj::Log::info("Completed place record in storage [%s].",
+                          dbname_.c_str());
         }
         else
         {
+            logjamd::lua::result_push(L,
+                                      k_command,
+                                      k_command, 
+                                      NULL,
+                                      NULL,
+                                      timer);
+
             // Not in a writable state. error out.
             luaL_error(L, "Unable to place record. Server is not in a writable mode.");
         }
         
-        timer.stop();
-        
+        logjamd::lua::result_push(L,
+                                  k_command,
+                                  k_command, 
+                                  NULL,
+                                  NULL,
+                                  timer);
+
         return 0;
     }
     

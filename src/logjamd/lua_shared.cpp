@@ -97,5 +97,52 @@ namespace logjamd
             lua_replace(L, -2); // {value}
             return 1;
         }
+
+        int result_push(lua_State* L,
+                        const std::string& full_cmd,
+                        const std::string& current_cmd,
+                        lj::Bson* cost_data,
+                        lj::Bson* items,
+                        lj::Time_tracker& timer)
+        {
+            // {}
+            logjamd::lua::sandbox_get(L, "lj__response"); // {response}
+            lj::Bson& response = Lunar<Lua_bson>::check(L, -1)->real_node();
+            lua_pop(L, 1); // {}
+
+            // Normalize cost and items data.
+            if (!cost_data)
+            {
+                cost_data = new lj::Bson();
+            }
+
+            if (!items)
+            {
+                items = new lj::Bson();
+            }
+
+            // build the result.
+            auto item_size = items->size();
+            lj::Bson* result = new lj::Bson();
+            result->set_child("cmd", lj::bson_new_string(full_cmd));
+            result->set_child("costs", cost_data);
+            if (item_size > 0)
+            {
+                result->set_child("items", items);
+            }
+
+            // add the result to the response.
+            response.push_child("results", result);
+
+            // Add the last cost to the result.
+            timer.stop();
+            lj::Bson* last_cost = lj::bson_new_cost(current_cmd,
+                                                    timer.elapsed(),
+                                                    item_size,
+                                                    item_size);
+            cost_data->push_child("", last_cost);
+
+            return 0;
+        }
     }; // namespace logjamd::lua
 }; // namespace logjamd
