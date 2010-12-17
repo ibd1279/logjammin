@@ -162,7 +162,7 @@ namespace logjamd
                                     dbname_ +
                                     ".place(<record>)");
 
-        // validate the input before we even begin.
+        // validate the input before we begin.
         Lua_bson* wrapped_record = Lunar<Lua_bson>::check(L, -1);
 
         // Get the configuration from the environment.
@@ -202,7 +202,6 @@ namespace logjamd
             {
                 lua_pop(L, 2); // {}
                 lj::Log::debug(".. Pre-palcement returned false. Not placing record.");
-                timer.stop();
                 logjamd::lua::result_push(L,
                                           k_command,
                                           k_command, 
@@ -231,8 +230,7 @@ namespace logjamd
                 real_storage(L).place(record);
                 
                 lj::Log::debug(".. recording replication information.");
-                const std::string replication_name(push_replication_record(L, record));
-                push_replication_command(L, "place", dbname_, replication_name);
+                // XXX Replication functionality.
 
                 lj::Log::debug(".. placement complete.");
             }
@@ -263,7 +261,7 @@ namespace logjamd
             lj::Log::debug(".. updating record.");
             original_record.copy_from(record);
 
-            // post placement event logic.
+            // Post placement event logic.
             get_event(L, dbname_, "post_place"); // {record, event}
             if (!lua_isnil(L, -1))
             {
@@ -308,66 +306,143 @@ namespace logjamd
     
     int Lua_storage::remove(lua_State* L)
     {
+        // {record}
         lj::Time_tracker timer;
         timer.start();
+
+        // Create the command name.
+        const std::string k_command(std::string("db.") +
+                                    dbname_ +
+                                    ".remove(<record>)");
         
-        get_event(L, dbname_, "pre_remove");
-        if (!lua_isnil(L, -1))
+        // Validate the input before we begin.
+        Lua_bson* wrapped_record = Lunar<Lua_bson>::check(L, -1);
+
+        // Get the configuration from the environment.
+        logjamd::lua::sandbox_get(L, "lj__config"); // {record, config}
+        const lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
+        lua_pop(L, 1); // {record}
+
+        // Test the writable mode.
+        if (logjamd::lua::is_mutable_write(config, __FUNCTION__))
         {
-            lua_pushvalue(L, -2);
-            lua_pushnil(L);
-            lua_call(L, 2, 1);
-        }
-        else
-        {
-            lua_pop(L, 1);
-            lua_pushboolean(L, true);
-        }
-        
-        if (!lua_toboolean(L, -1))
-        {
-            lj::Log::debug.log("Not removing record.");
-            lua_pop(L, 2);
-            return 0;
-        }
-        else
-        {
-            lua_pop(L, 1);
-        }
-        
-        Lua_bson* ptr = Lunar<Lua_bson>::check(L, -1);
-        
-        try
-        {
-            lua_getglobal(L, "server_id");
-            std::string server_id(lua_to_string(L, -1));
-            lua_pop(L, 1);
+            // We can write, so lets execute the remove logic.
+            lj::Log::info("Remove record in storage [%s].",
+                          dbname_.c_str());
+
+            // Invoke the pre-removal event.
+            get_event(L, dbname_, "pre_remove"); // {record, event}
+            if (!lua_isnil(L, -1))
+            {
+                lj::Log::debug(".. Found pre-removal event. Executing.");
+                lua_pushvalue(L, -2); // {record, event, record}
+                lua_pushnil(L); // {record, event, record, nil}
+                lua_call(L, 2, 1); // {record, bool}
+            }
+            else
+            {
+                lj::Log::debug(".. No pre-removal event found.");
+                lua_pop(L, 1); // {record}
+                lua_pushboolean(L, true); // {record, bool}
+            }
             
-            lj::bson_increment(ptr->real_node().nav("__clock").nav(server_id), 1);
-            ptr->real_node().set_child("__dirty", lj::bson_new_boolean(false));
-            real_storage(L).remove(ptr->real_node());
+            // Test the event result.
+            if (!lua_toboolean(L, -1))
+            {
+                lua_pop(L, 2); // {}
+                lj::Log::debug(".. Pre-removal returned false. Not removing record.");
+
+                logjamd::lua::result_push(L,
+                                          k_command,
+                                          k_command, 
+                                          NULL,
+                                          NULL,
+                                          timer);
+                luaL_error(L, "Unable to remove record. Pre-removal returned false.");
+            }
+            else
+            {
+                lua_pop(L, 1); // {record}
+                lj::Log::debug(".. Finished pre-removal events. continuing.");
+            }
             
-            const std::string replication_name(push_replication_record(L, ptr->real_node()));
-            push_replication_command(L, "remove", dbname_, replication_name);
-        }
-        catch(lj::Exception* ex)
-        {
-            luaL_error(L, "Unable to remove record. %s", ex->to_string().c_str());
-        }
-        
-        get_event(L, dbname_, "post_remove");
-        if (!lua_isnil(L, -1))
-        {
-            lua_pushvalue(L, -2);
-            lua_pushnil(L);
-            lua_call(L, 2, 0);
+            // Un-wrap the argument.
+            lj::Bson& record = wrapped_record->real_node();
+
+            // try to remove the record.
+            try
+            {
+                lj::Log::debug(".. executing removal.");
+                real_storage(L).remove(record);
+
+                lj::Log::debug(".. recording replication information.");
+                // XXX Replication functionality.
+
+                lj::Log::debug(".. removal complete.");
+            }
+            catch(lj::Exception* ex)
+            {
+                // Clean things up.
+                std::string msg(ex->to_string());
+                delete ex;
+                lua_pop(L, 1); // {}
+
+                // XXX need some rollback logic on the replication stuff.
+
+                lj::Log::info.log("Unable to remove record: [%s].\n%s")
+                        << msg
+                        << lj::bson_as_pretty_string(record)
+                        << lj::Log::end;
+                
+                logjamd::lua::result_push(L,
+                                          k_command,
+                                          k_command, 
+                                          NULL,
+                                          NULL,
+                                          timer);
+
+                luaL_error(L, "Unable to remove record: [%s].", msg.c_str());
+            }
+            
+            // Post removal event logic.
+            get_event(L, dbname_, "post_remove");
+            if (!lua_isnil(L, -1))
+            {
+                lj::Log::debug(".. Found post-removal event. Executing.");
+                lua_pushvalue(L, -2); // {record, event, record}
+                lua_pushnil(L); // {record, event, record, nil}
+                lua_call(L, 2, 0); // {record}
+            }
+            else
+            {
+                lj::Log::debug(".. No post-removal event found.");
+                lua_pop(L, 1); // {record}
+            }
+
+            lua_pop(L, 1); // {}
+
+            lj::Log::info("Completed remove record from storage [%s].",
+                          dbname_.c_str());
         }
         else
         {
-            lua_pop(L, 1);
-        }        
+            logjamd::lua::result_push(L,
+                                      k_command,
+                                      k_command, 
+                                      NULL,
+                                      NULL,
+                                      timer);
+
+            // Not in a writable state. error out.
+            luaL_error(L, "Unable to remove record. Server is not in a writable mode.");
+        }
         
-        timer.stop();
+        logjamd::lua::result_push(L,
+                                  k_command,
+                                  k_command, 
+                                  NULL,
+                                  NULL,
+                                  timer);
         
         return 0;
     }
