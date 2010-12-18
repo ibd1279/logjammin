@@ -151,5 +151,29 @@ namespace logjamd
                         lj::Bson* cost_data,
                         lj::Bson* items,
                         lj::Time_tracker& timer);
+
+        //! Get the server configuration object from the lua state.
+        /*!
+         Get the current server configuration from the sandbox. This
+         does not change the stack.
+         \param L The lua state.
+         \return A reference to the server configuration.
+         */
+        const lj::Bson& get_configuration(lua_State* L);
+
+        //! Fail out of the current lua command.
+        /*!
+         Records the time spent executing the current command, then
+         it throws a lua error to end execution of the current command.
+         \param L The lua state.
+         \param command The command being executed.
+         \param msg The error message.
+         \param timer The timer to use for tracking the cost of the failed
+         action.
+         */
+        int fail(lua_State* L,
+                 const std::string& command,
+                 const std::string& msg,
+                 lj::Time_tracker& timer);
     }; // namespace logjamd::lua
 }; // namespace logjamd

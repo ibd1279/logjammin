@@ -57,8 +57,6 @@ namespace logjamd
     LUNAR_MEMBER_METHOD(Lua_storage, place),
     LUNAR_MEMBER_METHOD(Lua_storage, remove),
     LUNAR_MEMBER_METHOD(Lua_storage, checkpoint),
-    LUNAR_MEMBER_METHOD(Lua_storage, add_index),
-    LUNAR_MEMBER_METHOD(Lua_storage, remove_index),
     LUNAR_MEMBER_METHOD(Lua_storage, rebuild),
     LUNAR_MEMBER_METHOD(Lua_storage, optimize),
     LUNAR_MEMBER_METHOD(Lua_storage, recall),
@@ -80,21 +78,33 @@ namespace logjamd
     int Lua_storage::all(lua_State* L)
     {
         lj::Time_tracker timer;
-        timer.start();
         
         // Build the command.
-        std::string cmd("db.");
-        cmd.append(dbname_).append(":all()");
+        const std::string k_command(std::string("db.") +
+                                    dbname_ +
+                                    ":all()");
         
+        // Get the configuration from the environment.
+        const lj::Bson& config = logjamd::lua::get_configuration(L);
+
+        // Test the readable mode.
+        if (!logjamd::lua::is_mutable_read(config, __FUNCTION__))
+        {
+            // Not in a readable state. error out.
+            return logjamd::lua::fail(L,
+                                      k_command,
+                                      "Server is not in a read mode.",
+                                      timer);
+        }
+
         // Create the record set.
         lj::Bson* cost_data = new lj::Bson();
         lj::Record_set* ptr = real_storage(L).all().release();
         Lua_record_set* wrapper = new Lua_record_set(ptr, cost_data);
         Lunar<Lua_record_set>::push(L, wrapper, true);
         
-        // Finish the debug info collection.
-        timer.stop();
-        cost_data->push_child("", lj::bson_new_cost(cmd,
+        // Finish the cost info collection.
+        cost_data->push_child("", lj::bson_new_cost(k_command,
                                                     timer.elapsed(),
                                                     ptr->raw_size(),
                                                     ptr->size()));        
@@ -104,21 +114,33 @@ namespace logjamd
     int Lua_storage::none(lua_State* L)
     {
         lj::Time_tracker timer;
-        timer.start();
         
         // Build the command.
-        std::string cmd("db.");
-        cmd.append(dbname_).append(":none()");
-        
+        const std::string k_command(std::string("db.") +
+                                    dbname_ +
+                                    ":none()");
+
+        // Get the configuration from the environment.
+        const lj::Bson& config = logjamd::lua::get_configuration(L);
+
+        // Test the readable mode.
+        if (!logjamd::lua::is_mutable_read(config, __FUNCTION__))
+        {
+            // Not in a readable state. error out.
+            return logjamd::lua::fail(L,
+                                      k_command,
+                                      "Server is not in a read mode.",
+                                      timer);
+        }
+
         // Create the record set.
         lj::Bson* cost_data = new lj::Bson();
         lj::Record_set* ptr = real_storage(L).none().release();
         Lua_record_set* wrapper = new Lua_record_set(ptr, cost_data);
         Lunar<Lua_record_set>::push(L, wrapper, true);
         
-        // Finish the debug info collection.
-        timer.stop();
-        cost_data->push_child("", lj::bson_new_cost(cmd,
+        // Finish the cost info collection.
+        cost_data->push_child("", lj::bson_new_cost(k_command,
                                                     timer.elapsed(),
                                                     ptr->raw_size(),
                                                     ptr->size()));        
@@ -128,7 +150,6 @@ namespace logjamd
     int Lua_storage::at(lua_State* L)
     {
         lj::Time_tracker timer;
-        timer.start();
         
         // Get the key to exclude.
         int key = luaL_checkint(L, -1);
@@ -137,14 +158,28 @@ namespace logjamd
         std::ostringstream cmd_builder;
         cmd_builder << "db." << dbname_;
         cmd_builder << ":at(" << key << ")";
+        const std::string k_command(cmd_builder.str());
         
+        // Get the configuration from the environment.
+        const lj::Bson& config = logjamd::lua::get_configuration(L);
+
+        // Test the readable mode.
+        if (!logjamd::lua::is_mutable_read(config, __FUNCTION__))
+        {
+            // Not in a readable state. error out.
+            return logjamd::lua::fail(L,
+                                      k_command,
+                                      "Server is not in a read mode.",
+                                      timer);
+        }
+
         lj::Bson* cost_data = new lj::Bson();
         lj::Record_set* ptr = real_storage(L).at(key).release();
         Lua_record_set* wrapper = new Lua_record_set(ptr, cost_data);
         Lunar<Lua_record_set>::push(L, wrapper, true);
-        
-        timer.stop();
-        cost_data->push_child("", lj::bson_new_cost(cmd_builder.str(),
+    
+        // Finish the cost info collection.
+        cost_data->push_child("", lj::bson_new_cost(k_command,
                                                     timer.elapsed(),
                                                     ptr->raw_size(),
                                                     ptr->size()));        
@@ -155,7 +190,6 @@ namespace logjamd
     {
         // {record}
         lj::Time_tracker timer;
-        timer.start();
 
         // Create the command name.
         const std::string k_command(std::string("db.") +
@@ -166,134 +200,119 @@ namespace logjamd
         Lua_bson* wrapped_record = Lunar<Lua_bson>::check(L, -1);
 
         // Get the configuration from the environment.
-        logjamd::lua::sandbox_get(L, "lj__config"); // {record, config}
-        const lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
-        lua_pop(L, 1); // {record}
+        const lj::Bson& config = logjamd::lua::get_configuration(L);
 
         // Test the writable mode.
-        if (logjamd::lua::is_mutable_write(config, __FUNCTION__))
+        if (!logjamd::lua::is_mutable_write(config, __FUNCTION__))
         {
-            // We can write, so lets execute the write logic.
-            lj::Log::info("Place record in storage [%s].",
-                          dbname_.c_str());
+            // Not in a writable state. error out.
+            return logjamd::lua::fail(L,
+                                      k_command,
+                                      "Server is not in a write mode.",
+                                      timer);
+        }
 
-            // Start by protecting the original object.
-            lj::Bson& original_record = wrapped_record->real_node();
-            lj::Bson record(original_record);
+        // We can write, so lets execute the write logic.
+        lj::Log::info("Place record in storage [%s].",
+                      dbname_.c_str());
 
-            // Invoke the pre-placement event.
-            get_event(L, dbname_, "pre_place"); // {record, event}
-            if (!lua_isnil(L, -1))
-            {
-                lj::Log::debug(".. Found pre-placement event. Executing.");
-                lua_pushvalue(L, -2); // {record, event, record}
-                lua_pushnil(L); // {record, event, record, nil}
-                lua_call(L, 2, 1); // {record, bool}
-            }
-            else
-            {
-                lj::Log::debug(".. No pre-placement event found.");
-                lua_pop(L, 1); // {record}
-                lua_pushboolean(L, true); // {record, bool}
-            }
-            
-            // Test the event result.
-            if (!lua_toboolean(L, -1))
-            {
-                lua_pop(L, 2); // {}
-                lj::Log::debug(".. Pre-palcement returned false. Not placing record.");
-                logjamd::lua::result_push(L,
-                                          k_command,
-                                          k_command, 
-                                          NULL,
-                                          NULL,
-                                          timer);
+        // Start by protecting the original object.
+        lj::Bson& original_record = wrapped_record->real_node();
+        lj::Bson record(original_record);
 
-                luaL_error(L, "Unable to place record. Pre-placement returned false.");
-            }
-            else
-            {
-                lua_pop(L, 1); // {record}
-                lj::Log::debug(".. Finished pre-palcement events. continuing.");
-            }
-            
-            // Try to place the record.
-            try
-            {
-                // Modify internal structures on the object prior to placing.
-                lj::Log::debug(".. preparing record.");
-                std::string server_id(lj::bson_as_string(config.nav("server/id")));
-                lj::bson_increment(record.nav("__clock").nav(server_id), 1);
-                record.set_child("__dirty", lj::bson_new_boolean(false));
-
-                lj::Log::debug(".. executing placement.");
-                real_storage(L).place(record);
-                
-                lj::Log::debug(".. recording replication information.");
-                // XXX Replication functionality.
-
-                lj::Log::debug(".. placement complete.");
-            }
-            catch(lj::Exception* ex)
-            {
-                // Clean things up.
-                std::string msg(ex->to_string());
-                delete ex;
-                lua_pop(L, 1); // {}
-
-                // XXX need some rollback logic on the replication stuff.
-
-                lj::Log::info.log("Unable to place record: [%s].\n%s")
-                        << msg
-                        << lj::bson_as_pretty_string(record)
-                        << lj::Log::end;
-                
-                logjamd::lua::result_push(L,
-                                          k_command,
-                                          k_command, 
-                                          NULL,
-                                          NULL,
-                                          timer);
-
-                luaL_error(L, "Unable to place record: [%s].", msg.c_str());
-            }
-            
-            lj::Log::debug(".. updating record.");
-            original_record.copy_from(record);
-
-            // Post placement event logic.
-            get_event(L, dbname_, "post_place"); // {record, event}
-            if (!lua_isnil(L, -1))
-            {
-                lj::Log::debug(".. Found post-placement event. Executing.");
-                lua_pushvalue(L, -2); // {record, event, record}
-                lua_pushnil(L); // {record, event, record, nil}
-                lua_call(L, 2, 0); // {record}
-            }
-            else
-            {
-                lj::Log::debug(".. No post-placement event found.");
-                lua_pop(L, 1); // {record}
-            }
-
-            lua_pop(L, 1); // {}
-
-            lj::Log::info("Completed place record in storage [%s].",
-                          dbname_.c_str());
+        // Invoke the pre-placement event.
+        get_event(L, dbname_, "pre_place"); // {record, event}
+        if (!lua_isnil(L, -1))
+        {
+            lj::Log::debug(".. Found pre-placement event. Executing.");
+            lua_pushvalue(L, -2); // {record, event, record}
+            lua_pushnil(L); // {record, event, record, nil}
+            lua_call(L, 2, 1); // {record, bool}
         }
         else
         {
-            logjamd::lua::result_push(L,
-                                      k_command,
-                                      k_command, 
-                                      NULL,
-                                      NULL,
-                                      timer);
-
-            // Not in a writable state. error out.
-            luaL_error(L, "Unable to place record. Server is not in a writable mode.");
+            lj::Log::debug(".. No pre-placement event found.");
+            lua_pop(L, 1); // {record}
+            lua_pushboolean(L, true); // {record, bool}
         }
         
+        // Test the event result.
+        if (!lua_toboolean(L, -1))
+        {
+            lua_pop(L, 2); // {}
+            lj::Log::debug(".. Pre-palcement returned false. Not placing record.");
+            return logjamd::lua::fail(L,
+                                      k_command,
+                                      "Pre-placement returned false.",
+                                      timer);
+        }
+        else
+        {
+            lua_pop(L, 1); // {record}
+            lj::Log::debug(".. Finished pre-palcement events. continuing.");
+        }
+        
+        // Try to place the record.
+        try
+        {
+            // Modify internal structures on the object prior to placing.
+            lj::Log::debug(".. preparing record.");
+            std::string server_id(lj::bson_as_string(config.nav("server/id")));
+            lj::bson_increment(record.nav("__clock").nav(server_id), 1);
+            record.set_child("__dirty", lj::bson_new_boolean(false));
+
+            lj::Log::debug(".. executing placement.");
+            real_storage(L).place(record);
+            
+            lj::Log::debug(".. recording replication information.");
+            // XXX Replication functionality.
+
+            lj::Log::debug(".. placement complete.");
+        }
+        catch(lj::Exception* ex)
+        {
+            // Clean things up.
+            std::string msg(ex->to_string());
+            delete ex;
+            lua_pop(L, 1); // {}
+
+            // Log the exception.
+            lj::Log::info.log("Unable to place record in [%s]. [%s]")
+                    << dbname_
+                    << msg
+                    << lj::Log::end;
+
+            lj::Log::debug(".. erasing replication information.");
+            // XXX need some rollback logic on the replication stuff.
+
+            return logjamd::lua::fail(L,
+                                      k_command,
+                                      msg,
+                                      timer);
+        }
+        
+        lj::Log::debug(".. updating record.");
+        original_record.copy_from(record);
+
+        // Post placement event logic.
+        get_event(L, dbname_, "post_place"); // {record, event}
+        if (!lua_isnil(L, -1))
+        {
+            lj::Log::debug(".. Found post-placement event. Executing.");
+            lua_pushvalue(L, -2); // {record, event, record}
+            lua_pushnil(L); // {record, event, record, nil}
+            lua_call(L, 2, 0); // {record}
+        }
+        else
+        {
+            lj::Log::debug(".. No post-placement event found.");
+            lua_pop(L, 1); // {record}
+        }
+
+        lua_pop(L, 1); // {}
+
+        lj::Log::info("Completed place record in storage [%s].",
+                      dbname_.c_str());
         logjamd::lua::result_push(L,
                                   k_command,
                                   k_command, 
@@ -308,7 +327,6 @@ namespace logjamd
     {
         // {record}
         lj::Time_tracker timer;
-        timer.start();
 
         // Create the command name.
         const std::string k_command(std::string("db.") +
@@ -319,124 +337,108 @@ namespace logjamd
         Lua_bson* wrapped_record = Lunar<Lua_bson>::check(L, -1);
 
         // Get the configuration from the environment.
-        logjamd::lua::sandbox_get(L, "lj__config"); // {record, config}
-        const lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
-        lua_pop(L, 1); // {record}
+        const lj::Bson& config = logjamd::lua::get_configuration(L);
 
         // Test the writable mode.
-        if (logjamd::lua::is_mutable_write(config, __FUNCTION__))
+        if (!logjamd::lua::is_mutable_write(config, __FUNCTION__))
         {
-            // We can write, so lets execute the remove logic.
-            lj::Log::info("Remove record in storage [%s].",
-                          dbname_.c_str());
+            // Not in a writable state. error out.
+            return logjamd::lua::fail(L,
+                                      k_command,
+                                      "Server is not in a write mode.",
+                                      timer);
+        }
 
-            // Invoke the pre-removal event.
-            get_event(L, dbname_, "pre_remove"); // {record, event}
-            if (!lua_isnil(L, -1))
-            {
-                lj::Log::debug(".. Found pre-removal event. Executing.");
-                lua_pushvalue(L, -2); // {record, event, record}
-                lua_pushnil(L); // {record, event, record, nil}
-                lua_call(L, 2, 1); // {record, bool}
-            }
-            else
-            {
-                lj::Log::debug(".. No pre-removal event found.");
-                lua_pop(L, 1); // {record}
-                lua_pushboolean(L, true); // {record, bool}
-            }
-            
-            // Test the event result.
-            if (!lua_toboolean(L, -1))
-            {
-                lua_pop(L, 2); // {}
-                lj::Log::debug(".. Pre-removal returned false. Not removing record.");
+        // We can write, so lets execute the remove logic.
+        lj::Log::info("Remove record in storage [%s].",
+                      dbname_.c_str());
 
-                logjamd::lua::result_push(L,
-                                          k_command,
-                                          k_command, 
-                                          NULL,
-                                          NULL,
-                                          timer);
-                luaL_error(L, "Unable to remove record. Pre-removal returned false.");
-            }
-            else
-            {
-                lua_pop(L, 1); // {record}
-                lj::Log::debug(".. Finished pre-removal events. continuing.");
-            }
-            
-            // Un-wrap the argument.
-            lj::Bson& record = wrapped_record->real_node();
-
-            // try to remove the record.
-            try
-            {
-                lj::Log::debug(".. executing removal.");
-                real_storage(L).remove(record);
-
-                lj::Log::debug(".. recording replication information.");
-                // XXX Replication functionality.
-
-                lj::Log::debug(".. removal complete.");
-            }
-            catch(lj::Exception* ex)
-            {
-                // Clean things up.
-                std::string msg(ex->to_string());
-                delete ex;
-                lua_pop(L, 1); // {}
-
-                // XXX need some rollback logic on the replication stuff.
-
-                lj::Log::info.log("Unable to remove record: [%s].\n%s")
-                        << msg
-                        << lj::bson_as_pretty_string(record)
-                        << lj::Log::end;
-                
-                logjamd::lua::result_push(L,
-                                          k_command,
-                                          k_command, 
-                                          NULL,
-                                          NULL,
-                                          timer);
-
-                luaL_error(L, "Unable to remove record: [%s].", msg.c_str());
-            }
-            
-            // Post removal event logic.
-            get_event(L, dbname_, "post_remove");
-            if (!lua_isnil(L, -1))
-            {
-                lj::Log::debug(".. Found post-removal event. Executing.");
-                lua_pushvalue(L, -2); // {record, event, record}
-                lua_pushnil(L); // {record, event, record, nil}
-                lua_call(L, 2, 0); // {record}
-            }
-            else
-            {
-                lj::Log::debug(".. No post-removal event found.");
-                lua_pop(L, 1); // {record}
-            }
-
-            lua_pop(L, 1); // {}
-
-            lj::Log::info("Completed remove record from storage [%s].",
-                          dbname_.c_str());
+        // Invoke the pre-removal event.
+        get_event(L, dbname_, "pre_remove"); // {record, event}
+        if (!lua_isnil(L, -1))
+        {
+            lj::Log::debug(".. Found pre-removal event. Executing.");
+            lua_pushvalue(L, -2); // {record, event, record}
+            lua_pushnil(L); // {record, event, record, nil}
+            lua_call(L, 2, 1); // {record, bool}
         }
         else
         {
-            logjamd::lua::result_push(L,
-                                      k_command,
-                                      k_command, 
-                                      NULL,
-                                      NULL,
-                                      timer);
-
-            // Not in a writable state. error out.
-            luaL_error(L, "Unable to remove record. Server is not in a writable mode.");
+            lj::Log::debug(".. No pre-removal event found.");
+            lua_pop(L, 1); // {record}
+            lua_pushboolean(L, true); // {record, bool}
         }
         
+        // Test the event result.
+        if (!lua_toboolean(L, -1))
+        {
+            lua_pop(L, 2); // {}
+            lj::Log::debug(".. Pre-removal returned false. Not removing record.");
+            return logjamd::lua::fail(L,
+                                      k_command,
+                                      "Pre-removal returned false.",
+                                      timer);
+        }
+        else
+        {
+            lua_pop(L, 1); // {record}
+            lj::Log::debug(".. Finished pre-removal events. continuing.");
+        }
+        
+        // Un-wrap the argument.
+        lj::Bson& record = wrapped_record->real_node();
+
+        // try to remove the record.
+        try
+        {
+            lj::Log::debug(".. executing removal.");
+            real_storage(L).remove(record);
+
+            lj::Log::debug(".. recording replication information.");
+            // XXX Replication functionality.
+
+            lj::Log::debug(".. removal complete.");
+        }
+        catch(lj::Exception* ex)
+        {
+            // Clean things up.
+            std::string msg(ex->to_string());
+            delete ex;
+            lua_pop(L, 1); // {}
+
+            lj::Log::info.log("Unable to remove record from [%s]. [%s].")
+                    << dbname_
+                    << msg
+                    << lj::Log::end;
+            
+            lj::Log::debug(".. erasing replication information.");
+            // XXX need some rollback logic on the replication stuff.
+
+            return logjamd::lua::fail(L,
+                                      k_command,
+                                      msg,
+                                      timer);
+        }
+        
+        // Post removal event logic.
+        get_event(L, dbname_, "post_remove");
+        if (!lua_isnil(L, -1))
+        {
+            lj::Log::debug(".. Found post-removal event. Executing.");
+            lua_pushvalue(L, -2); // {record, event, record}
+            lua_pushnil(L); // {record, event, record, nil}
+            lua_call(L, 2, 0); // {record}
+        }
+        else
+        {
+            lj::Log::debug(".. No post-removal event found.");
+            lua_pop(L, 1); // {record}
+        }
+
+        lua_pop(L, 1); // {}
+
+        lj::Log::info("Completed remove record from storage [%s].",
+                      dbname_.c_str());
         logjamd::lua::result_push(L,
                                   k_command,
                                   k_command, 
@@ -450,86 +452,146 @@ namespace logjamd
     int Lua_storage::checkpoint(lua_State* L)
     {
         lj::Time_tracker timer;
-        timer.start();
+
+        const std::string k_command(std::string("db.") +
+                                    dbname_ +
+                                    ":checkpoint()");
         
-        real_storage(L).checkpoint();
+        // Get the configuration from the environment.
+        const lj::Bson& config = logjamd::lua::get_configuration(L);
+
+        // Test the writable mode.
+        if (!logjamd::lua::is_mutable_write(config, __FUNCTION__))
+        {
+            // Not in a writable state. error out.
+            return logjamd::lua::fail(L,
+                                      k_command,
+                                      "Server is not in a write mode.",
+                                      timer);
+        }
+
+        try
+        {
+            lj::Log::info("Performing checkpoint on [%s].",
+                          dbname_.c_str());
+            real_storage(L).checkpoint();
+        }
+        catch (lj::Exception* ex)
+        {
+            std::string msg(ex->to_string());
+            delete ex;
+            return logjamd::lua::fail(L,
+                                      k_command,
+                                      msg,
+                                      timer);
+        }
+
+        lj::Log::info("Completed checkpoint on [%s].",
+                      dbname_.c_str());
+        logjamd::lua::result_push(L,
+                                  k_command,
+                                  k_command, 
+                                  NULL,
+                                  NULL,
+                                  timer);
         
-        timer.stop();
-        
-        return 0;
-    }
-    
-    int Lua_storage::add_index(lua_State* L)
-    {
-        // Get the data directory.
-        lua_getglobal(L, "lj__config");
-        const lj::Bson& server_config = Lunar<Lua_bson>::check(L, -1)->real_node();
-        lua_pop(L, 1);
-        
-        // Function args.
-        std::string indxcomp(lua_to_string(L, -1));
-        std::string indxfield(lua_to_string(L, -2));
-        std::string indxtype(lua_to_string(L, -3));
-        
-        lj::Bson* cfg = real_storage(server_config).configuration();
-        lj::storage_config_add_index(*cfg,
-                                     indxtype,
-                                     indxfield,
-                                     indxcomp);
-        lj::storage_config_save(*cfg, server_config);
-        lj::Storage* ptr = lj::Storage_factory::reproduce(dbname_,
-                                                          server_config);
-        ptr->rebuild_field_index(indxfield);
-        return 0;
-    }
-    
-    int Lua_storage::remove_index(lua_State* L)
-    {
-        // Get the data directory.
-        lua_getglobal(L, "lj__config");
-        const lj::Bson& server_config = Lunar<Lua_bson>::check(L, -1)->real_node();
-        lua_pop(L, 1);
-        
-        // Function args
-        std::string indxfield(lua_to_string(L, -1));
-        std::string indxtype(lua_to_string(L, -2));
-        
-        lj::Bson* cfg = real_storage(server_config).configuration();
-        lj::storage_config_remove_index(*cfg,
-                                        indxtype,
-                                        indxfield);
-        lj::storage_config_save(*cfg, server_config);
-        lj::Storage_factory::reproduce(dbname_, server_config);
         return 0;
     }
     
     int Lua_storage::rebuild(lua_State* L)
     {
+        lj::Time_tracker timer;
+
+        const std::string k_command(std::string("db.") +
+                                    dbname_ +
+                                    ":rebuild()");
+
+        // Get the configuration from the environment.
+        const lj::Bson& config = logjamd::lua::get_configuration(L);
+
+        // Test the writable mode.
+        if (!logjamd::lua::is_mutable_write(config, __FUNCTION__))
+        {
+            // Not in a writable state. error out.
+            return logjamd::lua::fail(L,
+                                      k_command,
+                                      "Server is not in a write mode.",
+                                      timer);
+        }
+
         try
         {
+            lj::Log::info("Performing rebuild on [%s].",
+                          dbname_.c_str());
             real_storage(L).rebuild();
         }
         catch (lj::Exception* ex)
         {
             std::string msg(ex->to_string());
             delete ex;
-            return luaL_error(L, "Unable to rebuild indicies. %s", msg.c_str());
+            return logjamd::lua::fail(L,
+                                      k_command,
+                                      msg,
+                                      timer);
         }
+
+        lj::Log::info("Completed rebuild on [%s].",
+                      dbname_.c_str());
+        logjamd::lua::result_push(L,
+                                  k_command,
+                                  k_command, 
+                                  NULL,
+                                  NULL,
+                                  timer);
+        
         return 0;
     }
     
     int Lua_storage::optimize(lua_State* L)
     {
+        lj::Time_tracker timer;
+
+        const std::string k_command(std::string("db.") +
+                                    dbname_ +
+                                    ":optimize()");
+
+        // Get the configuration from the environment.
+        const lj::Bson& config = logjamd::lua::get_configuration(L);
+
+        // Test the writable mode.
+        if (!logjamd::lua::is_mutable_write(config, __FUNCTION__))
+        {
+            // Not in a writable state. error out.
+            return logjamd::lua::fail(L,
+                                      k_command,
+                                      "Server is not in a write mode.",
+                                      timer);
+        }
+
         try
         {
+            lj::Log::info("Performing optimize on [%s].",
+                          dbname_.c_str());
             real_storage(L).optimize();
         }
         catch (lj::Exception* ex)
         {
             std::string msg(ex->to_string());
             delete ex;
-            return luaL_error(L, "Unable to optimize storage. %s", msg.c_str());
+            return logjamd::lua::fail(L,
+                                      k_command,
+                                      msg,
+                                      timer);
         }
+        lj::Log::info("Completed rebuild on [%s].",
+                      dbname_.c_str());
+        logjamd::lua::result_push(L,
+                                  k_command,
+                                  k_command, 
+                                  NULL,
+                                  NULL,
+                                  timer);
+        
         return 0;
     }
     

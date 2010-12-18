@@ -168,6 +168,6 @@ namespace logjamd
         //! Hidden.
         Lua_storage& operator=(const Lua_storage&);
         
-        std::string dbname_;
+        const std::string dbname_;
     };
 }; // namespace logjamd

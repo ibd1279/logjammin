@@ -122,7 +122,7 @@ namespace logjamd
             }
 
             // build the result.
-            auto item_size = items->size();
+            auto item_size = items->to_map().size();
             lj::Bson* result = new lj::Bson();
             result->set_child("cmd", lj::bson_new_string(full_cmd));
             result->set_child("costs", cost_data);
@@ -135,14 +135,41 @@ namespace logjamd
             response.push_child("results", result);
 
             // Add the last cost to the result.
-            timer.stop();
-            lj::Bson* last_cost = lj::bson_new_cost(current_cmd,
-                                                    timer.elapsed(),
-                                                    item_size,
-                                                    item_size);
-            cost_data->push_child("", last_cost);
+            cost_data->push_child("", lj::bson_new_cost(current_cmd,
+                                                        timer.elapsed(),
+                                                        item_size,
+                                                        item_size));
 
             return 0;
         }
+
+        const lj::Bson& get_configuration(lua_State* L)
+        {
+            // {}
+            logjamd::lua::sandbox_get(L, "lj__config"); // {config}
+            const lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
+            lua_pop(L, 1); // {}
+            return config;
+        }
+
+        int fail(lua_State* L,
+                 const std::string& command,
+                 const std::string& msg,
+                 lj::Time_tracker& timer)
+        {
+            logjamd::lua::result_push(L,
+                                      command,
+                                      command, 
+                                      NULL,
+                                      NULL,
+                                      timer);
+
+            std::string fmt(command + " failed. [%s]");
+            return luaL_error(L,
+                              fmt.c_str(),
+                              msg.c_str());
+
+        }
+
     }; // namespace logjamd::lua
 }; // namespace logjamd
