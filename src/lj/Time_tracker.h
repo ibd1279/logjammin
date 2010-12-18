@@ -60,7 +60,18 @@ namespace lj
          */
         unsigned long long elapsed() const;
     private:
-        std::pair<unsigned long long, unsigned long long> start_;
+        struct Point_in_time
+        {
+            unsigned long long seconds;
+            unsigned long long useconds;
+            Point_in_time(unsigned long long sec,
+                          unsigned long long usec) : seconds(sec),
+                                                     useconds(usec)
+            {
+            }
+        };
+
+        Point_in_time start_;
         unsigned long long elapsed_;
     }; // class Time_tracker
 }; // namespace lj

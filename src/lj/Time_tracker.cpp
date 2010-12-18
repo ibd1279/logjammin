@@ -41,36 +41,33 @@ namespace lj
 {
     Time_tracker::Time_tracker() : start_(0, 0), elapsed_(0)
     {
+        start();
     }
     
     void Time_tracker::start()
     {
         struct timeval now;
         gettimeofday(&now, NULL);
-        start_.first = now.tv_sec;
-        start_.second = now.tv_usec;
+        start_.seconds = now.tv_sec;
+        start_.useconds = now.tv_usec;
     }
     
     unsigned long long Time_tracker::stop()
     {
-        if (start_.first)
-        {
-            elapsed_ += elapsed();
-            start_.first = 0;
-            start_.second = 0;
-        }
+        elapsed_ = elapsed();
+        start_.seconds = 0;
+        start_.useconds = 0;
         return elapsed_;
     }
     
     unsigned long long Time_tracker::elapsed() const
     {
-        if (start_.first)
+        if (start_.seconds)
         {
             struct timeval now;
             gettimeofday(&now, NULL);
-            std::pair<unsigned long long, unsigned long long> end(now.tv_sec, now.tv_usec);
-            return (((end.first - start_.first) * 1000000UL) +
-                    (end.second - start_.second));
+            return (((now.tv_sec - start_.seconds) * 1000000UL) +
+                    (now.tv_usec - start_.useconds));
         }
         else
         {
