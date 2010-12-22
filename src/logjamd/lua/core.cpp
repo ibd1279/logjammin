@@ -1,5 +1,5 @@
 /*!
- \file lua_config.cpp
+ \file config_api.cpp
  \brief Logjam server lua functions for configuration.
  \author Jason Watson
  
@@ -33,12 +33,11 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjamd/lua_config.h"
+#include "logjamd/lua/core.h"
 
 #include "logjamd/Lua_bson.h"
-#include "logjamd/Lua_storage.h"
+#include "logjamd/lua/Storage.h"
 #include "logjamd/logjamd_lua.h"
-#include "logjamd/lua_shared.h"
 #include "lj/Logger.h"
 #include "lj/Storage.h"
 #include "lj/Storage_factory.h"
@@ -135,7 +134,7 @@ namespace
         lua_pop(L, 1); // {}
 
         // Test that config commands are currently allowed.
-        if (!logjamd::lua::is_mutable_config(config, __FUNCTION__))
+        if (!logjamd::is_mutable_config(config, __FUNCTION__))
         {
             return 0;
         }
@@ -162,7 +161,7 @@ namespace
         lua_pop(L, 1); // {}
 
         // Test that config commands are currently allowed.
-        if (!logjamd::lua::is_mutable_config(config, __FUNCTION__))
+        if (!logjamd::is_mutable_config(config, __FUNCTION__))
         {
             return 0;
         }
@@ -189,7 +188,7 @@ namespace
         lua_pop(L, 1); // {}
 
         // Test that config commands are currently allowed.
-        if (!logjamd::lua::is_mutable_config(config, __FUNCTION__))
+        if (!logjamd::is_mutable_config(config, __FUNCTION__))
         {
             return 0;
         }
@@ -217,7 +216,7 @@ namespace
         lua_pop(L, 2); // {}
 
         // Test that config commands are currently allowed.
-        if (!logjamd::lua::is_mutable_config(config, __FUNCTION__))
+        if (!logjamd::is_mutable_config(config, __FUNCTION__))
         {
             return 0;
         }
@@ -270,7 +269,7 @@ namespace
         lua_pop(L, 2); // {}
 
         // Test that config commands are currently allowed.
-        if (!logjamd::lua::is_mutable_config(config, __FUNCTION__))
+        if (!logjamd::is_mutable_config(config, __FUNCTION__))
         {
             return 0;
         }
@@ -328,7 +327,7 @@ namespace
         // Logging level can be changed even when not in a configurable state.
         // the difference is that the configuration change will not be saved
         // unless we are in a configurable mode.
-        if (logjamd::lua::is_mutable_config(config, __FUNCTION__))
+        if (logjamd::is_mutable_config(config, __FUNCTION__))
         {
             // Save the config file to disk.
             util_persist_config(L, config);
@@ -353,7 +352,7 @@ namespace
         lua_pop(L, 1); // {}
 
         // Test that write commands are currently allowed.
-        if (!logjamd::lua::is_mutable_write(config, __FUNCTION__))
+        if (!logjamd::is_mutable_write(config, __FUNCTION__))
         {
             return 0;
         }
@@ -377,7 +376,7 @@ namespace
         lua_pop(L, 4); // {}
 
         // Test that write commands are currently allowed.
-        if (!logjamd::lua::is_mutable_write(config, __FUNCTION__))
+        if (!logjamd::is_mutable_write(config, __FUNCTION__))
         {
             return 0;
         }
@@ -403,7 +402,7 @@ namespace
         lua_pop(L, 2); // {}
 
         // Test that write commands are currently allowed.
-        if (!logjamd::lua::is_mutable_write(config, __FUNCTION__))
+        if (!logjamd::is_mutable_write(config, __FUNCTION__))
         {
             return 0;
         }
@@ -436,7 +435,7 @@ namespace
         lua_pop(L, 3);
 
         // Test that write commands are currently allowed.
-        if (!logjamd::lua::is_mutable_write(config, __FUNCTION__))
+        if (!logjamd::is_mutable_write(config, __FUNCTION__))
         {
             return 0;
         }
@@ -468,7 +467,7 @@ namespace
         lua_pop(L, 1); // {}
         
         // Test that write commands are currently allowed.
-        if (!logjamd::lua::is_mutable_read(config, __FUNCTION__))
+        if (!logjamd::is_mutable_read(config, __FUNCTION__))
         {
             return 0;
         }
@@ -481,6 +480,12 @@ namespace
 
 namespace logjamd
 {
+    bool check_mutable_mode(const lj::Bson& config, const Mutable_mode mode)
+    {
+        const lj::Bson& tmp = config.nav("server/mode");
+        return (mode == static_cast<Mutable_mode>(lj::bson_as_int64(tmp)));
+    }
+
     namespace lua
     {
         void register_config_api(lua_State* L, lj::Bson* config)
@@ -550,8 +555,8 @@ namespace logjamd
                 // load the storage and set it to the db table.
                 std::string dbname(lj::bson_as_string(*iter->second));
                 lua_pushstring(L, dbname.c_str()); // {db, event, dbname}
-                logjamd::Lua_storage* db_ptr = new logjamd::Lua_storage(dbname);
-                Lunar<logjamd::Lua_storage>::push(L, db_ptr, true); // {db, event, dbname, storage}
+                logjamd::lua::Storage* db_ptr = new logjamd::lua::Storage(dbname);
+                Lunar<logjamd::lua::Storage>::push(L, db_ptr, true); // {db, event, dbname, storage}
                 lua_settable(L, db_table); // {db, event}
                 
                 // Loop over the events for the storage.
@@ -601,6 +606,117 @@ namespace logjamd
             lua_setglobal(L, "db"); // {}
         }
 
+        int sandbox_push(lua_State* L)
+        {
+            lua_getglobal(L, "environment_cache"); // {ec}
+            if (lua_isnil(L, -1))
+            {
+                lua_pop(L, 1); // {}
+                lua_newtable(L); // {ec}
+                lua_pushvalue(L, -1); // {ec, ec}
+                lua_setglobal(L, "environment_cache"); // {ec}
+            }
+            lua_pushthread(L); // {ec, thread}
+            lua_gettable(L, -2); // {ec, t}
+            if (lua_isnil(L, -1))
+            {
+                lua_pop(L, 1); // {ec}
+                lua_newtable(L); // {ec, t}
+                lua_pushthread(L); // {ec, t, thread}
+                lua_pushvalue(L, -2); // {ec, t, name, t}
+                lua_settable(L, -4); // {ec, t}
+                lua_pushvalue(L, -1); // {ec, t, t}
+                lua_pushstring(L, "__index"); // {ec, t, t, __index}
+                lua_pushvalue(L, LUA_GLOBALSINDEX); // {ec, t, t, __index, _G}
+                lua_settable(L, -3); // {ec, t, t}
+                lua_setmetatable(L, -2); // {ec, t}
+            }
+            lua_replace(L, -2); // {t}
+            return 1;
+        }
+
+        int sandbox_get(lua_State* L, const std::string& key)
+        {
+            // {}
+            sandbox_push(L); // {sandbox}
+            lua_pushlstring(L, key.c_str(), key.size()); // {sandbox, key}
+            lua_gettable(L, -2); // {sandbox, value}
+            lua_replace(L, -2); // {value}
+            return 1;
+        }
+
+        int result_push(lua_State* L,
+                        const std::string& full_cmd,
+                        const std::string& current_cmd,
+                        lj::Bson* cost_data,
+                        lj::Bson* items,
+                        lj::Time_tracker& timer)
+        {
+            // {}
+            logjamd::lua::sandbox_get(L, "lj__response"); // {response}
+            lj::Bson& response = Lunar<Lua_bson>::check(L, -1)->real_node();
+            lua_pop(L, 1); // {}
+
+            // Normalize cost and items data.
+            if (!cost_data)
+            {
+                cost_data = new lj::Bson();
+            }
+
+            if (!items)
+            {
+                items = new lj::Bson();
+            }
+
+            // build the result.
+            auto item_size = items->to_map().size();
+            lj::Bson* result = new lj::Bson();
+            result->set_child("cmd", lj::bson_new_string(full_cmd));
+            result->set_child("costs", cost_data);
+            if (item_size > 0)
+            {
+                result->set_child("items", items);
+            }
+
+            // add the result to the response.
+            response.push_child("results", result);
+
+            // Add the last cost to the result.
+            cost_data->push_child("", lj::bson_new_cost(current_cmd,
+                                                        timer.elapsed(),
+                                                        item_size,
+                                                        item_size));
+
+            return 0;
+        }
+
+        const lj::Bson& get_configuration(lua_State* L)
+        {
+            // {}
+            logjamd::lua::sandbox_get(L, "lj__config"); // {config}
+            const lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
+            lua_pop(L, 1); // {}
+            return config;
+        }
+
+        int fail(lua_State* L,
+                 const std::string& command,
+                 const std::string& msg,
+                 lj::Time_tracker& timer)
+        {
+            logjamd::lua::result_push(L,
+                                      command,
+                                      command, 
+                                      NULL,
+                                      NULL,
+                                      timer);
+
+            std::string fmt(command + " failed. [%s]");
+            return luaL_error(L,
+                              fmt.c_str(),
+                              msg.c_str());
+
+        }
     }; // namespace logjamd::lua
 
 }; // namespace logjamd

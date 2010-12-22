@@ -34,12 +34,11 @@
  */
 
 #include "logjamd/logjamd_lua.h"
-#include "logjamd/lua_config.h"
-#include "logjamd/lua_shared.h"
+#include "logjamd/lua/core.h"
 
 #include "logjamd/Lua_bson.h"
 #include "logjamd/Lua_record_set.h"
-#include "logjamd/Lua_storage.h"
+#include "logjamd/lua/Storage.h"
 #include "lj/Base64.h"
 #include "lj/Logger.h"
 #include "lj/Storage.h"
@@ -131,7 +130,7 @@ namespace logjamd
 
         // Register the object model.
         Lunar<logjamd::Lua_record_set>::Register(L);
-        Lunar<logjamd::Lua_storage>::Register(L);
+        Lunar<logjamd::lua::Storage>::Register(L);
         
         // Build the default storage object.
         logjamd::lua::load_autoload_storage(L, config);

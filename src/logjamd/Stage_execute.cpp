@@ -34,9 +34,9 @@
 
 #include "logjamd/Stage_execute.h"
 
+#include "logjamd/lua/core.h"
 #include "logjamd/Lua_bson.h"
 #include "logjamd/logjamd_lua.h"
-#include "logjamd/lua_shared.h"
 #include "lj/Bson.h"
 #include "lj/Logger.h"
 #include "lj/Time_tracker.h"

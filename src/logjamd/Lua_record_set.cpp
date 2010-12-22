@@ -35,7 +35,7 @@
 
 #include "Lua_record_set.h"
 
-#include "logjamd/Lua_storage.h"
+#include "logjamd/lua/Storage.h"
 #include "logjamd/Lua_bson.h"
 #include "lj/Bson.h"
 #include "lj/Logger.h"
@@ -46,6 +46,8 @@
 #include <string>
 #include <memory>
 #include <sstream>
+
+using namespace logjamd::lua;
 
 namespace
 {
@@ -194,7 +196,7 @@ namespace logjamd
 
     Lua_record_set::Lua_record_set(lua_State* L) : filter_(NULL), costs_(NULL)
     {
-        Lua_storage *ptr = Lunar<Lua_storage>::check(L, -1);
+        Storage *ptr = Lunar<Storage>::check(L, -1);
         filter_ = ptr->real_storage(L).none().release();
         costs_ = new lj::Bson();
     }

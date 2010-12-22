@@ -1,7 +1,7 @@
 #pragma once
 /*!
- \file lua_shared.h
- \brief Logjam server shared lua functions header.
+ \file core.h
+ \brief Core logjamd server functionality.
  \author Jason Watson
  
  Copyright (c) 2010, Jason Watson
@@ -34,6 +34,7 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+
 #include "lj/Bson.h"
 #include "lj/Logger.h"
 #include "lj/Time_tracker.h"
@@ -47,69 +48,95 @@ extern "C" {
 
 namespace logjamd
 {
+    //! Enumeration of mutable modes.
+    /*!
+     \par
+     These mutable modes are used by the lua functions to check
+     the permisibility of actions.
+     */
+    enum class Mutable_mode : unsigned int {
+        k_config,     //!< Configration mutable mode.
+        k_readonly,   //!< Read only mutable mode. No writes allowed.
+        k_readwrite   //!< Read write mutable mode. All actions allowed.
+    }; // enum class logjamd::lua::Mutable_mode
+
+    //! Check to see if the configuration is in a given mutable mode.
+    /*!
+     \param config The config file to test.
+     \param mode The mode to test.
+     \return true if the mode matches, false otherwise.
+     */
+    bool check_mutable_mode(const lj::Bson& config, const Mutable_mode mode);
+
+    //! Shortcut to checking for the configurable mode.
+    inline bool is_mutable_config(const lj::Bson& config, const std::string& action)
+    {
+        bool test = (check_mutable_mode(config, Mutable_mode::k_config) ||
+                     check_mutable_mode(config, Mutable_mode::k_readonly) ||
+                     check_mutable_mode(config, Mutable_mode::k_readwrite));
+        if (!test)
+        {
+            lj::Log::notice.log("Configurable test when not in a config mode for [%s].")
+                    << action << lj::Log::end;
+        }
+
+        return test;
+    }
+
+    //! Shortcut to checking the readable mode.
+    inline bool is_mutable_read(const lj::Bson& config, const std::string& action)
+    {
+        bool test = (check_mutable_mode(config, Mutable_mode::k_readonly) ||
+                     check_mutable_mode(config, Mutable_mode::k_readwrite));
+        if (!test)
+        {
+            lj::Log::notice.log("Readable test when not in a read mode for [%s].")
+                    << action << lj::Log::end;
+        }
+
+        return test;
+    }
+
+    //! Shortcut to checking the writable mode.
+    inline bool is_mutable_write(const lj::Bson& config, const std::string& action)
+    {
+        bool test = check_mutable_mode(config, Mutable_mode::k_readwrite);
+        if (!test)
+        {
+            lj::Log::notice.log("Writable test when not in a write mode for [%s].")
+                    << action << lj::Log::end;
+        }
+
+        return test;
+    }
+
     namespace lua
     {
-        //! Enumeration of mutable modes.
+        //! Register the configuration API into the lua state.
         /*!
          \par
-         These mutable modes are used by the lua functions to check
-         the permisibility of actions.
-         */
-        enum class Mutable_mode : unsigned int {
-            k_config,     //!< Configration mutable mode.
-            k_readonly,   //!< Read only mutable mode. No writes allowed.
-            k_readwrite   //!< Read write mutable mode. All actions allowed.
-        }; // enum class logjamd::lua::Mutable_mode
+         Registers the configuration api into the lua state. The APIs
+         registered by this method support server and storage
+         configuraton.
+         \note The config pointer.
+         The config pointer must be a long-lived pointer -- at least
+         as long as the lua state. The reason is that the config pointer
+         is used as an upvalue for all the registered functions.
+         \param L The lua state to register the functions into.
+         \param config Pointer to the server configuration object.
+        */
+        void register_config_api(lua_State* L, lj::Bson* config);
 
-        //! Check to see if the configuration is in a given mutable mode.
+        //! Load the storage configured to be auto loaded.
         /*!
-         \param config The config file to test.
-         \param mode The mode to test.
-         \return true if the mode matches, false otherwise.
+         \par Code location.
+         This function exists in the lua configuration APIs because
+         it depends on the functionality to store and load storage
+         events.
+         \param L the lua state.
+         \param config Pointer to the server configuration object.
          */
-        bool check_mutable_mode(const lj::Bson& config, const Mutable_mode mode);
-
-        //! Shortcut to checking for the configurable mode.
-        inline bool is_mutable_config(const lj::Bson& config, const std::string& action)
-        {
-            bool test = (check_mutable_mode(config, Mutable_mode::k_config) ||
-                         check_mutable_mode(config, Mutable_mode::k_readonly) ||
-                         check_mutable_mode(config, Mutable_mode::k_readwrite));
-            if (!test)
-            {
-                lj::Log::notice.log("Configurable test when not in a config mode for [%s].")
-                        << action << lj::Log::end;
-            }
-
-            return test;
-        }
-
-        //! Shortcut to checking the readable mode.
-        inline bool is_mutable_read(const lj::Bson& config, const std::string& action)
-        {
-            bool test = (check_mutable_mode(config, Mutable_mode::k_readonly) ||
-                         check_mutable_mode(config, Mutable_mode::k_readwrite));
-            if (!test)
-            {
-                lj::Log::notice.log("Readable test when not in a read mode for [%s].")
-                        << action << lj::Log::end;
-            }
-
-            return test;
-        }
-
-        //! Shortcut to checking the writable mode.
-        inline bool is_mutable_write(const lj::Bson& config, const std::string& action)
-        {
-            bool test = check_mutable_mode(config, Mutable_mode::k_readwrite);
-            if (!test)
-            {
-                lj::Log::notice.log("Writable test when not in a write mode for [%s].")
-                        << action << lj::Log::end;
-            }
-
-            return test;
-        }
+        void load_autoload_storage(lua_State* L, const lj::Bson* config);
 
         //! Put the environment table for this identifier ontop of the stack.
         /*!

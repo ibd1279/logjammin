@@ -33,7 +33,7 @@
  */
 
 #include "logjamd/logjamd_lua.h"
-#include "logjamd/lua_shared.h"
+#include "logjamd/lua/core.h"
 #include "logjamd/Server.h"
 #include "lj/Logger.h"
 #include "build/default/config.h"
@@ -70,22 +70,22 @@ void populate_config(lj::Bson* config)
     config->set_child("logging/emergency", lj::bson_new_boolean(true));
 }
 
-logjamd::lua::Mutable_mode string_to_mutable_mode(const std::string& m)
+logjamd::Mutable_mode string_to_mutable_mode(const std::string& m)
 {
     if (m.compare("config") == 0)
     {
-        return logjamd::lua::Mutable_mode::k_config;
+        return logjamd::Mutable_mode::k_config;
     }
     if (m.compare("readonly") == 0)
     {
-        return logjamd::lua::Mutable_mode::k_readonly;
+        return logjamd::Mutable_mode::k_readonly;
     }
     if (m.compare("readwrite") == 0)
     {
-        return logjamd::lua::Mutable_mode::k_readwrite;
+        return logjamd::Mutable_mode::k_readwrite;
     }
 
-    return logjamd::lua::Mutable_mode::k_readonly;
+    return logjamd::Mutable_mode::k_readonly;
 }
 
 //! Server main entry point.
@@ -99,7 +99,7 @@ int main(int argc, char* const argv[]) {
 
     // Load the configuration from disk
     lj::Bson* mutable_config;
-    logjamd::lua::Mutable_mode server_mutable_mode = string_to_mutable_mode(argv[1]);
+    logjamd::Mutable_mode server_mutable_mode = string_to_mutable_mode(argv[1]);
     std::cerr << "starting server in "
               << static_cast<int64_t>(server_mutable_mode)
               << " mode."
@@ -108,7 +108,7 @@ int main(int argc, char* const argv[]) {
     {
         mutable_config = lj::bson_load(argv[2]);
         if (!mutable_config->exists() &&
-            logjamd::lua::Mutable_mode::k_config == server_mutable_mode)
+            logjamd::Mutable_mode::k_config == server_mutable_mode)
         {
             // Create a new default configuration file and let the server
             // go ahead and start.
