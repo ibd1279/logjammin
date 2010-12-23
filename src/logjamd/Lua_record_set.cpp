@@ -35,6 +35,7 @@
 
 #include "Lua_record_set.h"
 
+#include "logjamd/lua/core.h"
 #include "logjamd/lua/Storage.h"
 #include "logjamd/Lua_bson.h"
 #include "lj/Bson.h"
@@ -55,10 +56,12 @@ namespace
                      lj::Record_set& real_set,
                      std::unique_ptr<lj::Record_set> (lj::Record_set::*f)(const std::string&, const std::string&) const,
                      const std::string& cmd,
-                     lj::Bson* cost_data)
+                     const lj::Bson& costs)
     {
         lj::Time_tracker timer;
-        timer.start();
+
+        // copy cost data for the new result.
+        lj::Bson* cost_data = new lj::Bson(costs);
         
         // Get the search inputs
         std::string field(lua_to_string(L, -2));
@@ -68,14 +71,14 @@ namespace
         std::ostringstream cmd_builder;
         cmd_builder << cmd << "(";
         cmd_builder << "'" << field << "', '" << val << "')";
+        const std::string k_command(cmd_builder.str());
         
         // Execute the filtering operation.
         lj::Record_set* ptr = (real_set.*f)(field, val).release();
         logjamd::Lua_record_set* wrapper = new logjamd::Lua_record_set(ptr, cost_data);
         Lunar<logjamd::Lua_record_set>::push(L, wrapper, true);
         
-        timer.stop();
-        cost_data->push_child("", lj::bson_new_cost(cmd_builder.str(),
+        cost_data->push_child("", lj::bson_new_cost(k_command,
                                                     timer.elapsed(),
                                                     ptr->raw_size(),
                                                     ptr->size()));
@@ -84,10 +87,12 @@ namespace
                 lj::Record_set& real_set,
                 std::unique_ptr<lj::Record_set> (lj::Record_set::*f)(const std::string&, const void* const, const size_t) const,
                 const std::string& cmd,
-                lj::Bson* cost_data)
+                const lj::Bson& costs)
     {
         lj::Time_tracker timer;
-        timer.start();
+
+        // copy cost data for the new result.
+        lj::Bson* cost_data = new lj::Bson(costs);
         
         // Get the field from the lua stack.
         std::string field(lua_to_string(L, -2));
@@ -99,7 +104,7 @@ namespace
         
         // Execute the filtering operation.
         lj::Record_set* ptr;
-        lj::Log::info.log("doing a compare on string %d number %d")
+        lj::Log::info.log("doing a compare with is_string %d is_number %d")
                 << lua_isstring(L, -1)
                 << lua_isnumber(L, -1)
                 << lj::Log::end;
@@ -121,31 +126,31 @@ namespace
         else
         {
             // Must be a bson object.
-            logjamd::Lua_bson* val = Lunar<logjamd::Lua_bson>::check(L, -1);
-            if (lj::bson_type_is_quotable(val->real_node().type()))
+            lj::Bson& val = Lunar<logjamd::Lua_bson>::check(L, -1)->real_node();
+            if (lj::bson_type_is_quotable(val.type()))
             {
                 // Deal with string bson objects.
-                std::string tmp(lj::bson_as_string(val->real_node()));
+                const std::string tmp(lj::bson_as_string(val));
                 cmd_builder << "'" << tmp << "'";
                 ptr = (real_set.*f)(field, tmp.c_str(), tmp.size()).release();
             }
-            else if (lj::bson_type_is_nested(val->real_node().type()))
+            else if (lj::bson_type_is_nested(val.type()))
             {
                 // Deal with document and array bson objects.
-                char* binary = val->real_node().to_binary();
-                size_t len = val->real_node().size();
-                cmd_builder << "'" << lj::bson_as_string(val->real_node()) << "'";
+                char* binary = val.to_binary();
+                size_t len = val.size();
+                cmd_builder << "'" << lj::bson_as_string(val) << "'";
                 ptr = (real_set.*f)(field, binary, len).release();
                 delete[] binary;
             }
-            else if (lj::Bson::k_null == val->real_node().type())
+            else if (lj::Bson::k_null == val.type())
             {
                 // Deal with null bson objects.
                 // XXX This is all wrong code, nil should be treated
                 // XXX as a difference on the current set and the set of 
                 // XXX values in the index.
-                char* binary = val->real_node().to_binary();
-                size_t len = val->real_node().size();
+                char* binary = val.to_binary();
+                size_t len = val.size();
                 cmd_builder << "nil";
                 ptr = (real_set.*f)(field, binary, len).release();
                 delete[] binary;
@@ -153,9 +158,9 @@ namespace
             else
             {
                 // Deal with all other value types (double, int, bool, etc).
-                char* binary = val->real_node().to_binary();
-                size_t len = val->real_node().size();
-                cmd_builder << lj::bson_as_string(val->real_node());
+                char* binary = val.to_binary();
+                size_t len = val.size();
+                cmd_builder << lj::bson_as_string(val);
                 ptr = (real_set.*f)(field, binary, len).release();
                 delete[] binary;
             }
@@ -167,8 +172,9 @@ namespace
         
         // Finish the debug info collection.
         cmd_builder << ")";
-        timer.stop();
-        cost_data->push_child("", lj::bson_new_cost(cmd_builder.str(),
+        const std::string k_command(cmd_builder.str());
+
+        cost_data->push_child("", lj::bson_new_cost(k_command,
                                                     timer.elapsed(),
                                                     ptr->raw_size(),
                                                     ptr->size()));
@@ -210,13 +216,13 @@ namespace logjamd
         if (filter_)
         {
             delete filter_;
-            filter_ = 0;
+            filter_ = NULL;
         }
         
         if (costs_)
         {
             delete costs_;
-            costs_ = 0;
+            costs_ = NULL;
         }
     }
 
@@ -237,7 +243,6 @@ namespace logjamd
     int Lua_record_set::include(lua_State* L)
     {
         lj::Time_tracker timer;
-        timer.start();
         
         // Build the command executed.
         std::ostringstream cmd_builder;
@@ -246,7 +251,6 @@ namespace logjamd
         // Include the value.
         lj::Bson* cost_data = new lj::Bson(*costs_);
         lj::Record_set* ptr = NULL;
-        Lua_record_set* wrapper = NULL;
         if (lua_isfunction(L, -1) && !lua_iscfunction(L, -1))
         {            
             // Build the command executed.
@@ -263,7 +267,7 @@ namespace logjamd
             Lunar<Lua_record_set>::push(L, this, true);
             
             std::set<unsigned long long> keys;
-            for (std::list<lj::Bson*>::iterator iter = d.begin();
+            for (auto iter = d.begin();
                  d.end() != iter;
                  ++iter)
             {
@@ -292,7 +296,6 @@ namespace logjamd
             
             // Include the key
             ptr = real_set().include_keys(keys).release();
-            wrapper = new Lua_record_set(ptr, cost_data);
         }
         else
         {
@@ -302,14 +305,15 @@ namespace logjamd
                         
             // Include the key.
             ptr = real_set().include_key(key).release();
-            wrapper = new Lua_record_set(ptr, cost_data);
         }
+        Lua_record_set* wrapper = new Lua_record_set(ptr, cost_data);
         Lunar<Lua_record_set>::push(L, wrapper, true);
         
         // Finish the debug info collection.
         cmd_builder << ")";
-        timer.stop();
-        cost_data->push_child("", lj::bson_new_cost(cmd_builder.str(),
+        const std::string k_command(cmd_builder.str());
+
+        cost_data->push_child("", lj::bson_new_cost(k_command,
                                                     timer.elapsed(),
                                                     ptr->raw_size(),
                                                     ptr->size()));
@@ -329,7 +333,6 @@ namespace logjamd
         // Include the value.
         lj::Bson* cost_data = new lj::Bson(*costs_);
         lj::Record_set* ptr = NULL;
-        Lua_record_set* wrapper = NULL;
         if (lua_isfunction(L, -1) && !lua_iscfunction(L, -1))
         {
             // Build the command executed.
@@ -346,7 +349,7 @@ namespace logjamd
             Lunar<Lua_record_set>::push(L, this, true);
             
             std::set<unsigned long long> keys;
-            for (std::list<lj::Bson*>::iterator iter = d.begin();
+            for (auto iter = d.begin();
                  d.end() != iter;
                  ++iter)
             {
@@ -373,7 +376,6 @@ namespace logjamd
             
             // Include the key
             ptr = real_set().exclude_keys(keys).release();
-            wrapper = new Lua_record_set(ptr, cost_data);
         }
         else
         {
@@ -383,14 +385,14 @@ namespace logjamd
             
             // Include the key.
             ptr = real_set().exclude_key(key).release();
-            wrapper = new Lua_record_set(ptr, cost_data);
         }
+        Lua_record_set* wrapper = new Lua_record_set(ptr, cost_data);
         Lunar<Lua_record_set>::push(L, wrapper, true);
         
         // Finish the debug info collection.
         cmd_builder << ")";
-        timer.stop();
-        cost_data->push_child("", lj::bson_new_cost(cmd_builder.str(),
+        const std::string k_command(cmd_builder.str());
+        cost_data->push_child("", lj::bson_new_cost(k_command,
                                                     timer.elapsed(),
                                                     ptr->raw_size(),
                                                     ptr->size()));
@@ -400,61 +402,61 @@ namespace logjamd
         
     int Lua_record_set::equal(lua_State* L)
     {
-        lj::Bson* cost_data = new lj::Bson(*costs_);
         filter(L,
                real_set(),
                &lj::Record_set::equal,
                "equal",
-               cost_data);
+               *costs_);
         return 1;
     }
 
     int Lua_record_set::greater(lua_State* L)
     {
-        lj::Bson* cost_data = new lj::Bson(*costs_);
         filter(L,
                real_set(),
                &lj::Record_set::greater,
                "greater",
-               cost_data);
+               *costs_);
         return 1;
     }
     
     int Lua_record_set::lesser(lua_State* L)
     {
-        lj::Bson* cost_data = new lj::Bson(*costs_);
         filter(L,
                real_set(),
                &lj::Record_set::lesser,
                "lesser",
-               cost_data);
+               *costs_);
         return 1;
     }
     
     int Lua_record_set::contains(lua_State* L)
     {
-        lj::Bson* cost_data = new lj::Bson(*costs_);
         text_filter(L,
                     real_set(),
                     &lj::Record_set::contains,
                     "contains",
-                    cost_data);
+                    *costs_);
         return 1;
     }
 
     int Lua_record_set::tagged(lua_State* L)
     {
-        lj::Bson* cost_data = new lj::Bson(*costs_);
         text_filter(L,
                     real_set(),
                     &lj::Record_set::tagged,
                     "tagged",
-                    cost_data);
+                    *costs_);
         return 1;
     }
 
     int Lua_record_set::records(lua_State* L)
     {
+        lj::Time_tracker timer;
+
+        lj::Bson* cost_data = new lj::Bson(*costs_);
+        const std::string k_command("records()");
+
         std::list<lj::Bson *> d;
         int h = 0;
         real_set().items(d);
@@ -466,11 +468,24 @@ namespace logjamd
             Lunar<Lua_bson>::push(L, new Lua_bson(*iter, true), true);
             lua_rawseti(L, -2, ++h);
         }
+
+        logjamd::lua::result_push(L,
+                                  k_command,
+                                  k_command,
+                                  cost_data,
+                                  NULL,
+                                  timer);
+
         return 1;
     }
 
     int Lua_record_set::first(lua_State* L)
     {
+        lj::Time_tracker timer;
+
+        lj::Bson* cost_data = new lj::Bson(*costs_);
+        const std::string k_command("first()");
+
         if (real_set().size() < 1)
         {
             lua_pushnil(L);
@@ -479,6 +494,14 @@ namespace logjamd
         lj::Bson *d = new lj::Bson();
         real_set().first(*d);
         Lunar<Lua_bson>::push(L, new Lua_bson(d, true), true);
+
+        logjamd::lua::result_push(L,
+                                  k_command,
+                                  k_command,
+                                  cost_data,
+                                  NULL,
+                                  timer);
+
         return 1;
     }
 
