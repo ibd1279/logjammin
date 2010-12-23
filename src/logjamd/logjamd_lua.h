@@ -62,14 +62,6 @@ namespace logjamd
     //! Execute an event.
     void get_event(lua_State* L, const std::string& db_name, const std::string& event);
     
-    //! Push a bson object onto the replication queue and return the name.
-    const std::string push_replication_record(lua_State* L, const lj::Bson& b);
-    
-    void push_replication_command(lua_State* L,
-                                  const std::string& action,
-                                  const std::string& dbname,
-                                  const std::string& obj);    
-    
     //! Put a result set on the response.
     /*!
      \par

@@ -88,31 +88,6 @@ namespace logjamd
                      lj::bson_as_boolean(config.nav("logging/emergency")));
     }
 
-    namespace lua
-    {
-        int send_item(lua_State* L)
-        {        
-            // {item}
-            sandbox_get(L, "lj__response"); // {item, response}
-            Lua_bson* response = Lunar<logjamd::Lua_bson>::check(L, -1);
-            Lua_bson* item = Lunar<logjamd::Lua_bson>::check(L, -2);
-            lua_pop(L, 2); // {}
-            response->real_node().push_child("item", new lj::Bson(item->real_node()));
-            return 0;
-        }
-
-        int print(lua_State* L)
-        {
-            // {item}
-            sandbox_get(L, "lj__response"); // {arg, response}
-            Lua_bson* response = Lunar<logjamd::Lua_bson>::check(L, -1);
-            std::string arg = lua_to_string(L, -2);
-            lua_pop(L, 2); // {}
-            response->real_node().push_child("lj__output", lj::bson_new_string(arg));
-            return 0;
-        }
-    }; // namespace lua
-
     void logjam_lua_init(lua_State* L, lj::Bson* config) {
         // Load the Bson class into lua.
         Lunar<logjamd::Lua_bson>::Register(L);
@@ -120,10 +95,6 @@ namespace logjamd
         // load standard lj functions.
         lua_register(L, "send_set",
                      &send_set);
-        lua_register(L, "send_item",
-                     &logjamd::lua::send_item);
-        lua_register(L, "print",
-                     &logjamd::lua::print);
 
         // register the configuration api.
         logjamd::lua::register_config_api(L, config);
@@ -155,46 +126,6 @@ namespace logjamd
         lua_remove(L, -2); // func
     }
         
-    const std::string push_replication_record(lua_State* L, const lj::Bson& b)
-    {
-        lua_pushstring(L, "o"); // {a}
-        lua_pushinteger(L, rand() % 100); // {a, b}
-        lua_pushstring(L, "_"); // {a, b, c}
-        lua_pushinteger(L, rand()); // {a, b, c, d}
-        lua_concat(L, 4); // {record_id}
-        std::string name(lua_to_string(L, -1));
-        lua_pop(L, 1); // {}
-
-        logjamd::lua::sandbox_get(L, "lj__replication"); // {replication}
-        Lua_bson* ptr = Lunar<Lua_bson>::check(L, -1);
-        lua_pop(L, 1); // {}
-        ptr->real_node().set_child(name, new lj::Bson(b));
-        
-        return name;
-    }
-    
-    void push_replication_command(lua_State* L,
-                                  const std::string& action,
-                                  const std::string& dbname,
-                                  const std::string& obj)
-    {
-        logjamd::lua::sandbox_get(L, "lj__replication"); // {replication}
-        Lua_bson* ptr = Lunar<Lua_bson>::check(L, -1);
-        lua_pop(L, 1); // {}
-        
-        std::string cmd("replication_");
-        cmd.append(action);
-        cmd.append("('");
-        cmd.append(dbname);
-        cmd.append("', '");
-        cmd.append(obj);
-        cmd.append("')");
-        
-        std::string script(lj::bson_as_string(ptr->real_node().nav("cmd")));
-        script.append("\n").append(cmd);
-        ptr->real_node().set_child("cmd", lj::bson_new_string(script));
-    }
-    
     int send_set(lua_State *L)
     {
         // {record_set}
@@ -208,7 +139,7 @@ namespace logjamd
         // Put the command parts together to make a full string.
         // String is used for recording the cost in the response.
         std::string cmd("send_set(");
-        for (lj::Linked_map<std::string, lj::Bson*>::const_iterator iter = filter->costs().to_map().begin();
+        for (auto iter = filter->costs().to_map().begin();
              filter->costs().to_map().end() != iter;
              ++iter)
         {

@@ -476,6 +476,28 @@ namespace
         Lunar<logjamd::Lua_bson>::push(L, new logjamd::Lua_bson(ptr, true), true);
         return 1;
     }
+
+    int send_item(lua_State* L)
+    {        
+        // {item}
+        logjamd::lua::sandbox_get(L, "lj__response"); // {item, response}
+        logjamd::Lua_bson* response = Lunar<logjamd::Lua_bson>::check(L, -1);
+        logjamd::Lua_bson* item = Lunar<logjamd::Lua_bson>::check(L, -2);
+        lua_pop(L, 2); // {}
+        response->real_node().push_child("item", new lj::Bson(item->real_node()));
+        return 0;
+    }
+
+    int print(lua_State* L)
+    {
+        // {item}
+        logjamd::lua::sandbox_get(L, "lj__response"); // {arg, response}
+        logjamd::Lua_bson* response = Lunar<logjamd::Lua_bson>::check(L, -1);
+        std::string arg = lua_to_string(L, -2);
+        lua_pop(L, 2); // {}
+        response->real_node().push_child("lj__output", lj::bson_new_string(arg));
+        return 0;
+    }
 } // namespace (anonymous)
 
 namespace logjamd
@@ -490,6 +512,12 @@ namespace logjamd
     {
         void register_config_api(lua_State* L, lj::Bson* config)
         {
+            // Register the minimum required functions.
+            lua_register(L, "send_item",
+                         &send_item);
+            lua_register(L, "print",
+                         &print);
+
             // Push the configuration onto the stack for closures.
             Lunar<logjamd::Lua_bson>::push(L, new logjamd::Lua_bson(config, false), true); // {cfg}
 
