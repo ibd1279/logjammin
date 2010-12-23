@@ -165,6 +165,7 @@ namespace lj
          Hidden. Use the Storage_factory instead.
          \sa lj::Storage_factory
          \param dir The document repository name.
+         \param server_config The configuration for the storage server.
          */
         Storage(const std::string &dir,
                 const lj::Bson& server_config);
@@ -236,8 +237,26 @@ namespace lj
         Storage& operator=(const Storage& o) = delete;
     };
     
+    //! Create an empty basic storage configuration.
+    /*!
+     \par
+     This is used to create a default new storage configuration with no
+     options.
+     \param cfg The configuration to populate the values into.
+     \param name The name to use for the new storage.
+     */
     void storage_config_init(lj::Bson& cfg,
                              const std::string& name);
+
+    //! Add an index to a storage configuration.
+    /*!
+     \par
+     Create a new indexed attribute for the storage configuration.
+     \param cfg The storage configuration to modify.
+     \param type The type of index to build. [hash, tree, tag, text]
+     \param field The field to index in placed documents.
+     \param comp The type of comparison to use.
+     */
     void storage_config_add_index(lj::Bson& cfg,
                                   const std::string& type,
                                   const std::string& field,
