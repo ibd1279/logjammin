@@ -68,6 +68,7 @@ namespace logjamd
          }
          \endcode
          \param request The request document to process.
+         \param connection The connection associated with the client.
          \return The processor to use for the next request.
          */
         virtual Stage* logic(lj::Bson& request, Connection& connection);
