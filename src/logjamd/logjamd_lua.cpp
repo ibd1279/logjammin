@@ -34,11 +34,11 @@
  */
 
 #include "logjamd/logjamd_lua.h"
-#include "logjamd/lua/core.h"
 
-#include "logjamd/Lua_bson.h"
-#include "logjamd/Lua_record_set.h"
+#include "logjamd/lua/core.h"
 #include "logjamd/lua/Storage.h"
+#include "logjamd/lua/Record_set.h"
+#include "logjamd/Lua_bson.h"
 #include "lj/Base64.h"
 #include "lj/Logger.h"
 #include "lj/Storage.h"
@@ -129,7 +129,7 @@ namespace logjamd
         logjamd::lua::register_config_api(L, config);
 
         // Register the object model.
-        Lunar<logjamd::Lua_record_set>::Register(L);
+        Lunar<logjamd::lua::Record_set>::Register(L);
         Lunar<logjamd::lua::Storage>::Register(L);
         
         // Build the default storage object.
@@ -202,7 +202,7 @@ namespace logjamd
         timer.start();
 
         // Get what we need from lua's stack
-        Lua_record_set* filter = Lunar<Lua_record_set>::check(L, -1);
+        lua::Record_set* filter = Lunar<lua::Record_set>::check(L, -1);
         lua_pop(L, 1); // {}
         
         // Put the command parts together to make a full string.

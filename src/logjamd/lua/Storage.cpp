@@ -36,8 +36,8 @@
 #include "logjamd/lua/Storage.h"
 
 #include "logjamd/lua/core.h"
+#include "logjamd/lua/Record_set.h"
 #include "logjamd/Lua_bson.h"
-#include "logjamd/Lua_record_set.h"
 #include "logjamd/logjamd_lua.h"
 #include "lj/Logger.h"
 #include "lj/Storage_factory.h"
@@ -102,8 +102,8 @@ namespace logjamd
             // Create the record set.
             lj::Bson* cost_data = new lj::Bson();
             lj::Record_set* ptr = real_storage(L).all().release();
-            Lua_record_set* wrapper = new Lua_record_set(ptr, cost_data);
-            Lunar<Lua_record_set>::push(L, wrapper, true);
+            Record_set* wrapper = new Record_set(ptr, cost_data);
+            Lunar<Record_set>::push(L, wrapper, true);
             
             // Finish the cost info collection.
             cost_data->push_child("", lj::bson_new_cost(k_command,
@@ -138,8 +138,8 @@ namespace logjamd
             // Create the record set.
             lj::Bson* cost_data = new lj::Bson();
             lj::Record_set* ptr = real_storage(L).none().release();
-            Lua_record_set* wrapper = new Lua_record_set(ptr, cost_data);
-            Lunar<Lua_record_set>::push(L, wrapper, true);
+            Record_set* wrapper = new Record_set(ptr, cost_data);
+            Lunar<Record_set>::push(L, wrapper, true);
             
             // Finish the cost info collection.
             cost_data->push_child("", lj::bson_new_cost(k_command,
@@ -177,8 +177,8 @@ namespace logjamd
 
             lj::Bson* cost_data = new lj::Bson();
             lj::Record_set* ptr = real_storage(L).at(key).release();
-            Lua_record_set* wrapper = new Lua_record_set(ptr, cost_data);
-            Lunar<Lua_record_set>::push(L, wrapper, true);
+            Record_set* wrapper = new Record_set(ptr, cost_data);
+            Lunar<Record_set>::push(L, wrapper, true);
         
             // Finish the cost info collection.
             cost_data->push_child("", lj::bson_new_cost(k_command,

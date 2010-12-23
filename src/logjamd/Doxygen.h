@@ -40,3 +40,10 @@
  \par
  The logjamd server code.
  */
+
+/*!
+ \namespace logjamd::lua
+ \brief The logjamd server interface to the lua interpreter.
+ \par
+ The logjamd server lua interface code.
+ */
