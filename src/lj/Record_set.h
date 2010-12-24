@@ -1,6 +1,6 @@
 #pragma once
 /*!
- \file Record_set.h
+ \file lj/Record_set.h
  \brief LJ Record_set header.
  \author Jason Watson
  

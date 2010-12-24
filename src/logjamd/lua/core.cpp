@@ -1,5 +1,5 @@
 /*!
- \file config_api.cpp
+ \file logjamd/lua/core.cpp
  \brief Logjam server lua functions for configuration.
  \author Jason Watson
  

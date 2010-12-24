@@ -1,6 +1,6 @@
 #pragma once
 /*!
- \file Storage.h
+ \file lj/Storage.h
  \brief LJ Storage implementation.
  \author Jason Watson
  
@@ -70,6 +70,19 @@ namespace lj
         friend class Storage_factory;
         friend class Record_set;
     public:
+        
+        //! Removed
+        /*!
+         \param o Copy from object.
+         */
+        Storage(const Storage& o) = delete;
+        
+        //! Removed
+        /*!
+         \param o Copy from object.
+         */
+        Storage& operator=(const Storage& o) = delete;
+
         //! Destructor
         ~Storage();
         
@@ -223,18 +236,6 @@ namespace lj
         
         //! Update the journal entry to completed.
         void journal_end(const unsigned long long key);
-        
-        //! Hidden copy constructor
-        /*!
-         \param o Copy from object.
-         */
-        Storage(const Storage& o) = delete;
-        
-        //! Hidden assignment operator.
-        /*!
-         \param o Copy from object.
-         */
-        Storage& operator=(const Storage& o) = delete;
     };
     
     //! Create an empty basic storage configuration.
@@ -251,7 +252,7 @@ namespace lj
     //! Add an index to a storage configuration.
     /*!
      \par
-     Create a new indexed attribute for the storage configuration.
+     Create an indexed attribute on the storage configuration.
      \param cfg The storage configuration to modify.
      \param type The type of index to build. [hash, tree, tag, text]
      \param field The field to index in placed documents.
@@ -261,13 +262,48 @@ namespace lj
                                   const std::string& type,
                                   const std::string& field,
                                   const std::string& comp);
+
+    //! Remove an index from a storage configuration.
+    /*!
+     \par
+     Remove an indexed attribute on the storage configuration.
+     \param cfg The storage configuration to modify.
+     \param type The type of index to remove.
+     \param field The field used to create the index.
+     */
     void storage_config_remove_index(lj::Bson& cfg,
                                      const std::string& type,
                                      const std::string& field);
+
+    //! Classify a field as containing multiple values.
+    /*!
+     \par
+     Marks a document field as containing multiple elements.
+     \param cfg The storage configuration to modify.
+     \param field The field.
+     */
     void storage_config_add_subfield(lj::Bson& cfg,
                                      const std::string& field);
+    //! Save a storage configuration to disk.
+    /*!
+     \par
+     Write a storage configuration to disk. Saves the file where
+     the server configuration points for the data directory.
+     \param cfg The storage configuration to save.
+     \param server_config The configuration of the server.
+     */
     void storage_config_save(const lj::Bson& cfg,
                              const lj::Bson& server_config);
+    //! Load a storage configuration from disk.
+    /*!
+     \par
+     Load a storage configuration from disk. The file is loaded
+     from where the server configuration points for the data
+     directory.
+     \param dbname The name of the storage.
+     \param server_config The configuration of the server.
+     \return Pointer (allocated with new) to the storage configuration.
+     */
     lj::Bson* storage_config_load(const std::string& dbname,
                                   const lj::Bson& server_config);
     

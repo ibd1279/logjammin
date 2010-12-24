@@ -1,5 +1,5 @@
 /*!
- \file Record_set.cpp
+ \file lj/Record_set.cpp
  \brief LJ Record_set implementation.
  \author Jason Watson
  

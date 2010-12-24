@@ -1,5 +1,5 @@
 /*!
- \file Storage.cpp
+ \file logjamd/lua/Storage.cpp
  \brief Logjamd lj::Storage wrapper for lua implementation.
  \author Jason Watson
  

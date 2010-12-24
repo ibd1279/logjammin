@@ -1,7 +1,7 @@
 #pragma once
 /*!
- \file Time_tracker.h
- \brief LJ time tracking code.
+ \file lj/Time_tracker.h
+ \brief LJ time tracking definition.
  \author Jason Watson
  
  Copyright (c) 2010, Jason Watson

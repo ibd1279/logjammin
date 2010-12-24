@@ -1,6 +1,6 @@
 #pragma once
 /*!
- \file Lua_record_set.h
+ \file logjamd/lua/Record_set.h
  \brief Logjamd lj::Record_set wrapper header.
  \author Jason Watson
  

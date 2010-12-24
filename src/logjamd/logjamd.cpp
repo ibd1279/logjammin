@@ -42,51 +42,54 @@
 #include <cstring>
 
 
-int usage()
+namespace
 {
-    std::cerr << "LogJam Distributed Storage Server (Version 1.0)" << std::endl << std::endl;
-    std::cerr << "Copyright (C) 2010 Jason Watson <jwatson@slashopt.net>" << std::endl;
-    std::cerr << "usage: logjamd mode configfile" << std::endl;
-    std::cerr << "  mode is either \"config\", \"readonly\", or \"readwrite\"" << std::endl;
-    std::cerr << "    config is for creating and modifying the configfile." << std::endl;
-    std::cerr << "    readonly prevents storage modification." << std::endl;
-    std::cerr << "    readwrite enabled storage modification." << std::endl;
-    return 1;
-}
-
-void populate_config(lj::Bson* config)
-{
-    config->set_child("server/port", lj::bson_new_int64(27754));
-    config->set_child("server/directory", lj::bson_new_string(DBDIR));
-    config->set_child("server/id", lj::bson_new_int64(1));
-    config->set_child("replication/enabled", lj::bson_new_boolean(false));
-    config->set_child("logging/debug", lj::bson_new_boolean(false));
-    config->set_child("logging/info", lj::bson_new_boolean(true));
-    config->set_child("logging/notice", lj::bson_new_boolean(true));
-    config->set_child("logging/warning", lj::bson_new_boolean(true));
-    config->set_child("logging/error", lj::bson_new_boolean(true));
-    config->set_child("logging/critical", lj::bson_new_boolean(true));
-    config->set_child("logging/alert", lj::bson_new_boolean(true));
-    config->set_child("logging/emergency", lj::bson_new_boolean(true));
-}
-
-logjamd::Mutable_mode string_to_mutable_mode(const std::string& m)
-{
-    if (m.compare("config") == 0)
+    int usage()
     {
-        return logjamd::Mutable_mode::k_config;
+        std::cerr << "LogJam Distributed Storage Server (Version 1.0)" << std::endl << std::endl;
+        std::cerr << "Copyright (C) 2010 Jason Watson <jwatson@slashopt.net>" << std::endl;
+        std::cerr << "usage: logjamd mode configfile" << std::endl;
+        std::cerr << "  mode is either \"config\", \"readonly\", or \"readwrite\"" << std::endl;
+        std::cerr << "    config is for creating and modifying the configfile." << std::endl;
+        std::cerr << "    readonly prevents storage modification." << std::endl;
+        std::cerr << "    readwrite enabled storage modification." << std::endl;
+        return 1;
     }
-    if (m.compare("readonly") == 0)
+
+    void populate_config(lj::Bson* config)
     {
+        config->set_child("server/port", lj::bson_new_int64(27754));
+        config->set_child("server/directory", lj::bson_new_string(DBDIR));
+        config->set_child("server/id", lj::bson_new_int64(1));
+        config->set_child("replication/enabled", lj::bson_new_boolean(false));
+        config->set_child("logging/debug", lj::bson_new_boolean(false));
+        config->set_child("logging/info", lj::bson_new_boolean(true));
+        config->set_child("logging/notice", lj::bson_new_boolean(true));
+        config->set_child("logging/warning", lj::bson_new_boolean(true));
+        config->set_child("logging/error", lj::bson_new_boolean(true));
+        config->set_child("logging/critical", lj::bson_new_boolean(true));
+        config->set_child("logging/alert", lj::bson_new_boolean(true));
+        config->set_child("logging/emergency", lj::bson_new_boolean(true));
+    }
+
+    logjamd::Mutable_mode string_to_mutable_mode(const std::string& m)
+    {
+        if (m.compare("config") == 0)
+        {
+            return logjamd::Mutable_mode::k_config;
+        }
+        if (m.compare("readonly") == 0)
+        {
+            return logjamd::Mutable_mode::k_readonly;
+        }
+        if (m.compare("readwrite") == 0)
+        {
+            return logjamd::Mutable_mode::k_readwrite;
+        }
+
         return logjamd::Mutable_mode::k_readonly;
     }
-    if (m.compare("readwrite") == 0)
-    {
-        return logjamd::Mutable_mode::k_readwrite;
-    }
-
-    return logjamd::Mutable_mode::k_readonly;
-}
+}; // namespace (anonymous)
 
 //! Server main entry point.
 int main(int argc, char* const argv[]) {

@@ -1,6 +1,6 @@
 #pragma once
 /*!
- \file core.h
+ \file logjamd/lua/core.h
  \brief Core logjamd server functionality.
  \author Jason Watson
  

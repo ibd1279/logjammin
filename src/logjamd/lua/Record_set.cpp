@@ -1,5 +1,5 @@
 /*!
- \file Record_set.cpp
+ \file logjamd/lua/Record_set.cpp
  \brief Logjamd lj::Record_set wrapper implement.
  \author Jason Watson
  

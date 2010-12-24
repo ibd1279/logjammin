@@ -1,6 +1,6 @@
 #pragma once
 /*!
- \file logjamd_net.h
+ \file logjamd/Server.h
  \brief Logjam server networking header.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson

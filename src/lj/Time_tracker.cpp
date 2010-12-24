@@ -1,6 +1,6 @@
 /*!
- \file Record_set.cpp
- \brief LJ Record_set implementation.
+ \file lj/Time_tracker.cpp
+ \brief LJ Time tracking implementation.
  \author Jason Watson
  
  Copyright (c) 2010, Jason Watson
