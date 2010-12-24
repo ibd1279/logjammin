@@ -470,8 +470,12 @@ namespace logjamd
                 lua_rawseti(L, -2, ++h);
             }
 
+            const std::string k_summary(command_from_costs("",
+                                                           k_command,
+                                                           costs()));
+
             logjamd::lua::result_push(L,
-                                      k_command,
+                                      k_summary,
                                       k_command,
                                       cost_data,
                                       NULL,
@@ -496,8 +500,11 @@ namespace logjamd
             real_set().first(*d);
             Lunar<Lua_bson>::push(L, new Lua_bson(d, true), true);
 
+            const std::string k_summary(command_from_costs("",
+                                                           k_command,
+                                                           costs()));
             logjamd::lua::result_push(L,
-                                      k_command,
+                                      k_summary,
                                       k_command,
                                       cost_data,
                                       NULL,
