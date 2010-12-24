@@ -61,15 +61,4 @@ namespace logjamd
     
     //! Execute an event.
     void get_event(lua_State* L, const std::string& db_name, const std::string& event);
-    
-    //! Put a result set on the response.
-    /*!
-     \par
-     Populates the item field on the response.
-     \par
-     Expects a Lua_record_set object on top of the stack.
-     \param L The lua state.
-     \return 0
-     */
-    int send_set(lua_State* L);
 };

@@ -155,6 +155,20 @@ namespace logjamd
          */
         int sandbox_get(lua_State* L, const std::string& key);
 
+        //! Create a command name from a cost structure.
+        /*!
+         \par
+         Take the given lj::Bson document of costs and create a
+         simple combine command.
+         \param prefix String to prepend before the command.
+         \param suffix String to append after the command.
+         \param costs The lj::Bson document of costs.
+         \return The final command.
+         */
+        std::string command_from_costs(const std::string& prefix,
+                                       const std::string& suffix,
+                                       const lj::Bson& costs);
+
         //! Push cost data into the response object.
         /*!
          Gets the response object from the current sandbox, appends

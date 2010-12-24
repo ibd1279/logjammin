@@ -91,10 +91,6 @@ namespace logjamd
     void logjam_lua_init(lua_State* L, lj::Bson* config) {
         // Load the Bson class into lua.
         Lunar<logjamd::Lua_bson>::Register(L);
-        
-        // load standard lj functions.
-        lua_register(L, "send_set",
-                     &send_set);
 
         // register the configuration api.
         logjamd::lua::register_config_api(L, config);
@@ -124,40 +120,5 @@ namespace logjamd
         lua_pushstring(L, event_key.c_str());
         lua_gettable(L, -2); // db_events, func.
         lua_remove(L, -2); // func
-    }
-        
-    int send_set(lua_State *L)
-    {
-        // {record_set}
-        lj::Time_tracker timer;
-        timer.start();
-
-        // Get what we need from lua's stack
-        lua::Record_set* filter = Lunar<lua::Record_set>::check(L, -1);
-        lua_pop(L, 1); // {}
-        
-        // Put the command parts together to make a full string.
-        // String is used for recording the cost in the response.
-        std::string cmd("send_set(");
-        for (auto iter = filter->costs().to_map().begin();
-             filter->costs().to_map().end() != iter;
-             ++iter)
-        {
-            cmd.append(lj::bson_as_string(*(*iter).second->path("cmd")));
-            cmd.append(":");
-        }
-        cmd.erase(cmd.size() - 1).append(")");
-        
-        // copy the costs, incase they use the result set more than once.
-        lj::Bson* cost_data = new lj::Bson(filter->costs());
-        
-        // Get the items for the result set.
-        lj::Bson* items = new lj::Bson();
-        filter->real_set().items_raw(*items);
-        
-        // Push the result.
-        logjamd::lua::result_push(L, cmd, "send_set", cost_data, items, timer);
-        
-        return 0;
     }
 };

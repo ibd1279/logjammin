@@ -37,6 +37,7 @@
 
 #include "logjamd/Lua_bson.h"
 #include "logjamd/lua/Storage.h"
+#include "logjamd/lua/Record_set.h"
 #include "logjamd/logjamd_lua.h"
 #include "lj/Logger.h"
 #include "lj/Storage.h"
@@ -498,6 +499,38 @@ namespace
         response->real_node().push_child("lj__output", lj::bson_new_string(arg));
         return 0;
     }
+
+    int send_set(lua_State *L)
+    {
+        // {record_set}
+        lj::Time_tracker timer;
+
+        // Get what we need from lua's stack
+        logjamd::lua::Record_set* filter = Lunar<logjamd::lua::Record_set>::check(L, -1);
+        lua_pop(L, 1); // {}
+        
+        const std::string k_command(logjamd::lua::command_from_costs("send_set(",
+                                                                     ")",
+                                                                     filter->costs()));
+        
+        // copy the costs, incase they use the result set more than once.
+        lj::Bson* cost_data = new lj::Bson(filter->costs());
+        
+        // Get the items for the result set.
+        lj::Bson* items = new lj::Bson();
+        filter->real_set().items_raw(*items);
+        
+        // Push the result.
+        logjamd::lua::result_push(L,
+                                  k_command,
+                                  "send_set",
+                                  cost_data,
+                                  items,
+                                  timer);
+        
+        return 0;
+    }
+
 } // namespace (anonymous)
 
 namespace logjamd
@@ -513,10 +546,9 @@ namespace logjamd
         void register_config_api(lua_State* L, lj::Bson* config)
         {
             // Register the minimum required functions.
-            lua_register(L, "send_item",
-                         &send_item);
-            lua_register(L, "print",
-                         &print);
+            lua_register(L, "send_item", &send_item);
+            lua_register(L, "print", &print);
+            lua_register(L, "send_set", &send_set);
 
             // Push the configuration onto the stack for closures.
             Lunar<logjamd::Lua_bson>::push(L, new logjamd::Lua_bson(config, false), true); // {cfg}
@@ -671,6 +703,22 @@ namespace logjamd
             lua_gettable(L, -2); // {sandbox, value}
             lua_replace(L, -2); // {value}
             return 1;
+        }
+
+        std::string command_from_costs(const std::string& prefix,
+                                       const std::string& suffix,
+                                       const lj::Bson& costs)
+        {
+            std::string cmd(prefix);
+            for (auto iter = costs.to_map().begin();
+                 costs.to_map().end() != iter;
+                 ++iter)
+            {
+                cmd.append(lj::bson_as_string(*(*iter).second->path("cmd")));
+                cmd.append(":");
+            }
+            cmd.erase(cmd.size() - 1).append(suffix);
+            return cmd;
         }
 
         int result_push(lua_State* L,

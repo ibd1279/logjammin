@@ -81,6 +81,7 @@ namespace
                                                     ptr->raw_size(),
                                                     ptr->size()));
     }
+
     void filter(lua_State* L, 
                 lj::Record_set& real_set,
                 std::unique_ptr<lj::Record_set> (lj::Record_set::*f)(const std::string&, const void* const, const size_t) const,
