@@ -89,18 +89,19 @@ namespace logjamd
     }
 
     void logjam_lua_init(lua_State* L, lj::Bson* config) {
-        // Load the Bson class into lua.
+        // Register the object model.
         Lunar<logjamd::Lua_bson>::Register(L);
+        Lunar<logjamd::lua::Record_set>::Register(L);
+        Lunar<logjamd::lua::Storage>::Register(L);
 
         // register the configuration api.
         logjamd::lua::register_config_api(L, config);
-
-        // Register the object model.
-        Lunar<logjamd::lua::Record_set>::Register(L);
-        Lunar<logjamd::lua::Storage>::Register(L);
         
-        // Build the default storage object.
-        logjamd::lua::load_autoload_storage(L, config);
+        // Only autoload storage objects if we are in a read mode or higher.
+        if (logjamd::is_mutable_read(*config, __FUNCTION__))
+        {
+            logjamd::lua::load_autoload_storage(L, config);
+        }
         
         // Server ID.
         lua_pushinteger(L, rand());
