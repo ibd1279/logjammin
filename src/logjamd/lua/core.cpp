@@ -531,6 +531,66 @@ namespace
         return 0;
     }
 
+    int help(lua_State* L)
+    {
+        logjamd::lua::sandbox_get(L, "lj__response"); // {arg, response}
+        lj::Bson& response = Lunar<logjamd::Lua_bson>::check(L, -1)->real_node();
+        lua_pop(L, 1);
+        response["lj__help/common"]
+                << lj::bson_new_string("send_item(bson)")
+                << lj::bson_new_string("print(string)")
+                << lj::bson_new_string("send_set(record_set)")
+                << lj::bson_new_string("help()")
+                << lj::bson_new_string("Bson:nav(path)")
+                << lj::bson_new_string("Bson:set(value)")
+                << lj::bson_new_string("Bson:push(value)")
+                << lj::bson_new_string("Bson:get()")
+                << lj::bson_new_string("Bson:save(filename)")
+                << lj::bson_new_string("Bson:load(filename)")
+                << lj::bson_new_string("Bson.<path>")
+                << lj::bson_new_string("Storage:none()")
+                << lj::bson_new_string("Storage:all()")
+                << lj::bson_new_string("Storage:place(record)")
+                << lj::bson_new_string("Storage:remove(record)")
+                << lj::bson_new_string("Storage:at(id)")
+                << lj::bson_new_string("Storage:rebuild()")
+                << lj::bson_new_string("Storage:checkpoint()")
+                << lj::bson_new_string("Storage:optimize()")
+                << lj::bson_new_string("Storage:recall()")
+                << lj::bson_new_string("Record_set:mode_and()")
+                << lj::bson_new_string("Record_set:mode_or()")
+                << lj::bson_new_string("Record_set:include(id)")
+                << lj::bson_new_string("Record_set:include(function (b) if include then return true else return false end end)")
+                << lj::bson_new_string("Record_set:exclude(id)")
+                << lj::bson_new_string("Record_set:exclude(function (b) if exclude then return true else return false end end)")
+                << lj::bson_new_string("Record_set:equal(field, value)")
+                << lj::bson_new_string("Record_set:greater(field, value)")
+                << lj::bson_new_string("Record_set:lesser(field, value)")
+                << lj::bson_new_string("Record_set:contains(field, value)")
+                << lj::bson_new_string("Record_set:tagged(field, value)")
+                << lj::bson_new_string("Record_set:records()")
+                << lj::bson_new_string("Record_set:first()")
+                << lj::bson_new_string("Record_set:size()");
+
+        response["lj__help/server"]
+                << lj::bson_new_string("lj__server_port(port)")
+                << lj::bson_new_string("lj__server_directory(directory)")
+                << lj::bson_new_string("lj__server_id(id)")
+                << lj::bson_new_string("lj__storage_autoload('add', name)")
+                << lj::bson_new_string("lj__storage_autoload('rm', name)")
+                << lj::bson_new_string("lj__replication_peer('add', peer)")
+                << lj::bson_new_string("lj__replication_peer('rm', peer)")
+                << lj::bson_new_string("lj__logging_level(level, enable)")
+                << lj::bson_new_string("lj_storage_init(name)")
+                << lj::bson_new_string("lj_storage_index(name, field, type, compare)")
+                << lj::bson_new_string("lj_storage_subfield(name, field)")
+                << lj::bson_new_string("lj_storage_event(name, event, function)")
+                << lj::bson_new_string("lj_storage_config(name)");
+
+        return 0;
+
+    }
+
 } // namespace (anonymous)
 
 namespace logjamd
@@ -549,6 +609,7 @@ namespace logjamd
             lua_register(L, "send_item", &send_item);
             lua_register(L, "print", &print);
             lua_register(L, "send_set", &send_set);
+            lua_register(L, "help", &help);
 
             // Push the configuration onto the stack for closures.
             Lunar<logjamd::Lua_bson>::push(L, new logjamd::Lua_bson(config, false), true); // {cfg}

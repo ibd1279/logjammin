@@ -290,7 +290,24 @@ namespace lj
         void push_child(const std::string& path, Bson* child);
 
         //! Push a child onto this Bson object.
+        /*!
+         \param o other object to copy from.
+         \return reference to this.
+         */
         Bson& operator<<(const Bson& o);
+
+        //! Push a child onto this bson object.
+        /*!
+         \note Memory
+         This object becomes responsible for the memory.
+         \param o other object pointer to attach
+         \return reference to this.
+         */
+        inline Bson& operator<<(Bson* o)
+        {
+            push_child("", o);
+            return *this;
+        }
         
         //! Get the map backing document type.
         /*!
