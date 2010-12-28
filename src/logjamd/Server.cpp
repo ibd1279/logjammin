@@ -36,7 +36,7 @@
 
 #include "logjamd/Connection.h"
 #include "logjamd/logjamd_lua.h"
-#include "logjamd/Lua_bson.h"
+#include "logjamd/lua/Bson.h"
 #include "lj/Bson.h"
 #include "lj/Logger.h"
 #include "lj/Time_tracker.h"

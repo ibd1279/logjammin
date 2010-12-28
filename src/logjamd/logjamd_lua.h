@@ -47,6 +47,12 @@ extern "C" {
 
 namespace logjamd
 {
+    //! Set the logging level at runtime.
+    /*!
+     Sets the runtime logging configuration to match the logging
+     configuration of the server.
+     \param config The server configuration to read the logging settings from.
+     */
     void set_logging_levels(const lj::Bson& config);
 
     //! Initialize the lua state for the server process.
@@ -60,5 +66,9 @@ namespace logjamd
     void logjam_lua_init(lua_State* L, lj::Bson* config);
     
     //! Execute an event.
+    /*!
+     this will be removed in the future. The mechanism this uses needs
+     to be redesigned.
+     */
     void get_event(lua_State* L, const std::string& db_name, const std::string& event);
 };
