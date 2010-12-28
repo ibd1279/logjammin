@@ -35,7 +35,7 @@
 #include "logjamd/Stage_execute.h"
 
 #include "logjamd/lua/core.h"
-#include "logjamd/Lua_bson.h"
+#include "logjamd/lua/Bson.h"
 #include "logjamd/logjamd_lua.h"
 #include "lj/Bson.h"
 #include "lj/Logger.h"
@@ -65,32 +65,32 @@ namespace logjamd
 
         // Copy the global server configuration to prevent modification.
         lj::Bson server_config(connection.server_config());
-        Lua_bson wrapper_config(&server_config, false);
+        logjamd::lua::Bson wrapper_config(&server_config, false);
 
         // Prepare the request and the response.
         lj::Bson response;
-        Lua_bson wrapped_response(&response, false);
-        Lua_bson wrapped_request(&request, false);
+        logjamd::lua::Bson wrapped_response(&response, false);
+        logjamd::lua::Bson wrapped_request(&request, false);
 
         // Load the replication log.
         lj::Bson replication;
-        Lua_bson wrapped_replication(&replication, false);
+        logjamd::lua::Bson wrapped_replication(&replication, false);
         replication.set_child("lj__command", lj::bson_new_string(""));
         replication.set_child("lj__dirty", lj::bson_new_boolean(false));
 
         // Populate the lua environment.
         logjamd::lua::sandbox_push(L); // {t}
         lua_pushstring(L, "lj__config"); // {t, str}
-        Lunar<Lua_bson>::push(L, &wrapper_config, false); // {t, str, val}
+        Lunar<logjamd::lua::Bson>::push(L, &wrapper_config, false); // {t, str, val}
         lua_settable(L, -3); // {t}
         lua_pushstring(L, "lj__request"); // {t, str}
-        Lunar<Lua_bson>::push(L, &wrapped_request, false); // {t, str, val}
+        Lunar<logjamd::lua::Bson>::push(L, &wrapped_request, false); // {t, str, val}
         lua_settable(L, -3); // {t}
         lua_pushstring(L, "lj__response"); // {t, str}
-        Lunar<Lua_bson>::push(L, &wrapped_response, false); // {t, str, val}
+        Lunar<logjamd::lua::Bson>::push(L, &wrapped_response, false); // {t, str, val}
         lua_settable(L, -3); // {t}
         lua_pushstring(L, "lj__replication"); // {t, str}
-        Lunar<Lua_bson>::push(L, &wrapped_replication, false); // {t, str, val}
+        Lunar<logjamd::lua::Bson>::push(L, &wrapped_replication, false); // {t, str, val}
         lua_settable(L, -3); // {t}
         lua_pushstring(L, "lj__client_id"); // {t, str}
         lua_pushstring(L, connection.ip().c_str()); // {t, str, str}

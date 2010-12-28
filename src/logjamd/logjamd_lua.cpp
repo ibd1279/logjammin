@@ -36,9 +36,9 @@
 #include "logjamd/logjamd_lua.h"
 
 #include "logjamd/lua/core.h"
+#include "logjamd/lua/Bson.h"
 #include "logjamd/lua/Storage.h"
 #include "logjamd/lua/Record_set.h"
-#include "logjamd/Lua_bson.h"
 #include "lj/Base64.h"
 #include "lj/Logger.h"
 #include "lj/Storage.h"
@@ -90,11 +90,11 @@ namespace logjamd
 
     void logjam_lua_init(lua_State* L, lj::Bson* config) {
         // Register the object model.
-        Lunar<logjamd::Lua_bson>::Register(L);
+        Lunar<logjamd::lua::Bson>::Register(L);
         Lunar<logjamd::lua::Record_set>::Register(L);
         Lunar<logjamd::lua::Storage>::Register(L);
 
-        // register the configuration api.
+        // Register the configuration API.
         logjamd::lua::register_config_api(L, config);
         
         // Only autoload storage objects if we are in a read mode or higher.

@@ -36,8 +36,8 @@
 #include "logjamd/lua/Storage.h"
 
 #include "logjamd/lua/core.h"
+#include "logjamd/lua/Bson.h"
 #include "logjamd/lua/Record_set.h"
-#include "logjamd/Lua_bson.h"
 #include "logjamd/logjamd_lua.h"
 #include "lj/Logger.h"
 #include "lj/Storage_factory.h"
@@ -199,7 +199,7 @@ namespace logjamd
                                         ".place(<record>)");
 
             // validate the input before we begin.
-            Lua_bson* wrapped_record = Lunar<Lua_bson>::check(L, -1);
+            logjamd::lua::Bson* wrapped_record = Lunar<logjamd::lua::Bson>::check(L, -1);
 
             // Get the configuration from the environment.
             const lj::Bson& config = logjamd::lua::get_configuration(L);
@@ -336,7 +336,7 @@ namespace logjamd
                                         ".remove(<record>)");
             
             // Validate the input before we begin.
-            Lua_bson* wrapped_record = Lunar<Lua_bson>::check(L, -1);
+            logjamd::lua::Bson* wrapped_record = Lunar<logjamd::lua::Bson>::check(L, -1);
 
             // Get the configuration from the environment.
             const lj::Bson& config = logjamd::lua::get_configuration(L);

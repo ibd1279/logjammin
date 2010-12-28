@@ -35,7 +35,7 @@
 
 #include "logjamd/lua/core.h"
 
-#include "logjamd/Lua_bson.h"
+#include "logjamd/lua/Bson.h"
 #include "logjamd/lua/Storage.h"
 #include "logjamd/lua/Record_set.h"
 #include "logjamd/logjamd_lua.h"
@@ -120,9 +120,9 @@ namespace
         lj::bson_save(config, lj::bson_as_string(configfile));
 
         // environment next
-        logjamd::Lua_bson* wrapped_config = new logjamd::Lua_bson(new lj::Bson(config), true);
+        logjamd::lua::Bson* wrapped_config = new logjamd::lua::Bson(new lj::Bson(config), true);
         logjamd::lua::sandbox_push(L); // {env}
-        Lunar<logjamd::Lua_bson>::push(L, wrapped_config, true); // {env, cfg}
+        Lunar<logjamd::lua::Bson>::push(L, wrapped_config, true); // {env, cfg}
         lua_setfield(L, -2, "lj__config"); // {env}
         lua_pop(L, 1); // {}
     }
@@ -130,7 +130,7 @@ namespace
     int server_port(lua_State* L)
     {
         // {arg}
-        lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+        lj::Bson& config = Lunar<logjamd::lua::Bson>::check(L, lua_upvalueindex(1))->real_node();
         int port = lua_tointeger(L, -1);
         lua_pop(L, 1); // {}
 
@@ -157,7 +157,7 @@ namespace
     int server_directory(lua_State* L)
     {
         // {arg}
-        lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+        lj::Bson& config = Lunar<logjamd::lua::Bson>::check(L, lua_upvalueindex(1))->real_node();
         std::string directory = lua_to_string(L, -1);
         lua_pop(L, 1); // {}
 
@@ -184,7 +184,7 @@ namespace
     int server_id(lua_State* L)
     {
         // {arg}
-        lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+        lj::Bson& config = Lunar<logjamd::lua::Bson>::check(L, lua_upvalueindex(1))->real_node();
         std::string server_id = lua_to_string(L, -1);
         lua_pop(L, 1); // {}
 
@@ -211,7 +211,7 @@ namespace
     int storage_autoload(lua_State* L)
     {
         // {cmd, storage}
-        lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+        lj::Bson& config = Lunar<logjamd::lua::Bson>::check(L, lua_upvalueindex(1))->real_node();
         std::string storage = lua_to_string(L, -1);
         std::string command = lua_to_string(L, -2);
         lua_pop(L, 2); // {}
@@ -264,7 +264,7 @@ namespace
     int replication_peer(lua_State* L)
     {
         // {cmd, peer}
-        lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+        lj::Bson& config = Lunar<logjamd::lua::Bson>::check(L, lua_upvalueindex(1))->real_node();
         std::string peer = lua_to_string(L, -1);
         std::string command = lua_to_string(L, -2);
         lua_pop(L, 2); // {}
@@ -317,7 +317,7 @@ namespace
     int logging_level(lua_State* L)
     {
         // {level, enabled}
-        lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+        lj::Bson& config = Lunar<logjamd::lua::Bson>::check(L, lua_upvalueindex(1))->real_node();
         bool enabled = lua_toboolean(L, -1);
         std::string level = lua_to_string(L, -2);
         lua_pop(L, 2); // {}
@@ -348,7 +348,7 @@ namespace
     int storage_init(lua_State* L)
     {
         // {name}
-        lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+        lj::Bson& config = Lunar<logjamd::lua::Bson>::check(L, lua_upvalueindex(1))->real_node();
         std::string storage_name = lua_to_string(L, -1);
         lua_pop(L, 1); // {}
 
@@ -369,7 +369,7 @@ namespace
     int storage_index(lua_State* L)
     {
         // {storage, field, type, compare}
-        lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+        lj::Bson& config = Lunar<logjamd::lua::Bson>::check(L, lua_upvalueindex(1))->real_node();
         std::string index_comparison(lua_to_string(L, -1));
         std::string index_type(lua_to_string(L, -2));
         std::string index_field(lua_to_string(L, -3));
@@ -397,7 +397,7 @@ namespace
     int storage_subfield(lua_State* L)
     {
         // {storage, field}
-        lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+        lj::Bson& config = Lunar<logjamd::lua::Bson>::check(L, lua_upvalueindex(1))->real_node();
         std::string field(lua_to_string(L, -1));
         std::string storage_name(lua_to_string(L, -2));
         lua_pop(L, 2); // {}
@@ -420,7 +420,7 @@ namespace
     int storage_event(lua_State* L)
     {
         // {storage, event, function}
-        lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+        lj::Bson& config = Lunar<logjamd::lua::Bson>::check(L, lua_upvalueindex(1))->real_node();
         lj::Bson* function = 0;
         if (lua_isfunction(L, -1) && !lua_iscfunction(L, -1))
         {
@@ -463,7 +463,7 @@ namespace
     int storage_config(lua_State* L)
     {
         // {storage}
-        lj::Bson& config = Lunar<logjamd::Lua_bson>::check(L, lua_upvalueindex(1))->real_node();
+        lj::Bson& config = Lunar<logjamd::lua::Bson>::check(L, lua_upvalueindex(1))->real_node();
         std::string storage_name(lua_to_string(L, -1));
         lua_pop(L, 1); // {}
         
@@ -474,7 +474,7 @@ namespace
         }
 
         lj::Bson* ptr = lj::storage_config_load(storage_name, config);
-        Lunar<logjamd::Lua_bson>::push(L, new logjamd::Lua_bson(ptr, true), true);
+        Lunar<logjamd::lua::Bson>::push(L, new logjamd::lua::Bson(ptr, true), true);
         return 1;
     }
 
@@ -482,8 +482,8 @@ namespace
     {        
         // {item}
         logjamd::lua::sandbox_get(L, "lj__response"); // {item, response}
-        logjamd::Lua_bson* response = Lunar<logjamd::Lua_bson>::check(L, -1);
-        logjamd::Lua_bson* item = Lunar<logjamd::Lua_bson>::check(L, -2);
+        logjamd::lua::Bson* response = Lunar<logjamd::lua::Bson>::check(L, -1);
+        logjamd::lua::Bson* item = Lunar<logjamd::lua::Bson>::check(L, -2);
         lua_pop(L, 2); // {}
         response->real_node().push_child("item", new lj::Bson(item->real_node()));
         return 0;
@@ -493,7 +493,7 @@ namespace
     {
         // {item}
         logjamd::lua::sandbox_get(L, "lj__response"); // {arg, response}
-        logjamd::Lua_bson* response = Lunar<logjamd::Lua_bson>::check(L, -1);
+        logjamd::lua::Bson* response = Lunar<logjamd::lua::Bson>::check(L, -1);
         std::string arg = lua_to_string(L, -2);
         lua_pop(L, 2); // {}
         response->real_node().push_child("lj__output", lj::bson_new_string(arg));
@@ -534,7 +534,7 @@ namespace
     int help(lua_State* L)
     {
         logjamd::lua::sandbox_get(L, "lj__response"); // {arg, response}
-        lj::Bson& response = Lunar<logjamd::Lua_bson>::check(L, -1)->real_node();
+        lj::Bson& response = Lunar<logjamd::lua::Bson>::check(L, -1)->real_node();
         lua_pop(L, 1);
         response["lj__help/common"]
                 << lj::bson_new_string("send_item(bson)")
@@ -612,7 +612,7 @@ namespace logjamd
             lua_register(L, "help", &help);
 
             // Push the configuration onto the stack for closures.
-            Lunar<logjamd::Lua_bson>::push(L, new logjamd::Lua_bson(config, false), true); // {cfg}
+            Lunar<logjamd::lua::Bson>::push(L, new logjamd::lua::Bson(config, false), true); // {cfg}
 
             // load the server configuration functions.
             lua_pushvalue(L, -1); // {cfg, cfg}
@@ -791,7 +791,7 @@ namespace logjamd
         {
             // {}
             logjamd::lua::sandbox_get(L, "lj__response"); // {response}
-            lj::Bson& response = Lunar<Lua_bson>::check(L, -1)->real_node();
+            lj::Bson& response = Lunar<lua::Bson>::check(L, -1)->real_node();
             lua_pop(L, 1); // {}
 
             // Normalize cost and items data.
@@ -831,7 +831,7 @@ namespace logjamd
         {
             // {}
             logjamd::lua::sandbox_get(L, "lj__config"); // {config}
-            const lj::Bson& config = Lunar<Lua_bson>::check(L, -1)->real_node();
+            const lj::Bson& config = Lunar<lua::Bson>::check(L, -1)->real_node();
             lua_pop(L, 1); // {}
             return config;
         }

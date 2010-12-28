@@ -36,8 +36,8 @@
 #include "logjamd/lua/Record_set.h"
 
 #include "logjamd/lua/core.h"
+#include "logjamd/lua/Bson.h"
 #include "logjamd/lua/Storage.h"
-#include "logjamd/Lua_bson.h"
 #include "lj/Bson.h"
 #include "lj/Logger.h"
 #include "lj/Standard_record_set.h"
@@ -125,7 +125,7 @@ namespace
         else
         {
             // Must be a bson object.
-            lj::Bson& val = Lunar<logjamd::Lua_bson>::check(L, -1)->real_node();
+            lj::Bson& val = Lunar<logjamd::lua::Bson>::check(L, -1)->real_node();
             if (lj::bson_type_is_quotable(val.type()))
             {
                 // Deal with string bson objects.
@@ -282,7 +282,7 @@ namespace logjamd
                     
                     // Run the function.
                     lua_pushvalue(L, function);
-                    Lunar<Lua_bson>::push(L, new Lua_bson(*iter, true), true);
+                    Lunar<logjamd::lua::Bson>::push(L, new logjamd::lua::Bson(*iter, true), true);
                     int res = lua_pcall(L, 1, 1, 0);
                     if (res == 0)
                     {
@@ -358,7 +358,7 @@ namespace logjamd
                     
                     // Run the function.
                     lua_pushvalue(L, function);
-                    Lunar<Lua_bson>::push(L, new Lua_bson(*iter, true), false);
+                    Lunar<logjamd::lua::Bson>::push(L, new logjamd::lua::Bson(*iter, true), false);
                     int res = lua_pcall(L, 1, 1, 0);
                     if (res == 0)
                     {
@@ -466,7 +466,7 @@ namespace logjamd
                  iter != d.end();
                  ++iter)
             {
-                Lunar<Lua_bson>::push(L, new Lua_bson(*iter, true), true);
+                Lunar<logjamd::lua::Bson>::push(L, new logjamd::lua::Bson(*iter, true), true);
                 lua_rawseti(L, -2, ++h);
             }
 
@@ -498,7 +498,7 @@ namespace logjamd
             }
             lj::Bson *d = new lj::Bson();
             real_set().first(*d);
-            Lunar<Lua_bson>::push(L, new Lua_bson(d, true), true);
+            Lunar<logjamd::lua::Bson>::push(L, new logjamd::lua::Bson(d, true), true);
 
             const std::string k_summary(command_from_costs("",
                                                            k_command,
