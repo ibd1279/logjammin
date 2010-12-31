@@ -641,7 +641,7 @@ namespace lj
         return new Bson(Bson::k_null, NULL);
     }
 
-    Bson* bson_new_binary(const uint8_t* val, uint32_t sz, Bson::Binary_type subtype)
+    Bson* bson_new_binary(const uint8_t* const val, uint32_t sz, Bson::Binary_type subtype)
     {
         char* ptr = new char[sz + 5];
         memcpy(ptr, &sz, 4);
@@ -664,6 +664,13 @@ namespace lj
         b->set_child("result_size", lj::bson_new_int64(result_size));
         return b;
     }
+
+    lj::Bson* bson_new_uuid(const Uuid& uuid)
+    {
+        size_t sz;
+        const uint8_t* const d = uuid.data(&sz);
+        return bson_new_binary(d, sz, Bson::k_bin_uuid);
+    }
     
     std::string bson_as_debug_string(const Bson& b)
     {
@@ -685,10 +692,17 @@ namespace lj
                 return buf.str();
             case Bson::k_binary:
                 memcpy(&l, v, 4);
-                memcpy(&binary_type, v, 1);
+                memcpy(&binary_type, v + 4, 1);
                 buf << "(4-" << l << ")";
                 buf << "(1-" << bson_binary_type_string(binary_type) << ")";
-                buf << lj::base64_encode(reinterpret_cast<const unsigned char*>(v + 5), l);
+                if (Bson::k_bin_uuid == binary_type && l == 16)
+                {
+                    buf << ((std::string)Uuid(reinterpret_cast<const uint8_t*>(v + 5)));
+                }
+                else
+                {
+                    buf << lj::base64_encode(reinterpret_cast<const unsigned char*>(v + 5), l);
+                }
                 return buf.str();
             case Bson::k_int32:
                 memcpy(&l, v, 4);
@@ -741,6 +755,7 @@ namespace lj
     
     std::string bson_as_string(const Bson& b)
     {
+        Bson::Binary_type binary_type = Bson::k_bin_user_defined;
         long long l = 0;
         double d = 0.0;
         const char* v = b.to_value();
@@ -757,7 +772,15 @@ namespace lj
                 return std::string(v + 4);
             case Bson::k_binary:
                 memcpy(&l, v, 4);
-                return lj::base64_encode(reinterpret_cast<const unsigned char*>(v + 5), l);
+                memcpy(&binary_type, v + 4, 1);
+                if (Bson::k_bin_uuid == binary_type && l == 16)
+                {
+                    return Uuid(reinterpret_cast<const uint8_t*>(v + 5));
+                }
+                else
+                {
+                    return lj::base64_encode(reinterpret_cast<const unsigned char*>(v + 5), l);
+                }
             case Bson::k_int32:
                 memcpy(&l, v, 4);
                 buf << l;
@@ -829,6 +852,7 @@ namespace lj
     
     std::string bson_as_pretty_string(const Bson& b, int lvl)
     {
+        Bson::Binary_type binary_type = Bson::k_bin_user_defined;
         long long l = 0;
         double d = 0.0;
         const char* v = b.to_value();
@@ -851,7 +875,15 @@ namespace lj
                 return std::string(v + 4);
             case Bson::k_binary:
                 memcpy(&l, v, 4);
-                return lj::base64_encode(reinterpret_cast<const unsigned char*>(v + 5), l);
+                memcpy(&binary_type, v + 4, 1);
+                if (Bson::k_bin_uuid == binary_type && l == 16)
+                {
+                    return Uuid(reinterpret_cast<const uint8_t*>(v + 5));
+                }
+                else
+                {
+                    return lj::base64_encode(reinterpret_cast<const unsigned char*>(v + 5), l);
+                }
             case Bson::k_int32:
                 memcpy(&l, v, 4);
                 buf << l;

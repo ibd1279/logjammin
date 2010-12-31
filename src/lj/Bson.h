@@ -35,6 +35,7 @@
 
 #include "lj/Exception.h"
 #include "lj/Linked_map.h"
+#include "lj/Uuid.h"
 #include <set>
 #include <string>
 #include <stdint.h>
@@ -514,6 +515,17 @@ namespace lj
                             unsigned long long time,
                             long long filter_size,
                             long long result_size);
+
+    //! Create a new Uuid Bson object.
+    /*!
+     \par
+     A Uuid bson object is a binary type that contains 16 bytes.
+     \par
+     Result should be released with delete.
+     \param uuid The unique ID.
+     \return a new Bson object.
+     */
+    lj::Bson* bson_new_uuid(const Uuid& uuid);
     
     //! Get the value of a Bson object as a C++ string in debug format.
     /*!

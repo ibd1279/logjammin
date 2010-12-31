@@ -36,7 +36,7 @@
 #include "logjamd/lua/core.h"
 #include "logjamd/Server.h"
 #include "lj/Logger.h"
-#include "lj/Uuid.h"
+#include "lj/Bson.h"
 #include "build/default/config.h"
 
 #include <cstdlib>
@@ -54,6 +54,7 @@ namespace
         std::cerr << "    config is for creating and modifying the configfile." << std::endl;
         std::cerr << "    readonly prevents storage modification." << std::endl;
         std::cerr << "    readwrite enabled storage modification." << std::endl;
+        std::cerr << lj::bson_as_string(*(lj::bson_new_uuid(lj::Uuid()))) << std::endl;
         return 1;
     }
 

@@ -75,6 +75,14 @@ namespace lj
         }
     }
 
+    Uuid::Uuid(const uint8_t d[16])
+    {
+        for (int i = 0; i < 16; ++i)
+        {
+            data_[i] = d[i];
+        }
+    }
+
     Uuid::Uuid(const Uuid& o)
     {
         for (uint8_t i = 0; i < 16; ++i)
@@ -132,6 +140,8 @@ namespace lj
 
     Uuid::Uuid(const unsigned long long o)
     {
+        // Load the provided key into the data array, avoiding
+        // the "reserved" bits in the UUID format.
         data_[0] = static_cast<uint8_t>((o & 0xff00000000000000ULL) >> 56ULL);
         data_[1] = static_cast<uint8_t>((o & 0x00ff000000000000ULL) >> 48ULL);
         data_[2] = static_cast<uint8_t>((o & 0x0000ff0000000000ULL) >> 40ULL);
@@ -142,6 +152,7 @@ namespace lj
         data_[7] = static_cast<uint8_t>((o & 0x0000000000000ff0ULL) >> 4ULL);
         data_[8] = static_cast<uint8_t>((o & 0x000000000000000fULL) << 2ULL);
 
+        // Populate everything else with random values.
         std::ifstream rand("/dev/urandom");
         data_[8] |= static_cast<uint8_t>(rand.get() & 0x03ULL);
 
