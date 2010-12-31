@@ -112,7 +112,8 @@ namespace lj
             {
                 std::string& byte = byte_pairs.back();
                 byte.push_back(*iter);
-                is_first = false;
+                is_first = true;
+                std::cerr << byte << std::endl;
             }
             else
             {
