@@ -656,6 +656,18 @@ namespace lj
      */
     const char* bson_as_binary(const Bson& b, Bson::Binary_type* t, uint32_t* sz);
     
+    //! Get the value of a bson object as a lj::Uuid.
+    /*!
+     \par
+     Only works if the bson value is a binary type with the subtype of uuid.
+     \par
+     Returned value contains no reference to the Bson object and is still
+     valid after the Bson object is deleted.
+     \param b The Bson object.
+     \return The Uuid.
+     */
+    Uuid bson_as_uuid(const Bson& b);
+
     //! Increment the value of a bson object.
     /*!
      \par

@@ -42,6 +42,7 @@ namespace lj
     class Uuid
     {
     public:
+        static Uuid k_nil;
         Uuid();
         Uuid(std::initializer_list<uint8_t> d);
         Uuid(const uint8_t d[16]);
@@ -52,7 +53,8 @@ namespace lj
         Uuid& operator=(const Uuid& o);
         bool operator==(const Uuid& o) const;
         operator std::string() const;
-        const uint8_t* const data(size_t* sz) const { *sz = 16; return data_; }
+        std::string str() const;
+        inline const uint8_t* const data(size_t* sz) const { *sz = 16; return data_; }
     private:
         uint8_t data_[16];
     };

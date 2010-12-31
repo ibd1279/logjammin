@@ -43,6 +43,7 @@
 
 namespace lj
 {
+    Uuid Uuid::k_nil{0,0,0,0 ,0,0,0,0 ,0,0,0,0 ,0,0,0,0};
     Uuid::Uuid()
     {
         std::ifstream rand("/dev/urandom");
@@ -169,7 +170,6 @@ namespace lj
         // setting the y value.
         data_[8] &= 0xbf;
         data_[8] |= 0x80;
-
     }
 
     Uuid::~Uuid()
@@ -206,5 +206,22 @@ namespace lj
                  data_[8], data_[9], data_[10],data_[11],
                  data_[12], data_[13], data_[14], data_[15]);
         return std::string(buf);
+    }
+    std::string Uuid::str() const
+    {
+        uint64_t key = 0;
+        key |= static_cast<uint64_t>(data_[0]) << 56ULL;
+        key |= static_cast<uint64_t>(data_[1]) << 48ULL;
+        key |= static_cast<uint64_t>(data_[2]) << 40ULL;
+        key |= static_cast<uint64_t>(data_[3]) << 32ULL;
+        key |= static_cast<uint64_t>(data_[4]) << 24ULL;
+        key |= static_cast<uint64_t>(data_[5]) << 16ULL;
+        key |= static_cast<uint64_t>(data_[6] & 0x0f) << 12ULL;
+        key |= static_cast<uint64_t>(data_[7]) << 4ULL;
+        key |= static_cast<uint64_t>(data_[8] & 0x3c) >> 2ULL;
+
+        std::ostringstream oss;
+        oss << ((std::string)(*this)) << "/" << key;
+        return oss.str();
     }
 };

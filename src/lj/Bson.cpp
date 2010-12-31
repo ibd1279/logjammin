@@ -1168,6 +1168,18 @@ namespace lj
         memcpy(t, v + 4, 1);
         return v + 5;
     }
+
+    Uuid bson_as_uuid(const Bson& b)
+    {
+        Bson::Binary_type t = Bson::k_bin_user_defined;
+        uint32_t sz;
+        const uint8_t* ptr = reinterpret_cast<const uint8_t*>(bson_as_binary(b, &t, &sz));
+        if (Bson::k_bin_uuid == t && 16 == sz)
+        {
+            return ptr;
+        }
+        return Uuid::k_nil;
+    }
     
     void bson_increment(lj::Bson& b, int amount)
     {
