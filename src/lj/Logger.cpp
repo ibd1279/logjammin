@@ -160,57 +160,57 @@ namespace
                 buffer_ << msg;
             }
         }
-        Log &operator<<(long long msg)
+        virtual Log &operator<<(long long msg)
         {
             write_number(msg);
             return *this;
         }
-        Log &operator<<(unsigned long long msg)
+        virtual Log &operator<<(unsigned long long msg)
         {
             write_number(static_cast<long long>(msg));
             return *this;
         }
-        Log &operator<<(long msg)
+        virtual Log &operator<<(long msg)
         {
             write_number(msg);
             return *this;
         }
-        Log &operator<<(unsigned long msg)
+        virtual Log &operator<<(unsigned long msg)
         {
             write_number(static_cast<long long>(msg));
             return *this;
         }
-        Log &operator<<(int msg)
+        virtual Log &operator<<(int msg)
         {
             write_number(msg);
             return *this;
         }
-        Log &operator<<(unsigned int msg)
+        virtual Log &operator<<(unsigned int msg)
         {
             write_number(static_cast<long long>(msg));
             return *this;
         }
-        Log &operator<<(short msg)
+        virtual Log &operator<<(short msg)
         {
             write_number(msg);
             return *this;
         }
-        Log &operator<<(unsigned short msg)
+        virtual Log &operator<<(unsigned short msg)
         {
             write_number(static_cast<long long>(msg));
             return *this;
         }
-        Log &operator<<(char msg)
+        virtual Log &operator<<(char msg)
         {
             write_number(msg);
             return *this;
         }
-        Log &operator<<(unsigned char msg)
+        virtual Log &operator<<(unsigned char msg)
         {
             write_number(static_cast<long long>(msg));
             return *this;
         }
-        Log &operator<<(bool msg)
+        virtual Log &operator<<(bool msg)
         { 
             if (parts_.size() > 0)
             {
@@ -226,7 +226,7 @@ namespace
             }
             return *this;
         }
-        virtual Log &operator<<(void* msg) {
+        virtual Log& operator<<(void* msg) {
             char *buffer = new char[512 + parts_.front().size()];
             if (parts_.size() > 0)
             {
@@ -241,6 +241,10 @@ namespace
             }
             delete[] buffer;
             return *this;
+        }
+        virtual Log& operator<<(const lj::Uuid& msg)
+        {
+            return ((*this) << ((std::string)msg));
         }
         virtual void operator<<(const Log::End &msg)
         {

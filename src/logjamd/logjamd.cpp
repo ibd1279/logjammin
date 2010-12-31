@@ -36,6 +36,7 @@
 #include "logjamd/lua/core.h"
 #include "logjamd/Server.h"
 #include "lj/Logger.h"
+#include "lj/Uuid.h"
 #include "build/default/config.h"
 
 #include <cstdlib>

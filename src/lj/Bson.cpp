@@ -641,7 +641,7 @@ namespace lj
         return new Bson(Bson::k_null, NULL);
     }
 
-    Bson* bson_new_binary(const char* val, uint32_t sz, Bson::Binary_type subtype)
+    Bson* bson_new_binary(const uint8_t* val, uint32_t sz, Bson::Binary_type subtype)
     {
         char* ptr = new char[sz + 5];
         memcpy(ptr, &sz, 4);

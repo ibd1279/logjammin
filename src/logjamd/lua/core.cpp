@@ -53,12 +53,12 @@ namespace
     //! Function buffer for reading and writing lua functions.
     struct Function_buffer
     {
-        char* const buf;
-        char* cur;
-        char* const max;
+        uint8_t* const buf;
+        uint8_t* cur;
+        uint8_t* const max;
         size_t size;
         
-        Function_buffer(size_t sz) : buf(new char[sz + 1]), cur(buf), max(buf + sz + 1)
+        Function_buffer(size_t sz) : buf(new uint8_t[sz + 1]), cur(buf), max(buf + sz + 1)
         {
         }
         
@@ -105,10 +105,10 @@ namespace
         }
         else
         {
-            const char* bytes = ptr->buf;
+            const uint8_t* bytes = ptr->buf;
             *sz = ptr->cur - ptr->buf;
             ptr->cur = ptr->max;
-            return bytes;
+            return reinterpret_cast<const char*>(bytes);
         }
     }
 

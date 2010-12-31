@@ -33,6 +33,8 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "Uuid.h"
+#include "Bson.h"
 #include <ostream>
 #include <string>
 
@@ -178,6 +180,8 @@ namespace lj
         virtual Log &operator<<(bool msg) { return *this; };
         //! Log a value.
         virtual Log &operator<<(void* msg) { return *this; };
+        //! Log a unique id value.
+        virtual Log &operator<<(const Uuid& msg) { return *this; };
         //! Close the logger.
         virtual void operator<<(const End &msg) { };
         

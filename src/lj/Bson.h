@@ -496,7 +496,7 @@ namespace lj
      \param subtype The binary subtype.
      \return a new Bson object.
      */
-    Bson* bson_new_binary(const char* val, uint32_t sz, Bson::Binary_type subtype);
+    Bson* bson_new_binary(const uint8_t* val, uint32_t sz, Bson::Binary_type subtype);
     
     //! Create a new cost object.
     /*!
