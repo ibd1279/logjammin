@@ -39,21 +39,145 @@
 
 namespace lj
 {
+    //! Uuid value.
+    /*!
+     \par
+     Unique ID value.
+     \author Jason Watson
+     \version 1.0
+     \date January 01, 2011
+     */
     class Uuid
     {
     public:
-        static Uuid k_nil;
+        static const Uuid k_nil; //!< constant nil value.
+
+        //! Default constructor.
+        /*!
+         \par
+         Create a random Uuid.
+         */
         Uuid();
+
+        //! Initializer list constructor.
+        /*!
+         \par
+         Construct a Uuid from 16 constant bytes.
+         \param d 16 bytes.
+         */
         Uuid(std::initializer_list<uint8_t> d);
+
+        //! Array constructor.
+        /*!
+         \par
+         Construct a Uuid from a 16 byte array.
+         \param d 16 bytes.
+         */
         Uuid(const uint8_t d[16]);
+
+        //! Copy constructor.
+        /*!
+         \param o The other object.
+         */
         Uuid(const Uuid& o);
+
+        //! String constructor.
+        /*!
+         \par
+         Expects the input string in the format of
+         {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}
+         \param o The string.
+         */
         Uuid(const std::string& o);
-        Uuid(const unsigned long long o);
+
+        //! Id constructor.
+        /*!
+         \par
+         ID is calculated into the Uuid.
+         \note two Uuids created from the same ID are not
+         guarenteed to be equal. They have a high probability of
+         being not equal.
+         \param o The id.
+         */
+        Uuid(const uint64_t o);
+
+        //! Destructor.
         ~Uuid();
+
+        //! Assignment operator.
+        /*!
+         \note Performs a deep copy.
+         \param o The right hand value.
+         \return reference to this.
+         */
         Uuid& operator=(const Uuid& o);
+
+        //! Equality operator.
+        /*!
+         \param o The right hand value.
+         \return true if the two are equal, false otherwise.
+         */
         bool operator==(const Uuid& o) const;
+
+        //! Inequality operator.
+        /*!
+         \param o The right hand value.
+         \return false if the two are equal, true otherwise.
+         */
+        inline bool operator!=(const Uuid& o) const { return !((*this) == o); };
+
+        //! Less than operator.
+        /*!
+         \param o The right hand value.
+         \return true if this object is less than \c o, false otherwise.
+         */
+        bool operator<(const Uuid& o) const;
+
+        //! Less than or equal operator.
+        /*!
+         \param o The right hand value.
+         \return true if this object is less than or equal to \c o, false otherwise.
+         */
+        inline bool operator<=(const Uuid& o) const { return ((*this) == o) || ((*this) < o); };
+
+        //! Greater than operator.
+        /*!
+         \param o The right hand value.
+         \return true if this object is greater than \c o, false otherwise.
+         */
+        inline bool operator>(const Uuid& o) const { return !(((*this) == o) || ((*this) < o)); };
+
+        //! Greater than or equal operator.
+        /*!
+         \param o The right hand value.
+         \return true if this object is greater than or equal to \c o, false otherwise.
+         */
+        inline bool operator>=(const Uuid& o) const { return !((*this) < o); };
+
+        //! String conversion
+        /*!
+         \par
+         Outputs in the format {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}.
+         \return The string representation.
+         */
         operator std::string() const;
+
+        //! Debug string conversion.
+        /*!
+         \par
+         Outputs in the format {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}/yyyy,
+         where yyyy is the embedded id value.
+         \return The string representation.
+         */
         std::string str() const;
+
+        //! Data accessor.
+        /*!
+         \par
+         size will always be set to 16.
+         \param sz Pointer to a location to store the data size.
+         \return Pointer to the data.
+         */
         inline const uint8_t* const data(size_t* sz) const { *sz = 16; return data_; }
     private:
         uint8_t data_[16];

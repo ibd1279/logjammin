@@ -43,7 +43,7 @@
 
 namespace lj
 {
-    Uuid Uuid::k_nil{0,0,0,0 ,0,0,0,0 ,0,0,0,0 ,0,0,0,0};
+    const Uuid Uuid::k_nil{0,0,0,0 ,0,0,0,0 ,0,0,0,0 ,0,0,0,0};
     Uuid::Uuid()
     {
         std::ifstream rand("/dev/urandom");
@@ -195,6 +195,18 @@ namespace lj
             }
         }
         return true;
+    }
+
+    bool Uuid::operator<(const Uuid& o) const
+    {
+        for (uint8_t i = 0; i < 16; ++i)
+        {
+            if (data_[i] < o.data_[i])
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     Uuid::operator std::string() const
