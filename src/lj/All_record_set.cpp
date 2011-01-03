@@ -178,60 +178,6 @@ namespace lj
         return ptr;
     }
     
-    std::unique_ptr<Record_set> All_record_set::contains(const std::string& indx,
-                                                       const std::string& term) const
-    {
-        std::unique_ptr<Record_set> ptr;
-        if (Record_set::k_union == op_)
-        {
-            ptr.reset(new All_record_set(*this));
-        }
-        else if (Record_set::k_intersection == op_)
-        {
-            Standard_record_set tmp(storage_,
-                                    new std::set<unsigned long long>(),
-                                    Record_set::k_union);
-            ptr = tmp.contains(indx, term);
-            ptr->set_operation(op_);
-        }
-        else
-        {
-            std::set<unsigned long long>* real_keys = new std::set<unsigned long long>();
-            get_all_keys(real_keys);
-            Standard_record_set tmp(storage_, real_keys, op_);
-            ptr = tmp.contains(indx, term);
-        }
-        
-        return ptr;
-    }
-    
-    std::unique_ptr<Record_set> All_record_set::tagged(const std::string& indx,
-                                                     const std::string& word) const
-    {
-        std::unique_ptr<Record_set> ptr;
-        if (Record_set::k_union == op_)
-        {
-            ptr.reset(new All_record_set(*this));
-        }
-        else if (Record_set::k_intersection == op_)
-        {
-            Standard_record_set tmp(storage_,
-                                    new std::set<unsigned long long>(),
-                                    Record_set::k_union);
-            ptr = tmp.tagged(indx, word);
-            ptr->set_operation(op_);
-        }
-        else
-        {
-            std::set<unsigned long long>* real_keys = new std::set<unsigned long long>();
-            get_all_keys(real_keys);
-            Standard_record_set tmp(storage_, real_keys, op_);
-            ptr = tmp.tagged(indx, word);
-        }
-        
-        return ptr;
-    }
-    
     long long All_record_set::size() const
     {
         return Record_set::storage_db(storage_)->count();

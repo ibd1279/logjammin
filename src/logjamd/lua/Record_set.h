@@ -172,32 +172,6 @@ namespace logjamd
              */
             int lesser(lua_State* L);
 
-            //! Filter the lj::Record_set on an index.
-            /*!
-             \par
-             Pops the value (lua string) off the stack.
-             \par
-             Pops the field (lua string) off the stack.
-             \par
-             Pushes a new Lua_record_set onto the stack.
-             \param L The lua state.
-             \return 1
-             */
-            int contains(lua_State* L);
-            
-            //! Filter the lj::Record_set on an index.
-            /*!
-             \par
-             Pops the value (lua string) off the stack.
-             \par
-             Pops the field (lua string) off the stack.
-             \par
-             Pushes a new Lua_record_set onto the stack.
-             \param L The lua state.
-             \return 1
-             */
-            int tagged(lua_State* L);
-
             //! Get the list of Lua_bson records.
             /*!
              \par

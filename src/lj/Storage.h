@@ -202,12 +202,6 @@ namespace lj
         //! Fields indexed using a hash db.
         std::map<std::string, tokyo::Hash_db*> fields_hash_;
         
-        //! Fields indexed using full text searcher.
-        std::map<std::string, tokyo::TextSearcher*> fields_text_;
-        
-        //! Fields indexed using word searcher.
-        std::map<std::string, tokyo::TagSearcher*> fields_tag_;
-        
         //! Fields that have unique constraints.
         std::set<std::string> nested_indexing_;
         

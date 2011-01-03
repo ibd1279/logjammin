@@ -51,9 +51,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-using tokyo::TextSearcher;
-using tokyo::TagSearcher;
-
 // ====================================================================
 // Opening a storage object.
 // ====================================================================
@@ -109,23 +106,6 @@ namespace
             lj::Log::info.log("  Using int64 for compares") << lj::Log::end;
         }
         tcbdbtune(db, 256, 512, 65498, 9, 11, BDBTLARGE | BDBTBZIP);
-    }
-    
-    void tune_text_index(TCQDB* db, const void* ptr)
-    {
-        //const Bson *bn = static_cast<const Bson *>(ptr);
-        tcqdbtune(db, 10000000, QDBTLARGE | QDBTBZIP);
-        
-        // XXX config other things like compression type.
-    }
-    
-    // XXX Add configuration method for tags
-    void tune_word_index(TCWDB* db, const void* ptr)
-    {
-        //const Bson *bn = static_cast<const Bson *>(ptr);
-        tcwdbtune(db, 10000000, WDBTLARGE | WDBTBZIP);
-        
-        // XXX config other things like compression type.
     }
     
     void tune_fixed_index(TCFDB* db, const void* ptr)
@@ -201,7 +181,7 @@ namespace
 
 namespace lj
 {
-    Storage::Storage(const std::string &name, const lj::Bson& server_config) : db_(NULL), fields_tree_(), fields_hash_(), fields_text_(), fields_tag_(), config_(NULL), server_config_(server_config), name_(name)
+    Storage::Storage(const std::string &name, const lj::Bson& server_config) : db_(NULL), fields_tree_(), fields_hash_(), config_(NULL), server_config_(server_config), name_(name)
     {
         const std::string& dir = root_data_directory(server_config_);
         const std::string& configfile = storage_config_path(server_config_, name_);
@@ -244,20 +224,6 @@ namespace lj
                                      &tune_tree_index,
                                      fields_tree_);
         
-        open_indices<TextSearcher>(server_config_,
-                                   name,
-                                   config_->nav("index/text"),
-                                   QDBOREADER | QDBOWRITER | QDBOCREAT | QDBOLCKNB,
-                                   &tune_text_index,
-                                   fields_text_);
-        
-        open_indices<TagSearcher>(server_config_,
-                                  name,
-                                  config_->nav("index/tag"),
-                                  WDBOREADER | WDBOWRITER | WDBOCREAT | WDBOLCKNB,
-                                  &tune_word_index,
-                                  fields_tag_);
-        
         Log::info.log("Checkpointing [%s] after startup.") << dir << Log::end;
         checkpoint();
     }
@@ -269,8 +235,6 @@ namespace lj
         Log::info.log("Checkpointing [%s/%s] before shutdown.") << dir << name_ << Log::end;
         checkpoint();
         
-        close_indices<TagSearcher>(server_config_, name_, fields_tag_);
-        close_indices<TextSearcher>(server_config_, name_, fields_text_);
         close_indices<tokyo::Tree_db>(server_config_, name_, fields_tree_);
         close_indices<tokyo::Hash_db>(server_config_, name_, fields_hash_);
         
@@ -379,34 +343,6 @@ namespace
         delete[] bson;
     }
     
-    void text_deindex(tokyo::TextSearcher& db,
-                      const lj::Bson& n,
-                      const unsigned long long key)
-    {
-        db.remove(key, lj::bson_as_string(n));
-    }
-    
-    void text_reindex(tokyo::TextSearcher& db,
-                      const lj::Bson& n,
-                      const unsigned long long key)
-    {
-        db.index(key, lj::bson_as_string(n));
-    }
-    
-    void word_deindex(tokyo::TagSearcher& db,
-                      const lj::Bson& n,
-                      const unsigned long long key)
-    {
-        db.remove(key, lj::bson_as_value_string_set(n));
-    }
-    
-    void word_reindex(tokyo::TagSearcher& db,
-                      const lj::Bson& n,
-                      const unsigned long long key)
-    {
-        db.index(key, lj::bson_as_value_string_set(n));
-    }
-    
     template<typename T>
     void perform_on_index(const std::string field_name,
                           T& index,
@@ -506,18 +442,6 @@ namespace lj
                                            key,
                                            &hash_deindex);
         
-        perform_on_indices<tokyo::TextSearcher>(fields_text_,
-                                                false,
-                                                nested_indexing_,
-                                                record,
-                                                key,
-                                                &text_deindex);
-        perform_on_indices<tokyo::TagSearcher>(fields_tag_,
-                                               false,
-                                               nested_indexing_,
-                                               record,
-                                               key,
-                                               &word_deindex);
         return *this;
     }
     
@@ -550,18 +474,6 @@ namespace lj
                                            key,
                                            &hash_reindex);
         
-        perform_on_indices<tokyo::TextSearcher>(fields_text_,
-                                                false,
-                                                nested_indexing_,
-                                                record,
-                                                key,
-                                                &text_reindex);
-        perform_on_indices<tokyo::TagSearcher>(fields_tag_,
-                                               false,
-                                               nested_indexing_,
-                                               record,
-                                               key,
-                                               &word_reindex);
         return *this;
     }
     
@@ -577,18 +489,6 @@ namespace lj
         if (hash_ptr)
         {
             hash_ptr->truncate();
-        }
-        
-        tokyo::TextSearcher* text_ptr = get_index_by_field<tokyo::TextSearcher>(fields_text_, index);
-        if (text_ptr)
-        {
-            text_ptr->truncate();
-        }
-        
-        tokyo::TagSearcher* word_ptr = get_index_by_field<tokyo::TagSearcher>(fields_tag_, index);
-        if (word_ptr)
-        {
-            word_ptr->truncate();
         }
         
         const std::string& dir = root_data_directory(server_config_);
@@ -618,20 +518,6 @@ namespace lj
                                              record,
                                              key,
                                              &hash_reindex);
-            perform_on_index<tokyo::TextSearcher>(index,
-                                                  *text_ptr,
-                                                  false,
-                                                  nested_indexing_,
-                                                  record,
-                                                  key,
-                                                  &text_reindex);
-            perform_on_index<tokyo::TagSearcher>(index,
-                                                 *word_ptr,
-                                                 false,
-                                                 nested_indexing_,
-                                                 record,
-                                                 key,
-                                                 &word_reindex);
         }
     }
 }; // namespace lj
@@ -740,8 +626,6 @@ namespace lj
         Log::info.log("Truncating all indicies in [%s/%s]") << dir << name_ << Log::end;
         truncate_indices<tokyo::Tree_db>(fields_tree_);
         truncate_indices<tokyo::Hash_db>(fields_hash_);
-        truncate_indices<tokyo::TextSearcher>(fields_text_);
-        truncate_indices<tokyo::TagSearcher>(fields_tag_);
         
         Log::info.log("Rebuilding all indicies in [%s/%s]") << dir << name_ << Log::end;
         tokyo::Tree_db::Enumerator* e = db_->forward_enumerator();
@@ -758,8 +642,6 @@ namespace lj
     
     void Storage::optimize()
     {
-        optimize_indices<tokyo::TagSearcher>(fields_tag_);
-        optimize_indices<tokyo::TextSearcher>(fields_text_);
         optimize_indices<tokyo::Hash_db>(fields_hash_);
         optimize_indices<tokyo::Tree_db>(fields_tree_);
     }

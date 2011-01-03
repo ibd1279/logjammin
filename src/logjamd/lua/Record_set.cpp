@@ -50,38 +50,6 @@
 
 namespace
 {
-    void text_filter(lua_State* L,
-                     lj::Record_set& real_set,
-                     std::unique_ptr<lj::Record_set> (lj::Record_set::*f)(const std::string&, const std::string&) const,
-                     const std::string& cmd,
-                     const lj::Bson& costs)
-    {
-        lj::Time_tracker timer;
-
-        // copy cost data for the new result.
-        lj::Bson* cost_data = new lj::Bson(costs);
-        
-        // Get the search inputs
-        std::string field(lua_to_string(L, -2));
-        std::string val(lua_to_string(L, -1));
-        
-        // Start collecting some cost information.
-        std::ostringstream cmd_builder;
-        cmd_builder << cmd << "(";
-        cmd_builder << "'" << field << "', '" << val << "')";
-        const std::string k_command(cmd_builder.str());
-        
-        // Execute the filtering operation.
-        lj::Record_set* ptr = (real_set.*f)(field, val).release();
-        logjamd::lua::Record_set* wrapper = new logjamd::lua::Record_set(ptr, cost_data);
-        Lunar<logjamd::lua::Record_set>::push(L, wrapper, true);
-        
-        cost_data->push_child("", lj::bson_new_cost(k_command,
-                                                    timer.elapsed(),
-                                                    ptr->raw_size(),
-                                                    ptr->size()));
-    }
-
     void filter(lua_State* L, 
                 lj::Record_set& real_set,
                 std::unique_ptr<lj::Record_set> (lj::Record_set::*f)(const std::string&, const void* const, const size_t) const,
@@ -193,8 +161,6 @@ namespace logjamd
         LUNAR_MEMBER_METHOD(Record_set, equal),
         LUNAR_MEMBER_METHOD(Record_set, greater),
         LUNAR_MEMBER_METHOD(Record_set, lesser),
-        LUNAR_MEMBER_METHOD(Record_set, contains),
-        LUNAR_MEMBER_METHOD(Record_set, tagged),
         LUNAR_MEMBER_METHOD(Record_set, records),
         LUNAR_MEMBER_METHOD(Record_set, first),
         LUNAR_MEMBER_METHOD(Record_set, size),
@@ -431,26 +397,6 @@ namespace logjamd
             return 1;
         }
         
-        int Record_set::contains(lua_State* L)
-        {
-            text_filter(L,
-                        real_set(),
-                        &lj::Record_set::contains,
-                        "contains",
-                        costs());
-            return 1;
-        }
-
-        int Record_set::tagged(lua_State* L)
-        {
-            text_filter(L,
-                        real_set(),
-                        &lj::Record_set::tagged,
-                        "tagged",
-                        costs());
-            return 1;
-        }
-
         int Record_set::records(lua_State* L)
         {
             lj::Time_tracker timer;

@@ -215,53 +215,6 @@ namespace lj
         return ptr;
     }
     
-    std::unique_ptr<Record_set> Standard_record_set::contains(const std::string& indx,
-                                                            const std::string& term) const
-    {
-        Log::debug.log("Contains on [%s] with [%s]") << indx << term << Log::end;
-        tokyo::TextSearcher* text_index = Record_set::storage_text(storage_, indx);
-        
-        tokyo::Searcher::set_key_t searcher_values;
-        if (text_index)
-        {
-            text_index->search(term, searcher_values);
-        }
-        else
-        {
-            return std::unique_ptr<Record_set>(new Standard_record_set(*this));
-        }
-        
-        std::set<unsigned long long>* output = Record_set::operate_on_sets<std::set<unsigned long long> >(op_, *keys_, searcher_values);
-        Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
-        
-        std::unique_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
-        ptr->set_raw_size(searcher_values.size());
-        return ptr;
-    }
-    
-    std::unique_ptr<Record_set> Standard_record_set::tagged(const std::string& indx,
-                                                          const std::string& word) const
-    {
-        Log::debug.log("Tagged on [%s] with [%s]") << indx << word << Log::end;
-        tokyo::TagSearcher* tag_index = Record_set::storage_tag(storage_, indx);
-        
-        tokyo::Searcher::set_key_t searcher_values;
-        if (tag_index)
-        {
-            tag_index->search(word, searcher_values);
-        }
-        else
-        {
-            return std::unique_ptr<Record_set>(new Standard_record_set(*this));
-        }
-        
-        std::set<unsigned long long>* output = Record_set::operate_on_sets<std::set<unsigned long long> >(op_, *keys_, searcher_values);
-        Log::debug.log("  %d Result%s") << output->size() << (output->size() ? "s" : "") << Log::end;
-        
-        std::unique_ptr<Record_set> ptr(new Standard_record_set(storage_, output, op_));
-        ptr->set_raw_size(searcher_values.size());
-        return ptr;
-    }
     
     long long Standard_record_set::size() const
     {

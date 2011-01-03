@@ -26,13 +26,6 @@ def configure(ctx):
         define_name='HAVE_EDITLINE'
     )
     ctx.check_cxx(
-        header_name='dystopia.h',
-        lib=['tokyodystopia'],
-        libpath=['/usr/local/lib', '/opt/local/lib/'],
-        includes=['/usr/local/include', '/opt/local/include/'],
-        mandatory=True
-    )
-    ctx.check_cxx(
         header_name='tcutil.h',
         lib=['tokyocabinet'],
         libpath=['/usr/local/lib', '/opt/local/lib/'],

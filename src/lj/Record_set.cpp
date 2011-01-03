@@ -65,28 +65,6 @@ namespace lj {
         return (*i).second;
     }
     
-    tokyo::TextSearcher* Record_set::storage_text(const Storage* s,
-                                                  const std::string& indx)
-    {
-        std::map<std::string, tokyo::TextSearcher*>::const_iterator i = s->fields_text_.find(indx);
-        if (s->fields_text_.end() == i)
-        {
-            return 0;
-        }
-        return (*i).second;
-    }
-    
-    tokyo::TagSearcher* Record_set::storage_tag(const Storage* s,
-                                                const std::string& indx)
-    {
-        std::map<std::string, tokyo::TagSearcher*>::const_iterator i = s->fields_tag_.find(indx);
-        if (s->fields_tag_.end() == i)
-        {
-            return 0;
-        }
-        return (*i).second;
-    }
-    
     void Record_set::list_to_set(const tokyo::DB::list_value_t& a,
                                  std::set<unsigned long long>& b)
     {

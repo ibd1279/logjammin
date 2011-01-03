@@ -84,10 +84,6 @@ namespace lj
         virtual std::unique_ptr<Record_set> lesser(const std::string& indx,
                                                    const void* const val,
                                                    const size_t len) const;
-        virtual std::unique_ptr<Record_set> contains(const std::string& indx,
-                                                     const std::string& term) const;
-        virtual std::unique_ptr<Record_set> tagged(const std::string& indx,
-                                                   const std::string& word) const;
         virtual long long size() const;
         virtual bool items(std::list<Bson>& records) const;
         virtual bool items(std::list<Bson*>& records) const;

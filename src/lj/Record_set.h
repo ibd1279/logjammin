@@ -185,36 +185,6 @@ namespace lj
                                                    const void* const val,
                                                    const size_t len) const = 0;
         
-        //! Perform operation against this Record_set and another new Record_set.
-        /*!
-         \par
-         Searches \c indx for documents with values containing \c term.
-         The results from the index are operated with the current Record_set.
-         \par
-         If a Text_searcher exists for \c indx, it will be used. If an index
-         does not exist, a copy of the current Record_set is returned.
-         \param indx The index to search against.
-         \param term The value to search for.
-         \return A Record_set.
-         */
-        virtual std::unique_ptr<Record_set> contains(const std::string& indx,
-                                                     const std::string& term) const = 0;
-        
-        //! Perform operation against this Record_set and another new Record_set.
-        /*!
-         \par
-         Searches \c indx for documents with values containing \c word.
-         The results from the index are operated with the current Record_set.
-         \par
-         If a Word_searcher exists for \c indx, it will be used. If an index
-         does not exist, a copy of the current Record_set is returned.
-         \param indx The index to search against.
-         \param word The value to search for.
-         \return A Record_set.
-         */
-        virtual std::unique_ptr<Record_set> tagged(const std::string& indx,
-                                                   const std::string& word) const = 0;
-        
         //! Record_set size.
         /*!
          \return The number of documents currently in the set.
@@ -306,24 +276,6 @@ namespace lj
          */
         static tokyo::Hash_db* storage_hash(const Storage* s,
                                             const std::string& indx);
-        
-        //! Get a text index from the Storage object.
-        /*!
-         \param s The Storage object.
-         \param indx The index name.
-         \return The text index pointer.
-         */
-        static tokyo::TextSearcher* storage_text(const Storage* s,
-                                                 const std::string& indx);
-        
-        //! Get a tag index from the Storage object.
-        /*!
-         \param s The Storage object.
-         \param indx The index name.
-         \return The tag index pointer.
-         */
-        static tokyo::TagSearcher* storage_tag(const Storage* s,
-                                               const std::string& indx);
         
         //! Convert a list to a set.
         /*!

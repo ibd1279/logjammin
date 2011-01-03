@@ -40,8 +40,6 @@ extern "C" {
 #include <tcbdb.h>
 #include <tchdb.h>
 #include <tcfdb.h>
-#include <dystopia.h>
-#include <laputa.h>
 }
 #include <set>
 #include <string>
@@ -125,47 +123,6 @@ namespace tokyo {
         DB();
     };
     
-    //! Abstract Searcher Class.
-    /*!
-     \author Jason Watson
-     \version 1.0
-     \date April 19, 2010
-     */
-    class Searcher {
-    protected:
-        Searcher() {
-        }
-    public:
-        //! type for the indexed search values.
-        typedef std::string value_t;
-        
-        //! type for the document ID associated with the search value.
-        typedef unsigned long long key_t;
-        
-        //! type for a collection of IDs.
-        typedef std::set<unsigned long long> set_key_t;
-        
-        virtual ~Searcher() { }
-        
-        //! Index a document.
-        virtual void index(const key_t key,
-                           const value_t& txt) = 0;
-        
-        //! Remove a document.
-        virtual void remove(const key_t key,
-                            const value_t& txt) = 0;
-        
-        //! Search for a document.
-        virtual bool search(const std::string& query,
-                            set_key_t& results) = 0;
-        
-        //! Erase the entire index.
-        virtual void truncate() = 0;
-        
-        //! Optimize the database.
-        virtual void optimize() = 0;
-    };
-    
     //! Hash DB Class.
     /*!
      \author Jason Watson
@@ -193,6 +150,18 @@ namespace tokyo {
                 const int mode,
                 Tune_function_pointer db_tune_func,
                 const void* ptr);
+        
+        //! Removed
+        /*!
+         \param o Other.
+         */
+        Hash_db(const Hash_db& o) = delete;
+        
+        //! Removed
+        /*!
+         \param o Other.
+         */
+        Hash_db& operator=(const Hash_db& o) = delete;
         
         //! Hash_db Destructor
         virtual ~Hash_db();
@@ -231,18 +200,6 @@ namespace tokyo {
             return db_;
         }
     private:
-        //! Hiding to prevent use.
-        /*!
-         \param o Other.
-         */
-        Hash_db(const Hash_db& o);
-        
-        //! Hiding to prevent use.
-        /*!
-         \param o Other.
-         */
-        Hash_db& operator=(const Hash_db& o);
-        
         //! Tokyo Hash Database handle.
         TCHDB *db_;
     };
@@ -309,6 +266,19 @@ namespace tokyo {
                 const int mode,
                 Tune_function_pointer db_tune_func,
                 const void* ptr);
+
+        //! Removed
+        /*!
+         \param o Other.
+         */
+        Tree_db(const Tree_db& o) = delete;
+        
+        //! Removed
+        /*!
+         \param o Other.
+         */
+        Tree_db& operator=(const Tree_db& o) = delete;
+        
         
         //! Tree DB Distructor.
         virtual ~Tree_db();
@@ -409,18 +379,6 @@ namespace tokyo {
             return db_;
         }
     private:
-        //! Hiding to prevent use.
-        /*!
-         \param o Other.
-         */
-        Tree_db(const Tree_db& o);
-        
-        //! Hiding to prevent use.
-        /*!
-         \param o Other.
-         */
-        Tree_db& operator=(const Tree_db& o);
-        
         //! Tokyo Tree Database handle.
         TCBDB *db_;
     };
@@ -495,6 +453,18 @@ namespace tokyo {
                 const int mode,
                 Tune_function_pointer db_tune_func,
                 const void* ptr);
+
+        //! Removed
+        /*!
+         \param o Other.
+         */
+        Fixed_db(const Fixed_db& o) = delete;
+        
+        //! Removed
+        /*!
+         \param o Other.
+         */
+        Fixed_db& operator=(const Fixed_db& o) = delete;
         
         //! Fixed_db Destructor
         virtual ~Fixed_db();
@@ -536,110 +506,8 @@ namespace tokyo {
             return db_;
         }
     private:
-        //! Hiding to prevent use.
-        /*!
-         \param o Other.
-         */
-        Fixed_db(const Fixed_db& o);
-        
-        //! Hiding to prevent use.
-        /*!
-         \param o Other.
-         */
-        Fixed_db& operator=(const Fixed_db& o);
-        
         //! Tokyo Hash Database handle.
         TCFDB *db_;
     };
     
-    //! Full text searcher.
-    /*!
-     Wraps a Tokyo Dystopia full text index object.
-     \author Jason Watson
-     \version 1.0
-     \date April 19, 2010
-     */
-    class TextSearcher : public Searcher {
-    private:
-        //! The Full text database object.
-        TCQDB *_db;
-    protected:
-        //! Get the underlying searcher object.
-        inline TCQDB *db() {
-            return _db;
-        }
-        
-    public:
-        //! Type of the type function.
-        typedef void (*Tune_function_pointer)(TCQDB*, const void*);
-
-        //! String name of the type. \c Text
-        static const std::string k_db_type;
-        
-        //! Create a new searcher.
-        TextSearcher(const std::string &filename,
-                     const int mode,
-                     Tune_function_pointer db_tune_func,
-                     const void *ptr);
-        virtual ~TextSearcher();
-        virtual void index(const key_t key,
-                           const value_t &txt);
-        virtual void remove(const key_t key,
-                            const value_t &txt);
-        virtual bool search(const std::string &query,
-                            set_key_t &results);
-        virtual void truncate();
-        virtual void optimize();
-    };
-    
-    //! Tag searcher.
-    /*!
-     Wraps a Tokyo Dystopia word index object.
-     \author Jason Watson
-     \version 1.0
-     \date April 19, 2010
-     */
-    class TagSearcher : public Searcher {
-    private:
-        //! The word database object.
-        TCWDB *_db;
-    protected:
-        //! Get the underlying searcher object.
-        inline TCWDB *db() {
-            return _db;
-        }
-        
-    public:
-        //! Type of the type function.
-        typedef void (*Tune_function_pointer)(TCWDB*, const void*);
-        
-        //! String name of the type. \c Word
-        static const std::string k_db_type;
-        
-        //! Type of lists of values.
-        typedef std::set<value_t> set_value_t;
-        
-        //! Crete a new Tag Searcher.
-        TagSearcher(const std::string &filename,
-                    const int mode,
-                    Tune_function_pointer db_tune_func,
-                    const void *ptr);
-        virtual ~TagSearcher();
-        virtual void index(const key_t key,
-                           const value_t &txt);
-        virtual void remove(const key_t key,
-                            const value_t &txt);
-        virtual bool search(const std::string &query,
-                            set_key_t &results);
-        virtual void truncate();
-        virtual void optimize();
-        
-        //! index a key to multiple words/phrases.
-        virtual void index(const key_t key,
-                           const set_value_t &words);
-        
-        //! remove a key from multiple words/phrases.
-        virtual void remove(const key_t key,
-                            const set_value_t &words);
-    };
 };
