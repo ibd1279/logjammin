@@ -105,6 +105,11 @@ namespace lj
          \return All keys.
          */
         std::unique_ptr<Record_set> all() const;
+
+        const lj::Engine* const index(const std::string& indx) const
+        {
+            return NULL;
+        }
         
         //! Get an empty Record_set.
         /*!
