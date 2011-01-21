@@ -63,7 +63,7 @@ namespace
     void tune_hash_db(TCHDB* db, const void* ptr)
     {
         //const Bson *bn = static_cast<const Bson *>(ptr);
-        tchdbtune(db, 514229, 8, 11, HDBTLARGE | HDBTBZIP);
+        tchdbtune(db, 1000003, 8, 11, HDBTLARGE | HDBTBZIP);
     }
 
     void tune_key_db(TCBDB* db, const void* ptr)
@@ -71,6 +71,11 @@ namespace
         const lj::Bson* bn = static_cast<const lj::Bson*>(ptr);
         tcbdbsetcmpfunc(db, tcbdbcmpint64, NULL);
         tcbdbtune(db, 256, 512, 65498, 9, 11, BDBTLARGE | BDBTBZIP);
+    }
+
+    void tune_journal_db(TCFDB* db, const void* ptr)
+    {
+        tcfdbtune(db, 16, -1);
     }
 
 }; // namespace (anonymous)
@@ -108,77 +113,199 @@ namespace lj
         
         Tokyo_vault::~Tokyo_vault()
         {
+            data_.reset();
+            key_.reset();
+            journal.reset();
+        }
+
+        uint64_t Tokyo_vault::next_key()
+        {
+            uint64_t *ptr = static_cast<uint64_t*>(key_->max_key().first);
+            return (*ptr) + 1;
         }
 
         void Tokyo_vault::place(lj::Bson& item)
         {
-            lj::Uuid& uid = lj::bson_as_uuid(item["__uid"]);
-            size_t sz;
-            const uint8_t* const key = uid.data(&sz);
-            data_->place(key
-                         sz,
-                         item,
-                         item.size());
+            try
+            {
+                data_->start_writes();
+                key_->start_writes();
+
+                lj::Uuid& uid = lj::bson_as_uuid(item["__uid"]);
+                size_t sz;
+                const uint8_t* const pk = uid.data(&sz);
+                data_->place(pk
+                             sz,
+                             item.to_binary(),
+                             item.size());
+
+                uint64_t key = lj::bson_as_uint64(item["__key"]);
+                key_->place(key,
+                            sizeof(uint64_t),
+                            pk,
+                            sz);
+
+                key_->commit_writes();
+                data_->commit_writes();
+            }
+            catch (lj::Exception* ex)
+            {
+                key_->abort_writes();
+                data_->abort_writes();
+                throw ex;
+            }
         }
 
         void Tokyo_vault::remove(lj::Bson& item)
         {
-            lj::Uuid& uid = lj::bson_as_uuid(item["__uid"]);
-            size_t sz;
-            const uint8_t* const key = uid.data(&sz);
-            data_->remove(&key,
-                          sz);
+            try
+            {
+                data_->start_writes();
+                key_->start_writes();
+
+                lj::Uuid& uid = lj::bson_as_uuid(item["__uid"]);
+                size_t sz;
+                const uint8_t* const pk = uid.data(&sz);
+                uint64_t key = lj::bson_as_uint64(item["__key"]);
+                key_->remove_from_existing(key,
+                                           sizeof(uint64_t),
+                                           pk,
+                                           sz);
+
+                data_->remove(&pk,
+                              sz);
+
+                key_->commit_writes();
+                data_->commit_writes();
+            }
+            catch (lj::Exception* ex)
+            {
+                key_->abort_writes();
+                data_->abort_writes();
+                throw ex;
+            }
         }
 
         void Tokyo_vault::journal_begin(const lj::Uuid& uid)
         {
-            bool complete = false;
-            size_t sz;
-            const uint8_t* const key = uid.data(&sz);
-            journal_->start_writes();
-            journal_->place(key,
-                            sz,
-                            &complete,
-                            sizeof(bool));
-            journal_->end_writes();
+            try
+            {
+                size_t sz;
+                const uint8_t* const pk = uid.data(&sz);
+                const uint64_t key = static_cast<uint64_t>(uid);
+                journal_->start_writes();
+                journal_->place(&key,
+                                sizeof(uint64_t),
+                                pk,
+                                sz);
+                journal_->commit_writes();
+            }
+            catch (lj::Exception* ex)
+            {
+                journal_->abort_writes();
+                throw ex;
+            }
         }
 
         void Tokyo_vault::journal_end(const lj::Uuid& uid)
         {
-            bool complete = true;
-            size_t sz;
-            const uint8_t* const key = uid.data(&sz);
-            journal_->start_writes();
-            journal_->place(key,
-                            sz,
-                            &complete,
-                            sizeof(bool));
-            journal_->end_writes();
+            try
+            {
+                size_t sz;
+                const uint8_t* const pk = uid.data(&sz);
+                const uint64_t key = static_cast<uint64_t>(uid);
+                journal_->start_writes();
+                journal_->place(&key,
+                                sizeof(uint64_t),
+                                pk,
+                                sz);
+                journal_->commit_writes();
+            }
+            catch (lj::Exception* ex)
+            {
+                journal_->abort_writes();
+                throw ex;
+            }
         }
 
         uint64_t Tokyo_vault::size()
         {
+            return data_->count();
         }
 
         bool Tokyo_vault::items(const lj::Index* const index,
                                 std::list<Bson>& records) const
             
         {
+            for (lj::Uuid& uid : index.keys())
+            {
+                size_t sz;
+                const uint8_t* const pk = uid.data(&sz);
+                char* item = static_cast<char*>(data_->at(pk, sz).first);
+                if (!item)
+                {
+                    continue;
+                }
+                record.push_back(lj::Bson(Bson::k_document, item));
+                free(item);
+            }
+            return records.size();;
         }
 
         bool Tokyo_vault::items(const lj::Index* const index,
                                 std::list<Bson*>& records) const
         {
+            for (lj::Uuid& uid : index.keys())
+            {
+                size_t sz;
+                const uint8_t* const pk = uid.data(&sz);
+                char* item = static_cast<char*>(data_->at(pk, sz).first);
+                if (!item)
+                {
+                    continue;
+                }
+                record.push_back(new lj::Bson(Bson::k_document, item));
+                free(item);
+            }
+            return records.size();
         }
 
         bool Tokyo_vault::items_raw(const lj::Index* const index,
                                     lj::Bson& records) const
         {
+            for (lj::Uuid& uid : index.keys())
+            {
+                size_t sz;
+                const uint8_t* const pk = uid.data(&sz);
+                char* item = static_cast<char*>(data_->at(pk, sz).first);
+                if (!item)
+                {
+                    continue;
+                }
+                record.push_child("", new lj::Bson(Bson::k_binary_document,
+                                                   item));
+                free(item);
+            }
+            return records.size();
         }
 
         bool Tokyo_vault::first(const lj::Index* const index,
                                 lj::Bson& result) const
         {
+            for (lj::Uuid& uid : index.keys())
+            {
+                size_t sz;
+                const uint8_t* const pk = uid.data(&sz);
+                char* item = static_cast<char*>(data_->at(pk, sz).first);
+                if (!item)
+                {
+                    continue;
+                }
+                result.set_value(Bson::k_document, item);
+                free(item);
+                return true;
+            }
+            return false;
         }
     }; // namespace lj::engines
 }; // namespace lj.

@@ -219,6 +219,22 @@ namespace lj
                  data_[12], data_[13], data_[14], data_[15]);
         return std::string(buf);
     }
+
+    Uuid::operator uint64_t() const
+    {
+        uint64_t key = 0;
+        key |= static_cast<uint64_t>(data_[0]) << 56ULL;
+        key |= static_cast<uint64_t>(data_[1]) << 48ULL;
+        key |= static_cast<uint64_t>(data_[2]) << 40ULL;
+        key |= static_cast<uint64_t>(data_[3]) << 32ULL;
+        key |= static_cast<uint64_t>(data_[4]) << 24ULL;
+        key |= static_cast<uint64_t>(data_[5]) << 16ULL;
+        key |= static_cast<uint64_t>(data_[6] & 0x0f) << 12ULL;
+        key |= static_cast<uint64_t>(data_[7]) << 4ULL;
+        key |= static_cast<uint64_t>(data_[8] & 0x3c) >> 2ULL;
+        return key;
+    }
+
     std::string Uuid::str() const
     {
         uint64_t key = 0;

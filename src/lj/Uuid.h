@@ -162,6 +162,14 @@ namespace lj
          */
         operator std::string() const;
 
+        //! Integer conversion
+        /*!
+         \par
+         Converts the Uuid to the embedded id value.
+         \return The embedded id value.
+         */
+        operator uint64_t() const;
+
         //! Debug string conversion.
         /*!
          \par

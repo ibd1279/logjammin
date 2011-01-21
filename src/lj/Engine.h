@@ -35,6 +35,7 @@
  */
 
 #include "lj/Bson.h"
+#include "lj/Storage.h"
 
 #include <memory>
 #include <string>
@@ -169,11 +170,13 @@ namespace lj
         {
         }
 
+        virtual uint64_t next_key() = 0;
+
+        virtual void journal_begin(const lj::Uuid& uid) = 0;
+
         virtual void place(lj::Bson& item) = 0;
 
         virtual void remove(lj::Bson& item) = 0;
-
-        virtual void journal_begin(const lj::Uuid& uid) = 0;
 
         virtual void journal_end(const lj::Uuid& uid) = 0;
 

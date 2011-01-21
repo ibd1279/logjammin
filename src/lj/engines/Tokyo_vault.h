@@ -58,6 +58,8 @@ namespace lj
             //! Destructor.
             virtual ~Tokyo_vault();
 
+            virtual uint64_t next_key();
+
             virtual void place(lj::Bson& item);
 
             virtual void remove(lj::Bson& item);

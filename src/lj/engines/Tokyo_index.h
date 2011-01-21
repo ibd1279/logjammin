@@ -1,6 +1,6 @@
 #pragma once
 /*!
- \file lj/engines/TokyoIndex.h
+ \file lj/engines/Tokyo_index.h
  \brief LJ Tokyo Index engine interface.
  \author Jason Watson
  
@@ -48,11 +48,13 @@ namespace lj
          \date January 18, 2011
          \sa lj::Storage
          */
-        class TokyoIndex : public lj::Index {
+        class Tokyo_index : public lj::Index {
         public:
             //! Constructor.
-            TokyoIndex(const lj::Storage* const storage,
-                       const lj::Bson* const config);
+            Tokyo_index(const lj::Bson* const server_config,
+                        const lj::Bson* const storage_config,
+                        const lj::Bson* const index_config,
+                        const lj::Storage* const storage);
             
             //! Destructor.
             virtual ~TokyoIndex();
