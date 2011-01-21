@@ -51,8 +51,9 @@ namespace lj
         class Tokyo_vault : public lj::Vault {
         public:
             //! Constructor.
-            Tokyo_vault(const lj::Storage* const storage,
-                       const lj::Bson* const config);
+            Tokyo_vault(const lj::Bson* const server_config,
+                        const lj::Bson* const storage_config,
+                        const lj::Bson* const vault_config);
             
             //! Destructor.
             virtual ~Tokyo_vault();
@@ -79,8 +80,12 @@ namespace lj
             virtual bool first(const lj::Index* const index,
                                lj::Bson& result) const;
         private:
-            std::shared_ptr<tokyo::Tree_db> data_;
+            std::shared_ptr<tokyo::Hash_db> data_;
+            std::shared_ptr<tokyo::Tree_db> index_;
             std::shared_ptr<tokyo::Fixed_db> journal_;
+            const lj::Bson* const server_config_;
+            const lj::Bson* const storage_config_;
+            const lj::Bson* const vault_config_;
         };
     }; // namespace lj::engines
 }; // namespace lj.

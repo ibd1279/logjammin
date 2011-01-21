@@ -35,14 +35,75 @@
 
 #include "lj/Tokyo_vault.h"
 
+#include <cassert>
+
+namespace
+{
+    const int k_tree_db_mode = BDBOREADER | BDBOWRITER | BDBOCREAT | BDBOLCKNB;
+    const int k_hash_db_mode = HDBOREADER | HDBOWRITER | HDBOCREAT | HDBOLCKNB;
+    const int k_fixed_db_mode = FDBOREADER | FDBOWRITER | FDBOCREAT | FDBOLCKNB;
+
+    template<typename T>
+    T* open_db(const lj::Bson& server_config,
+               const lj::Bson& storage_config,
+               const lj::Bson& vault_config,
+               const std::string& path,
+               const int open_flags,
+               typename T::Tune_function_pointer tune_function)
+    {
+        const lj::Bson* cfg = vault_config[path];
+        std::string& r = lj::bson_as_string(server_config["server/directory"]);
+        std::string& s = lj::bson_as_string(storage_config["storage/name"]);
+        std::string& p = lj::bson_as_string(cfg->nav("filename"));
+        assert(p.size() > 0);
+        std::string filename(p.at(0) == '/' ? p : (r + "/" + s + "/" + p));
+        return new T(filename, open_flags, tune_function, cfg);
+    }
+
+    void tune_hash_db(TCHDB* db, const void* ptr)
+    {
+        //const Bson *bn = static_cast<const Bson *>(ptr);
+        tchdbtune(db, 514229, 8, 11, HDBTLARGE | HDBTBZIP);
+    }
+
+    void tune_key_db(TCBDB* db, const void* ptr)
+    {
+        const lj::Bson* bn = static_cast<const lj::Bson*>(ptr);
+        tcbdbsetcmpfunc(db, tcbdbcmpint64, NULL);
+        tcbdbtune(db, 256, 512, 65498, 9, 11, BDBTLARGE | BDBTBZIP);
+    }
+
+}; // namespace (anonymous)
+
 namespace lj
 {
     namespace engines
     {
-        Tokyo_vault::Tokyo_vault(const lj::Storage* const storage,
-                                 const lj::Bson* const config) :
-                                 lj::Vault(storage)
+        Tokyo_vault::Tokyo_vault(const lj::Bson* const server_config,
+                                 const lj::Bson* const storage_config,
+                                 const lj::Bson* const vault_config) :
+                                 server_config_(server_config),
+                                 storage_config_(storage_config),
+                                 vault_config_(vault_config)
         {
+            data_ = open_db<tokyo::Hash_db>(*server_config_,
+                                            *storage_config_,
+                                            *vault_config_,
+                                            "data",
+                                            k_hash_db_mode,
+                                            tune_hash_db);
+            key_ = open_db<tokyo::Tree_db>(*server_config_,
+                                           *storage_config_,
+                                           *vault_config_,
+                                           "key",
+                                           k_tree_db_mode,
+                                           tune_key_db);
+            journal = open_db<tokyo::Fixed_db>(*server_config_,
+                                               *storage_config_,
+                                               *vault_config_,
+                                               "journal",
+                                               k_fixed_db_mode,
+                                               tune_journal_db);
         }
         
         Tokyo_vault::~Tokyo_vault()
