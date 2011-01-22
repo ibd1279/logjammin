@@ -231,14 +231,86 @@ namespace lj
             return std::unique_ptr<Index>(ret);
         }
 
-        void place(const void* const key,
-                   const size_t key_len,
-                   const void* const val,
-                   const size_t val_len);
+        void Tokyo_index::place(const void* const key,
+                                const size_t key_len,
+                                const lj::Uuid& uid)
+        {
+            try
+            {
+                if (is_unique_constraint_)
+                {
+                    hash_->start_writes();
+                }
+                tree_->start_writes();
 
-        void remove(const void* const key,
-                    const size_t key_len,
-                    const void* const val,
-                    const size_t val_len);
+                size_t sz;
+                const uint8_t* const pk = uid.data(&sz);
+                if (is_unique_constraint_)
+                {
+                    hash_->place(key,
+                                 key_len,
+                                 pk,
+                                 sz);
+                }
+                tree_->place_with_existing(key,
+                                           key_len,
+                                           pk,
+                                           sz);
+                tree_->save_writes();
+                if (is_unique_constraint_)
+                {
+                    hash_->save_writes();
+                }
+            }
+            catch(lj::Exception* ex)
+            {
+                tree_->abort_writes();
+                if (is_unique_constraint_)
+                {
+                    hash_->abort_writes();
+                }
+                throw ex;
+            }
+        }
+
+        void Tokyo_index::remove(const void* const key,
+                                 const size_t key_len,
+                                 const lj::Uuid& uid)
+        {
+            try
+            {
+                if (is_unique_constraint_)
+                {
+                    hash_->start_writes();
+                }
+                tree_->start_writes();
+
+                size_t sz;
+                const uint8_t* const pk = uid.data(&sz);
+                if (is_unique_constraint_)
+                {
+                    hash_->remove(key,
+                                  key_len);
+                }
+                tree_->remove_from_existing(key,
+                                            key_len,
+                                            pk,
+                                            sz);
+                tree_->save_writes();
+                if (is_unique_constraint_)
+                {
+                    hash_->save_writes();
+                }
+            }
+            catch(lj::Exception* ex)
+            {
+                tree_->abort_writes();
+                if (is_unique_constraint_)
+                {
+                    hash_->abort_writes();
+                }
+                throw ex;
+            }
+        }
     }; // namespace lj::engines
 }; // namespace lj.

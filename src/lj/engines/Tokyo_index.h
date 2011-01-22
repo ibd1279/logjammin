@@ -74,13 +74,11 @@ namespace lj
 
             virtual void place(const void* const key,
                                const size_t key_len,
-                               const void* const val,
-                               const size_t val_len);
+                               const lj::Uuid& uid);
 
             virtual void remove(const void* const key,
                                 const size_t key_len,
-                                const void* const val,
-                                const size_t val_len);
+                                const lj::Uuid& uid);
 
             virtual uint64_t size() const
             {
