@@ -55,7 +55,14 @@ namespace lj
                         const lj::Bson* const storage_config,
                         const lj::Bson* const index_config,
                         const lj::Storage* const storage);
-            
+
+            Tokyo_index(const Tokyo_index* const orig);
+
+            lj::Index* clone() const
+            {
+                return new Tokyo_index(this);
+            }
+
             //! Destructor.
             virtual ~TokyoIndex();
 
@@ -67,9 +74,6 @@ namespace lj
             
             virtual std::unique_ptr<Index> lesser(const void* const val,
                                                   const size_t len) const;
-
-            virtual std::unique_ptr<Index> merge(const lj::Index::MergeMode mode,
-                                                  const Index* const other);
 
             virtual void place(const void* const key,
                                const size_t key_len,
@@ -86,16 +90,24 @@ namespace lj
                 return keys_.size();
             }
 
-            virtual const std::list<lj::Uuid>& keys() const
+            virtual const std::set<lj::Uuid>& keys() const
             {
                 return keys_;
             }
+        protected:
+            void include(const lj::Uuid& uid)
+            {
+                keys_.include(uid);
+            }
 
         private:
+            const bool is_unique_constraint_;
             std::shared_ptr<tokyo::Tree_db> tree_;
             std::shared_ptr<tokyo::Hash_db> hash_;
-            std::shared_ptr<lj::Bson> config_;
-            std::list<lj::Uuid> keys_;
+            const lj::Bson* const server_config_;
+            const lj::Bson* const storage_config_;
+            const lj::Bson* const vault_config_;
+            std::set<lj::Uuid> keys_;
         };
     }; // namespace lj::engines
 }; // namespace lj.

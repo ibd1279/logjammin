@@ -72,6 +72,8 @@ namespace lj
         {
         }
 
+        virtual Index* clone() const = 0;
+
         virtual std::unique_ptr<Index> equal(const void* const val,
                                              const size_t len) const = 0;
         
@@ -106,7 +108,54 @@ namespace lj
         }
 
         virtual std::unique_ptr<Index> merge(const MergeMode mode,
-                                             const Index* const other) = 0;
+                                             const Index* const other)
+        {
+            const std::set<Uuid>& small = (this->size() < other->size()) ? this->keys() : other->keys();
+            const std::set<Uuid>& big = (this->size() < other->size()) ? other->keys() : this->keys();
+            Index* ret = this->clone();
+            switch (mode)
+            {
+                case MergeMode::k_intersection:
+                    for (Uuid& uid : small)
+                    {
+                        if (big.end() != big.find(uid))
+                        {
+                            ret->insert(uid);
+                        }
+                    }
+                    break;
+                case MergeMode::k_union:
+                    for (Uuid& uid : big)
+                    {
+                        ret->insert(uid);
+                    }
+                    for (Uuid& uid : small)
+                    {
+                        ret->insert(uid);
+                    }
+                    break;
+                case MergeMode::k_symmetric_difference:
+                    for (Uuid& uid : *other)
+                    {
+                        if (this->keys().end() == this->keys().find(uid))
+                        {
+                            ret->insert(uid);
+                        }
+                    }
+                    // fall through.
+                case MergeMode::k_complement:
+                    for (Uuid& uid : *this)
+                    {
+                        if (other->keys().end() == other->keys().find(uid))
+                        {
+                            ret->insert(uid);
+                        }
+                    }
+                    break;
+            }
+            return ret;
+
+        }
         
         virtual void place(const void* const key,
                            const size_t key_len,
@@ -120,7 +169,7 @@ namespace lj
 
         virtual uint64_t size() const = 0;
 
-        virtual const std::list<lj::Uuid>& keys() const = 0;
+        virtual const std::set<lj::Uuid>& keys() const = 0;
 
         virtual bool items(std::list<Bson>& records) const
         {
@@ -143,6 +192,7 @@ namespace lj
         }
         
     protected:
+        virtual void include(const lj::Uuid& uid) = 0;
         virtual const lj::Storage* const storage() const
         {
             return storage_;

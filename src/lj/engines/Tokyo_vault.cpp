@@ -33,7 +33,7 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "lj/Tokyo_vault.h"
+#include "lj/engines/Tokyo_vault.h"
 
 #include <cassert>
 
