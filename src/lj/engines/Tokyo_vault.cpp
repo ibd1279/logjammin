@@ -44,20 +44,20 @@ namespace
     const int k_fixed_db_mode = FDBOREADER | FDBOWRITER | FDBOCREAT | FDBOLCKNB;
 
     template<typename T>
-    T* open_db(const lj::Bson& server_config,
-               const lj::Bson& storage_config,
-               const lj::Bson& vault_config,
-               const std::string& path,
-               const int open_flags,
-               typename T::Tune_function_pointer tune_function)
+    std::shared_ptr<T> open_db(const lj::Bson& server_config,
+                               const lj::Bson& storage_config,
+                               const lj::Bson& vault_config,
+                               const std::string& path,
+                               const int open_flags,
+                               typename T::Tune_function_pointer tune_function)
     {
-        const lj::Bson* cfg = vault_config[path];
-        std::string& r = lj::bson_as_string(server_config["server/directory"]);
-        std::string& s = lj::bson_as_string(storage_config["storage/name"]);
-        std::string& p = lj::bson_as_string(cfg->nav("filename"));
+        const lj::Bson* cfg = vault_config.path(path);
+        const std::string& r = lj::bson_as_string(server_config["server/directory"]);
+        const std::string& s = lj::bson_as_string(storage_config["storage/name"]);
+        const std::string& p = lj::bson_as_string(cfg->nav("filename"));
         assert(p.size() > 0);
         std::string filename(p.at(0) == '/' ? p : (r + "/" + s + "/" + p));
-        return new T(filename, open_flags, tune_function, cfg);
+        return std::shared_ptr<T>(new T(filename, open_flags, tune_function, cfg));
     }
 
     void tune_hash_db(TCHDB* db, const void* ptr)
@@ -68,7 +68,7 @@ namespace
 
     void tune_key_db(TCBDB* db, const void* ptr)
     {
-        const lj::Bson* bn = static_cast<const lj::Bson*>(ptr);
+        //const lj::Bson* bn = static_cast<const lj::Bson*>(ptr);
         tcbdbsetcmpfunc(db, tcbdbcmpint64, NULL);
         tcbdbtune(db, 256, 512, 65498, 9, 11, BDBTLARGE | BDBTBZIP);
     }
@@ -103,19 +103,19 @@ namespace lj
                                            "key",
                                            k_tree_db_mode,
                                            tune_key_db);
-            journal = open_db<tokyo::Fixed_db>(*server_config_,
-                                               *storage_config_,
-                                               *vault_config_,
-                                               "journal",
-                                               k_fixed_db_mode,
-                                               tune_journal_db);
+            journal_ = open_db<tokyo::Fixed_db>(*server_config_,
+                                                *storage_config_,
+                                                *vault_config_,
+                                                "journal",
+                                                k_fixed_db_mode,
+                                                tune_journal_db);
         }
         
         Tokyo_vault::~Tokyo_vault()
         {
             data_.reset();
             key_.reset();
-            journal.reset();
+            journal_.reset();
         }
 
         uint64_t Tokyo_vault::next_key()
@@ -131,22 +131,22 @@ namespace lj
                 data_->start_writes();
                 key_->start_writes();
 
-                lj::Uuid& uid = lj::bson_as_uuid(item["__uid"]);
+                const lj::Uuid& uid = lj::bson_as_uuid(item["__uid"]);
                 size_t sz;
                 const uint8_t* const pk = uid.data(&sz);
-                data_->place(pk
+                data_->place(pk,
                              sz,
                              item.to_binary(),
                              item.size());
 
                 uint64_t key = lj::bson_as_uint64(item["__key"]);
-                key_->place(key,
+                key_->place(&key,
                             sizeof(uint64_t),
                             pk,
                             sz);
 
-                key_->commit_writes();
-                data_->commit_writes();
+                key_->save_writes();
+                data_->save_writes();
             }
             catch (lj::Exception* ex)
             {
@@ -163,11 +163,11 @@ namespace lj
                 data_->start_writes();
                 key_->start_writes();
 
-                lj::Uuid& uid = lj::bson_as_uuid(item["__uid"]);
+                const lj::Uuid& uid = lj::bson_as_uuid(item["__uid"]);
                 size_t sz;
                 const uint8_t* const pk = uid.data(&sz);
                 uint64_t key = lj::bson_as_uint64(item["__key"]);
-                key_->remove_from_existing(key,
+                key_->remove_from_existing(&key,
                                            sizeof(uint64_t),
                                            pk,
                                            sz);
@@ -175,8 +175,8 @@ namespace lj
                 data_->remove(&pk,
                               sz);
 
-                key_->commit_writes();
-                data_->commit_writes();
+                key_->save_writes();
+                data_->save_writes();
             }
             catch (lj::Exception* ex)
             {
@@ -198,7 +198,7 @@ namespace lj
                                 sizeof(uint64_t),
                                 pk,
                                 sz);
-                journal_->commit_writes();
+                journal_->save_writes();
             }
             catch (lj::Exception* ex)
             {
@@ -219,7 +219,7 @@ namespace lj
                                 sizeof(uint64_t),
                                 pk,
                                 sz);
-                journal_->commit_writes();
+                journal_->save_writes();
             }
             catch (lj::Exception* ex)
             {
@@ -237,7 +237,7 @@ namespace lj
                                 std::list<Bson>& records) const
             
         {
-            for (lj::Uuid& uid : index.keys())
+            for (const lj::Uuid& uid : index->keys())
             {
                 size_t sz;
                 const uint8_t* const pk = uid.data(&sz);
@@ -246,7 +246,7 @@ namespace lj
                 {
                     continue;
                 }
-                record.push_back(lj::Bson(Bson::k_document, item));
+                records.push_back(lj::Bson(Bson::k_document, item));
                 free(item);
             }
             return records.size();;
@@ -255,7 +255,7 @@ namespace lj
         bool Tokyo_vault::items(const lj::Index* const index,
                                 std::list<Bson*>& records) const
         {
-            for (lj::Uuid& uid : index.keys())
+            for (const lj::Uuid& uid : index->keys())
             {
                 size_t sz;
                 const uint8_t* const pk = uid.data(&sz);
@@ -264,7 +264,7 @@ namespace lj
                 {
                     continue;
                 }
-                record.push_back(new lj::Bson(Bson::k_document, item));
+                records.push_back(new lj::Bson(Bson::k_document, item));
                 free(item);
             }
             return records.size();
@@ -273,7 +273,7 @@ namespace lj
         bool Tokyo_vault::items_raw(const lj::Index* const index,
                                     lj::Bson& records) const
         {
-            for (lj::Uuid& uid : index.keys())
+            for (const lj::Uuid& uid : index->keys())
             {
                 size_t sz;
                 const uint8_t* const pk = uid.data(&sz);
@@ -282,7 +282,7 @@ namespace lj
                 {
                     continue;
                 }
-                record.push_child("", new lj::Bson(Bson::k_binary_document,
+                records.push_child("", new lj::Bson(Bson::k_binary_document,
                                                    item));
                 free(item);
             }
@@ -292,7 +292,7 @@ namespace lj
         bool Tokyo_vault::first(const lj::Index* const index,
                                 lj::Bson& result) const
         {
-            for (lj::Uuid& uid : index.keys())
+            for (const lj::Uuid& uid : index->keys())
             {
                 size_t sz;
                 const uint8_t* const pk = uid.data(&sz);

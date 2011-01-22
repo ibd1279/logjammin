@@ -58,13 +58,10 @@ namespace lj
 
             Tokyo_index(const Tokyo_index* const orig);
 
-            lj::Index* clone() const
-            {
-                return new Tokyo_index(this);
-            }
+            virtual lj::engines::Tokyo_index* clone() const;
 
             //! Destructor.
-            virtual ~TokyoIndex();
+            virtual ~Tokyo_index();
 
             virtual std::unique_ptr<Index> equal(const void* const val,
                                                  const size_t len) const;
@@ -95,9 +92,9 @@ namespace lj
                 return keys_;
             }
         protected:
-            void include(const lj::Uuid& uid)
+            void insert(const lj::Uuid& uid)
             {
-                keys_.include(uid);
+                keys_.insert(uid);
             }
 
         private:
@@ -106,7 +103,7 @@ namespace lj
             std::shared_ptr<tokyo::Hash_db> hash_;
             const lj::Bson* const server_config_;
             const lj::Bson* const storage_config_;
-            const lj::Bson* const vault_config_;
+            const lj::Bson* const index_config_;
             std::set<lj::Uuid> keys_;
         };
     }; // namespace lj::engines

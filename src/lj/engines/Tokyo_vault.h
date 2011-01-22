@@ -83,7 +83,7 @@ namespace lj
                                lj::Bson& result) const;
         private:
             std::shared_ptr<tokyo::Hash_db> data_;
-            std::shared_ptr<tokyo::Tree_db> index_;
+            std::shared_ptr<tokyo::Tree_db> key_;
             std::shared_ptr<tokyo::Fixed_db> journal_;
             const lj::Bson* const server_config_;
             const lj::Bson* const storage_config_;

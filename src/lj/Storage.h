@@ -46,6 +46,7 @@
 namespace lj
 {
     class Storage_factory;
+    class Vault;
     class Index;
     
     //! Storage Engine based on tokyo cabinet database libraries.
@@ -108,6 +109,11 @@ namespace lj
         std::unique_ptr<Record_set> all() const;
 
         const lj::Index* const index(const std::string& indx) const
+        {
+            return NULL;
+        }
+
+        const lj::Vault* const vault() const
         {
             return NULL;
         }

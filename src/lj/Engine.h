@@ -43,6 +43,50 @@
 namespace lj
 {
     class Storage;
+    class Index;
+    
+    //! A key/value storage interface for different storage vaults.
+    /*!
+     \author Jason Watson
+     \version 1.0
+     \date January 19, 2011
+     \sa lj::Storage
+     */
+    class Vault
+    {
+    public:
+        Vault()
+        {
+        }
+
+        virtual ~Vault()
+        {
+        }
+
+        virtual uint64_t next_key() = 0;
+
+        virtual void journal_begin(const lj::Uuid& uid) = 0;
+
+        virtual void place(lj::Bson& item) = 0;
+
+        virtual void remove(lj::Bson& item) = 0;
+
+        virtual void journal_end(const lj::Uuid& uid) = 0;
+
+        virtual uint64_t size() = 0;
+
+        virtual bool items(const lj::Index* const index,
+                           std::list<Bson>& records) const = 0;
+        
+        virtual bool items(const lj::Index* const index,
+                           std::list<Bson*>& records) const = 0;
+
+        virtual bool items_raw(const lj::Index* const index,
+                               lj::Bson& records) const = 0;
+        
+        virtual bool first(const lj::Index* const index,
+                           lj::Bson& result) const = 0;
+    };
     
     //! A key/value storage interface for different storage indices.
     /*!
@@ -64,6 +108,10 @@ namespace lj
         
         //! Constructor.
         Index(const lj::Storage* const storage) : storage_(storage)
+        {
+        }
+
+        Index(const Index* const orig) : storage_(orig->storage_)
         {
         }
         
@@ -116,7 +164,7 @@ namespace lj
             switch (mode)
             {
                 case MergeMode::k_intersection:
-                    for (Uuid& uid : small)
+                    for (const Uuid& uid : small)
                     {
                         if (big.end() != big.find(uid))
                         {
@@ -125,17 +173,17 @@ namespace lj
                     }
                     break;
                 case MergeMode::k_union:
-                    for (Uuid& uid : big)
+                    for (const Uuid& uid : big)
                     {
                         ret->insert(uid);
                     }
-                    for (Uuid& uid : small)
+                    for (const Uuid& uid : small)
                     {
                         ret->insert(uid);
                     }
                     break;
                 case MergeMode::k_symmetric_difference:
-                    for (Uuid& uid : *other)
+                    for (const Uuid& uid : other->keys())
                     {
                         if (this->keys().end() == this->keys().find(uid))
                         {
@@ -144,7 +192,7 @@ namespace lj
                     }
                     // fall through.
                 case MergeMode::k_complement:
-                    for (Uuid& uid : *this)
+                    for (const Uuid& uid : this->keys())
                     {
                         if (other->keys().end() == other->keys().find(uid))
                         {
@@ -153,7 +201,7 @@ namespace lj
                     }
                     break;
             }
-            return ret;
+            return std::unique_ptr<Index>(ret);
 
         }
         
@@ -192,7 +240,7 @@ namespace lj
         }
         
     protected:
-        virtual void include(const lj::Uuid& uid) = 0;
+        virtual void insert(const lj::Uuid& uid) = 0;
         virtual const lj::Storage* const storage() const
         {
             return storage_;
@@ -202,46 +250,4 @@ namespace lj
         const Storage* const storage_;
     }; // class lj::Index.
 
-    //! A key/value storage interface for different storage vaults.
-    /*!
-     \author Jason Watson
-     \version 1.0
-     \date January 19, 2011
-     \sa lj::Storage
-     */
-    class Vault
-    {
-    public:
-        Vault()
-        {
-        }
-
-        virtual ~Vault()
-        {
-        }
-
-        virtual uint64_t next_key() = 0;
-
-        virtual void journal_begin(const lj::Uuid& uid) = 0;
-
-        virtual void place(lj::Bson& item) = 0;
-
-        virtual void remove(lj::Bson& item) = 0;
-
-        virtual void journal_end(const lj::Uuid& uid) = 0;
-
-        virtual uint64_t size() = 0;
-
-        virtual bool items(const lj::Index* const index,
-                           std::list<Bson>& records) const = 0;
-        
-        virtual bool items(const lj::Index* const index,
-                           std::list<Bson*>& records) const = 0;
-
-        virtual bool items_raw(const lj::Index* const index,
-                               lj::Bson& records) const = 0;
-        
-        virtual bool first(const lj::Index* const index,
-                           lj::Bson& result) const = 0;
-    }; // class lj::Vault
 }; // namespace lj.
