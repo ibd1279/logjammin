@@ -34,34 +34,19 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "lj/Record_set.h"
 #include "lj/Bson.h"
-#include "tokyo/Tokyo.h"
+#include "lj/Engine.h"
 
 #include <map>
 #include <memory>
-#include <set>
 #include <string>
 
 namespace lj
 {
     class Storage_factory;
-    class Vault;
-    class Index;
     
-    //! Storage Engine based on tokyo cabinet database libraries.
+    //! Storage Interface
     /*!
-     \par
-     The storage engine represents a collection of indicies and a main document
-     store.  When documents are placed into the storage engine, it indexes the
-     document based upon a configuration.  Those configured indicies can be
-     used to discover a document through the Record_set class.
-     \par
-     The Storage class loads configuration information from the DBDIR macro.
-     The value of this macro can be set during build configuration:
-     \code
-     ./waf configure
-     \endcode.
      \author Jason Watson
      \version 1.0
      \date April 19, 2010
@@ -70,7 +55,6 @@ namespace lj
     class Storage
     {
         friend class Storage_factory;
-        friend class Record_set;
     public:
         
         //! Removed
@@ -88,160 +72,38 @@ namespace lj
         //! Destructor
         ~Storage();
         
-        //! Get a single document Record_set.
-        /*!
-         \par
-         This is a helper method for:
-         \code
-         none().include_key(key);
-         \endcode.
-         \param key The key to populate the Record_set with.
-         \return A new Record_set object.
-         */
-        std::unique_ptr<Record_set> at(const unsigned long long key) const;
-        
-        //! Get a Record_set containing all keys.
-        /*!
-         \par
-         The default operation for the all Record_set is \c lj::set::k_intersection.
-         \return All keys.
-         */
-        std::unique_ptr<Record_set> all() const;
+        const lj::Index* const index(const std::string& indx) const;
 
-        const lj::Index* const index(const std::string& indx) const
-        {
-            return NULL;
-        }
-
-        const lj::Vault* const vault() const
-        {
-            return NULL;
-        }
-        
-        //! Get an empty Record_set.
-        /*!
-         \par
-         The default operation for the none Record_set is \c lj::set::k_union.
-         \return No keys.
-         */
-        std::unique_ptr<Record_set> none() const;
+        const lj::Vault* const vault() const;
         
         //! Store a document
-        /*!
-         \par
-         Store a document.  If they document already has a key, it will
-         replace the old document at that key.  If the document has a key of
-         zero, it will be treated as a new document.
-         \param value The document to place in storage.
-         \return This storage object.
-         */
         Storage& place(Bson &value);
         
         //! Remove a document
-        /*!
-         \par
-         Document is deindexed and removed from the storage system.
-         \param value The document to remove.
-         \return This storage object.
-         */
         Storage& remove(Bson &value);
-        
-        //! Begin a transaction.
-        void begin_transaction();
-        
-        //! Commit a transaction.
-        void commit_transaction();
-        
-        //! Rollback a transaction.
-        void abort_transaction();
         
         //! Get the configuration.
         /*!
          \return Bson object.
          */
-        Bson* configuration();
-        
-        //! Get the name associated with the loading of this storage object.
-        /*!
-         \return the name.
-         */
-        const std::string& name() const;
-        
-        //! Checkpoint the database.
-        /*!
-         \par
-         Checkpointing the database causes the journal to be cleared and a copy
-         of the database is created.
-         */
-        void checkpoint();
-        
-        //! Delete all index files and rebuild.
-        void rebuild();
-        
-        //! Rebuild a specific index.
-        void rebuild_field_index(const std::string& index);
-        
-        //! Optimize all the indices.
-        void optimize();
+        Bson* storage_config();
     protected:
         //! Open up a Storage engine.
         /*!
          \par
          Hidden. Use the Storage_factory instead.
          \sa lj::Storage_factory
-         \param dir The document repository name.
+         \param name The document repository name.
          \param server_config The configuration for the storage server.
          */
-        Storage(const std::string &dir,
-                const lj::Bson& server_config);
+        Storage(const std::string &name,
+                const lj::Bson* const server_config);
         
     private:
-        //! Primary database.
-        /*!
-         \par Stores the actual documents, indexed by primary key.
-         */
-        tokyo::Tree_db* db_;
-        
-        //! Journal database.
-        /*!
-         \par Journal used to track database actions for recovery purposes.
-         */
-        tokyo::Fixed_db* journal_;
-        
-        //! Fields indexed using a tree db.
-        std::map<std::string, tokyo::Tree_db*> fields_tree_;
-        
-        //! Fields indexed using a hash db.
-        std::map<std::string, tokyo::Hash_db*> fields_hash_;
-        
-        //! Fields that have unique constraints.
-        std::set<std::string> nested_indexing_;
-        
-        //! Configuration.
-        lj::Bson* config_;
-        
-        //! Server configuration;
-        const lj::Bson& server_config_;
-        
-        //! name of the storage object.
-        std::string name_;
-        
-        //! Remove a record from the indexed files.
-        Storage &deindex(const lj::Bson& record);
-        
-        //! Add a record to the indexed files.
-        Storage &reindex(const lj::Bson& record);
-        
-        //! Check that an existing record does not exist for a given value.
-        Storage &check_unique(const Bson &n,
-                              const std::string &name,
-                              tokyo::DB *index);
-        
-        //! Write a journal entry at the start of a modification action.
-        void journal_start(const unsigned long long key);
-        
-        //! Update the journal entry to completed.
-        void journal_end(const unsigned long long key);
+        lj::Vault* vault_;
+        std::map<std::string, lj::Index*> indices_;
+        lj::Bson* storage_config_;
+        const lj::Bson* const server_config_;
     };
     
     //! Create an empty basic storage configuration.

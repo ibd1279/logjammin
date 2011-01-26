@@ -66,6 +66,7 @@ def build(ctx):
                 'src/lj/All_record_set.cpp'
                 ,'src/lj/Base64.cpp'
                 ,'src/lj/Bson.cpp'
+                ,'src/lj/Engine.cpp'
                 ,'src/lj/engines/Tokyo_vault.cpp'
                 ,'src/lj/engines/Tokyo_index.cpp'
                 ,'src/lj/Logger.cpp'

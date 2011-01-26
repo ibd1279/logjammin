@@ -53,34 +53,74 @@ namespace lj
             //! Constructor.
             Tokyo_vault(const lj::Bson* const server_config,
                         const lj::Bson* const storage_config,
-                        const lj::Bson* const vault_config);
+                        const lj::Bson* const vault_config,
+                        const lj::Storage* const storage);
+
+            //! Copy-ish constructor.
+            Tokyo_vault(const lj::engines::Tokyo_vault* const orig);
             
             //! Destructor.
             virtual ~Tokyo_vault();
 
-            virtual uint64_t next_key();
+            virtual lj::engines::Tokyo_vault* clone() const;
 
-            virtual void place(lj::Bson& item);
+            virtual std::unique_ptr<Index> equal(const void* const val,
+                                                 const size_t len) const;
+            
+            virtual std::unique_ptr<Index> greater(const void* const val,
+                                                   const size_t len) const;
+            
+            virtual std::unique_ptr<Index> lesser(const void* const val,
+                                                  const size_t len) const;
 
-            virtual void remove(lj::Bson& item);
+            virtual void record(const void* const key,
+                                const size_t key_len,
+                                const void* const val,
+                                const size_t val_len);
+
+            virtual void erase(const void* const key,
+                               const size_t key_len,
+                               const void* const val,
+                               const size_t val_len);
+
+            virtual void test(const void* const key,
+                              const size_t key_len,
+                              const void* const val,
+                              const size_t val_len) const;
 
             virtual void journal_begin(const lj::Uuid& uid);
 
             virtual void journal_end(const lj::Uuid& uid);
 
-            virtual uint64_t size();
+            virtual uint64_t count() const;
 
-            virtual bool items(const lj::Index* const index,
+            virtual uint64_t size() const
+            {
+                return keys_.size();
+            }
+
+            virtual const std::set<lj::Uuid>& keys() const
+            {
+                return keys_;
+            }
+
+            virtual bool fetch(const lj::Index* const index,
                                std::list<Bson>& records) const;
             
-            virtual bool items(const lj::Index* const index,
+            virtual bool fetch(const lj::Index* const index,
                                std::list<Bson*>& records) const;
 
-            virtual bool items_raw(const lj::Index* const index,
+            virtual bool fetch_raw(const lj::Index* const index,
                                    lj::Bson& records) const;
             
-            virtual bool first(const lj::Index* const index,
-                               lj::Bson& result) const;
+            virtual bool fetch_first(const lj::Index* const index,
+                                     lj::Bson& result) const;
+        protected:
+            void insert(const lj::Uuid& uid)
+            {
+                keys_.insert(uid);
+            }
+            
         private:
             std::shared_ptr<tokyo::Hash_db> data_;
             std::shared_ptr<tokyo::Tree_db> key_;
@@ -88,6 +128,7 @@ namespace lj
             const lj::Bson* const server_config_;
             const lj::Bson* const storage_config_;
             const lj::Bson* const vault_config_;
+            std::set<lj::Uuid> keys_;
         };
     }; // namespace lj::engines
 }; // namespace lj.

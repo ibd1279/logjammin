@@ -231,9 +231,10 @@ namespace lj
             return std::unique_ptr<Index>(ret);
         }
 
-        void Tokyo_index::place(const void* const key,
-                                const size_t key_len,
-                                const lj::Uuid& uid)
+        void Tokyo_index::record(const void* const key,
+                                 const size_t key_len,
+                                 const void* const val,
+                                 const size_t val_len)
         {
             try
             {
@@ -243,19 +244,17 @@ namespace lj
                 }
                 tree_->start_writes();
 
-                size_t sz;
-                const uint8_t* const pk = uid.data(&sz);
                 if (is_unique_constraint_)
                 {
                     hash_->place(key,
                                  key_len,
-                                 pk,
-                                 sz);
+                                 val,
+                                 val_len);
                 }
                 tree_->place_with_existing(key,
                                            key_len,
-                                           pk,
-                                           sz);
+                                           val,
+                                           val_len);
                 tree_->save_writes();
                 if (is_unique_constraint_)
                 {
@@ -273,9 +272,10 @@ namespace lj
             }
         }
 
-        void Tokyo_index::remove(const void* const key,
-                                 const size_t key_len,
-                                 const lj::Uuid& uid)
+        void Tokyo_index::erase(const void* const key,
+                                const size_t key_len,
+                                const void* const val,
+                                const size_t val_len)
         {
             try
             {
@@ -285,8 +285,6 @@ namespace lj
                 }
                 tree_->start_writes();
 
-                size_t sz;
-                const uint8_t* const pk = uid.data(&sz);
                 if (is_unique_constraint_)
                 {
                     hash_->remove(key,
@@ -294,8 +292,8 @@ namespace lj
                 }
                 tree_->remove_from_existing(key,
                                             key_len,
-                                            pk,
-                                            sz);
+                                            val,
+                                            val_len);
                 tree_->save_writes();
                 if (is_unique_constraint_)
                 {
@@ -310,6 +308,39 @@ namespace lj
                     hash_->abort_writes();
                 }
                 throw ex;
+            }
+        }
+
+        void Tokyo_index::test(const void* const key,
+                               const size_t key_len,
+                               const void* const val,
+                               const size_t val_len) const
+        {
+            if (is_unique_constraint_)
+            {
+                auto pair = hash_->at(key, key_len);
+                uint8_t* bytes = static_cast<uint8_t*>(pair.first);
+                if (!bytes)
+                {
+                    return;
+                }
+                std::unique_ptr<uint8_t> gc(bytes);
+
+                if (val_len != pair.second)
+                {
+                    throw new lj::Exception("Tokyo_index",
+                                            "Unique constraint violation.");
+                }
+
+                for (size_t h = 0; h < val_len; ++h)
+                {
+                    if (static_cast<const uint8_t* const>(val)[h] != bytes[h])
+                    {
+                        throw new lj::Exception("Tokyo_index",
+                                                "Unique constraint violation.");
+                    }
+                }
+                gc.reset();
             }
         }
     }; // namespace lj::engines

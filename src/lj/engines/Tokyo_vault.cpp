@@ -66,13 +66,6 @@ namespace
         tchdbtune(db, 1000003, 8, 11, HDBTLARGE | HDBTBZIP);
     }
 
-    void tune_key_db(TCBDB* db, const void* ptr)
-    {
-        //const lj::Bson* bn = static_cast<const lj::Bson*>(ptr);
-        tcbdbsetcmpfunc(db, tcbdbcmpint64, NULL);
-        tcbdbtune(db, 256, 512, 65498, 9, 11, BDBTLARGE | BDBTBZIP);
-    }
-
     void tune_journal_db(TCFDB* db, const void* ptr)
     {
         tcfdbtune(db, 16, -1);
@@ -86,7 +79,9 @@ namespace lj
     {
         Tokyo_vault::Tokyo_vault(const lj::Bson* const server_config,
                                  const lj::Bson* const storage_config,
-                                 const lj::Bson* const vault_config) :
+                                 const lj::Bson* const vault_config,
+                                 const lj::Storage* const storage) :
+                                 lj::Vault(storage),
                                  server_config_(server_config),
                                  storage_config_(storage_config),
                                  vault_config_(vault_config)
@@ -97,12 +92,6 @@ namespace lj
                                             "data",
                                             k_hash_db_mode,
                                             tune_hash_db);
-            key_ = open_db<tokyo::Tree_db>(*server_config_,
-                                           *storage_config_,
-                                           *vault_config_,
-                                           "key",
-                                           k_tree_db_mode,
-                                           tune_key_db);
             journal_ = open_db<tokyo::Fixed_db>(*server_config_,
                                                 *storage_config_,
                                                 *vault_config_,
@@ -110,80 +99,129 @@ namespace lj
                                                 k_fixed_db_mode,
                                                 tune_journal_db);
         }
+
+        Tokyo_vault::Tokyo_vault(const lj::engines::Tokyo_vault* const orig) :
+                                 lj::Vault(orig),
+                                 data_(orig->data_),
+                                 journal_(orig->journal_),
+                                 server_config_(orig->server_config_),
+                                 storage_config_(orig->storage_config_),
+                                 vault_config_(orig->vault_config_)
+        {
+        }
         
         Tokyo_vault::~Tokyo_vault()
         {
             data_.reset();
-            key_.reset();
             journal_.reset();
         }
 
-        uint64_t Tokyo_vault::next_key()
+        lj::engines::Tokyo_vault* Tokyo_vault::clone() const
         {
-            uint64_t *ptr = static_cast<uint64_t*>(key_->max_key().first);
-            return (*ptr) + 1;
+            return new lj::engines::Tokyo_vault(this);
         }
 
-        void Tokyo_vault::place(lj::Bson& item)
+        std::unique_ptr<Index> Tokyo_vault::equal(const void* const val,
+                                                  const size_t len) const
+        {
+            lj::engines::Tokyo_vault* ret = this->clone();
+            auto pair = data_->at(val, len);
+            uint8_t* bytes = static_cast<uint8_t*>(pair.first);
+            if (bytes)
+            {
+                ret->insert(Uuid(static_cast<const uint8_t* const>(val)));
+            }
+            free(bytes);
+            return std::unique_ptr<Index>(ret);
+        }
+        
+        std::unique_ptr<Index> Tokyo_vault::greater(const void* const val,
+                                                    const size_t len) const
+        {
+            throw new lj::Exception("Tokyo_vault",
+                                    "Unsupported operation [greaters] on vault.");
+        }
+        
+        std::unique_ptr<Index> Tokyo_vault::lesser(const void* const val,
+                                                   const size_t len) const
+        {
+            throw new lj::Exception("Tokyo_vault",
+                                    "Unsupported operation [lesser] on vault.");
+        }
+
+        void Tokyo_vault::record(const void* const key,
+                                 const size_t key_len,
+                                 const void* const val,
+                                 const size_t val_len)
         {
             try
             {
                 data_->start_writes();
-                key_->start_writes();
 
-                const lj::Uuid& uid = lj::bson_as_uuid(item["__uid"]);
-                size_t sz;
-                const uint8_t* const pk = uid.data(&sz);
-                data_->place(pk,
-                             sz,
-                             item.to_binary(),
-                             item.size());
+                data_->place(key,
+                             key_len,
+                             val,
+                             val_len);
 
-                uint64_t key = lj::bson_as_uint64(item["__key"]);
-                key_->place(&key,
-                            sizeof(uint64_t),
-                            pk,
-                            sz);
-
-                key_->save_writes();
                 data_->save_writes();
             }
             catch (lj::Exception* ex)
             {
-                key_->abort_writes();
                 data_->abort_writes();
                 throw ex;
             }
         }
 
-        void Tokyo_vault::remove(lj::Bson& item)
+        void Tokyo_vault::erase(const void* const key,
+                                const size_t key_len,
+                                const void* const val,
+                                const size_t val_len)
         {
             try
             {
                 data_->start_writes();
-                key_->start_writes();
 
-                const lj::Uuid& uid = lj::bson_as_uuid(item["__uid"]);
-                size_t sz;
-                const uint8_t* const pk = uid.data(&sz);
-                uint64_t key = lj::bson_as_uint64(item["__key"]);
-                key_->remove_from_existing(&key,
-                                           sizeof(uint64_t),
-                                           pk,
-                                           sz);
+                data_->remove(key,
+                              key_len);
 
-                data_->remove(&pk,
-                              sz);
-
-                key_->save_writes();
                 data_->save_writes();
             }
             catch (lj::Exception* ex)
             {
-                key_->abort_writes();
                 data_->abort_writes();
                 throw ex;
             }
+        }
+
+        void Tokyo_vault::test(const void* const key,
+                               const size_t key_len,
+                               const void* const val,
+                               const size_t val_len) const
+        {
+            auto pair = data_->at(key, key_len);
+            uint8_t* bytes = static_cast<uint8_t*>(pair.first);
+            if (!bytes)
+            {
+                return;
+            }
+
+            if (val_len != pair.second)
+            {
+                free(bytes);
+                throw new lj::Exception("Tokyo_vault",
+                                        "Unique constraint violation.");
+            }
+
+            for (size_t h = 0; h < val_len; ++h)
+            {
+                if (static_cast<const uint8_t* const>(val)[h] != bytes[h])
+                {
+                    free(bytes);
+                    throw new lj::Exception("Tokyo_vault",
+                                            "Unique constraint violation.");
+                }
+            }
+            free(bytes);
         }
 
         void Tokyo_vault::journal_begin(const lj::Uuid& uid)
@@ -228,12 +266,12 @@ namespace lj
             }
         }
 
-        uint64_t Tokyo_vault::size()
+        uint64_t Tokyo_vault::count() const
         {
             return data_->count();
         }
 
-        bool Tokyo_vault::items(const lj::Index* const index,
+        bool Tokyo_vault::fetch(const lj::Index* const index,
                                 std::list<Bson>& records) const
             
         {
@@ -252,7 +290,7 @@ namespace lj
             return records.size();;
         }
 
-        bool Tokyo_vault::items(const lj::Index* const index,
+        bool Tokyo_vault::fetch(const lj::Index* const index,
                                 std::list<Bson*>& records) const
         {
             for (const lj::Uuid& uid : index->keys())
@@ -270,7 +308,7 @@ namespace lj
             return records.size();
         }
 
-        bool Tokyo_vault::items_raw(const lj::Index* const index,
+        bool Tokyo_vault::fetch_raw(const lj::Index* const index,
                                     lj::Bson& records) const
         {
             for (const lj::Uuid& uid : index->keys())
@@ -289,8 +327,8 @@ namespace lj
             return records.size();
         }
 
-        bool Tokyo_vault::first(const lj::Index* const index,
-                                lj::Bson& result) const
+        bool Tokyo_vault::fetch_first(const lj::Index* const index,
+                                      lj::Bson& result) const
         {
             for (const lj::Uuid& uid : index->keys())
             {

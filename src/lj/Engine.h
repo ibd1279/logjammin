@@ -35,58 +35,16 @@
  */
 
 #include "lj/Bson.h"
-#include "lj/Storage.h"
 
+#include <algorithm>
+#include <list>
 #include <memory>
+#include <set>
 #include <string>
 
 namespace lj
 {
     class Storage;
-    class Index;
-    
-    //! A key/value storage interface for different storage vaults.
-    /*!
-     \author Jason Watson
-     \version 1.0
-     \date January 19, 2011
-     \sa lj::Storage
-     */
-    class Vault
-    {
-    public:
-        Vault()
-        {
-        }
-
-        virtual ~Vault()
-        {
-        }
-
-        virtual uint64_t next_key() = 0;
-
-        virtual void journal_begin(const lj::Uuid& uid) = 0;
-
-        virtual void place(lj::Bson& item) = 0;
-
-        virtual void remove(lj::Bson& item) = 0;
-
-        virtual void journal_end(const lj::Uuid& uid) = 0;
-
-        virtual uint64_t size() = 0;
-
-        virtual bool items(const lj::Index* const index,
-                           std::list<Bson>& records) const = 0;
-        
-        virtual bool items(const lj::Index* const index,
-                           std::list<Bson*>& records) const = 0;
-
-        virtual bool items_raw(const lj::Index* const index,
-                               lj::Bson& records) const = 0;
-        
-        virtual bool first(const lj::Index* const index,
-                           lj::Bson& result) const = 0;
-    };
     
     //! A key/value storage interface for different storage indices.
     /*!
@@ -106,19 +64,14 @@ namespace lj
             k_symmetric_difference //!< Similar to a "XOR"
         };
         
-        //! Constructor.
-        Index(const lj::Storage* const storage) : storage_(storage)
-        {
-        }
+        // Create a new index attached to a storage instance
+        Index(const lj::Storage* const storage);
 
-        Index(const Index* const orig) : storage_(orig->storage_)
-        {
-        }
+        // Create a new index as a copy of another index.
+        Index(const Index* const orig);
         
         //! Destructor.
-        virtual ~Index()
-        {
-        }
+        virtual ~Index();
 
         virtual Index* clone() const = 0;
 
@@ -128,10 +81,7 @@ namespace lj
         virtual std::unique_ptr<Index> eq(const std::string& indx,
                                           const void* const val,
                                           const size_t len,
-                                          const MergeMode mode = MergeMode::k_intersection) const
-        {
-            return storage()->index(indx)->equal(val, len)->merge(mode, this);
-        }
+                                          const MergeMode mode = MergeMode::k_intersection) const;
         
         virtual std::unique_ptr<Index> greater(const void* const val,
                                           const size_t len) const = 0;
@@ -139,10 +89,7 @@ namespace lj
         virtual std::unique_ptr<Index> gt(const std::string& indx,
                                           const void* const val,
                                           const size_t len,
-                                          const MergeMode mode = MergeMode::k_intersection) const
-        {
-            return storage()->index(indx)->greater(val, len)->merge(mode, this);
-        }
+                                          const MergeMode mode = MergeMode::k_intersection) const;
         
         virtual std::unique_ptr<Index> lesser(const void* const val,
                                            const size_t len) const = 0;
@@ -150,102 +97,95 @@ namespace lj
         virtual std::unique_ptr<Index> lt(const std::string& indx,
                                            const void* const val,
                                            const size_t len,
-                                           const MergeMode mode = MergeMode::k_intersection) const
-        {
-            return storage()->index(indx)->lesser(val, len)->merge(mode, this);
-        }
+                                           const MergeMode mode = MergeMode::k_intersection) const;
 
         virtual std::unique_ptr<Index> merge(const MergeMode mode,
-                                             const Index* const other)
-        {
-            const std::set<Uuid>& small = (this->size() < other->size()) ? this->keys() : other->keys();
-            const std::set<Uuid>& big = (this->size() < other->size()) ? other->keys() : this->keys();
-            Index* ret = this->clone();
-            switch (mode)
-            {
-                case MergeMode::k_intersection:
-                    for (const Uuid& uid : small)
-                    {
-                        if (big.end() != big.find(uid))
-                        {
-                            ret->insert(uid);
-                        }
-                    }
-                    break;
-                case MergeMode::k_union:
-                    for (const Uuid& uid : big)
-                    {
-                        ret->insert(uid);
-                    }
-                    for (const Uuid& uid : small)
-                    {
-                        ret->insert(uid);
-                    }
-                    break;
-                case MergeMode::k_symmetric_difference:
-                    for (const Uuid& uid : other->keys())
-                    {
-                        if (this->keys().end() == this->keys().find(uid))
-                        {
-                            ret->insert(uid);
-                        }
-                    }
-                    // fall through.
-                case MergeMode::k_complement:
-                    for (const Uuid& uid : this->keys())
-                    {
-                        if (other->keys().end() == other->keys().find(uid))
-                        {
-                            ret->insert(uid);
-                        }
-                    }
-                    break;
-            }
-            return std::unique_ptr<Index>(ret);
-
-        }
+                                             const Index* const other);
         
         virtual void place(const void* const key,
                            const size_t key_len,
-                           const lj::Uuid& uid) = 0;
+                           const lj::Uuid& uid);
+
+        virtual void place(const lj::Bson& item);
+
+        virtual void record(const void* const key,
+                            const size_t key_len,
+                            const void* const val,
+                            const size_t val_len) = 0;
 
         virtual void remove(const void* const key,
                             const size_t key_len,
-                            const lj::Uuid& uid) = 0;
+                            const lj::Uuid& uid);
+
+        virtual void remove(const lj::Bson& item);
+
+        virtual void erase(const void* const key,
+                           const size_t key_len,
+                           const void* const val,
+                           const size_t val_len) = 0;
+
+        virtual void check(const void* const key,
+                           const size_t key_len,
+                           const lj::Uuid& uid);
+
+        virtual void check(const lj::Bson& item);
+
+        virtual void test(const void* const key,
+                          const size_t key_len,
+                          const void* const val,
+                          const size_t val_len) const = 0;
 
         virtual uint64_t size() const = 0;
 
         virtual const std::set<lj::Uuid>& keys() const = 0;
 
-        virtual bool items(std::list<Bson>& records) const
-        {
-            return storage()->vault()->items(this, records);
-        }
+        virtual bool items(std::list<Bson>& records) const;
         
-        virtual bool items(std::list<Bson*>& records) const
-        {
-            return storage()->vault()->items(this, records);
-        }
+        virtual bool items(std::list<Bson*>& records) const;
 
-        virtual bool items_raw(lj::Bson& records) const
-        {
-            return storage()->vault()->items_raw(this, records);
-        }
+        virtual bool items_raw(lj::Bson& records) const;
         
-        virtual bool first(lj::Bson& result) const
-        {
-            return storage()->vault()->first(this, result);
-        }
+        virtual bool first(lj::Bson& result) const;
         
     protected:
         virtual void insert(const lj::Uuid& uid) = 0;
-        virtual const lj::Storage* const storage() const
-        {
-            return storage_;
-        }
+
+        virtual const lj::Storage* const storage() const;
 
     private:
         const Storage* const storage_;
     }; // class lj::Index.
 
+    //! A key/value storage interface for different storage vaults.
+    /*!
+     \author Jason Watson
+     \version 1.0
+     \date January 19, 2011
+     \sa lj::Storage
+     */
+    class Vault : public Index
+    {
+    public:
+        Vault(const lj::Storage* const storage);
+
+        Vault(const lj::Vault* const vault);
+
+        virtual ~Vault();
+
+        virtual void journal_begin(const lj::Uuid& uid) = 0;
+
+        virtual void journal_end(const lj::Uuid& uid) = 0;
+
+        virtual bool fetch(const lj::Index* const index,
+                           std::list<Bson>& records) const = 0;
+        
+        virtual bool fetch(const lj::Index* const index,
+                           std::list<Bson*>& records) const = 0;
+
+        virtual bool fetch_raw(const lj::Index* const index,
+                               lj::Bson& records) const = 0;
+        
+        virtual bool fetch_first(const lj::Index* const index,
+                                 lj::Bson& result) const = 0;
+    }; // class lj::Vault
 }; // namespace lj.

@@ -40,3 +40,8 @@
  C++ library for logjam functionality. Includes storage, recordsets, sockets,
  etc.
  */
+
+/*!
+ \namespace lj::engines
+ \brief Engine implementations.
+ */

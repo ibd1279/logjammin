@@ -56,6 +56,7 @@ namespace lj
                         const lj::Bson* const index_config,
                         const lj::Storage* const storage);
 
+            //! Copy-ish constructor.
             Tokyo_index(const Tokyo_index* const orig);
 
             virtual lj::engines::Tokyo_index* clone() const;
@@ -72,13 +73,20 @@ namespace lj
             virtual std::unique_ptr<Index> lesser(const void* const val,
                                                   const size_t len) const;
 
-            virtual void place(const void* const key,
-                               const size_t key_len,
-                               const lj::Uuid& uid);
-
-            virtual void remove(const void* const key,
+            virtual void record(const void* const key,
                                 const size_t key_len,
-                                const lj::Uuid& uid);
+                                const void* const val,
+                                const size_t val_len);
+
+            virtual void erase(const void* const key,
+                               const size_t key_len,
+                               const void* const val,
+                               const size_t val_len);
+
+            virtual void test(const void* const key,
+                              const size_t key_len,
+                              const void* const val,
+                              const size_t val_len) const;
 
             virtual uint64_t size() const
             {
