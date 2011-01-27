@@ -275,69 +275,70 @@ namespace lj
                                 std::list<Bson>& records) const
             
         {
-            for (const lj::Uuid& uid : index->keys())
+            std::for_each(index->keys().begin(), index->keys().end(), [&data_, &records] (const lj::Uuid& uid)
             {
                 size_t sz;
                 const uint8_t* const pk = uid.data(&sz);
                 char* item = static_cast<char*>(data_->at(pk, sz).first);
                 if (!item)
                 {
-                    continue;
+                    return;
                 }
                 records.push_back(lj::Bson(Bson::k_document, item));
                 free(item);
-            }
+            });
             return records.size();;
         }
 
         bool Tokyo_vault::fetch(const lj::Index* const index,
                                 std::list<Bson*>& records) const
         {
-            for (const lj::Uuid& uid : index->keys())
+            std::for_each(index->keys().begin(), index->keys().end(), [&data_, &records] (const lj::Uuid& uid)
             {
                 size_t sz;
                 const uint8_t* const pk = uid.data(&sz);
                 char* item = static_cast<char*>(data_->at(pk, sz).first);
                 if (!item)
                 {
-                    continue;
+                    return;
                 }
                 records.push_back(new lj::Bson(Bson::k_document, item));
                 free(item);
-            }
+            });
             return records.size();
         }
 
         bool Tokyo_vault::fetch_raw(const lj::Index* const index,
                                     lj::Bson& records) const
         {
-            for (const lj::Uuid& uid : index->keys())
+            std::for_each(index->keys().begin(), index->keys().end(), [&data_, &records] (const lj::Uuid& uid)
             {
                 size_t sz;
                 const uint8_t* const pk = uid.data(&sz);
                 char* item = static_cast<char*>(data_->at(pk, sz).first);
                 if (!item)
                 {
-                    continue;
+                    return;
                 }
                 records.push_child("", new lj::Bson(Bson::k_binary_document,
                                                    item));
                 free(item);
-            }
+            });
             return records.size();
         }
 
         bool Tokyo_vault::fetch_first(const lj::Index* const index,
                                       lj::Bson& result) const
         {
-            for (const lj::Uuid& uid : index->keys())
+            if (index->keys().begin() != index->keys().end())
             {
+                const lj::Uuid& uid = *(index->keys().begin());
                 size_t sz;
                 const uint8_t* const pk = uid.data(&sz);
                 char* item = static_cast<char*>(data_->at(pk, sz).first);
                 if (!item)
                 {
-                    continue;
+                    return false;
                 }
                 result.set_value(Bson::k_document, item);
                 free(item);

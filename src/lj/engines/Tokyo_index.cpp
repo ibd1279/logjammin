@@ -162,7 +162,7 @@ namespace lj
             {
                 tokyo::DB::list_value_t pairs;
                 tree_->at_together(val, len, pairs);
-                for (auto pair : pairs)
+                std::for_each(pairs.begin(), pairs.end(), [&ret] (const tokyo::DB::value_t& pair)
                 {
                     uint8_t* bytes = static_cast<uint8_t*>(pair.first);
                     if (bytes && 16 == pair.second)
@@ -170,7 +170,7 @@ namespace lj
                         ret->insert(Uuid(bytes));
                     }
                     free(bytes);
-                }
+                });
             }
             return std::unique_ptr<Index>(ret);
         }
@@ -190,7 +190,7 @@ namespace lj
                                 max.second,
                                 true,
                                 pairs);
-                for (auto pair : pairs)
+                std::for_each(pairs.begin(), pairs.end(), [&ret] (const tokyo::DB::value_t& pair)
                 {
                     uint8_t* bytes = static_cast<uint8_t*>(pair.first);
                     if (bytes && 16 == pair.second)
@@ -198,7 +198,7 @@ namespace lj
                         ret->insert(Uuid(bytes));
                     }
                     free(bytes);
-                }
+                });
             }
             return std::unique_ptr<Index>(ret);
         }
@@ -218,7 +218,7 @@ namespace lj
                                 len,
                                 false,
                                 pairs);
-                for (auto pair : pairs)
+                std::for_each(pairs.begin(), pairs.end(), [&ret] (const tokyo::DB::value_t& pair)
                 {
                     uint8_t* bytes = static_cast<uint8_t*>(pair.first);
                     if (bytes && 16 == pair.second)
@@ -226,7 +226,7 @@ namespace lj
                         ret->insert(Uuid(bytes));
                     }
                     free(bytes);
-                }
+                });
             }
             return std::unique_ptr<Index>(ret);
         }
