@@ -35,7 +35,6 @@
  */
 
 #include "lj/Bson.h"
-#include "lj/Engine.h"
 
 #include <map>
 #include <memory>
@@ -44,6 +43,8 @@
 namespace lj
 {
     class Storage_factory;
+    class Index;
+    class Vault;
     
     //! Storage Interface
     /*!
@@ -77,16 +78,16 @@ namespace lj
         const lj::Vault* const vault() const;
         
         //! Store a document
-        Storage& place(Bson &value);
+        Storage& place(lj::Bson& item);
         
         //! Remove a document
-        Storage& remove(Bson &value);
+        Storage& remove(lj::Bson& item);
         
         //! Get the configuration.
         /*!
          \return Bson object.
          */
-        Bson* storage_config();
+        const lj::Bson* const storage_config();
     protected:
         //! Open up a Storage engine.
         /*!

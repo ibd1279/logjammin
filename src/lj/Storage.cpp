@@ -36,6 +36,9 @@
 #include "lj/Storage.h"
 
 #include "build/default/config.h"
+#include "lj/Engine.h"
+#include "lj/engines/Tokyo_index.h"
+#include "lj/engines/Tokyo_vault.h"
 #include "lj/Exception.h"
 #include "lj/Logger.h"
 
@@ -72,7 +75,7 @@ namespace lj
                      server_config_(server_config)
     {
         const std::string& configfile =
-                storage_config_path(server_config_, name_);
+                storage_config_path(server_config_, name);
         
         storage_config_ = bson_load(configfile);
         storage_config_->set_child("storage/name",
@@ -80,31 +83,32 @@ namespace lj
 
         vault_ = new lj::engines::Tokyo_vault(server_config_,
                                               storage_config_,
-                                              storage_config_->path("vault"));
+                                              storage_config_->path("vault"),
+                                              this);
 
         const lj::Linked_map<std::string, lj::Bson*>& indices =
-                config->nav("indices").to_map();
-        for (auto iter : indices)
+                storage_config_->nav("indices").to_map();
+        std::for_each(indices.begin(), indices.end(), [&indices_, server_config_, storage_config_, this] (const std::pair<std::string, lj::Bson*>& pair)
         {
-            lj::Bson* index_config = (*iter).second;
+            lj::Bson* index_config = pair.second;
             const std::string& field =
                     lj::bson_as_string(index_config->nav("field"));
             lj::Index* index = new lj::engines::Tokyo_index(server_config_,
                                                             storage_config_,
                                                             index_config,
                                                             this);
-            indices_.insert(std::pair(field, index));
-        }
+            indices_.insert(std::pair<std::string, lj::Index*>(field, index));
+        });
     }
     
     Storage::~Storage()
     {
         delete storage_config_;
         delete vault_;
-        for (auto iter : indices_)
+        std::for_each(indices_.begin(), indices_.end(), [] (const std::pair<std::string, lj::Index*> pair)
         {
-            delete (*iter).second;
-        }
+            delete pair.second;
+        });
     }
 }; // namespace lj
 
@@ -127,62 +131,62 @@ namespace
 
     void deindex(const std::map<std::string, lj::Index*>& indices,
                  const lj::Bson& item,
-                 const Uuid& uid)
+                 const lj::Uuid& uid)
     {
-        for (auto iter : indices)
+        std::for_each(indices.begin(), indices.end(), [&item, &uid] (const std::pair<std::string, lj::Index*>& pair)
         {
-            lj::Bson* value = item.path((*iter).first);
+            const lj::Bson* value = item.path(pair.first);
             if (value)
             {
-                lj::Index* index = (*iter).second;
-                char* data = value.to_binary();
+                lj::Index* index = pair.second;
+                char* data = value->to_binary();
                 auto delta = bson_to_storage_delta(*value);
-                index->remove(data + delta.first(),
+                index->remove(data + delta.first,
                               value->size() - delta.second,
                               uid);
                 delete[] data;
             }
-        }
+        });
     }
 
-    void index(const std::map<std::string, lj::Index*>& indices,
+    void reindex(const std::map<std::string, lj::Index*>& indices,
                const lj::Bson& item,
-               const Uuid& uid)
+               const lj::Uuid& uid)
     {
-        for (auto iter : indices)
+        std::for_each(indices.begin(), indices.end(), [&item, &uid] (const std::pair<std::string, lj::Index*>& pair)
         {
-            lj::Bson* value = item.path((*iter).first);
+            const lj::Bson* value = item.path(pair.first);
             if (value)
             {
-                lj::Index* index = (*iter).second;
-                char* data = value.to_binary();
+                lj::Index* index = pair.second;
+                char* data = value->to_binary();
                 auto delta = bson_to_storage_delta(*value);
-                index->place(data + delta.first(),
+                index->place(data + delta.first,
                              value->size() - delta.second,
                              uid);
                 delete[] data;
             }
-        }
+        });
     }
 
     void check(const std::map<std::string, lj::Index*>& indices,
                const lj::Bson& item,
-               const Uuid& uid)
+               const lj::Uuid& uid)
     {
-        for (auto iter : indices)
+        std::for_each(indices.begin(), indices.end(), [&item, &uid] (const std::pair<std::string, lj::Index*>& pair)
         {
-            lj::Bson* value = item.path((*iter).first);
+            const lj::Bson* value = item.path(pair.first);
             if (value)
             {
-                lj::Index* index = (*iter).second;
-                char* data = value.to_binary();
+                lj::Index* index = pair.second;
+                char* data = value->to_binary();
                 auto delta = bson_to_storage_delta(*value);
-                index->check(data + delta.first(),
+                index->check(data + delta.first,
                              value->size() - delta.second,
                              uid);
                 delete[] data;
             }
-        }
+        });
     }
 
 }; // namespace
@@ -204,7 +208,7 @@ namespace lj
         return vault_;
     }
 
-    Storage& Storage::place(Bson& item)
+    Storage& Storage::place(lj::Bson& item)
     {
         Uuid uid(lj::bson_as_uuid(item["__uid"]));
         uint64_t key = lj::bson_as_int64(item["__key"]);
@@ -231,188 +235,53 @@ namespace lj
 
             vault_->place(item);
 
-            index(indices_, item, uid);
+            reindex(indices_, item, uid);
 
             vault_->journal_end(uid);
         }
-        catch(Exception* ex)
+        catch (lj::Exception* ex)
         {
-            deindex(indices_, item, uid);
-            vault_->remove(item);
-            item.set_child("__uid", lj::bson_new_uuid(original_uid));
-            item.set_child("__key", lj::bson_new_uint64(original_key));
-            if (!original_key)
-            {
-                vault_->remove(item);
-            }
-            else
-            {
-                vault_->place(item);
-            }
-            reindex(value);
-            journal_end(key);
+            // XXX Rollback
             throw ex;
         }
         return *this;
     }
     
-    Storage &Storage::remove(Bson &value)
+    Storage &Storage::remove(lj::Bson& item)
     {
-        unsigned long long key = bson_as_int64(value.nav("__key"));
-        
-        Log::debug.log("Removing [%llu] [%s]") << key << bson_as_pretty_string(value) << Log::end;
+        Uuid uid(lj::bson_as_uuid(item["__uid"]));
+        uint64_t key = lj::bson_as_int64(item["__key"]);
+        const Uuid original_uid(uid);
+        const uint64_t original_key = key;
         
         if (key)
         {
             try
             {
-                journal_start(key);
-                begin_transaction();
-                deindex(value);
-                db_->remove(&key, sizeof(unsigned long long));
-                commit_transaction();
-                journal_end(key);
-                value.nav("__key").destroy();
+                vault_->journal_begin(uid);
+
+                deindex(indices_, item, uid);
+
+                vault_->remove(item);
+
+                vault_->journal_end(uid);
+
+                item["__key"].destroy();
+                item["__uid"].destroy();
             }
             catch (Exception* ex)
             {
-                abort_transaction();
-                deindex(value);
-                reindex(value);
-                journal_end(key);
+                // XXX Rollback
                 throw ex;
             }
         }
         return *this;
     }
     
-    Storage &Storage::check_unique(const Bson& n, const std::string& name, tokyo::DB* index)
-    {
-        if (lj::bson_type_is_nested(n.type()) &&
-            nested_indexing_.end() != nested_indexing_.find(name))
-        {
-            Log::debug.log("checking children of [%s].") << name << Log::end;
-            
-            for (Linked_map<std::string, Bson*>::const_iterator iter = n.to_map().begin();
-                 n.to_map().end() != iter;
-                 ++iter)
-            {
-                char* bson = iter->second->to_binary();
-                std::pair<int, int> delta(bson_to_storage_delta(*(iter->second)));
-                tokyo::DB::value_t existing = index->at(bson + delta.first,
-                                                        iter->second->size() - delta.second);
-                delete[] bson;
-                if (existing.first)
-                {
-                    throw new Exception("StorageError",
-                                        std::string("Unable to place record because of unique constraint [").append(name).append("]."));
-                }
-            }
-        }
-        else
-        {
-            Log::debug.log("Checking value of [%s].") << name << Log::end;
-            char *bson = n.to_binary();
-            std::pair<int, int> delta(bson_to_storage_delta(n));
-            tokyo::DB::value_t existing = index->at(bson + delta.first,
-                                                    n.size() - delta.second);
-            delete[] bson;
-            if (existing.first)
-            {
-                throw new Exception("StorageError",
-                                    std::string("Unable to place record because of unique constraint [").append(name).append("]."));
-            }
-        }
-        return *this;
-    }
     
-    void Storage::journal_start(const unsigned long long key)
+    const lj::Bson* const Storage::storage_config()
     {
-        Log::debug.log("Starting journaling for [%d]") << key << Log::end;
-        
-        bool complete = false;
-        
-        journal_->start_writes();
-        journal_->place(&key,
-                        sizeof(unsigned long long),
-                        &complete,
-                        sizeof(bool));
-        journal_->save_writes();
-    }
-    
-    void Storage::journal_end(const unsigned long long key)
-    {
-        Log::debug.log("Ending journaling for [%d]") << key << Log::end;
-        
-        bool complete = true;
-        
-        journal_->start_writes();
-        journal_->place(&key,
-                        sizeof(unsigned long long),
-                        &complete,
-                        sizeof(bool));
-        journal_->save_writes();
-    }
-    
-    void Storage::begin_transaction()
-    {
-        for (std::map<std::string, tokyo::Tree_db*>::const_iterator iter = fields_tree_.begin();
-             fields_tree_.end() != iter;
-             ++iter)
-        {
-            iter->second->start_writes();
-        }
-        for (std::map<std::string, tokyo::Hash_db*>::const_iterator iter = fields_hash_.begin();
-             fields_hash_.end() != iter;
-             ++iter)
-        {
-            iter->second->start_writes();
-        }
-        db_->start_writes();
-    }
-    
-    void Storage::commit_transaction()
-    {
-        db_->save_writes();
-        for (std::map<std::string, tokyo::Hash_db*>::reverse_iterator iter = fields_hash_.rbegin();
-             fields_hash_.rend() != iter;
-             ++iter)
-        {
-            iter->second->save_writes();
-        }
-        for (std::map<std::string, tokyo::Tree_db *>::reverse_iterator iter = fields_tree_.rbegin();
-             fields_tree_.rend() != iter;
-             ++iter)
-        {
-            iter->second->save_writes();
-        }
-    }
-    
-    void Storage::abort_transaction()
-    {
-        db_->abort_writes();
-        for (std::map<std::string, tokyo::Hash_db*>::reverse_iterator iter = fields_hash_.rbegin();
-             fields_hash_.rend() != iter;
-             ++iter)
-        {
-            iter->second->abort_writes();
-        }
-        for (std::map<std::string, tokyo::Tree_db *>::reverse_iterator iter = fields_tree_.rbegin();
-             fields_tree_.rend() != iter;
-             ++iter)
-        {
-            iter->second->abort_writes();
-        }
-    }
-    
-    Bson* Storage::configuration()
-    {
-        return config_;
-    }
-    
-    const std::string& Storage::name() const
-    {
-        return name_;
+        return storage_config_;
     }
     
     //======================================================================
