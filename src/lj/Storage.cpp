@@ -36,10 +36,8 @@
 #include "lj/Storage.h"
 
 #include "build/default/config.h"
-#include "lj/All_record_set.h"
 #include "lj/Exception.h"
 #include "lj/Logger.h"
-#include "lj/Standard_record_set.h"
 
 #include <cassert>
 #include <cstring>
@@ -131,7 +129,7 @@ namespace
                  const lj::Bson& item,
                  const Uuid& uid)
     {
-        for (auto iter = indices)
+        for (auto iter : indices)
         {
             lj::Bson* value = item.path((*iter).first);
             if (value)
@@ -151,7 +149,7 @@ namespace
                const lj::Bson& item,
                const Uuid& uid)
     {
-        for (auto iter = indices)
+        for (auto iter : indices)
         {
             lj::Bson* value = item.path((*iter).first);
             if (value)
@@ -171,7 +169,7 @@ namespace
                const lj::Bson& item,
                const Uuid& uid)
     {
-        for (auto iter = indices)
+        for (auto iter : indices)
         {
             lj::Bson* value = item.path((*iter).first);
             if (value)

@@ -63,16 +63,13 @@ def build(ctx):
     logjamd = ctx(
         features = ['cxx', 'cprogram']
         ,source = [
-                'src/lj/All_record_set.cpp'
-                ,'src/lj/Base64.cpp'
+                'src/lj/Base64.cpp'
                 ,'src/lj/Bson.cpp'
                 ,'src/lj/Engine.cpp'
                 ,'src/lj/engines/Tokyo_vault.cpp'
                 ,'src/lj/engines/Tokyo_index.cpp'
                 ,'src/lj/Logger.cpp'
-                ,'src/lj/Record_set.cpp'
                 ,'src/lj/Sockets.cpp'
-                ,'src/lj/Standard_record_set.cpp'
                 ,'src/lj/Storage.cpp'
                 ,'src/lj/Storage_factory.cpp'
                 ,'src/lj/Time_tracker.cpp'
