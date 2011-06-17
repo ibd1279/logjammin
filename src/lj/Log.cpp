@@ -1,5 +1,5 @@
 /*!
- \file Logger.cpp
+ \file lj/Log.cpp
  \brief LJ Logger implementation.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
@@ -32,7 +32,7 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "lj/Logger.h"
+#include "lj/Log.h"
 
 #include <cstdarg>
 #include <cstdio>
@@ -42,14 +42,14 @@
 #include <memory>
 #include <sstream>
 
-lj::Log lj::Log::emergency(lj::Log::level_emergency, &std::cerr);
-lj::Log lj::Log::alert(lj::Log::level_alert, &std::cerr);
-lj::Log lj::Log::critical(lj::Log::level_critical, &std::cerr);
-lj::Log lj::Log::error(lj::Log::level_error, &std::cerr);
-lj::Log lj::Log::warning(lj::Log::level_warning, &std::cerr);
-lj::Log lj::Log::notice(lj::Log::level_notice, &std::cerr);
-lj::Log lj::Log::info(lj::Log::level_info, &std::cerr);
-lj::Log lj::Log::debug(lj::Log::level_debug, &std::cerr);
+lj::Log lj::Log::emergency(lj::Log::Level::k_emergency, &std::cerr);
+lj::Log lj::Log::alert(lj::Log::Level::k_alert, &std::cerr);
+lj::Log lj::Log::critical(lj::Log::Level::k_critical, &std::cerr);
+lj::Log lj::Log::error(lj::Log::Level::k_error, &std::cerr);
+lj::Log lj::Log::warning(lj::Log::Level::k_warning, &std::cerr);
+lj::Log lj::Log::notice(lj::Log::Level::k_notice, &std::cerr);
+lj::Log lj::Log::info(lj::Log::Level::k_info, &std::cerr);
+lj::Log lj::Log::debug(lj::Log::Level::k_debug, &std::cerr);
 lj::Log::End lj::Log::end;
 
 namespace
@@ -69,22 +69,30 @@ namespace
     class Real_logger : public lj::Log {
     public:
         Real_logger(std::ostream *strm,
-                    Event_level level,
+                    Level level,
                     const std::string &msg) : lj::Log(level, strm), parts_(), buffer_()
         {
             std::string tmp;
-            for (std::string::const_iterator iter = msg.begin();
+            for (auto iter = msg.begin();
                  iter != msg.end();
                  ++iter)
             {
                 if (*iter == '%')
                 {
-                    parts_.push_back(tmp);
-                    tmp.clear();
-                    tmp.push_back((*iter++));
+                    ++iter;
                     if(iter == msg.end())
                     {
                         break;
+                    }
+                    else if(*iter == '%')
+                    {
+                        tmp.push_back('%');
+                    }
+                    else
+                    {
+                        parts_.push_back(tmp);
+                        tmp.clear();
+                        tmp.push_back('%');
                     }
                 }
                 tmp.push_back(*iter);
@@ -105,8 +113,23 @@ namespace
                 parts_.pop_front();
             }
         }
+                    
+        size_t size() const
+        {
+            return parts_.size();
+        }
         
-        virtual Log &operator<<(const std::string &msg)
+        std::string head() const
+        {
+            return parts_.front();
+        }
+        
+        void pop()
+        {
+            parts_.pop_front();
+        }
+        
+        virtual Log& write_string(const std::string& msg)
         {
             if (parts_.size() > 0)
             {
@@ -123,29 +146,7 @@ namespace
             return *this;
         }
         
-        virtual Log &operator<<(const char *msg)
-        {
-            if (0 == msg) 
-            {
-                msg = "NULL";
-            }
-            
-            if (parts_.size() > 0)
-            {
-                char *buffer = new char[strlen(msg) + parts_.front().size()];
-                sprintf(buffer, parts_.front().c_str(), msg);
-                buffer_ << buffer;
-                parts_.pop_front();
-                delete[] buffer;
-            }
-            else
-            {
-                buffer_ << msg;
-            }
-            return *this;
-        }
-        
-        void write_number(long long msg)
+        virtual Log& write_signed_int(const int64_t msg)
         {
             if (parts_.size() > 0)
             {
@@ -159,63 +160,15 @@ namespace
             {
                 buffer_ << msg;
             }
-        }
-        virtual Log &operator<<(long long msg)
-        {
-            write_number(msg);
             return *this;
         }
-        virtual Log &operator<<(unsigned long long msg)
+        
+        virtual Log& write_unsigned_int(const uint64_t msg)
         {
-            write_number(static_cast<long long>(msg));
-            return *this;
-        }
-        virtual Log &operator<<(long msg)
-        {
-            write_number(msg);
-            return *this;
-        }
-        virtual Log &operator<<(unsigned long msg)
-        {
-            write_number(static_cast<long long>(msg));
-            return *this;
-        }
-        virtual Log &operator<<(int msg)
-        {
-            write_number(msg);
-            return *this;
-        }
-        virtual Log &operator<<(unsigned int msg)
-        {
-            write_number(static_cast<long long>(msg));
-            return *this;
-        }
-        virtual Log &operator<<(short msg)
-        {
-            write_number(msg);
-            return *this;
-        }
-        virtual Log &operator<<(unsigned short msg)
-        {
-            write_number(static_cast<long long>(msg));
-            return *this;
-        }
-        virtual Log &operator<<(char msg)
-        {
-            write_number(msg);
-            return *this;
-        }
-        virtual Log &operator<<(unsigned char msg)
-        {
-            write_number(static_cast<long long>(msg));
-            return *this;
-        }
-        virtual Log &operator<<(bool msg)
-        { 
             if (parts_.size() > 0)
             {
-                char *buffer = new char[6 + parts_.front().size()];
-                sprintf(buffer, parts_.front().c_str(), msg ? "true" : "false");
+                char *buffer = new char[512 + parts_.front().size()];
+                sprintf(buffer, parts_.front().c_str(), msg);
                 buffer_ << buffer;
                 parts_.pop_front();
                 delete[] buffer;
@@ -226,7 +179,33 @@ namespace
             }
             return *this;
         }
-        virtual Log& operator<<(void* msg) {
+
+        virtual Log& write_bool(const bool msg)
+        { 
+            if (parts_.size() > 0)
+            {
+                char *buffer = new char[128 + parts_.front().size()];
+                if (parts_.front().at(1) == 's')
+                {
+                    sprintf(buffer, parts_.front().c_str(), msg ? "true" : "false");
+                }
+                else
+                {
+                    sprintf(buffer, parts_.front().c_str(), msg);
+                }
+                buffer_ << buffer;
+                parts_.pop_front();
+                delete[] buffer;
+            }
+            else
+            {
+                buffer_ << (msg ? "true" : "false");
+            }
+            return *this;
+        }
+        
+        virtual Log& write_pointer(const void* msg)
+        {
             char *buffer = new char[512 + parts_.front().size()];
             if (parts_.size() > 0)
             {
@@ -242,11 +221,8 @@ namespace
             delete[] buffer;
             return *this;
         }
-        virtual Log& operator<<(const lj::Uuid& msg)
-        {
-            return ((*this) << ((std::string)msg));
-        }
-        virtual void operator<<(const Log::End &msg)
+        
+        virtual void write_end()
         {
             for (auto iter = parts_.begin(); iter != parts_.end(); ++iter)
             {
@@ -259,49 +235,118 @@ namespace
         std::list<std::string> parts_;
         std::ostringstream buffer_;
     };
+    
+    const std::string k_level_emergency_string("[EMERGENCY]   ");
+    const std::string k_level_alert_string("[ALERT]       ");
+    const std::string k_level_critical_string("[CRITICAL]    ");
+    const std::string k_level_error_string("[ERROR]       ");
+    const std::string k_level_warning_string("[WARNING]     ");
+    const std::string k_level_notice_string("[NOTICE]      ");
+    const std::string k_level_info_string("[INFORMATION] ");
+    const std::string k_level_debug_string("[DEBUG]       ");
+    
+    bool is_flag(char c)
+    {
+        return !(c == 'c' || c == 'd' || c == 'i' || c == 'e' || c == 'E' ||
+                c == 'f' || c == 'g' || c == 'G' || c == 'o' || c == 's' ||
+                c == 'u' || c == 'x' || c == 'X' || c == 'p' || c == 'n' ||
+                c == '%');
+    }
+    
 }; // namespace
     
 namespace lj
 {    
-    std::string Log::level_text(const Event_level level)
+    const std::string& Log::level_text(const Level& level)
     {
-        switch(level)
+        switch (level)
         {
-            case level_emergency:
-                return std::string("[EMERGENCY]   ");
-            case level_alert:
-                return std::string("[ALERT]       ");
-            case level_critical:
-                return std::string("[CRITICAL]    ");
-            case level_error:
-                return std::string("[ERROR]       ");
-            case level_warning:
-                return std::string("[WARNING]     ");
-            case level_notice:
-                return std::string("[NOTICE]      ");
-            case level_info:
-                return std::string("[INFORMATION] ");
+            case Level::k_emergency:
+                return k_level_emergency_string;
+            case Level::k_alert:
+                return k_level_alert_string;
+            case Level::k_critical:
+                return k_level_critical_string;
+            case Level::k_error:
+                return k_level_error_string;
+            case Level::k_warning:
+                return k_level_warning_string;
+            case Level::k_notice:
+                return k_level_notice_string;
+            case Level::k_info:
+                return k_level_info_string;
             default:
-                return std::string("[DEBUG]       ");
+                return k_level_debug_string;
         }
     }
     
-    void Log::operator()(const std::string& fmt, ...)
+    void Log::log(const std::string& fmt, ...)
     {
         if (enabled_)
         {
-            char ptr[8192];
+            Real_logger& logger = *(new Real_logger(stream_, level_, fmt));
             va_list vl;
             va_start(vl, fmt);
-            vsnprintf(ptr, 8191, fmt.c_str(), vl);
+            while (logger.size())
+            {
+                //find the first character that isn't a formatting flag.
+                int position = 1;
+                char data_type = logger.head().at(position);
+                int bytes = 4;
+                while (is_flag(data_type))
+                {
+                    if (data_type == 'l')
+                    {
+                        bytes = sizeof(int64_t);
+                    }
+                    data_type = logger.head().at(++position);
+                }
+
+                // Handle the next argument as the needed data type.
+                switch (data_type)
+                {
+                    case 's':
+                        logger << va_arg(vl, const char*);
+                        break;
+                    case 'd':
+                    case 'i':
+                        if (bytes == sizeof(int64_t))
+                        {
+                            logger << va_arg(vl, int64_t);
+                        }
+                        else
+                        {
+                            logger << va_arg(vl, int);
+                        }
+                        break;
+                    case 'u':
+                    case 'x':
+                    case 'X':
+                        if (bytes == sizeof(int64_t))
+                        {
+                            logger << va_arg(vl, uint64_t);
+                        }
+                        else
+                        {
+                            logger << va_arg(vl, unsigned int);
+                        }
+                        break;
+                    case 'c':
+                        logger << ((char)va_arg(vl, int));
+                        break;
+                    case 'p':
+                        logger << va_arg(vl, void*);
+                        break;
+                }
+            }
+            
             va_end(vl);
             
-            Real_logger* logger = new Real_logger(stream_, level_, std::string(ptr));
-            (*logger) << end;
+            logger << end;
         }
     }
     
-    Log &Log::log(const std::string& fmt)
+    Log &Log::operator()(const std::string& fmt)
     {
         if (enabled_)
         {

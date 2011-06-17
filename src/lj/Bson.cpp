@@ -1,5 +1,5 @@
 /*!
- \file Bson.cpp
+ \file lj/Bson.cpp
  \brief LJ Bson implementation.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
@@ -34,553 +34,640 @@
 
 #include "lj/Bson.h"
 #include "lj/Base64.h"
-#include "lj/Logger.h"
+#include "lj/Log.h"
 
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
 #include <fstream>
+#include <iostream>
 #include <list>
 #include <sstream>
 
 namespace lj
 {
-    namespace
+    namespace bson
     {
-        //! escape a string.
-        std::string escape(const std::string &val)
+        namespace
         {
-            std::string r;
-            for (auto iter = val.begin(); iter != val.end(); ++iter)
+            //! escape a string.
+            std::string escape(const std::string &val)
             {
-                char c = *iter;
-                if (c == '\\' || c == '"')
+                std::string r;
+                for (auto iter = val.begin(); iter != val.end(); ++iter)
                 {
-                    r.push_back('\\');
+                    char c = *iter;
+                    if (c == '\\' || c == '"')
+                    {
+                        r.push_back('\\');
+                    }
+                    else if (c == '\n')
+                    {
+                        r.append("\\n\\");
+                    }
+                    r.push_back(c);
                 }
-                else if (c == '\n')
-                {
-                    r.append("\\n\\");
-                }
-                r.push_back(c);
+                return r;
             }
-            return r;
+
+            //! sub document parsing helper method.
+            void subdocument(Type parent_t, Node& node, const uint8_t* value)
+            {
+                // calculate the end address, and position pointer after size.
+                const uint8_t *ptr = value;
+                long sz = 0;
+                memcpy(&sz, ptr, 4);
+                const uint8_t *end = ptr + sz - 1;
+                ptr += 4;
+
+                // if the size is 5, then this is the smallest sub document possible
+                // and we don't need to process anything.
+                if (sz == 5)
+                {
+                    return;
+                }
+
+                // loop while the pointer is before the end.
+                while (ptr < end)
+                {
+                    // read the field type and advance the pointer.
+                    uint8_t t;
+                    memcpy(&t, ptr++, 1);
+
+                    // Read the field name. BSON spec says field names are null
+                    // terminated c-strings, so we let the std::string library
+                    // find the hard work
+                    std::string name(reinterpret_cast<const char*>(ptr));
+                    ptr += name.size() + 1;
+
+                    // Read the field value. this will create a child node.
+                    // The node constructor does all the byte parsing based on
+                    // the provided type.
+                    Node* new_child = new Node(static_cast<Type>(t), ptr);
+                    
+                    // Attaching the child node to the parent Node is different
+                    // depending on the type of the parent node.
+                    if (Type::k_document == parent_t)
+                    {
+                        node.set_child(escape_path(name), new_child);
+                    }
+                    else if(Type::k_array == parent_t)
+                    {
+                        node.push_child("", new_child);
+                    }
+
+                    // Move the pointer to the end of the parsed binary data.
+                    // will put us at the start of the next field or the end of
+                    // the document.
+                    ptr += new_child->size();
+                }
+            }
+
+            const std::string k_bson_type_string_string("string");
+            const std::string k_bson_type_string_int32("int32");
+            const std::string k_bson_type_string_double("double");
+            const std::string k_bson_type_string_int64("int64");
+            const std::string k_bson_type_string_timestamp("timestamp");
+            const std::string k_bson_type_string_boolean("boolean");
+            const std::string k_bson_type_string_null("null");
+            const std::string k_bson_type_string_document("document");
+            const std::string k_bson_type_string_binary_document("binary-document");
+            const std::string k_bson_type_string_binary("binary");
+            const std::string k_bson_type_string_array("array");
+            const std::string k_bson_type_string_unknown("unknown");
+
+            const std::string k_bson_binary_type_string_function("function");
+            const std::string k_bson_binary_type_string_binary("binary");
+            const std::string k_bson_binary_type_string_uuid("uuid");
+            const std::string k_bson_binary_type_string_md5("md5");
+            const std::string k_bson_binary_type_string_user_defined("user-defined");
+        }; // namespace lj::bson::(anonymous)
+
+        const std::string& type_string(const Type t)
+        {
+            
+            // All of these strings are declared and defined in the anonymous
+            // namespace above.
+            switch (t)
+            {
+                case Type::k_string:
+                    return k_bson_type_string_string;
+                case Type::k_binary:
+                    return k_bson_type_string_binary;
+                case Type::k_int32:
+                    return k_bson_type_string_int32;
+                case Type::k_double:
+                    return k_bson_type_string_double;
+                case Type::k_int64:
+                    return k_bson_type_string_int64;
+                case Type::k_timestamp:
+                    return k_bson_type_string_timestamp;
+                case Type::k_boolean:
+                    return k_bson_type_string_boolean;
+                case Type::k_null:
+                    return k_bson_type_string_null;
+                case Type::k_document:
+                    return k_bson_type_string_document;
+                case Type::k_binary_document:
+                    return k_bson_type_string_binary_document;
+                case Type::k_array:
+                    return k_bson_type_string_array;
+                default:
+                    break;
+            }
+            return k_bson_type_string_unknown;
+        }
+
+        const std::string& binary_type_string(const Binary_type subtype)
+        {
+            // All of these strings are declared and defined in the anonymous
+            // namespace above.
+            switch (subtype)
+            {
+                case Binary_type::k_bin_function:
+                    return k_bson_binary_type_string_function;
+                case Binary_type::k_bin_binary:
+                    return k_bson_binary_type_string_binary;
+                case Binary_type::k_bin_uuid:
+                    return k_bson_binary_type_string_uuid;
+                case Binary_type::k_bin_md5:
+                    return k_bson_binary_type_string_md5;
+                case Binary_type::k_bin_user_defined:
+                    return k_bson_binary_type_string_user_defined;
+                default:
+                    break;
+            }
+            return k_bson_type_string_unknown;
         }
         
-        //! sub document parsing helper method.
-        void subdocument(Bson::Type parent_t, Bson& node, const char* value)
+        //=====================================================================
+        // Bson path exception.
+        //=====================================================================
+        
+        std::string Bson_path_exception::str() const
         {
-            // treat it as a char * for pointer math reasons.
-            const char *ptr = value;
-            
-            // calculate the end address.
-            long sz = 0;
-            memcpy(&sz, ptr, 4);
-            const char *end = ptr + sz - 1;
-            ptr += 4;
-            
-            if (sz == 5)
-            {
-                return;
-            }
-            
-            // loop while the pointer is shorter 
-            while (ptr < end)
-            {
-                // child type.
-                unsigned char t;
-                memcpy(&t, ptr++, 1);
-                
-                // child name.
-                std::string name(ptr);
-                ptr += name.size() + 1;
-                
-                // child node.
-                Bson* new_child = new Bson(static_cast<Bson::Type>(t), ptr);
-                if (Bson::k_document == parent_t)
-                {
-                    node.set_child(lj::bson_escape_path(name), new_child);
-                }
-                else if(Bson::k_array == parent_t)
-                {
-                    node.push_child("", new_child);
-                }
-                
-                ptr += new_child->size();
-            }
+            std::ostringstream oss;
+            oss << lj::Exception::str();
+            oss << " [for path \"" << path() << "\"]";
+            return oss.str();
         }
         
-        const std::string k_bson_type_string_string("string");
-        const std::string k_bson_type_string_int32("int32");
-        const std::string k_bson_type_string_double("double");
-        const std::string k_bson_type_string_int64("int64");
-        const std::string k_bson_type_string_timestamp("timestamp");
-        const std::string k_bson_type_string_boolean("boolean");
-        const std::string k_bson_type_string_null("null");
-        const std::string k_bson_type_string_document("document");
-        const std::string k_bson_type_string_binary_document("binary-document");
-        const std::string k_bson_type_string_binary("binary");
-        const std::string k_bson_type_string_array("array");
-        const std::string k_bson_type_string_unknown("unknown");
+        //=====================================================================
+        // Bson type exception.
+        //=====================================================================
         
-        const std::string k_bson_binary_type_string_function("function");
-        const std::string k_bson_binary_type_string_binary("binary");
-        const std::string k_bson_binary_type_string_uuid("uuid");
-        const std::string k_bson_binary_type_string_md5("md5");
-        const std::string k_bson_binary_type_string_user_defined("user-defined");
-    }; // namespace lj::(anonymous)
-    
-    const std::string& bson_type_string(const Bson::Type t)
-    {
-        switch (t)
+        std::string Bson_type_exception::str() const
         {
-            case Bson::k_string:
-                return k_bson_type_string_string;
-            case Bson::k_binary:
-                return k_bson_type_string_binary;
-            case Bson::k_int32:
-                return k_bson_type_string_int32;
-            case Bson::k_double:
-                return k_bson_type_string_double;
-            case Bson::k_int64:
-                return k_bson_type_string_int64;
-            case Bson::k_timestamp:
-                return k_bson_type_string_timestamp;
-            case Bson::k_boolean:
-                return k_bson_type_string_boolean;
-            case Bson::k_null:
-                return k_bson_type_string_null;
-            case Bson::k_document:
-                return k_bson_type_string_document;
-            case Bson::k_binary_document:
-                return k_bson_type_string_binary_document;
-            case Bson::k_array:
-                return k_bson_type_string_array;
-            default:
-                break;
-        }
-        return k_bson_type_string_unknown;
-    }
-    
-    const std::string& bson_binary_type_string(const Bson::Binary_type subtype)
-    {
-        switch (subtype)
-        {
-            case Bson::k_bin_function:
-                return k_bson_binary_type_string_function;
-            case Bson::k_bin_binary:
-                return k_bson_binary_type_string_binary;
-            case Bson::k_bin_uuid:
-                return k_bson_binary_type_string_uuid;
-            case Bson::k_bin_md5:
-                return k_bson_binary_type_string_md5;
-            case Bson::k_bin_user_defined:
-                return k_bson_binary_type_string_user_defined;
-            default:
-                break;
-        }
-        return k_bson_type_string_unknown;
-    }
-    
-    size_t bson_type_min_size(const Bson::Type t)
-    {
-        switch (t)
-        {
-            case Bson::k_null:
-                return 0;
-            case Bson::k_boolean:
-                return 1;
-            case Bson::k_int32:
-                return 4;
-            case Bson::k_string:
-            case Bson::k_binary:
-            case Bson::k_binary_document:
-            case Bson::k_document:
-            case Bson::k_array:
-                return 5;
-            case Bson::k_timestamp:
-            case Bson::k_int64:
-            case Bson::k_double:
-                return 8;
-            default:
-                break;
-        }
-        return 5;
-    }
-    
-    //=====================================================================
-    // Bson ctor/dtor
-    //=====================================================================
-    
-    Bson::Bson() : child_map_(), last_child_(0), value_(NULL), type_(Bson::k_document)
-    {
-    }
-    
-    Bson::Bson(const Bson::Type t, const char *v) : child_map_(), last_child_(0), value_(NULL), type_(Bson::k_document)
-    {
-        set_value(t, v);
-    }
-    
-    Bson::Bson(const Bson &o) : child_map_(), last_child_(o.last_child_), value_(NULL), type_(o.type_)
-    {
-        copy_from(o);
-    }
-    
-    Bson::~Bson()
-    {
-        if (value_)
-        {
-            delete[] value_;
-        }
-        for (auto iter = child_map_.begin(); child_map_.end() != iter; ++iter)
-        {
-            delete iter->second;
-        }
-    }
-    
-    void Bson::set_value(const Bson::Type t, const char* v)
-    {
-        // assume the type may have changed.
-        char* old = NULL;
-        if (bson_type_is_nested(type()))
-        {
-            for (auto iter = child_map_.begin(); child_map_.end() != iter; ++iter)
+            std::ostringstream oss;
+            oss << lj::Exception::str();
+            oss << " [for type \"" << type_string(type()) << "\"";
+            if (Type::k_binary == type())
             {
+                oss << ", subtype \"" << binary_type_string(binary_type()) << "\"";
+            }
+            oss << "]";
+            return oss.str();
+        }
+
+
+        //=====================================================================
+        // Node
+        //=====================================================================
+
+        Node::Node() : type_(Type::k_document)
+        {
+            value_.map_ = new std::map<std::string, Node*>();
+        }
+
+        Node::Node(const Type t, const uint8_t* v) : type_(Type::k_null)
+        {
+            value_.data_ = NULL;
+            set_value(t, v);
+        }
+
+        Node::Node(const Node &o) : type_(Type::k_null)
+        {
+            value_.data_ = NULL;
+            copy_from(o);
+        }
+
+        Node::~Node()
+        {
+            destroy(true);
+        }
+
+        void Node::set_value(const Type t, const uint8_t* v)
+        {
+            // We have to clear out all of the current value before we can set
+            // new values.  we take extra caution to avoid
+            // issues with passing values into the same object:
+            // e.g. a.set_value(a.type(), a.to_value()).
+            uint8_t* old_data = NULL;
+            if (!type_is_nested(type()))
+            {
+                // We capture this pointer because destroy will lose it
+                // and we need to free it later.
+                old_data = value_.data_;
+                destroy(false);
+            }
+            else
+            {
+                destroy(true);
+            }
+
+            // process the void pointer provided based on the provided type.
+            type_ = t;
+            if (v)
+            {
+                long long sz = 0;
+                switch (type_)
+                {
+                    case Type::k_string:
+                        memcpy(&sz, v, 4);
+                        value_.data_ = new uint8_t[sz + 4];
+                        memcpy(value_.data_, v, sz + 4);
+                        break;
+                    case Type::k_binary:
+                        memcpy(&sz, v, 4);
+                        value_.data_ = new uint8_t[sz + 5];
+                        memcpy(value_.data_, v, sz + 5);
+                        break;
+                    case Type::k_int32:
+                        value_.data_ = new uint8_t[4];
+                        memcpy(value_.data_, v, 4);
+                        break;
+                    case Type::k_double:
+                    case Type::k_int64:
+                    case Type::k_timestamp:
+                        value_.data_ = new uint8_t[8];
+                        memcpy(value_.data_, v, 8);
+                        break;
+                    case Type::k_boolean:
+                        value_.data_ = new uint8_t[1];
+                        memcpy(value_.data_, v, 1);
+                        break;
+                    case Type::k_null:
+                        value_.data_ = NULL;
+                        break;
+                    case Type::k_document:
+                        value_.map_ = new std::map<std::string, Node*>();
+                        subdocument(type_, *this, v);
+                        break;
+                    case Type::k_array:
+                        value_.vector_ = new std::vector<Node*>();
+                        subdocument(type_, *this, v);
+                        break;
+                    case Type::k_binary_document:
+                        memcpy(&sz, v, 4);
+                        value_.data_ = new uint8_t[sz];
+                        memcpy(value_.data_, v, sz);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            else if (type_is_nested(type_))
+            {
+                // we were not passed a value, so create some empty data structures.
+                if (Type::k_document == type_)
+                {
+                    value_.map_ = new std::map<std::string, Node*>();
+                }
+                else if (Type::k_array == type_)
+                {
+                    value_.vector_ = new std::vector<Node*>();
+                }
+            }
+
+            // Clean up any old memory.
+            if (old_data)
+            {
+                delete[] old_data;
+            }
+        }
+
+        void Node::nullify()
+        {
+            destroy(true);
+        }
+
+        Node& Node::copy_from(const Node& o)
+        {
+            if (Type::k_document == o.type())
+            {
+                std::map<std::string, Node*>* tmp = new std::map<std::string, Node*>();
+                for (auto iter = o.to_map().begin(); o.to_map().end() != iter; ++iter)
+                {
+                    Node *ptr = new Node(*(iter->second));
+                    tmp->insert(std::pair<std::string, Node*>(iter->first, ptr));
+                }
+                destroy(true);
+                type_ = o.type();
+                value_.map_ = tmp;
+            }
+            else if (Type::k_array == o.type())
+            {
+                std::vector<Node*>* tmp = new std::vector<Node*>();
+                for (auto iter = o.to_vector().begin(); o.to_vector().end() != iter; ++iter)
+                {
+                    Node *ptr = new Node(*(*iter));
+                    tmp->push_back(ptr);
+                }
+                destroy(true);
+                type_ = o.type();
+                value_.vector_ = tmp;
+            }
+            else
+            {
+                set_value(o.type(), o.to_value());
+            }
+            return *this;
+        }
+        
+        Node* Node::find_or_create_child_documents(const std::list<std::string>& input_list)
+        {
+            std::list<std::string> parts(input_list);
+            
+            // set the root, and loop until all path parts are complete.
+            // verifying that each node is a document is handled by the
+            // to_map() method.
+            Node *n = this;
+            while (0 < parts.size())
+            {
+                if (Type::k_array == n->type())
+                {
+                    // Check that the position is valid.
+                    // Doesn't make sense to pad the vector with empty document
+                    // objects, so we don't do that here.
+                    int pos = atoi(parts.front().c_str());
+                    if(pos < 0 || static_cast<size_t>(pos) >= n->to_vector().size())
+                    {
+                        throw Bson_path_exception(std::string("Invalid array index ") + parts.front(), parts.front());
+                    }
+
+                    // one level deeper.
+                    n = n->to_vector().at(pos);
+                }
+                else
+                {
+                    // Search for the child by name.
+                    auto iter = n->to_map().find(parts.front());
+                    if (n->to_map().end() == iter)
+                    {
+                        // Child not found, so create it.
+                        Node* tmp = new Node();
+                        n->set_child(parts.front(), tmp);
+                        n = tmp;
+                    }
+                    else
+                    {
+                        // one level deeper.
+                        n = iter->second;
+                    }
+                }
+                parts.pop_front();
+            }
+            return n;
+        }
+
+        namespace {
+            void split_path(const std::string& path, std::list<std::string>& parts)
+            {
+                const char* tmp = path.c_str();
+                std::string current;
+                for (;*tmp; ++tmp)
+                {
+                    if (*tmp == '/')
+                    {
+                        if (0 < current.size())
+                        {
+                            parts.push_back(current);
+                            current.erase();
+                        }
+                    }
+                    else if (*tmp == '\\' && *(tmp + 1))
+                    {
+                        current.push_back(*(++tmp));
+                    }
+                    else
+                    {
+                        current.push_back(*tmp);
+                    }
+                }
+                if (0 < current.size())
+                {
+                    parts.push_back(current);
+                }
+            }
+        };
+
+        Node* Node::path(const std::string& p)
+        {
+            std::list<std::string> parts;
+            split_path(p, parts);
+            return find_or_create_child_documents(parts);
+        }
+
+        const Node* Node::path(const std::string& p) const
+        {
+            // split path up for looping.
+            std::list<std::string> parts;
+            split_path(p, parts);
+            
+            // set the root, and loop until all path parts are complete.
+            // verifying that each node is a document is handled by the
+            // to_map() method.
+            const Node *n = this;
+            while (0 < parts.size())
+            {
+                if (Type::k_array == n->type())
+                {
+                    // Check that the position is valid.
+                    int pos = atoi(parts.front().c_str());
+                    if (pos < 0 || static_cast<size_t>(pos) >= n->to_vector().size())
+                    {
+                        return NULL;
+                    }
+
+                    // one level deeper.
+                    n = n->to_vector().at(pos);
+                }
+                else
+                {
+                    // Search for the child by name.
+                    auto iter = n->to_map().find(parts.front());
+                    if (n->to_map().end() == iter)
+                    {
+                        // Child not found, and everything is const, so return null.
+                        return NULL;
+                    }
+
+                    // One level deeper.
+                    n = iter->second;
+                }
+                parts.pop_front();
+            }
+            return n;
+        }
+
+        void Node::set_child(const std::string& p, Node* c)
+        {
+            // split path up for navigation.
+            std::list<std::string> parts;
+            split_path(p, parts);
+
+            // Check that we got a valid child name.
+            if (parts.size() < 1)
+            {
+                throw Bson_path_exception("Cannot set a child without a child name.", p);
+            }
+            
+            // This gets the new child's name from the parts.s
+            std::string child_name = parts.back();
+            parts.pop_back();
+
+            // navigate the structure.
+            Node *n = find_or_create_child_documents(parts);
+            
+            // Cannot use to_map below because I need a non-const iterator.
+            // checking that the found node is a document.
+            if (Type::k_document != n->type())
+            {
+                throw Bson_type_exception("Cannot add a child to a non-document type.", n->type());
+            }
+            
+            // remove any existing value to keep memory sane.
+            auto iter = n->value_.map_->find(child_name);
+            if (n->value_.map_->end() != iter)
+            {
+                if (iter->second == c)
+                {
+                    //already here, do nothing.
+                    return;
+                }
                 delete iter->second;
+                n->value_.map_->erase(iter);
             }
-            child_map_.clear();
-            value_ = NULL;
-            last_child_ = 0;
-        }
-        else
-        {
-            old = value_;
-            value_ = NULL;
-        }
-        
-        // process the void pointer provided based on the provided type.
-        type_ = t;
-        if (v)
-        {
-            long long sz = 0;
-            switch (type_)
+
+            // At this point we have the target node, we have made sure no
+            // existing child exists with the same name, and we need to add
+            // the new child onto the node.
+            if (c)
             {
-                case Bson::k_string:
-                    memcpy(&sz, v, 4);
-                    value_ = new char[sz + 4];
-                    memcpy(value_, v, sz + 4);
+                n->value_.map_->insert(std::pair<std::string, Node*>(child_name, c));
+            }
+        }
+
+        void Node::push_child(const std::string& p, Node* c)
+        {
+            // Null check.
+            if (!c)
+            {
+                throw Bson_type_exception("Cannot push null as a child.", type());
+            }
+
+            // split path up for navigation.
+            std::list<std::string> parts;
+            split_path(p, parts);
+
+            // Navigate to the target node.
+            Node* n = find_or_create_child_documents(parts);
+            
+            // Make sure the target node is the correct type.
+            if (Type::k_array != n->type())
+            {
+                throw Bson_type_exception("Cannot push a child to a non-array type.", n->type());
+            }
+
+            // push the value to the end.
+            n->value_.vector_->push_back(c);
+        }
+
+        size_t Node::size() const
+        {
+            long sz = 0;
+            int indx = 0;
+            switch (type())
+            {
+                case Type::k_string:
+                    memcpy(&sz, value_.data_, 4);
+                    sz += 4;
                     break;
-                case Bson::k_binary:
-                    memcpy(&sz, v, 4);
-                    value_ = new char[sz + 5];
-                    memcpy(value_, v, sz + 5);
+                case Type::k_binary:
+                    memcpy(&sz, value_.data_, 4);
+                    sz += 5;
                     break;
-                case Bson::k_int32:
-                    value_ = new char[4];
-                    memcpy(value_, v, 4);
+                case Type::k_int32:
+                    sz = 4;
                     break;
-                case Bson::k_double:
-                case Bson::k_int64:
-                case Bson::k_timestamp:
-                    value_ = new char[8];
-                    memcpy(value_, v, 8);
+                case Type::k_double:
+                case Type::k_int64:
+                case Type::k_timestamp:
+                    sz = 8;
                     break;
-                case Bson::k_boolean:
-                    value_ = new char[1];
-                    memcpy(value_, v, 1);
+                case Type::k_boolean:
+                    sz = 1;
                     break;
-                case Bson::k_null:
-                    value_ = NULL;
+                case Type::k_null:
+                    sz = 0;
                     break;
-                case Bson::k_document:
-                case Bson::k_array:
-                    last_child_ = 0;
-                    subdocument(type_, *this, v);
+                case Type::k_array:
+                    sz += 5;
+                    for (auto iter = to_vector().begin(); to_vector().end() != iter; ++iter)
+                    {
+                        // Yes, this is ugly, but it avoids string building for
+                        // smaller arrays.
+                        int key_size = 1;
+                        if (indx < 10 && indx > -1)
+                        {
+                            key_size = 1;
+                        }
+                        else if (indx < 100 && indx > 9)
+                        {
+                            key_size = 2;
+                        }
+                        else if (indx < 1000 && indx > 99)
+                        {
+                            key_size = 3;
+                        }
+                        else
+                        {
+                            std::ostringstream oss;
+                            oss << indx++;
+                            key_size = oss.str().size();
+                        }
+                        sz += key_size + (*iter)->size() + 2;
+                    }
                     break;
-                case Bson::k_binary_document:
-                    memcpy(&sz, v, 4);
-                    value_ = new char[sz];
-                    memcpy(value_, v, sz);
+                case Type::k_document:
+                    sz += 5;
+                    for (auto iter = to_map().begin(); to_map().end() != iter; ++iter)
+                    {
+                        sz += iter->second->size() + iter->first.size() + 2;
+                    }
+                    break;
+                case Type::k_binary_document:
+                    memcpy(&sz, value_.data_, 4);
                     break;
                 default:
                     break;
             }
-        }
-        
-        // Clean up any old memory.
-        if (old)
-        {
-            delete[] old;
-        }
-    }
-    
-    void Bson::nullify()
-    {
-        set_value(Bson::k_null, NULL);
-    }
+            return sz;
+        }    
 
-    void Bson::destroy()
-    {
-        set_value(Bson::k_document, NULL);
-    }
-    
-    Bson& Bson::copy_from(const Bson& o)
-    {
-        destroy();
-        type_ = o.type();
-        if (k_document == o.type())
+        size_t Node::copy_to_bson(uint8_t* ptr) const
         {
-            for (auto iter = o.child_map_.begin(); o.child_map_.end() != iter; ++iter)
+            size_t sz = size();
+            if (Type::k_document == type() || Type::k_binary_document == type())
             {
-                Bson *ptr = new Bson(*(iter->second));
-                set_child(lj::bson_escape_path(iter->first), ptr);
-            }
-        }
-        else if (k_array == o.type())
-        {
-            for (auto iter = o.child_map_.begin(); o.child_map_.end() != iter; ++iter)
-            {
-                Bson *ptr = new Bson(*(iter->second));
-                push_child("", ptr);
-            }
-        }
-        else
-        {
-            set_value(o.type_, o.value_);
-        }
-        return *this;
-    }
-    
-    namespace {
-        void split_path(const std::string& path, std::list<std::string>& parts)
-        {
-            const char* tmp = path.c_str();
-            std::string current;
-            for (;*tmp; ++tmp)
-            {
-                if (*tmp == '/')
-                {
-                    if (0 < current.size())
-                    {
-                        parts.push_back(current);
-                        current.erase();
-                    }
-                }
-                else if (*tmp == '\\' && *(tmp + 1))
-                {
-                    current.push_back(*(++tmp));
-                }
-                else
-                {
-                    current.push_back(*tmp);
-                }
-            }
-            if (0 < current.size())
-            {
-                parts.push_back(current);
-            }
-        }
-    };
-    
-    Bson* Bson::path(const std::string& p)
-    {
-        std::list<std::string> parts;
-        split_path(p, parts);
-        Bson *n = this;
-        while (0 < parts.size())
-        {
-            auto iter = n->child_map_.find(parts.front());
-            if (n->child_map_.end() == iter)
-            {
-                iter = n->child_map_.insert(std::pair<std::string, Bson*>(parts.front(), new Bson())).first;
-            }
-            n = iter->second;
-            parts.pop_front();
-        }
-        return n;
-    }
-    
-    const Bson* Bson::path(const std::string& p) const
-    {
-        std::list<std::string> parts;
-        split_path(p, parts);
-        const Bson *n = this;
-        while (0 < parts.size())
-        {
-            auto iter = n->child_map_.find(parts.front());
-            if (n->child_map_.end() == iter)
-            {
-                return NULL;
-            }
-            n = iter->second;
-            parts.pop_front();
-        }
-        return n;
-    }
-    
-    void Bson::set_child(const std::string& p, Bson* c)
-    {
-        std::list<std::string> parts;
-        split_path(p, parts);
-
-        if (!parts.size()) 
-        {
-            // No child name or path, so abort.
-            return;
-        }
-        std::string child_name = parts.back();
-        parts.pop_back();
-        
-        // navigate the structure.
-        Bson *n = this;
-        while (parts.size())
-        {
-            auto iter = n->child_map_.find(parts.front());
-            if (n->child_map_.end() == iter)
-            {
-                iter = n->child_map_.insert(std::pair<std::string, Bson*>(parts.front(), new Bson())).first;
-            }
-            n = iter->second;
-            parts.pop_front();
-        }
-        
-        // remove any existing value just in case.
-        auto iter = n->child_map_.find(child_name);
-        if (n->child_map_.end() != iter)
-        {
-            if (iter->second == c)
-            {
-                //already here, do nothing.
-                return;
-            }
-            delete iter->second;
-            n->child_map_.erase(iter);
-        }
-        
-        if (c)
-        {
-            if (Bson::k_document != n->type())
-            {
-                // If this isn't a document, convert it to a document.
-                n->set_value(Bson::k_document, NULL);
-            }
-            
-            // Add the child.
-            n->child_map_.insert(std::pair<std::string, Bson*>(child_name, c));
-        }
-        else
-        {
-            // Remove the child.
-            n->child_map_.erase(child_name);
-        }
-    }
-    
-    void Bson::push_child(const std::string& p, Bson* c)
-    {
-        if (!c)
-        {
-            // Cannot push null.
-            return;
-        }
-        
-        Bson* ptr = path(p);
-        if (Bson::k_array != ptr->type())
-        {
-            // If this isn't an array, convert it to an array.
-            ptr->set_value(Bson::k_array, NULL);
-        }
-        
-        char key[20];
-        sprintf(key, "%d", last_child_++);
-        std::string tmp(key);
-        ptr->child_map_.insert(std::pair<std::string, Bson*>(tmp, c));
-    }
-    
-    Bson& Bson::operator<<(const Bson& o)
-    {
-        if (Bson::k_array != type())
-        {
-            // If this isn't an array, convert it to an array.
-            set_value(Bson::k_array, NULL);
-        }
-        
-        std::ostringstream oss;
-        oss << last_child_++;
-        child_map_.insert(std::pair<std::string, Bson*>(oss.str(), new Bson(o)));
-        return *this;
-    }
-        
-    bool Bson::exists() const
-    {
-        if (bson_type_is_nested(type()))
-        {
-            return (0 < child_map_.size() ? true : false);
-        }
-        else
-        {
-            return (value_ ? true : (type() == Bson::k_null ? true : false));
-        }
-    }
-    
-    size_t Bson::size() const
-    {
-        long sz = 0;
-        switch (type())
-        {
-            case Bson::k_string:
-                memcpy(&sz, value_, 4);
-                sz += 4;
-                break;
-            case Bson::k_binary:
-                memcpy(&sz, value_, 4);
-                sz += 5;
-                break;
-            case Bson::k_int32:
-                sz = 4;
-                break;
-            case Bson::k_double:
-            case Bson::k_int64:
-            case Bson::k_timestamp:
-                sz = 8;
-                break;
-            case Bson::k_boolean:
-                sz = 1;
-                break;
-            case Bson::k_null:
-                sz = 0;
-                break;
-            case Bson::k_document:
-            case Bson::k_array:
-                sz += 5;
-                for (auto iter = to_map().begin(); to_map().end() != iter; ++iter)
-                {
-                    sz += iter->second->size() + iter->first.size() + 2;
-                }
-                break;
-            case Bson::k_binary_document:
-                memcpy(&sz, value_, 4);
-                break;
-            default:
-                break;
-        }
-        return sz;
-    }    
-        
-    size_t Bson::copy_to_bson(char* ptr) const
-    {
-        size_t sz = size();
-        switch (type())
-        {
-            case Bson::k_document:
-            case Bson::k_array:
                 memcpy(ptr, &sz, 4);
                 ptr += 4;
-                for (auto iter = child_map_.begin(); child_map_.end() != iter; ++iter)
+                for (auto iter = to_map().begin(); to_map().end() != iter; ++iter)
                 {
-                    Bson::Type t = iter->second->type();
-                    if (Bson::k_binary_document == t)
+                    Type t = iter->second->type();
+                    if (Type::k_binary_document == t)
                     {
-                        t = Bson::k_document;
+                        t = Type::k_document;
                     }
                     memcpy(ptr++, &t, 1);
                     memcpy(ptr, iter->first.c_str(), iter->first.size() + 1);
@@ -588,626 +675,670 @@ namespace lj
                     ptr += iter->second->copy_to_bson(ptr);
                 }
                 *ptr = 0;
-                break;
-            default:
-                memcpy(ptr, value_, sz);
-                break;
-        }
-        return sz;
-    }
-    
-    std::string bson_escape_path(const std::string& input)
-    {
-        std::string name;
-        for (auto iter = input.begin(); input.end() != iter; ++iter)
-        {
-            if ('/' == *iter)
-            {
-                name.push_back('\\');
             }
-            name.push_back(*iter);
+            else if (Type::k_array == type())
+            {
+                int indx = 0;
+                memcpy(ptr, &sz, 4);
+                ptr += 4;
+                for (auto iter = to_vector().begin(); to_vector().end() != iter; ++iter)
+                {
+                    Type t = (*iter)->type();
+                    if (Type::k_binary_document == t)
+                    {
+                        t = Type::k_document;
+                    }
+                    memcpy(ptr++, &t, 1);
+                    
+                    std::ostringstream oss;
+                    oss << indx++;
+                    std::string key_name = oss.str();
+                    memcpy(ptr, key_name.c_str(), key_name.size() + 1);
+                    ptr += key_name.size() + 1;
+                    ptr += (*iter)->copy_to_bson(ptr);
+                }
+                *ptr = 0;
+            }
+            else
+            {
+                memcpy(ptr, value_.data_, sz);
+            }
+            return sz;
         }
-        return name;
-    }
-    
-    Bson* bson_new_string(const std::string& str)
-    {
-        long sz = str.size() + 1;
-        char *ptr = new char[sz + 4];;
-        memcpy(ptr, &sz, 4);
-        memcpy(ptr + 4, str.c_str(), sz);
-        Bson* new_bson = new Bson(Bson::k_string, ptr);
-        delete[] ptr;
-        return new_bson;
-    }
-    
-    Bson* bson_new_boolean(const bool val)
-    {
-        return new Bson(Bson::k_boolean, reinterpret_cast<const char *> (&val));
-    }
-    
-    Bson* bson_new_int64(const int64_t val)
-    {
-        return new Bson(Bson::k_int64, reinterpret_cast<const char *> (&val));
-    }
-    
-    Bson* bson_new_uint64(const uint64_t val)
-    {
-        return new Bson(Bson::k_int64, reinterpret_cast<const char*> (&val));
-    }
-    
-    Bson* bson_new_null()
-    {
-        return new Bson(Bson::k_null, NULL);
-    }
+        
+        void Node::destroy(bool should_delete_value)
+        {
+            if (type_is_value(type()) && should_delete_value)
+            {
+                if (value_.data_)
+                {
+                    delete[] value_.data_;
+                }
+            }
+            else if (Type::k_document == type())
+            {
+                for (auto iter = value_.map_->begin(); value_.map_->end() != iter; ++iter)
+                {
+                    delete iter->second;
+                }
+                delete value_.map_;
+            }
+            else if (Type::k_array == type())
+            {
+                for (auto iter = value_.vector_->begin(); value_.vector_->end() != iter; ++iter)
+                {
+                    delete *iter;
+                }
+                delete value_.vector_;
+            }
+            type_ = Type::k_null;
+            value_.data_ = NULL;
+        }
 
-    Bson* bson_new_binary(const uint8_t* const val, uint32_t sz, Bson::Binary_type subtype)
-    {
-        char* ptr = new char[sz + 5];
-        memcpy(ptr, &sz, 4);
-        memcpy(ptr + 4, &subtype, 1);
-        memcpy(ptr + 5, val, sz);
-        Bson* new_bson = new Bson(Bson::k_binary, ptr);
-        delete[] ptr;
-        return new_bson;
-    }
 
-    lj::Bson* bson_new_cost(const std::string& cmd,
-                            unsigned long long time,
-                            long long filter_size,
-                            long long result_size)
-    {
-        lj::Bson* b = new lj::Bson();
-        b->set_child("cmd", lj::bson_new_string(cmd));
-        b->set_child("usecs", lj::bson_new_uint64(time));
-        b->set_child("filter_size", lj::bson_new_int64(filter_size));
-        b->set_child("result_size", lj::bson_new_int64(result_size));
-        return b;
-    }
+        std::string escape_path(const std::string& input)
+        {
+            std::string name;
+            for (auto iter = input.begin(); input.end() != iter; ++iter)
+            {
+                if ('/' == *iter)
+                {
+                    name.push_back('\\');
+                }
+                else if ('\\' == *iter)
+                {
+                    name.push_back('\\');
+                }
+                name.push_back(*iter);
+            }
+            return name;
+        }
 
-    lj::Bson* bson_new_uuid(const Uuid& uuid)
-    {
-        size_t sz;
-        const uint8_t* const d = uuid.data(&sz);
-        return bson_new_binary(d, sz, Bson::k_bin_uuid);
-    }
-    
-    std::string bson_as_debug_string(const Bson& b)
-    {
-        Bson::Binary_type binary_type = Bson::k_bin_user_defined;
-        long long l = 0;
-        double d = 0.0;
-        const char* v = b.to_value();
-        if (!bson_type_is_nested(b.type()) && !v)
+        Node* new_string(const std::string& str)
         {
-            return std::string();
+            long sz = str.size() + 1;
+            uint8_t* ptr = new uint8_t[sz + 4];;
+            memcpy(ptr, &sz, 4);
+            memcpy(ptr + 4, str.c_str(), sz);
+            Node* new_bson = new Node(Type::k_string, ptr);
+            delete[] ptr;
+            return new_bson;
+        }
+
+        Node* new_boolean(const bool val)
+        {
+            return new Node(Type::k_boolean, reinterpret_cast<const uint8_t*> (&val));
         }
         
-        std::ostringstream buf;
-        switch (b.type())
+        Node* new_int32(const int32_t val)
         {
-            case Bson::k_string:
-                memcpy(&l, v, 4);
-                buf << "(4-" << l << ")" << (v + 4);
-                return buf.str();
-            case Bson::k_binary:
-                memcpy(&l, v, 4);
-                memcpy(&binary_type, v + 4, 1);
-                buf << "(4-" << l << ")";
-                buf << "(1-" << bson_binary_type_string(binary_type) << ")";
-                if (Bson::k_bin_uuid == binary_type && l == 16)
-                {
-                    buf << ((std::string)Uuid(reinterpret_cast<const uint8_t*>(v + 5)));
-                }
-                else
-                {
-                    buf << lj::base64_encode(reinterpret_cast<const unsigned char*>(v + 5), l);
-                }
-                return buf.str();
-            case Bson::k_int32:
-                memcpy(&l, v, 4);
-                buf << "(4)" << l;
-                return buf.str();
-            case Bson::k_double:
-                memcpy(&d, v, 8);
-                buf << "(8)" << d;
-                return buf.str();
-            case Bson::k_int64:
-            case Bson::k_timestamp:
-                memcpy(&l, v, 8);
-                buf << "(8)" << l;
-                return buf.str();
-            case Bson::k_boolean:
-                memcpy(&l, v, 1);
-                buf << "(1)" << ((bool)l);
-                return buf.str();
-            case Bson::k_document:
-            case Bson::k_array:
-                if (!b.to_map().size())
-                {
-                    return "{(4-0)(1-0)}";
-                }
-                buf << "{(4-" << b.size() << ")";
-                for (auto iter = b.to_map().begin(); b.to_map().end() != iter; ++iter)
-                {
-                    buf << "(1-" << bson_type_string(iter->second->type()) << ")";
-                    buf << "\"(" << iter->first.size() + 1 << ")" << escape(iter->first) << "\":";
-                    if (bson_type_is_quotable(iter->second->type()))
-                    {
-                        buf << "\"";
-                    }
-                    buf << bson_as_debug_string(*iter->second);
-                    if (bson_type_is_quotable(iter->second->type()))
-                    {
-                        buf << "\"";
-                    }
-                    buf << ",";
-                }
-                return buf.str().erase(buf.str().size() - 1).append("(1-0)}");
-            case Bson::k_binary_document:
-                buf << bson_as_debug_string(Bson(Bson::k_document, b.to_value()));
-                break;
-            default:
-                break;
+            return new Node(Type::k_int32, reinterpret_cast<const uint8_t*> (&val));
         }
-        return std::string();
-    }
-    
-    std::string bson_as_string(const Bson& b)
-    {
-        Bson::Binary_type binary_type = Bson::k_bin_user_defined;
-        long long l = 0;
-        double d = 0.0;
-        const char* v = b.to_value();
-        if (!bson_type_is_nested(b.type()) && !v)
+
+        Node* new_int64(const int64_t val)
         {
-            return std::string();
+            return new Node(Type::k_int64, reinterpret_cast<const uint8_t*> (&val));
         }
-        
-        std::ostringstream buf;
-        switch (b.type())
+
+        Node* new_uint64(const uint64_t val)
         {
-            case Bson::k_string:
-                memcpy(&l, v, 4);
-                return std::string(v + 4);
-            case Bson::k_binary:
-                memcpy(&l, v, 4);
-                memcpy(&binary_type, v + 4, 1);
-                if (Bson::k_bin_uuid == binary_type && l == 16)
-                {
-                    return Uuid(reinterpret_cast<const uint8_t*>(v + 5));
-                }
-                else
-                {
-                    return lj::base64_encode(reinterpret_cast<const unsigned char*>(v + 5), l);
-                }
-            case Bson::k_int32:
-                memcpy(&l, v, 4);
-                buf << l;
-                return buf.str();
-            case Bson::k_double:
-                memcpy(&d, v, 8);
-                buf << d;
-                return buf.str();
-            case Bson::k_int64:
-            case Bson::k_timestamp:
-                memcpy(&l, v, 8);
-                buf << l;
-                return buf.str();
-            case Bson::k_boolean:
-                memcpy(&l, v, 1);
-                buf << ((bool)l);
-                return buf.str();
-            case Bson::k_null:
-                return std::string("null");
-            case Bson::k_document:
-                if (!b.to_map().size())
-                {
-                    return "{}";
-                }
-                buf << "{";
-                for (auto iter = b.to_map().begin(); b.to_map().end() != iter; ++iter)
-                {
-                    buf << "\"" << escape(iter->first) << "\":";
-                    if (bson_type_is_quotable(iter->second->type()))
-                    {
-                        buf << "\"";
-                    }
-                    buf << bson_as_string(*iter->second);
-                    if (bson_type_is_quotable(iter->second->type()))
-                    {
-                        buf << "\"";
-                    }
-                    buf << ",";
-                }
-                return buf.str().erase(buf.str().size() - 1).append("}");
-            case Bson::k_array:
-                if (!b.to_map().size())
-                {
-                    return "[]";
-                }
-                buf << "[";
-                for (auto iter = b.to_map().begin(); b.to_map().end() != iter; ++iter)
-                {
-                    if (bson_type_is_quotable(iter->second->type()))
-                    {
-                        buf << "\"";
-                    }
-                    buf << bson_as_string(*iter->second);
-                    if (bson_type_is_quotable(iter->second->type()))
-                    {
-                        buf << "\"";
-                    }
-                    buf << ",";
-                }
-                return buf.str().erase(buf.str().size() - 1).append("]");
-            case Bson::k_binary_document:
-                buf << bson_as_string(Bson(Bson::k_document, b.to_value()));
-                break;
-            default:
-                break;
+            return new Node(Type::k_int64, reinterpret_cast<const uint8_t*> (&val));
         }
-        return std::string();
-    }
-    
-    std::string bson_as_pretty_string(const Bson& b, int lvl)
-    {
-        Bson::Binary_type binary_type = Bson::k_bin_user_defined;
-        long long l = 0;
-        double d = 0.0;
-        const char* v = b.to_value();
-        if (!bson_type_is_nested(b.type()) && !v)
+
+        Node* new_null()
         {
-            return std::string();
+            return new Node(Type::k_null, NULL);
         }
-        
-        std::ostringstream buf;
-        std::string indent;
-        for (int h = 0; h < lvl; ++h)
+
+        Node* new_binary(const uint8_t* const val, uint32_t sz, Binary_type subtype)
         {
-            indent.append("  ");
-        }                
-        
-        switch (b.type())
+            uint8_t* ptr = new uint8_t[sz + 5];
+            memcpy(ptr, &sz, 4);
+            memcpy(ptr + 4, &subtype, 1);
+            memcpy(ptr + 5, val, sz);
+            Node* new_bson = new Node(Type::k_binary, ptr);
+            delete[] ptr;
+            return new_bson;
+        }
+
+        Node* new_uuid(const Uuid& uuid)
         {
-            case Bson::k_string:
-                memcpy(&l, v, 4);
-                return std::string(v + 4);
-            case Bson::k_binary:
-                memcpy(&l, v, 4);
-                memcpy(&binary_type, v + 4, 1);
-                if (Bson::k_bin_uuid == binary_type && l == 16)
+            size_t sz;
+            const uint8_t* const d = uuid.data(&sz);
+            return new_binary(d, sz, Binary_type::k_bin_uuid);
+        }
+
+        std::string as_debug_string(const Node& b, int lvl)
+        {
+            Binary_type binary_type = Binary_type::k_bin_user_defined;
+            long long l = 0;
+            double d = 0.0;
+            std::ostringstream buf;
+            
+            if (type_is_nested(b.type()))
+            {
+                // This node can have children, indentation level matters.
+                std::string indent;
+                for (int h = 0; h < lvl; ++h)
                 {
-                    return Uuid(reinterpret_cast<const uint8_t*>(v + 5));
+                    indent.append("  ");
+                }   
+
+                // Caching node size because it can be complicated to compute.
+                size_t node_size = b.size();
+                if (node_size == 5)
+                {
+                    return "{(size-4)0(null-1)0}";
                 }
-                else
-                {
-                    return lj::base64_encode(reinterpret_cast<const unsigned char*>(v + 5), l);
-                }
-            case Bson::k_int32:
-                memcpy(&l, v, 4);
-                buf << l;
-                return buf.str();
-            case Bson::k_double:
-                memcpy(&d, v, 8);
-                buf << d;
-                return buf.str();
-            case Bson::k_int64:
-            case Bson::k_timestamp:
-                memcpy(&l, v, 8);
-                buf << l;
-                return buf.str();
-            case Bson::k_boolean:
-                memcpy(&l, v, 1);
-                buf << ((bool)l);
-                return buf.str();
-            case Bson::k_null:
-                return std::string("null");
-            case Bson::k_document:
-                if (!b.to_map().size())
-                {
-                    return "{}";
-                }
-                buf << "{\n";
-                for (auto iter = b.to_map().begin(); b.to_map().end() != iter; ++iter)
-                {
-                    if (!iter->second->exists())
-                    {
-                        continue;
-                    }
-                    buf << indent << "  \"" << escape(iter->first) << "\":";
-                    if (bson_type_is_quotable(iter->second->type()))
+                buf << "{(size-4)" << node_size << "\n";
+                
+                // The output function is essentially the same for documents
+                // and arrays. We create a nested anonymous function for use
+                // in the loops below. Except for the capture of the
+                // buf object, this is identical to a function in an anonymous
+                // namespace.
+                auto output_function = [&buf, &indent, &lvl](const std::string& key, const Node* n) {
+                    buf << indent;
+                    buf << "(type-1)" << type_string(n->type()) << "";
+                    buf << "\"(key-" << key.size() + 1 << ")" << escape(key) << "\":";
+                    if (type_is_quotable(n->type()))
                     {
                         buf << "\"";
                     }
-                    buf << bson_as_pretty_string(*iter->second, lvl + 1);
-                    if (bson_type_is_quotable(iter->second->type()))
+                    buf << as_debug_string(*n, lvl + 1);
+                    if (type_is_quotable(n->type()))
                     {
                         buf << "\"";
                     }
                     buf << ",\n";
-                }
-                return buf.str().erase(buf.str().size() - 2).append("\n").append(indent).append("}");
-            case Bson::k_array:
-                if (!b.to_map().size())
+                };
+                
+                // Handle Documents and Arrays differently.
+                if (Type::k_document == b.type())
                 {
-                    return "[]";
-                }
-                buf << "[ \n";
-                for (auto iter = b.to_map().begin(); b.to_map().end() != iter; ++iter)
-                {
-                    if (!iter->second->exists())
+                    for (auto iter = b.to_map().begin(); b.to_map().end() != iter; ++iter)
                     {
-                        continue;
+                        output_function(iter->first, iter->second);
                     }
-                    buf << indent << "  ";
-                    if (bson_type_is_quotable(iter->second->type()))
+                }
+                else
+                {
+                    int indx = 0;
+                    for (auto iter = b.to_vector().begin(); b.to_vector().end() != iter; ++iter)
+                    {
+                        std::ostringstream oss;
+                        oss << indx++;
+                        output_function(oss.str(), *iter);
+                    }
+                }
+                
+                //Close the document properly.
+                std::string ret_val = buf.str().erase(buf.str().size() - 2).append("\n");
+                if (indent.size() >= 2)
+                {
+                    ret_val.append(indent.erase(indent.size() - 2));
+                }
+                return ret_val.append("(null-1)0}");            }
+            else
+            {
+                const uint8_t* v = b.to_value();
+                switch (b.type())
+                {
+                    case Type::k_string:
+                        memcpy(&l, v, 4);
+                        buf << "(size-4)" << l << "(value-" << l << ")" << reinterpret_cast<const char*>(v + 4);
+                        return buf.str();
+                    case Type::k_binary:
+                        memcpy(&l, v, 4);
+                        memcpy(&binary_type, v + 4, 1);
+                        buf << "(size-4)" << l;
+                        buf << "(bin-type-1)" << binary_type_string(binary_type);
+                        buf << "(value-" << l << ")";
+                        if (Binary_type::k_bin_uuid == binary_type && l == 16)
+                        {
+                            buf << Uuid(v + 5).str();
+                        }
+                        else
+                        {
+                            buf << lj::base64_encode(v + 5, l);
+                        }
+                        return buf.str();
+                    case Type::k_int32:
+                        memcpy(&l, v, 4);
+                        buf << "(value-4)" << l;
+                        return buf.str();
+                    case Type::k_double:
+                        memcpy(&d, v, 8);
+                        buf << "(value-8)" << d;
+                        return buf.str();
+                    case Type::k_int64:
+                    case Type::k_timestamp:
+                        memcpy(&l, v, 8);
+                        buf << "(value-8)" << l;
+                        return buf.str();
+                    case Type::k_boolean:
+                        memcpy(&l, v, 1);
+                        buf << "(value-1)" << ((bool)l);
+                        return buf.str();
+                    case Type::k_null:
+                        buf << "(value-0)";
+                        return buf.str();
+                    case Type::k_binary_document:
+                        return as_debug_string(Node(Type::k_document, v));
+                    default:
+                        break;
+                }
+            }
+            return std::string();
+        }
+
+        std::string as_string(const Node& b)
+        {
+            Binary_type binary_type = Binary_type::k_bin_user_defined;
+            long long l = 0;
+            double d = 0.0;
+            std::ostringstream buf;
+
+            if (type_is_nested(b.type()))
+            {
+                // Caching node size because it can be complicated to compute.
+                size_t node_size = b.size();
+                
+                // Quickly abort for empty documents and arrays.
+                if (node_size == 5)
+                {
+                    return (Type::k_array == b.type() ? "[]" : "{}");
+                }
+                
+                buf << (Type::k_array == b.type() ? "[" : "{");
+                
+                // The output function is essentially the same for documents
+                // and arrays. We create a nested anonymous function for use
+                // in the loops below. Except for the capture of the
+                // buf object, this is identical to a function in an anonymous
+                // namespace.
+                auto output_function = [&buf](const std::string& key, const Node* n) {
+                    buf << "\"" << escape(key) << "\":";
+                    if (type_is_quotable(n->type()))
                     {
                         buf << "\"";
                     }
-                    buf << bson_as_pretty_string(*iter->second, lvl + 1);
-                    if (bson_type_is_quotable(iter->second->type()))
+                    buf << as_string(*n);
+                    if (type_is_quotable(n->type()))
+                    {
+                        buf << "\"";
+                    }
+                    buf << ", ";
+                };
+                
+                // Handle Documents and Arrays differently.
+                if (Type::k_document == b.type())
+                {
+                    for (auto iter = b.to_map().begin(); b.to_map().end() != iter; ++iter)
+                    {
+                        output_function(iter->first, iter->second);
+                    }
+                }
+                else
+                {
+                    int indx = 0;
+                    for (auto iter = b.to_vector().begin(); b.to_vector().end() != iter; ++iter)
+                    {
+                        std::ostringstream oss;
+                        oss << indx++;
+                        output_function(oss.str(), *iter);
+                    }
+                }
+                
+                //Close the document properly.
+                return buf.str().erase(buf.str().size() - 2).append((Type::k_array == b.type() ? "]" : "}"));
+            }
+            else
+            {
+                const uint8_t* v = b.to_value();
+                switch (b.type())
+                {
+                    case Type::k_null:
+                        return "null";
+                    case Type::k_string:
+                        memcpy(&l, v, 4);
+                        return std::string(reinterpret_cast<const char*>(v + 4));
+                    case Type::k_binary:
+                        memcpy(&l, v, 4);
+                        memcpy(&binary_type, v + 4, 1);
+                        if (Binary_type::k_bin_uuid == binary_type && l == 16)
+                        {
+                            return Uuid(v + 5).str();
+                        }
+                        else
+                        {
+                            return lj::base64_encode(v + 5, l);
+                        }
+                    case Type::k_int32:
+                        memcpy(&l, v, 4);
+                        buf << l;
+                        return buf.str();
+                    case Type::k_double:
+                        memcpy(&d, v, 8);
+                        buf << d;
+                        return buf.str();
+                    case Type::k_int64:
+                    case Type::k_timestamp:
+                        memcpy(&l, v, 8);
+                        buf << l;
+                        return buf.str();
+                    case Type::k_boolean:
+                        memcpy(&l, v, 1);
+                        buf << ((bool)l);
+                        return buf.str();
+                    case Type::k_binary_document:
+                        return as_string(Node(Type::k_document, v));
+                    default:
+                        break;
+                }
+            }
+            return std::string();
+        }
+
+        std::string as_pretty_json(const Node& b, int lvl)
+        {
+            std::ostringstream buf;
+            
+            if (type_is_nested(b.type()))
+            {
+                // This node can have children, indentation level matters.
+                std::string indent;
+                for (int h = 0; h < lvl; ++h)
+                {
+                    indent.append("  ");
+                }   
+
+                // Caching node size because it can be complicated to compute.
+                size_t node_size = b.size();
+                if (node_size == 5)
+                {
+                    return (Type::k_array == b.type() ? "[]" : "{}");;
+                }
+                
+                buf << (Type::k_array == b.type() ? "[" : "{") << "\n";
+                
+                // The output function is essentially the same for documents
+                // and arrays. We create a nested anonymous function for use
+                // in the loops below. Except for the capture of the
+                // buf object, this is identical to a function in an anonymous
+                // namespace.
+                auto output_function = [&b, &buf, &indent, &lvl](const std::string& key, const Node* n) {
+                    buf << indent;
+                    if (Type::k_document == b.type())
+                    {
+                        buf << "\"" << escape(key) << "\":";
+                    }
+                    if (!type_is_native(n->type()) && !type_is_nested(n->type()))
+                    {
+                        buf << "\"";
+                    }
+                    buf << as_pretty_json(*n, lvl + 1);
+                    if (!type_is_native(n->type()) && !type_is_nested(n->type()))
                     {
                         buf << "\"";
                     }
                     buf << ",\n";
+                };
+                
+                // Handle Documents and Arrays differently.
+                if (Type::k_document == b.type())
+                {
+                    for (auto iter = b.to_map().begin(); b.to_map().end() != iter; ++iter)
+                    {
+                        output_function(iter->first, iter->second);
+                    }
                 }
-                return buf.str().erase(buf.str().size() - 2).append("\n").append(indent).append("]");
-            case Bson::k_binary_document:
-                buf << bson_as_pretty_string(Bson(Bson::k_document, b.to_value()));
-                break;
-            default:
-                break;
-        }
-        return std::string();
-    }
-    
-    std::set<std::string> bson_as_key_set(const Bson& b)
-    {
-        std::set<std::string> key_set;
-        std::set<std::string>::iterator set_iter = key_set.begin();
-        if (Bson::k_document == b.type())
-        {
-            for (auto iter = b.to_map().begin(); b.to_map().end() != iter; ++iter)
-            {
-                set_iter = key_set.insert(set_iter, iter->first);
+                else
+                {
+                    int indx = 0;
+                    for (auto iter = b.to_vector().begin(); b.to_vector().end() != iter; ++iter)
+                    {
+                        std::ostringstream oss;
+                        oss << indx++;
+                        output_function(oss.str(), *iter);
+                    }
+                }
+                
+                //Close the document properly.
+                std::string ret_val = buf.str().erase(buf.str().size() - 2).append("\n");
+                if (indent.size() >= 2)
+                {
+                    ret_val.append(indent.erase(indent.size() - 2));
+                }
+                return ret_val.append("}");
             }
-        }
-        return key_set;
-    }
-    
-    std::set<std::string> bson_as_value_string_set(const Bson& b)
-    {
-        std::set<std::string> value_set;
-        if (bson_type_is_nested(b.type()))
-        {
-            for (auto iter = b.to_map().begin(); b.to_map().end() != iter; ++iter)
+            else
             {
-                value_set.insert(bson_as_string(*iter->second));
+                const uint8_t* v = b.to_value();
+                switch (b.type())
+                {
+                    case Type::k_binary_document:
+                        return as_pretty_json(Node(Type::k_document, v), lvl);
+                    default:
+                        return as_string(b);
+                }
             }
+            return std::string();
         }
-        else
-        {
-            value_set.insert(bson_as_string(b));
-        }
-        return value_set;
-    }
-    
-    int32_t bson_as_int32(const Bson& b)
-    {
-        long l = 0;
-        double d = 0.0;
-        const char* v = b.to_value();
-        switch (b.type())
-        {
-            case Bson::k_string:
-                return atoi(v + 4);
-            case Bson::k_int32:
-                memcpy(&l, v, 4);
-                return (int)l;
-            case Bson::k_double:
-                memcpy(&d, v, 8);
-                return (int)d;
-            case Bson::k_int64:
-            case Bson::k_timestamp:
-                memcpy(&l, v, 8);
-                return (int)l;
-            case Bson::k_boolean:
-                memcpy(&l, v, 1);
-                return (int)l;
-            default:
-                break;
-        }
-        return 0;
-    }
-    
-    int64_t bson_as_int64(const Bson& b)
-    {
-        int64_t l = 0;
-        double d = 0.0;
-        const char* v = b.to_value();
-        switch (b.type())
-        {
-            case Bson::k_string:
-                return atol(v + 4);
-            case Bson::k_int32:
-                memcpy(&l, v, 4);
-                return l;
-            case Bson::k_double:
-                memcpy(&d, v, 8);
-                return (long long)d;
-            case Bson::k_int64:
-            case Bson::k_timestamp:
-                memcpy(&l, v, 8);
-                return l;
-            case Bson::k_boolean:
-                memcpy(&l, v, 1);
-                return l;
-            default:
-                break;
-        }
-        return 0;
-    }
-    
-    uint64_t bson_as_uint64(const Bson& b)
-    {
-        uint64_t l = 0;
-        double d = 0.0;
-        const char* v = b.to_value();
-        switch (b.type())
-        {
-            case Bson::k_string:
-                return static_cast<uint64_t>(atol(v + 4));
-            case Bson::k_int32:
-                memcpy(&l, v, 4);
-                return l;
-            case Bson::k_double:
-                memcpy(&d, v, 8);
-                return (long long)d;
-            case Bson::k_int64:
-            case Bson::k_timestamp:
-                memcpy(&l, v, 8);
-                return l;
-            case Bson::k_boolean:
-                memcpy(&l, v, 1);
-                return l;
-            default:
-                break;
-        }
-        return 0;
-    }
-    
-    bool bson_as_boolean(const Bson& b)
-    {
-        long l = 0;
-        double d = 0.0;
-        const char* v = b.to_value();
-        const char* s = v + 4;
-        switch (b.type())
-        {
-            case Bson::k_string:
-                if (!v)
-                {
-                    return false;
-                }
-                if (!s[0])
-                {
-                    return false;
-                }
-                if (s[0] == '0' && !s[1])
-                {
-                    return false;
-                }
-                if (s[0] == '1' && !s[1])
-                {
-                    return true;
-                }
-                if (strlen(s) == 4 &&
-                    toupper(s[0]) == 'T' &&
-                    toupper(s[1]) == 'R' &&
-                    toupper(s[2]) == 'U' &&
-                    toupper(s[3]) == 'E')
-                {
-                    return true;
-                }
-            case Bson::k_int32:
-                memcpy(&l, v, 4);
-                return l;
-            case Bson::k_double:
-                memcpy(&d, v, 8);
-                return (long)d;
-            case Bson::k_int64:
-            case Bson::k_timestamp:
-                memcpy(&l, v, 8);
-                return l;
-            case Bson::k_boolean:
-                memcpy(&l, v, 1);
-                return l;
-            default:
-                break;
-        }
-        return false;
-    }
-    
-    double bson_as_double(const Bson& b)
-    {
-        long l = 0;
-        double d = 0.0;
-        const char* v = b.to_value();
-        switch (b.type())
-        {
-            case Bson::k_string:
-                return atof(v + 4);
-            case Bson::k_int32:
-                memcpy(&l, v, 4);
-                return (double)l;
-            case Bson::k_double:
-                memcpy(&d, v, 8);
-                return d;
-            case Bson::k_int64:
-            case Bson::k_timestamp:
-                memcpy(&l, v, 8);
-                return (double)l;
-            case Bson::k_boolean:
-                memcpy(&l, v, 1);
-                return (double)l;
-            default:
-                break;
-        }
-        return 0.0;
-    }
-    
-    const char* bson_as_binary(const Bson& b, Bson::Binary_type* t, uint32_t* sz)
-    {
-        if (Bson::k_binary != b.type())
-        {
-            return NULL;
-        }
-        const char* v = b.to_value();
-        memcpy(sz, v, 4);
-        memcpy(t, v + 4, 1);
-        return v + 5;
-    }
 
-    Uuid bson_as_uuid(const Bson& b)
-    {
-        Bson::Binary_type t = Bson::k_bin_user_defined;
-        uint32_t sz;
-        const uint8_t* ptr = reinterpret_cast<const uint8_t*>(bson_as_binary(b, &t, &sz));
-        if (Bson::k_bin_uuid == t && 16 == sz)
+        int32_t as_int32(const Node& b)
         {
-            return ptr;
+            long l = 0;
+            double d = 0.0;
+            if (type_is_value(b.type()))
+            {
+                const uint8_t* v = b.to_value();
+                switch (b.type())
+                {
+                    case Type::k_string:
+                        return atoi(reinterpret_cast<const char*>(v + 4));
+                    case Type::k_int32:
+                        memcpy(&l, v, 4);
+                        return (int)l;
+                    case Type::k_double:
+                        memcpy(&d, v, 8);
+                        return (int)d;
+                    case Type::k_int64:
+                    case Type::k_timestamp:
+                        memcpy(&l, v, 8);
+                        return (int)l;
+                    case Type::k_boolean:
+                        memcpy(&l, v, 1);
+                        return (int)l;
+                    default:
+                        break;
+                }
+            }
+            return 0;
         }
-        return Uuid::k_nil;
-    }
-    
-    void bson_increment(lj::Bson& b, int amount)
-    {
-        int64_t v = lj::bson_as_int64(b) + amount;
-        b.set_value(lj::Bson::k_int64,
-                    reinterpret_cast<const char*> (&v));
-    }
-    
-    void bson_save(const Bson& b, const std::string& path)
-    {
-        std::ofstream f(path.c_str());
-        char *ptr = b.to_binary();
-        f.write(ptr, b.size());
-        f.close();
-        delete[] ptr;
-    }
-    
-    Bson* bson_load(const std::string& path)
-    {
-        std::ifstream f(path.c_str());
-        size_t sz = 0;
-        f.read((char *)&sz, 4);
-        char *ptr = new char[sz];
-        memcpy(ptr, &sz, 4);
-        f.read(ptr + 4, sz - 4);
-        Bson* doc = new Bson(Bson::k_document, ptr);
-        f.close();
-        delete[] ptr;
-        return doc;
-    }
+
+        int64_t as_int64(const Node& b)
+        {
+            int64_t l = 0;
+            double d = 0.0;
+            if (type_is_value(b.type()))
+            {
+                const uint8_t* v = b.to_value();
+                switch (b.type())
+                {
+                    case Type::k_string:
+                        return atol(reinterpret_cast<const char*>(v + 4));
+                    case Type::k_int32:
+                        memcpy(&l, v, 4);
+                        return l;
+                    case Type::k_double:
+                        memcpy(&d, v, 8);
+                        return (long long)d;
+                    case Type::k_int64:
+                    case Type::k_timestamp:
+                        memcpy(&l, v, 8);
+                        return l;
+                    case Type::k_boolean:
+                        memcpy(&l, v, 1);
+                        return l;
+                    default:
+                        break;
+                }
+            }
+            return 0;
+        }
+
+        uint64_t as_uint64(const Node& b)
+        {
+            uint64_t l = 0;
+            double d = 0.0;
+            if (type_is_value(b.type()))
+            {
+                const uint8_t* v = b.to_value();
+                switch (b.type())
+                {
+                    case Type::k_string:
+                        return static_cast<uint64_t>(atol(reinterpret_cast<const char*>(v + 4)));
+                    case Type::k_int32:
+                        memcpy(&l, v, 4);
+                        return l;
+                    case Type::k_double:
+                        memcpy(&d, v, 8);
+                        return (long long)d;
+                    case Type::k_int64:
+                    case Type::k_timestamp:
+                        memcpy(&l, v, 8);
+                        return l;
+                    case Type::k_boolean:
+                        memcpy(&l, v, 1);
+                        return l;
+                    default:
+                        break;
+                }
+            }
+            return 0;
+        }
+
+        bool as_boolean(const Node& b)
+        {
+            long l = 0;
+            double d = 0.0;
+            if (type_is_value(b.type()))
+            {
+                const uint8_t* v = b.to_value();
+                const char* s;
+                switch (b.type())
+                {
+                    case Type::k_string:
+                        s = reinterpret_cast<const char*>(v + 4);
+                        if (!v)
+                        {
+                            return false;
+                        }
+                        if (!s[0])
+                        {
+                            return false;
+                        }
+                        if (s[0] == '0' && !s[1])
+                        {
+                            return false;
+                        }
+                        if (s[0] == '1' && !s[1])
+                        {
+                            return true;
+                        }
+                        if (strlen(s) == 4 &&
+                            toupper(s[0]) == 'T' &&
+                            toupper(s[1]) == 'R' &&
+                            toupper(s[2]) == 'U' &&
+                            toupper(s[3]) == 'E')
+                        {
+                            return true;
+                        }
+                        break;
+                    case Type::k_int32:
+                        memcpy(&l, v, 4);
+                        return l;
+                    case Type::k_double:
+                        memcpy(&d, v, 8);
+                        return (long)d;
+                    case Type::k_int64:
+                    case Type::k_timestamp:
+                        memcpy(&l, v, 8);
+                        return l;
+                    case Type::k_boolean:
+                        memcpy(&l, v, 1);
+                        return l;
+                    default:
+                        break;
+                }
+            }
+            return false;
+        }
+
+        double as_double(const Node& b)
+        {
+            long l = 0;
+            double d = 0.0;
+            if (type_is_value(b.type()))
+            {
+                const uint8_t* v = b.to_value();
+                switch (b.type())
+                {
+                    case Type::k_string:
+                        return atof(reinterpret_cast<const char*>(v + 4));
+                    case Type::k_int32:
+                        memcpy(&l, v, 4);
+                        return (double)l;
+                    case Type::k_double:
+                        memcpy(&d, v, 8);
+                        return d;
+                    case Type::k_int64:
+                    case Type::k_timestamp:
+                        memcpy(&l, v, 8);
+                        return (double)l;
+                    case Type::k_boolean:
+                        memcpy(&l, v, 1);
+                        return (double)l;
+                    default:
+                        break;
+                }
+            }
+            return 0.0;
+        }
+
+        const uint8_t* as_binary(const Node& b, Binary_type* t, uint32_t* sz)
+        {
+            if (Type::k_binary != b.type())
+            {
+                throw Bson_type_exception("Attempt to get non-binary node as binary.", b.type());
+            }
+            const uint8_t* v = b.to_value();
+            memcpy(sz, v, 4);
+            memcpy(t, v + 4, 1);
+            return v + 5;
+        }
+
+        Uuid as_uuid(const Node& b)
+        {
+            Binary_type t = Binary_type::k_bin_user_defined;
+            uint32_t sz;
+            if (Type::k_null != b.type())
+            {
+                const uint8_t* ptr = reinterpret_cast<const uint8_t*>(as_binary(b, &t, &sz));
+                if (Binary_type::k_bin_uuid == t && 16 == sz)
+                {
+                    return ptr;
+                }
+            }
+            return Uuid::k_nil;
+        }
+
+        void increment(Node& b, int amount)
+        {
+            const int64_t v = as_int64(b) + amount;
+            b.set_value(Type::k_int64,
+                        reinterpret_cast<const uint8_t*> (&v));
+        }
+    }; // namespace lj::bson
 }; // namespace lj

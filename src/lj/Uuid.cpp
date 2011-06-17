@@ -1,5 +1,5 @@
 /*!
- \file Uuid.cpp
+ \file lj/Uuid.cpp
  \brief LJ Uuid implementation.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
@@ -35,15 +35,21 @@
 #include "Uuid.h"
 
 #include <cstdlib>
-#include <list>
-#include <fstream>
-#include <sstream>
 #include <ios>
 #include <iostream>
+#include <list>
+#include <openssl/ssl.h>
+#include <fstream>
+#include <sstream>
 
 namespace lj
 {
     const Uuid Uuid::k_nil{0,0,0,0 ,0,0,0,0 ,0,0,0,0 ,0,0,0,0};
+    const Uuid Uuid::k_ns_dns{0x6B,0xA7,0xB8,0x10, 0x9D,0xAD,0x11,0xD1, 0x80,0xB4,0x00,0xC0, 0x4F,0xD4,0x30,0xC8};
+    const Uuid Uuid::k_ns_url{0x6B,0xA7,0xB8,0x11, 0x9D,0xAD,0x11,0xD1, 0x80,0xB4,0x00,0xC0, 0x4F,0xD4,0x30,0xC8};
+    const Uuid Uuid::k_ns_oid{0x6B,0xA7,0xB8,0x12, 0x9D,0xAD,0x11,0xD1, 0x80,0xB4,0x00,0xC0, 0x4F,0xD4,0x30,0xC8};
+    const Uuid Uuid::k_ns_x500{0x6B,0xA7,0xB8,0x14, 0x9D,0xAD,0x11,0xD1, 0x80,0xB4,0x00,0xC0, 0x4F,0xD4,0x30,0xC8};
+    
     Uuid::Uuid()
     {
         std::ifstream rand("/dev/urandom");
@@ -53,7 +59,7 @@ namespace lj
         }
 
         // setting the version.
-        data_[6] &= 0x4f;
+        data_[6] &= 0x0f;
         data_[6] |= 0x40;
 
         // setting the y value.
@@ -65,8 +71,8 @@ namespace lj
     {
         int i = 0;
         for (auto iter = d.begin();
-             d.end() != iter && i < 16;
-             ++iter, ++i)
+                d.end() != iter && i < 16;
+                ++iter, ++i)
         {
             data_[i] = *iter;
         }
@@ -114,7 +120,6 @@ namespace lj
                 std::string& byte = byte_pairs.back();
                 byte.push_back(*iter);
                 is_first = true;
-                std::cerr << byte << std::endl;
             }
             else
             {
@@ -139,8 +144,28 @@ namespace lj
             data_[i] = 0;
         }
     }
+    
+    Uuid::Uuid(const Uuid& ns, const void* name, const size_t name_sz)
+    {
+        size_t ns_sz;
+        const uint8_t* ns_ptr = ns.data(&ns_sz);
+        
+        SHA_CTX ctx;
+        SHA1_Init(&ctx);
+        SHA1_Update(&ctx, ns_ptr, ns_sz);
+        SHA1_Update(&ctx, name, name_sz);
+        
+        uint8_t tmp[20];
+        SHA1_Final(tmp, &ctx);
+        memcpy(data_, tmp, 16);
+        
+        data_[6] &= 0x0f; // time high/ver.
+        data_[6] |= 0x50;
+        data_[8] &= 0x3f; //clock seq high/reserved
+        data_[8] |= 0x80;
+    }
 
-    Uuid::Uuid(const unsigned long long o)
+    Uuid::Uuid(const uint64_t o)
     {
         // Load the provided key into the data array, avoiding
         // the "reserved" bits in the UUID format.
@@ -164,7 +189,7 @@ namespace lj
         }
 
         // setting the version.
-        data_[6] &= 0x4f;
+        data_[6] &= 0x0f;
         data_[6] |= 0x40;
 
         // setting the y value.
@@ -178,10 +203,7 @@ namespace lj
 
     Uuid& Uuid::operator=(const Uuid& o)
     {
-        for (uint8_t i = 0; i < 16; ++i)
-        {
-            data_[i] = o.data_[i];
-        }
+        memcpy(data_, o.data_, 16);
         return *this;
     }
 
@@ -212,11 +234,11 @@ namespace lj
     Uuid::operator std::string() const
     {
         char buf[40];
-        snprintf(buf, 40, "{%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x}",
-                 data_[0], data_[1], data_[2], data_[3],
-                 data_[4], data_[5], data_[6], data_[7],
-                 data_[8], data_[9], data_[10],data_[11],
-                 data_[12], data_[13], data_[14], data_[15]);
+        sprintf(buf, "{%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x}",
+                data_[0], data_[1], data_[2], data_[3],
+                data_[4], data_[5], data_[6], data_[7],
+                data_[8], data_[9], data_[10],data_[11],
+                data_[12], data_[13], data_[14], data_[15]);
         return std::string(buf);
     }
 

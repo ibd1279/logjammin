@@ -1,6 +1,7 @@
+#pragma once
 /*!
- \file lj/Time_tracker.cpp
- \brief LJ Time tracking implementation.
+ \file lj/Stopclock.h
+ \brief LJ time tracking definition.
  \author Jason Watson
  
  Copyright (c) 2010, Jason Watson
@@ -33,46 +34,42 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "lj/Time_tracker.h"
-
-#include <sys/time.h>
+#include <utility>
+#include <cstdint>
 
 namespace lj
 {
-    Time_tracker::Time_tracker() : start_(0, 0), elapsed_(0)
+    //! Utility class to track elapsed time.
+    class Stopclock
     {
-        start();
-    }
-    
-    void Time_tracker::start()
-    {
-        struct timeval now;
-        gettimeofday(&now, NULL);
-        start_.seconds = now.tv_sec;
-        start_.useconds = now.tv_usec;
-    }
-    
-    unsigned long long Time_tracker::stop()
-    {
-        elapsed_ = elapsed();
-        start_.seconds = 0;
-        start_.useconds = 0;
-        return elapsed_;
-    }
-    
-    unsigned long long Time_tracker::elapsed() const
-    {
-        if (start_.seconds)
-        {
-            struct timeval now;
-            gettimeofday(&now, NULL);
-            return (((now.tv_sec - start_.seconds) * 1000000UL) +
-                    (now.tv_usec - start_.useconds));
-        }
-        else
-        {
-            return elapsed_;
-        }
-    }
+    public:
+        //! Constructor.
+        Stopclock();
         
+        //! Start tracking time.
+        void start();
+        
+        //! Stop tracking time.
+        /*!
+         \return The amount of time elapsed.
+         */
+        uint64_t stop();
+        
+        //! Get the elapsed time.
+        /*!
+         \return The amount of time elapsed.
+         */
+        uint64_t elapsed() const;
+        
+        //! Alias for elapsed.
+        /*!
+         \return The elapsed time.
+         \sa elapsed()
+         */
+        operator uint64_t() const;
+    private:
+        uint64_t start_usec;
+        uint64_t start_sec;
+        uint64_t elapsed_;
+    }; // class Stopclock
 }; // namespace lj

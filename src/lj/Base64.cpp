@@ -1,5 +1,5 @@
 /*!
- \file Base64.cpp
+ \file lj/Base64.cpp
  \brief LJ base 64 implementation.
  \author Jason Watson
  
@@ -52,14 +52,14 @@ namespace lj
     }; // namespace
     
     // Simple uninteligent implementation.
-    unsigned char *base64_decode(const std::string &input, unsigned int *size)
+    uint8_t *base64_decode(const std::string &input, size_t *size)
     {
-        unsigned int i = 0;
-        std::list<unsigned char> buffer;
+        size_t i = 0;
+        std::list<uint8_t> buffer;
         std::string::const_iterator iter = input.begin();
         while (input.end() != iter && '=' != *iter)
         {
-            char tmp[4];
+            int8_t tmp[4];
             i = 0;
             for (;
                  input.end() != iter && '=' != *iter && 4 > i;
@@ -67,11 +67,11 @@ namespace lj
             {
                 if ('+' > *iter)
                 {
-                    throw new lj::Exception("base64", "invalid character");
+                    throw new lj::Exception("base64", "invalid character in input stream.");
                 }
                 else if (base64_dictionary[*iter - '+'] == -1)
                 {
-                    throw new lj::Exception("base64", "invalid character");
+                    throw new lj::Exception("base64", "invalid character in input stream.");
                 }
                 tmp[i] = base64_dictionary[*iter - '+'];
             }
@@ -79,28 +79,28 @@ namespace lj
             switch (i)
             {
                 case 4:
-                    buffer.push_back((unsigned char)((tmp[0] << 2) | (tmp[1] >> 4)));
-                    buffer.push_back((unsigned char)((tmp[1] << 4) | (tmp[2] >> 2)));
-                    buffer.push_back((unsigned char)((tmp[2] << 6) | tmp[3]));
+                    buffer.push_back((uint8_t)((tmp[0] << 2) | (tmp[1] >> 4)));
+                    buffer.push_back((uint8_t)((tmp[1] << 4) | (tmp[2] >> 2)));
+                    buffer.push_back((uint8_t)((tmp[2] << 6) | tmp[3]));
                     break;
                 case 3:
-                    buffer.push_back((unsigned char)((tmp[0] << 2) | (tmp[1] >> 4)));
-                    buffer.push_back((unsigned char)((tmp[1] << 4) | (tmp[2] >> 2)));
+                    buffer.push_back((uint8_t)((tmp[0] << 2) | (tmp[1] >> 4)));
+                    buffer.push_back((uint8_t)((tmp[1] << 4) | (tmp[2] >> 2)));
                     break;
                 case 2:
-                    buffer.push_back((unsigned char)((tmp[0] << 2) | (tmp[1] >> 4)));
+                    buffer.push_back((uint8_t)((tmp[0] << 2) | (tmp[1] >> 4)));
                     break;
                 case 1:
-                    throw new lj::Exception("base64", "invalid end character");
+                    throw new lj::Exception("base64", "invalid end character in input stream.");
             }
         }
         
         *size = buffer.size();
-        unsigned char* result = new unsigned char[*size + 1];
+        uint8_t* result = new uint8_t[*size + 1];
         result[*size] = 0;
         
         i = 0;
-        for (std::list<unsigned char>::const_iterator iter = buffer.begin();
+        for (std::list<uint8_t>::const_iterator iter = buffer.begin();
              iter != buffer.end();
              ++iter, ++i)
         {
@@ -110,10 +110,10 @@ namespace lj
         return result;
     }
 
-    std::string base64_encode(const unsigned char *input, unsigned int size)
+    std::string base64_encode(const uint8_t *input, size_t size)
     {        
         std::ostringstream data;
-        unsigned int h = 0;
+        size_t h = 0;
         if (2 < size)
         {
             while (h < size - 2)

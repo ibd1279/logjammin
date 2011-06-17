@@ -1,9 +1,9 @@
 #pragma once
 /*!
- \file Uuid.h
+ \file lj/Uuid.h
  \brief LJ Uuid header.
  \author Jason Watson
- Copyright (c) 2010, Jason Watson
+ Copyright (c) 2010, Jason Watson       
  All rights reserved.
  
  Redistribution and use in source and binary forms, with or without
@@ -51,6 +51,10 @@ namespace lj
     {
     public:
         static const Uuid k_nil; //!< constant nil value.
+        static const Uuid k_ns_dns; //!< constant for DNS namespace.
+        static const Uuid k_ns_url; //!< constant for URL namespace.
+        static const Uuid k_ns_oid; //!< constant for ISO OID namespace.
+        static const Uuid k_ns_x500; //!< constant for the X.500 DN namespace.
 
         //! Default constructor.
         /*!
@@ -89,6 +93,16 @@ namespace lj
          \param o The string.
          */
         Uuid(const std::string& o);
+        
+        //! Version 5 constructor.
+        /*!
+         \par
+         The namespace and identifier are hased to create a version 5 UUID.
+         \param ns The namespace uuid
+         \param name The name.
+         \param name_sz The length of the id byte array.
+         */
+        Uuid(const Uuid& ns, const void* name, const size_t name_sz);
 
         //! Id constructor.
         /*!
@@ -186,8 +200,8 @@ namespace lj
          \param sz Pointer to a location to store the data size.
          \return Pointer to the data.
          */
-        inline const uint8_t* const data(size_t* sz) const { *sz = 16; return data_; }
+        inline const uint8_t* const data(size_t* sz) const { *sz = 16; return data_; };
     private:
         uint8_t data_[16];
-    };
-};
+    }; // clase Uuid
+}; // namespace lj

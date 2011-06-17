@@ -1,6 +1,6 @@
 #pragma once
 /*!
- \file Bson.h
+ \file lj/Bson.h
  \brief LJ Bson header.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
@@ -34,49 +34,20 @@
  */
 
 #include "lj/Exception.h"
-#include "lj/Linked_map.h"
 #include "lj/Uuid.h"
-#include <set>
+
+#include <cstdint>
+#include <list>
+#include <map>
 #include <string>
-#include <stdint.h>
+#include <vector>
 
 namespace lj
 {
-    //! Bson value.
-    /*!
-     \par
-     Represets a Bson value, including documents and arrays. The following
-     examples show different ways to set a value at some path.
-     \code
-     Bson *string_node = bson_new_string("test"); // using helper methods.
-     Bson *int_node = new bson_new_int(Bson::k_int32, 123) // using constructor.
-     Bson root_node; // default constructor.
-     Bson some_node;
-     
-     // Copy the value from another node.
-     some_node.copy_from(*string_node); // copy_from method
-     some_node = *int_node; // assignment operator.
-     
-     // Access a specific path.
-     other_node = root_node.nav("some/path"); // nav method (reference)
-     other_node = *root_node.path("some/path"); // path method (pointer)
-     other_node = root_node["some/path"]; // array index operator (reference)
-     
-     // Set a child node at a path.
-     root_node["some/path/int"] = *int_node; // index operator (reference)
-     root_node.set_child("some/path/int", int_node); // set_child method (pointer).
-     root_node["some/path/string"] << *string_node; // shift left operator (reference).
-     root_node.push_child("some/path/string", string_node); // push_child method (pointer).
-     \endcode
-     \author Jason Watson
-     \version 1.0
-     \date April 19, 2010
-     */
-    class Bson
+    namespace bson
     {
-    public:
         //! Enumeration of Bson Types.
-        enum Type
+        enum class Type
         {
             k_double = 0x01,    //!< Node contains a double value.
             k_string = 0x02,    //!< Node contains a string value.
@@ -94,9 +65,9 @@ namespace lj
             k_minkey = 0xFF,    //!< Node contains a reserved BSON spec value.
             k_maxkey = 0x7F     //!< Node contains a reserved BSON spec value.
         };
-        
+
         //! Enumeration of Bson binary subtypes.
-        enum Binary_type
+        enum class Binary_type
         {
             k_bin_function = 0x01,     //!< Function.
             k_bin_binary = 0x02,       //!< Binary String.
@@ -104,590 +75,722 @@ namespace lj
             k_bin_md5 = 0x05,          //!< MD5.
             k_bin_user_defined = 0x80  //!< User defined binary string.
         };
-        
-        //! Create a new document Node.
+    
+        //! Get a string version of the type.
         /*!
-         \par
-         Creates a blank, empty document that considers itself non-existant.
-         Used to create document/array nodes.
+         \param t The type to convert into a string.
+         \return String name for the type.
          */
-        Bson();
-        
-        //! Create a new document node based on some data.
-        /*!
-         \par
-         Create a new bson value based on the provided values. Used to create
-         value nodes.
-         \par
-         Data from \c v is copied to internal objects.
-         \param t The type of node being created.
-         \param v The value to associate with this node.
-         \sa Bson::set_value()
-         */
-        Bson(const Bson::Type t, const char* v);
-        
-        //! Create a new document node as a copy of an existing Bson.
-        /*!
-         \par
-         \c Bson \c a(b) is identical to calling \c Bson \c a(); \c a.copy_from(b).
-         \param o The original Bson object.
-         \sa Bson::copy_from()
-         */
-        Bson(const Bson &o);
-        
-        //! Destructor.
-        ~Bson();
-                
-        //! Set the value of the document node based on a bson string.
-        /*!
-         \par
-         The value of v is copied out of the pointer \c v , and must be freed
-         by the calling application.
-         \param t The new type of the document.
-         \param v Array of data to read the new value from.
-         \return Reference to \c this .
-         */
-        void set_value(const Bson::Type t, const char* v);
-        
-        //! Set the value of the document node to null.
-        /*!
-         \par
-         Nullified nodes exist, but do not contain a value.
-         \return Reference to \c this .
-         */
-        void nullify();
-        
-        //! Set the value of the document node to not exist.
-        /*!
-         \par
-         Destroyed values no longer exist, and have no value.
-         \return Reference to \c this .
-         */
-        void destroy();
-        
-        //! Destroy the current value and copy values from another Bson.
-        /*!
-         \param o The original Bson object.
-         */
-        Bson& copy_from(const Bson& o);
+        const std::string& type_string(const Type t);
 
-        //! Destroy the current value and copy values from another Bson.
+        //! Get a string version of the binary type.
         /*!
-         \par
-         \c a \c = \c b is identical to calling \c a.copy_from(b).
-         \param o The original Bson object.
-         \sa Bson::copy_from()
+         \param subtype The type to convert into a string.
+         \return String name for the type.
          */
-        inline void operator=(const Bson& o)
+        const std::string& binary_type_string(const Binary_type subtype);
+
+        //! Get the minimum number of bytes required for a type.
+        /*!
+         \param t The type to get the required bytes for.
+         \return The minimum size of the type.
+         */
+        inline size_t type_min_size(const Type t)
         {
-            copy_from(o);
-        }
-        
-        //! Get a pointer to a specific Bson object in the document.
-        /*!
-         \par
-         The intermediate objects in the path are created if they do not exist.
-         \param p The path to follow.
-         \return Pointer to that object.
-         */
-        Bson* path(const std::string& p);
-        
-        //! Get a pointer to a specific Bson object in the document.
-        /*!
-         \par
-         Null is returned if the intermediate objects in the path do not exist.
-         \param p The path to follow.
-         \return Pointer to that object, null if it cannot be navigated to.
-         */
-        const Bson* path(const std::string& p) const;
-        
-        //! Get a specific Bson object at a path.
-        /*!
-         \par 
-         Reference version of \c path(p).
-         \sa path(const std::string)
-         \param p The path to follow.
-         \return Reference to the object at that node.
-         */
-        inline Bson& nav(const std::string& p)
-        {
-            return *path(p);
-        }
-        
-        //! Get a specific Bson object at a path.
-        /*!
-         \par 
-         Reference version of \c path(p).
-         \sa path(const std::string)const
-         \param p The path to follow.
-         \return Reference to the object at that node.
-         \throw Exception if the node cannot be navigated to.
-         */
-        inline const Bson& nav(const std::string& p) const
-        {
-            const Bson* ptr = path(p);
-            if (!ptr)
+            switch (t)
             {
-                std::string msg("Unable to navigate to path [");
-                msg.append(p);
-                msg.append("].");
-                throw new Exception("Bson", msg);
+                case Type::k_null:
+                    return 0;
+                case Type::k_boolean:
+                    return 1;
+                case Type::k_int32:
+                    return 4;
+                case Type::k_string:
+                case Type::k_binary:
+                case Type::k_binary_document:
+                case Type::k_document:
+                case Type::k_array:
+                    return 5;
+                case Type::k_timestamp:
+                case Type::k_int64:
+                case Type::k_double:
+                    return 8;
+                default:
+                    break;
             }
-            return *ptr;
+            return 5;
         }
         
-        //! Get a specific Bson object at a path.
+        //! Test if a type is a nested type (Array, or document).
         /*!
-         \par 
-         Syntatical sugar for \c nav(p).
-         \sa nav(const std::string)
-         \param p The path to follow.
-         \return Reference to the object at that node.
+         \param t The type to test.
+         \return True if the type is a nested object, false otherwise.
          */
-        inline Bson& operator[](const std::string& p)
+        inline bool type_is_nested(const Type t)
         {
-            return nav(p);
+            return (t == Type::k_document ||
+                    t == Type::k_array);
         }
         
-        //! Get a specific Bson object at a path.
+        //! Test if a type is a value type (to_value() will succeed).
         /*!
-         \par 
-         Syntatical sugar for \c nav(p).
-         \sa nav(const std::string)const
-         \param p The path to follow.
-         \return Reference to the object at that node.
-         \throw Exception if the node cannot be navigated to.
+         \param t the type to test.
+         \return True if the type supports to_valeu(), false otherwise.
          */
-        inline const Bson& operator[](const std::string& p) const
+        inline bool type_is_value(const Type t)
         {
-            return nav(p);
+            return !type_is_nested(t);
         }
-        
-        //! Set a child at a specific path.
-        /*!
-         \par
-         The parent Bson becomes responsibile for the destruction of the pointer \c child.
-         \par
-         If \c path is an empty string, \c set_child becomes a no-op.
-         \par
-         If \c child is null, the child specified by \c path is removed.
-         \param path The path to set the child for.
-         \param child The child to set.
-         */
-        void set_child(const std::string& path, Bson* child);
-        
-        //! Push a child at a specific path.
-        /*!
-         \par 
-         The parent Bson becomes responsible for the destruction of the pointer \c child.
-         \par
-         If \c path is an empty string, the child is pushed onto the
-         current Bson object.
-         \par
-         If \c child is null, \c push_child becomes a no-op.
-         \param path The path where the child should be pushed.
-         \param child The child to push.
-         */
-        void push_child(const std::string& path, Bson* child);
 
-        //! Push a child onto this Bson object.
+        //! Test if a type is quotablable (string types).
         /*!
-         \param o other object to copy from.
-         \return reference to this.
+         \param t The type to test.
+         \return True if the type is a quotable object, false otherwise.
          */
-        Bson& operator<<(const Bson& o);
-
-        //! Push a child onto this bson object.
-        /*!
-         \note Memory
-         This object becomes responsible for the memory.
-         \param o other object pointer to attach
-         \return reference to this.
-         */
-        inline Bson& operator<<(Bson* o)
+        inline bool type_is_quotable(const Type t)
         {
-            push_child("", o);
-            return *this;
+            return (t == Type::k_string);
+        }
+
+        //! Test if a type is a numerical type (integers and floats).
+        /*!
+         \param t The type to test.
+         \return True if the type is a number type, false otherwise.
+         */
+        inline bool type_is_number(const Type t)
+        {
+            return (t == Type::k_int32 ||
+                    t == Type::k_int64 ||
+                    t == Type::k_timestamp ||
+                    t == Type::k_double);
+        }
+
+        //! Test if a type is a native c++ type (integers, floats, booleans, null).
+        /*!
+         \param t The type to test.
+         \return True if the type is a native type, false otherwise.
+         */
+        inline bool type_is_native(const Type t)
+        {
+            return (t == Type::k_int32 ||
+                    t == Type::k_int64 ||
+                    t == Type::k_timestamp ||
+                    t == Type::k_double ||
+                    t == Type::k_boolean ||
+                    t == Type::k_null);
         }
         
-        //! Get the map backing document type.
-        /*!
-         \return A map of children. An empty map for non-document types.
-         */
-        inline const Linked_map<std::string, Bson*>& to_map() const
-        {
-            return child_map_;
-        }
-                
-        //! Get the value of this object.
-        /*!
-         \return The value of this node. NULL for document and array types.
-         */
-        inline const char* to_value() const
-        {
-            return value_;
-        }
-        
-        //! get the value of the document node as a bson string.
+        //! Bson path exception
         /*!
          \par
-         Pointer is allocated with "new[]" and must be released with "delete[]".
-         \par
-         The array length can be obtained by calling \c size() .
-         \par
-         The bson bytes include "empty" documents that may not appear in
-         \c to_s(), but will appear in \c to_dbg_s() .
-         \return A byte array contain the bson document.
+         Represents an invalid path in a bson document.
+         \author Jason Watson
+         \version 1.0
+         \date May 22, 2011
          */
-        inline char* to_binary() const
+        class Bson_path_exception : public lj::Exception
         {
-            char *ptr = new char[size()];
-            copy_to_bson(ptr);
-            return ptr;
-        }
+        public:
+            //! Constructor.
+            /*!
+             \param msg The exception message.
+             \param path The path that caused the exception.
+             */
+            Bson_path_exception(const std::string& msg, const std::string path) : lj::Exception("Bson", msg), path_(path)
+            {
+            }
 
-        //! Get the type of the document node.
-        inline Bson::Type type() const
+            //! Copy constructor.
+            /*!
+             \param o The other object.
+             */
+            Bson_path_exception(const Bson_path_exception& o) : lj::Exception(o.label_, o.msg_)
+            {
+            }
+            
+            //! Destructor.
+            virtual ~Bson_path_exception() throw()
+            {
+            }
+
+            //! Get the path that caused this exception.
+            /*!
+             \return The path.
+             */
+            virtual std::string path() const
+            {
+                return path_;
+            }
+            
+            virtual std::string str() const;
+        private:
+            std::string path_;
+        };
+        
+        //! Bson type exception.
+        /*!
+         \par
+         Represents an invalid type operation in a bson document.
+         \author Jason Watson
+         \version 1.0
+         \date May 22, 2011
+         */
+        class Bson_type_exception : public lj::Exception
         {
-            return type_;
-        }
+        public:
+            //! Constructor.
+            /*!
+             \param msg The exception msg.
+             \param type The bson type of the object.
+             \param binary_type The binary sub-type for binary objects.
+             */
+            Bson_type_exception(const std::string& msg, Type type, Binary_type binary_type = Binary_type::k_bin_user_defined) : lj::Exception("Bson", msg), type_(type), binary_type_(binary_type)
+            {
+            }
+            
+            //! Copy constructor.
+            /*!
+             \param o The other object.
+             */
+            Bson_type_exception(const Bson_type_exception& o) : lj::Exception(o.label_, o.msg_)
+            {
+            }
+            
+            //! Destructor
+            virtual ~Bson_type_exception() throw()
+            {
+            }
+
+            //! The type of the object.
+            /*!
+             \return The type.
+             */
+            virtual Type type() const
+            {
+                return type_;
+            }
+            
+            //! The binary type of the binary object.
+            /*!
+             \par
+             Only useful when the type is "binary".
+             \return The binary sub-type.
+             */
+            virtual Binary_type binary_type() const
+            {
+                return binary_type_;
+            }
+            
+            virtual std::string str() const;
+        private:
+            Type type_;
+            Binary_type binary_type_;
+        };
+
+        //! Bson value.
+        /*!
+         \par
+         Represets a Bson value, including documents and arrays. The following
+         examples show different ways to set a value at some path.
+         \author Jason Watson
+         \version 1.0
+         \date April 19, 2010
+         */
+        class Node
+        {
+        public:
+            //! Create a new document Node.
+            /*!
+             \par
+             Creates a blank, empty document that considers itself non-existant.
+             Used to create document nodes.
+             */
+            Node();
+
+            //! Create a new document node based on some data.
+            /*!
+             \par
+             Create a new Node value based on the provided values. Used to create
+             value nodes.
+             \par
+             Data from \c v is copied to internal objects.
+             \param t The type of node being created.
+             \param v The value to associate with this node.
+             \sa Node::set_value()
+             */
+            Node(const Type t, const uint8_t* v);
+
+            //! Create a new document node as a copy of an existing Node.
+            /*!
+             \param o The original Node object.
+             \sa Node::copy_from()
+             */
+            Node(const Node &o);
+
+            //! Destructor.
+            ~Node();
+
+            //! Set the value of the document node based on a bson string.
+            /*!
+             \par
+             The value of v is copied out of the pointer \c v , and must be freed
+             by the calling application.
+             \param t The new type of the document.
+             \param v Array of data to read the new value from.
+             */
+            void set_value(const Type t, const uint8_t* v);
+
+            //! Set the value of the document node to null.
+            /*!
+             \par
+             Nullified nodes exist, and contain the value null.
+             */
+            void nullify();
+
+            //! Destroy the current value and copy values from another Node.
+            /*!
+             \param o This node object.
+             */
+            Node& copy_from(const Node& o);
+
+            //! Destroy the current value and copy values from another Node.
+            /*!
+             \par
+             \c a \c = \c b is identical to calling \c a.copy_from(b).
+             \param o The original Node object.
+             \sa Node::copy_from()
+             */
+            inline void operator=(const Node& o)
+            {
+                copy_from(o);
+            }
+
+            //! Takes a list of strings, and creates child documents when they do not exist.
+            Node* find_or_create_child_documents(const std::list<std::string>&);
+            
+            //! Get a pointer to a specific Node object in the document.
+            /*!
+             \par
+             The intermediate objects in the path are created if they do not exist.
+             \param p The path to follow.
+             \return Pointer to that object.
+             \sa #find_or_create_child_documents(const std::list<std::string>&)
+             */
+            Node* path(const std::string& p);
+
+            //! Get a pointer to a specific Node object in the document.
+            /*!
+             \par
+             Null is returned if the intermediate objects in the path do not exist.
+             \param p The path to follow.
+             \return Pointer to that object, null if it cannot be navigated to.
+             */
+            const Node* path(const std::string& p) const;
+
+            //! Get a specific Node object at a path.
+            /*!
+             \par 
+             Reference version of \c path(p).
+             \sa path(const std::string)
+             \param p The path to follow.
+             \return Reference to the object at that node.
+             \sa #find_or_create_child_documents(const std::list<std::string>&)
+             */
+            inline Node& nav(const std::string& p)
+            {
+                return *path(p);
+            }
+
+            //! Get a specific Node object at a path.
+            /*!
+             \par 
+             Reference version of \c path(p).
+             \sa path(const std::string)const
+             \param p The path to follow.
+             \return Reference to the object at that node.
+             \throw Exception if the node cannot be navigated to.
+             */
+            inline const Node& nav(const std::string& p) const
+            {
+                const Node* ptr = path(p);
+                if (!ptr)
+                {
+                    throw Bson_path_exception("Path not found.", p);
+                }
+                return *ptr;
+            }
+
+            //! Get a specific Node object at a path.
+            /*!
+             \par 
+             Syntatical sugar for \c nav(p).
+             \sa nav(const std::string)
+             \param p The path to follow.
+             \return Reference to the object at that node.
+             \sa #find_or_create_child_documents(const std::list<std::string>&)
+             */
+            inline Node& operator[](const std::string& p)
+            {
+                return nav(p);
+            }
+
+            //! Get a specific Node object at a path.
+            /*!
+             \par 
+             Syntatical sugar for \c nav(p).
+             \sa nav(const std::string)const
+             \param p The path to follow.
+             \return Reference to the object at that node.
+             \throw Exception if the node cannot be navigated to.
+             */
+            inline const Node& operator[](const std::string& p) const
+            {
+                return nav(p);
+            }
+
+            //! Set a child at a specific path.
+            /*!
+             \par
+             The parent Node becomes responsibile for the destruction of the pointer \c child.
+             \par
+             If \c path is an empty string, \c set_child becomes a no-op.
+             \par
+             If \c child is null, the child specified by \c path is removed.
+             \param path The path to set the child for.
+             \param child The child to set.
+             \sa #find_or_create_child_documents(const std::list<std::string>&)
+             */
+            void set_child(const std::string& path, Node* child);
+
+            //! Push a child at a specific path.
+            /*!
+             \par 
+             The parent Node becomes responsible for the destruction of the pointer \c child.
+             \par
+             If \c path is an empty string, the child is pushed onto the
+             current Node object.
+             \par
+             If \c child is null, \c push_child becomes a no-op.
+             \param path The path where the child should be pushed.
+             \param child The child to push.
+             \sa #find_or_create_child_documents(const std::list<std::string>&)
+             */
+            void push_child(const std::string& path, Node* child);
+
+            //! Push a child onto this Node object.
+            /*!
+             \param o other object to copy from.
+             \return reference to this.
+             */
+            Node& operator<<(const Node& o)
+            {
+                push_child("", new Node(o));
+                return *this;
+            }
+
+            //! Push a child onto this Node object.
+            /*!
+             \note Memory
+             This object becomes responsible for the memory.
+             \param o other object pointer to attach
+             \return reference to this.
+             */
+            inline Node& operator<<(Node* o)
+            {
+                push_child("", o);
+                return *this;
+            }
+
+            //! Get the map backing document type.
+            /*!
+             \return A map of children. An empty map for non-document types.
+             */
+            inline const std::map<std::string, Node*>& to_map() const
+            {
+                if (Type::k_document != type())
+                {
+                    throw Bson_type_exception("Unable to represent object as a map.", type());
+                }
+                return *(value_.map_);
+            }
+
+            //! Get the vector backing array type.
+            inline const std::vector<Node*>& to_vector() const
+            {
+                if (Type::k_array != type())
+                {
+                    throw Bson_type_exception("Unable to represent object as a vector.", type());
+                }
+                return *(value_.vector_);
+            }
+
+            //! Get the value of this object.
+            /*!
+             \return The value of this node. NULL for document and array types.
+             */
+            inline const uint8_t* to_value() const
+            {
+                if (type_is_nested(type()))
+                {
+                    throw Bson_type_exception("Unable to represent object as a data pointer.", type());
+                }
+                return value_.data_;
+            }
+
+            //! get the value of the document node as a bson string.
+            /*!
+             \par
+             Pointer is allocated with "new[]" and must be released with "delete[]".
+             \par
+             The array length can be obtained by calling \c size() .
+             \return A byte array contain the bson document.
+             */
+            inline uint8_t* to_binary() const
+            {
+                uint8_t *ptr = new uint8_t[size()];
+                copy_to_bson(ptr);
+                return ptr;
+            }
+
+            //! Get the type of the document node.
+            inline Type type() const
+            {
+                return type_;
+            }
+
+            //! Get if the Node object contains anything.
+            bool exists(const std::string& path) const
+            {
+                return (this->path(path) != NULL);
+            }
+
+            //! Get the size of the node.
+            size_t size() const;
+
+        private:
+            Type type_;
+            union {
+                uint8_t* data_;
+                std::vector<Node*>* vector_;
+                std::map<std::string, Node*>* map_;
+            } value_;
+            
+            //! copy the value of this object into a bson byte array.
+            size_t copy_to_bson(uint8_t *) const;
+
+            //! Set the value of the document node to not exist.
+            void destroy(bool);
+        }; // class Node
+
+        //! Escape slashes for bson keys.
+        /*!
+         \param input The string to escape.
+         \return The escaped string.
+         */
+        std::string escape_path(const std::string& input);
+
+        //! Create a new string object.
+        /*!
+         \par
+         Object should be released with delete.
+         \param str The string value.
+         \return a new Node object.
+         */
+        Node* new_string(const std::string& str);
+
+        //! Create a new boolean object.
+        /*!
+         \par
+         Object should be released with delete.
+         \param val The boolean value.
+         \return a new Node object.
+         */
+        Node* new_boolean(const bool val);
         
-        //! Get if the Bson object contains anything.
-        bool exists() const;
-        
-        //! Get the size of the node.
-        size_t size() const;
-        
-    private:
-        Linked_map<std::string, Bson*> child_map_;
-        int last_child_;
-        char* value_;
-        Bson::Type type_;
-        //! copy the value of this object into a bson byte array.
-        size_t copy_to_bson(char *) const;
-    };
-    
-    //! Get a string version of the type.
-    /*!
-     \param t The type to convert into a string.
-     \return String name for the type.
-     */
-    const std::string& bson_type_string(const Bson::Type t);
-    
-    //! Get a string version of the binary type.
-    /*!
-     \param subtype The type to convert into a string.
-     \return String name for the type.
-     */
-    const std::string& bson_binary_type_string(const Bson::Binary_type subtype);
-    
-    //! Get the minimum number of bytes required for a type.
-    /*!
-     \param t The type to get the required bytes for.
-     \return The minimum size of the type.
-     */
-    size_t bson_type_min_size(const Bson::Type t);
-    
-    //! Test if a type is a nested type (Array, or document).
-    /*!
-     \param t The type to test.
-     \return True if the type is a nested object, false otherwise.
-     */
-    inline bool bson_type_is_nested(const Bson::Type t)
-    {
-        return (t == Bson::k_document ||
-                t == Bson::k_array);
-    }
-    
-    //! Test if a type is quotablable (string types).
-    /*!
-     \param t The type to test.
-     \return True if the type is a quotable object, false otherwise.
-     */
-    inline bool bson_type_is_quotable(const Bson::Type t)
-    {
-        return (t == Bson::k_string);
-    }
-    
-    //! Test if a type is a numerical type (integers and floats).
-    /*!
-     \param t The type to test.
-     \return True if the type is a number type, false otherwise.
-     */
-    inline bool bson_type_is_number(const Bson::Type t)
-    {
-        return (t == Bson::k_int32 ||
-                t == Bson::k_int64 ||
-                t == Bson::k_timestamp ||
-                t == Bson::k_double);
-    }
-    
-    //! Test if a type is a native c++ type (integers, floats, booleans, null).
-    /*!
-     \param t The type to test.
-     \return True if the type is a native type, false otherwise.
-     */
-    inline bool bson_type_is_native(const Bson::Type t)
-    {
-        return (t == Bson::k_int32 ||
-                t == Bson::k_int64 ||
-                t == Bson::k_timestamp ||
-                t == Bson::k_double ||
-                t == Bson::k_boolean ||
-                t == Bson::k_null);
-    }
-    
-    //! Escape slashes for bson keys.
-    /*!
-     \param input The string to escape.
-     \return The escaped string.
-     */
-    std::string bson_escape_path(const std::string& input);
-    
-    //! Create a new Bson string object.
-    /*!
-     \par
-     Object should be released with delete.
-     \param str The string value.
-     \return a new Bson object.
-     */
-    Bson* bson_new_string(const std::string& str);
-    
-    //! Create a new Bson boolean object.
-    /*!
-     \par
-     Object should be released with delete.
-     \param val The boolean value.
-     \return a new Bson object.
-     */
-    Bson* bson_new_boolean(const bool val);
+        //! Create a new int32 object.
+        /*!
+         \par
+         Object should be released with delete.
+         \param val The integer value.
+         \return a new Node object.
+         */
+        Node* new_int32(const int32_t val);
 
-    //! Create a new int64 object.
-    /*!
-     \par
-     Object should be released with delete.
-     \param val The integer value.
-     \return a new Bson object.
-     */
-    Bson* bson_new_int64(const int64_t val);
-    
-    //! Create a new int64 object.
-    /*!
-     \par
-     Object should be released with delete.
-     \param val The integer value.
-     \return a new Bson object.
-     */
-    Bson* bson_new_uint64(const uint64_t val);
+        //! Create a new int64 object.
+        /*!
+         \par
+         Object should be released with delete.
+         \param val The integer value.
+         \return a new Node object.
+         */
+        Node* new_int64(const int64_t val);
 
-    //! Create a new null object.
-    /*!
-     \par
-     Object should be released with delete.
-     \return a new Bson object.
-     */
-    Bson* bson_new_null();
+        //! Create a new int64 object.
+        /*!
+         \par
+         Object should be released with delete.
+         \param val The integer value.
+         \return a new Node object.
+         */
+        Node* new_uint64(const uint64_t val);
 
-    //! Create a new binary object.
-    /*!
-     \par
-     Object should be released with delete.
-     \param val The binary value
-     \param sz The size of the binary value.
-     \param subtype The binary subtype.
-     \return a new Bson object.
-     */
-    Bson* bson_new_binary(const uint8_t* val, uint32_t sz, Bson::Binary_type subtype);
-    
-    //! Create a new cost object.
-    /*!
-     \par
-     The cost object is a bson document with a specific set of fields.
-     \par
-     Object should be released with delete.
-     \param cmd The command associated with the cost.
-     \param time The time cost.
-     \param filter_size The size of the cost before any set operations.
-     \param result_size The size of the cost after any set operations.
-     \return a new Bson object.
-     */
-    lj::Bson* bson_new_cost(const std::string& cmd,
-                            unsigned long long time,
-                            long long filter_size,
-                            long long result_size);
+        //! Create a new null object.
+        /*!
+         \par
+         Object should be released with delete.
+         \return a new Node object.
+         */
+        Node* new_null();
 
-    //! Create a new Uuid Bson object.
-    /*!
-     \par
-     A Uuid bson object is a binary type that contains 16 bytes.
-     \par
-     Result should be released with delete.
-     \param uuid The unique ID.
-     \return a new Bson object.
-     */
-    lj::Bson* bson_new_uuid(const Uuid& uuid);
-    
-    //! Get the value of a Bson object as a C++ string in debug format.
-    /*!
-     \par
-     The debug string is a representation of the Bson object in BSON
-     format.  Rather than being a byte array, the results are output in
-     a pseudo-JSON looking format, with lengths and byte counts included
-     in the display.
-     \par
-     This is really only useful for debugging output.
-     \param b The Bson object
-     \return A string describing how this Bson object should look in BSON.
-     */
-    std::string bson_as_debug_string(const Bson& b);
-    
-    //! Get the value of a Bson object as a c++ string.
-    /*!
-     \par
-     Value types are output in their string representation.  Document and
-     array types are output in a JSON looking format.
-     \param b The Bson object.
-     \return A string describing how this Bson object should look in JSON.
-     */
-    std::string bson_as_string(const Bson& b);
-    
-    //! Get the value of a Bson object as a c++ string with indenting.
-    /*!
-     \par
-     The pretty string is a representation of the Bson object in JSON
-     format.  The nested structures are indented to make the structure
-     easier to read.
-     \par
-     Value types are output in their string representation.  Document and
-     array types are output in a JSON looking format.
-     \param b The Bson object.
-     \param lvl The current indention level.
-     \return A string describing how this Bson object should look in JSON with indentation.
-     */
-    std::string bson_as_pretty_string(const Bson& b, int lvl = 0);
-    
-    //! Get the set of keys.
-    /*!
-     \par
-     Value and array types return an empty set. Document types return
-     the set of keys.
-     \param b The Bson object.
-     \return Set of all keys for this object.
-     */
-    std::set<std::string> bson_as_key_set(const Bson& b);
-    
-    //! Get the set of values.
-    /*!
-     \par
-     Value types return a set containing themselves. Document and array types
-     return a set containing all child values as strings (not pretty or
-     debug strings).
-     \param b The Bson object.
-     \return A set of values.
-     \sa bson_as_string(const Bson&)
-     */
-    std::set<std::string> bson_as_value_string_set(const Bson& b);
-    
-    //! Get the value of a Bson object as an 32-bit wide integer.
-    /*!
-     \par
-     Value types are converted into numbers. Document, Array, and strings that
-     cannot be converted into a number return 0.
-     \param b The Bson object.
-     \return The number value.
-     */
-    int32_t bson_as_int32(const Bson& b);
-    
-    //! Get the value of a Bson object as an 64-bit wide integer.
-    /*!
-     \par
-     Value types are converted into numbers. Document, Array, and strings that
-     cannot be converted into a number return 0.
-     \param b The Bson object.
-     \return The number value.
-     */
-    int64_t bson_as_int64(const Bson& b);
-    
-    //! Get the value of a Bson object as an unsigned 64-bit wide integer.
-    /*!
-     \par
-     Value types are converted into numbers. Document, Array and strings that
-     cannot be converted into a number return 0.
-     \param b The Bson object.
-     \return The number value.
-     */
-    uint64_t bson_as_uint64(const Bson& b);
-    
-    //! Get the value of a Bson object as a boolean.
-    /*!
-     \par
-     If the value is a string, return true only if the string contains the
-     word "true" or the character '1'.
-     \par
-     Numeric types return true if the value is not equal to 0.
-     \par Document, Null, and Array types always return false.
-     \param b The Bson object.
-     \return The boolean value.
-     */
-    bool bson_as_boolean(const Bson& b);
-    
-    //! Get the value of a bson object as a double.
-    /*!
-     \par
-     Value types are converted into numbers. Document, Array, and string that
-     cannot be converted into a number return 0.0.
-     \param b The Bson object.
-     \return The double value.
-     */
-    double bson_as_double(const Bson& b);
-    
-    //! Get the value of a bson object as a pointer.
-    /*!
-     \par
-     Only works if the bson value is a binary type.
-     \par
-     Returned value points to an internal data structure and should not be
-     freed. Pointer will become invalid if the Bson object associated with
-     the value is deleted.
-     \param b The Bson object.
-     \param t Location to store the subtype in.
-     \param sz Location to store the length in.
-     \return pointer to a string of bytes, NULL otherwise.
-     */
-    const char* bson_as_binary(const Bson& b, Bson::Binary_type* t, uint32_t* sz);
-    
-    //! Get the value of a bson object as a lj::Uuid.
-    /*!
-     \par
-     Only works if the bson value is a binary type with the subtype of uuid.
-     \par
-     Returned value contains no reference to the Bson object and is still
-     valid after the Bson object is deleted.
-     \param b The Bson object.
-     \return The Uuid.
-     */
-    Uuid bson_as_uuid(const Bson& b);
+        //! Create a new binary object.
+        /*!
+         \par
+         Object should be released with delete.
+         \param val The binary value
+         \param sz The size of the binary value.
+         \param subtype The binary subtype.
+         \return a new Node object.
+         */
+        Node* new_binary(const uint8_t* val, uint32_t sz, Binary_type subtype);
 
-    //! Increment the value of a bson object.
-    /*!
-     \par
-     converts a value to an integer if it is not already.
-     \param b The bson object to modify.
-     \param amount The amount to increment a value. May be negative.
-     */
-    void bson_increment(lj::Bson& b, int amount);
-    
-    //! Save a Bson object.
-    /*!
-     \param b The Bson object.
-     \param path The path to save to.
-     */
-    void bson_save(const Bson& b, const std::string& path);
-    
-    //! Load a Bson object.
-    /*!
-     \param path The path to load from.
-     \return The loaded Bson object.
-     */
-    Bson* bson_load(const std::string& path);
+        //! Create a new Uuid Bson object.
+        /*!
+         \par
+         A Uuid Node object is a binary type that contains 16 bytes.
+         \par
+         Result should be released with delete.
+         \param uuid The unique ID.
+         \return a new Node object.
+         */
+        Node* new_uuid(const lj::Uuid& uuid);
+
+        //! Get the value of a Bson object as a C++ string in debug format.
+        /*!
+         \par
+         The debug string is a representation of the Node object in BSON
+         format.  Rather than being a byte array, the results are output in
+         a pseudo-JSON looking format, with lengths and byte counts included
+         in the display.
+         \par
+         This is really only useful for debugging output.
+         \param b The Node object
+         \param lvl The indentation level.
+         \return A string describing how this Node object should look in BSON.
+         */
+        std::string as_debug_string(const Node& b, int lvl = 1);
+
+        //! Get the value of a Bson object as a c++ string.
+        /*!
+         \par
+         Value types are output in their string representation.  Document and
+         array types are output in a JSON looking format.
+         \param b The Node object.
+         \return A string describing how this Node object should look in JSON.
+         */
+        std::string as_string(const Node& b);
+
+        //! Get the value of a Bson object as a c++ string with indenting.
+        /*!
+         \par
+         The pretty string is a representation of the Node object in JSON
+         format.  The nested structures are indented to make the structure
+         easier to read.
+         \par
+         Value types are output in their string representation.  Document and
+         array types are output in a JSON looking format.
+         \param b The Node object.
+         \param lvl The current indention level.
+         \return A string describing how this Node object should look in JSON with indentation.
+         */
+        std::string as_pretty_json(const Node& b, int lvl = 1);
+
+        //! Get the value of a Bson object as an 32-bit wide integer.
+        /*!
+         \par
+         Value types are converted into numbers. Document, Array, and strings that
+         cannot be converted into a number return 0.
+         \param b The Node object.
+         \return The number value.
+         */
+        int32_t as_int32(const Node& b);
+
+        //! Get the value of a Bson object as an 64-bit wide integer.
+        /*!
+         \par
+         Value types are converted into numbers. Document, Array, and strings that
+         cannot be converted into a number return 0.
+         \param b The Node object.
+         \return The number value.
+         */
+        int64_t as_int64(const Node& b);
+
+        //! Get the value of a Bson object as an unsigned 64-bit wide integer.
+        /*!
+         \par
+         Value types are converted into numbers. Document, Array and strings that
+         cannot be converted into a number return 0.
+         \param b The Node object.
+         \return The number value.
+         */
+        uint64_t as_uint64(const Node& b);
+
+        //! Get the value of a Bson object as a boolean.
+        /*!
+         \par
+         If the value is a string, return true only if the string contains the
+         word "true" or the character '1'.
+         \par
+         Numeric types return true if the value is not equal to 0.
+         \par Document, Null, and Array types always return false.
+         \param b The Node object.
+         \return The boolean value.
+         */
+        bool as_boolean(const Node& b);
+
+        //! Get the value of a bson object as a double.
+        /*!
+         \par
+         Value types are converted into numbers. Document, Array, and string that
+         cannot be converted into a number return 0.0.
+         \param b The Node object.
+         \return The double value.
+         */
+        double as_double(const Node& b);
+
+        //! Get the value of a bson object as a pointer.
+        /*!
+         \par
+         Only works if the Node is a binary type.
+         \par
+         Returned value points to an internal data structure and should not be
+         freed. Pointer will become invalid if the Node object associated with
+         the value is deleted.
+         \param b The Node object.
+         \param t Location to store the subtype in.
+         \param sz Location to store the length in.
+         \return pointer to a string of bytes, NULL otherwise.
+         */
+        const uint8_t* as_binary(const Node& b, Binary_type* t, uint32_t* sz);
+
+        //! Get the value of a bson object as a lj::Uuid.
+        /*!
+         \par
+         Only works if the Node is a binary type with the subtype of uuid.
+         \par
+         Returned value is independent from the Node object and is still
+         valid after the Node object is deleted.
+         \param b The Node object.
+         \return The Uuid.
+         */
+        Uuid as_uuid(const Node& b);
+
+        //! Increment the value of a bson object.
+        /*!
+         \par
+         converts a value to an integer if it is not already.
+         \param b The Node object to modify.
+         \param amount The amount to increment a value. May be negative.
+         */
+        void increment(Node& b, int amount);
+    }; // namespace lj::bson
 }; // namespace lj

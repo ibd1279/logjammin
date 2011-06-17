@@ -1,7 +1,6 @@
-#pragma once
 /*!
- \file Client.h
- \brief LJ client header.
+ \file lj/Stopclock.cpp
+ \brief LJ Time tracking implementation.
  \author Jason Watson
  
  Copyright (c) 2010, Jason Watson
@@ -34,57 +33,51 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "lj/Sockets.h"
+#include "lj/Stopclock.h"
+
+#include <sys/time.h>
 
 namespace lj
 {
-    class Bson;
-    
-    //! Logjam client Socket_dispatch implementation.
-    class Client : public Socket_dispatch
+    Stopclock::Stopclock() : start_usec(0), start_sec(0), elapsed_(0)
     {
-    public:
-        //! Destructor
-        virtual ~Client();
+        start();
+    }
+    
+    void Stopclock::start()
+    {
+        struct timeval now;
+        gettimeofday(&now, NULL);
+        start_usec = now.tv_usec;
+        start_sec = now.tv_sec;
+    }
+    
+    unsigned long long Stopclock::stop()
+    {
+        elapsed_ = elapsed();
+        start_usec = 0;
+        start_sec = 0;
+        return elapsed_;
+    }
+    
+    unsigned long long Stopclock::elapsed() const
+    {
+        if (start_sec)
+        {
+            struct timeval now;
+            gettimeofday(&now, NULL);
+            return (((now.tv_sec - start_sec) * 1000000ULL) +
+                    (now.tv_usec - start_usec));
+        }
+        else
+        {
+            return elapsed_;
+        }
+    }
+    
+    Stopclock::operator uint64_t() const
+    {
+        return elapsed();
+    }
         
-        //! Get the response object from the server.
-        /*!
-         \return The server response.
-         */
-        lj::Bson* response();
-        
-        //! Remove the response object.
-        void clear();
-        
-        //! Send a command to the server.
-        /*!
-         \param cmd The command to send.
-         */
-        lj::Bson* send_command(const std::string& cmd);
-        
-        //! Send a command to the server.
-        /*!
-         \param cmd The command to send.
-         */
-        lj::Bson* send_command(const lj::Bson* cmd);
-        
-        //! Connect to a client.
-        /*!
-         \param host The server host.
-         \param port The server port.
-         \return The connected client.
-         */
-        static lj::Client* connect(const std::string host, int port);
-    protected:
-        //! Constructor
-        Client();
-        virtual Socket_dispatch* accept(int socket, const std::string& buffer);
-        virtual void read(const char* buffer, int sz);
-    private:
-        char * in_;
-        int in_offset_;
-        int in_sz_;
-        bool in_post_length_;
-        lj::Bson* response_;
-    }; // class Client
 }; // namespace lj
