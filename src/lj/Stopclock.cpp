@@ -52,7 +52,7 @@ namespace lj
         start_sec = now.tv_sec;
     }
     
-    unsigned long long Stopclock::stop()
+    uint64_t Stopclock::stop()
     {
         elapsed_ = elapsed();
         start_usec = 0;
@@ -60,7 +60,7 @@ namespace lj
         return elapsed_;
     }
     
-    unsigned long long Stopclock::elapsed() const
+    uint64_t Stopclock::elapsed() const
     {
         if (start_sec)
         {

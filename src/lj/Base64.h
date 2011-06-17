@@ -1,6 +1,7 @@
+#pragma once
 /*!
- \file lj/Base64.cpp
- \brief LJ base 64 implementation.
+ \file lj/Base64.h
+ \brief LJ base 64 interface.
  \author Jason Watson
  
  Copyright (c) 2010, Jason Watson
@@ -33,114 +34,27 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "lj/Base64.h"
-#include "lj/Exception.h"
-
-#include <list>
-#include <sstream>
+#include <cstdint>
+#include <string>
 
 namespace lj
 {
-    namespace 
-    {
-        static const char base64_values[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-        static const char base64_dictionary[] = {
-        /* + */ 62,-1,-1,-1,
-        /* / */ 63,52,53,54,55,56,57,58,59,60,61,-1,-1,-1,-1,-1,-1,-1,
-        /* A */  0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,-1,-1,-1,-1,-1,-1,
-        /* a */ 26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,-1,-1,-1,-1,-1};
-    }; // namespace
-    
-    // Simple uninteligent implementation.
-    uint8_t *base64_decode(const std::string &input, size_t *size)
-    {
-        size_t i = 0;
-        std::list<uint8_t> buffer;
-        std::string::const_iterator iter = input.begin();
-        while (input.end() != iter && '=' != *iter)
-        {
-            int8_t tmp[4];
-            i = 0;
-            for (;
-                 input.end() != iter && '=' != *iter && 4 > i;
-                 ++i, ++iter)
-            {
-                if ('+' > *iter)
-                {
-                    throw new lj::Exception("base64", "invalid character in input stream.");
-                }
-                else if (base64_dictionary[*iter - '+'] == -1)
-                {
-                    throw new lj::Exception("base64", "invalid character in input stream.");
-                }
-                tmp[i] = base64_dictionary[*iter - '+'];
-            }
-            
-            switch (i)
-            {
-                case 4:
-                    buffer.push_back((uint8_t)((tmp[0] << 2) | (tmp[1] >> 4)));
-                    buffer.push_back((uint8_t)((tmp[1] << 4) | (tmp[2] >> 2)));
-                    buffer.push_back((uint8_t)((tmp[2] << 6) | tmp[3]));
-                    break;
-                case 3:
-                    buffer.push_back((uint8_t)((tmp[0] << 2) | (tmp[1] >> 4)));
-                    buffer.push_back((uint8_t)((tmp[1] << 4) | (tmp[2] >> 2)));
-                    break;
-                case 2:
-                    buffer.push_back((uint8_t)((tmp[0] << 2) | (tmp[1] >> 4)));
-                    break;
-                case 1:
-                    throw new lj::Exception("base64", "invalid end character in input stream.");
-            }
-        }
-        
-        *size = buffer.size();
-        uint8_t* result = new uint8_t[*size + 1];
-        result[*size] = 0;
-        
-        i = 0;
-        for (std::list<uint8_t>::const_iterator iter = buffer.begin();
-             iter != buffer.end();
-             ++iter, ++i)
-        {
-            result[i] = *iter;
-        }
-        
-        return result;
-    }
+    //! Decode a base 64 string.
+    /*!
+     \par
+     Pointer is allocated with new[].
+     \param input String to decode.
+     \param size Location to store the resulting string size.
+     \return 0 if the decode fails.  Pointer to the decoded data otherwise.
+     \throws lj::Exception If the string is not a valid base 64 string.
+     */
+    uint8_t *base64_decode(const std::string &input, size_t *size);
 
-    std::string base64_encode(const uint8_t *input, size_t size)
-    {        
-        std::ostringstream data;
-        size_t h = 0;
-        if (2 < size)
-        {
-            while (h < size - 2)
-            {
-                data << base64_values[input[h] >> 2];
-                data << base64_values[((input[h] & 3) << 4)  | (input[h + 1] >> 4)];
-                data << base64_values[((input[h + 1] & 15) << 2) | (input[h + 2] >> 6)];
-                data << base64_values[input[h + 2] & 63];
-                h += 3;
-            }
-        }
-        
-        switch (size - h)
-        {
-            case 1:
-                data << base64_values[input[h] >> 2];
-                data << base64_values[(input[h] & 3) << 4];
-                data << "==";
-                break;
-            case 2:
-                data << base64_values[input[h] >> 2];
-                data << base64_values[((input[h] & 3) << 4)  | (input[h + 1] >> 4)];
-                data << base64_values[(input[h + 1] & 15) << 2];
-                data << "=";
-                break;
-        }
-        
-        return data.str();
-    }
+    //! Encode a base 64 string.
+    /*!
+     \param input Byte array to encode.
+     \param size Length of the byte array.
+     \return the encoded string.
+     */
+    std::string base64_encode(const uint8_t *input, size_t size);
 }; // namespace lj
