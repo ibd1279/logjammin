@@ -47,7 +47,7 @@ namespace lj
     namespace bson
     {
         //! Enumeration of Bson Types.
-        enum class Type
+        enum class Type : uint8_t
         {
             k_double = 0x01,    //!< Node contains a double value.
             k_string = 0x02,    //!< Node contains a string value.
@@ -67,7 +67,7 @@ namespace lj
         };
 
         //! Enumeration of Bson binary subtypes.
-        enum class Binary_type
+        enum class Binary_type : uint8_t
         {
             k_bin_function = 0x01,     //!< Function.
             k_bin_binary = 0x02,       //!< Binary String.

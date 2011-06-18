@@ -1,91 +1,74 @@
 # vim: filetype=python
+APPNAME = 'logjammin'
+VERSION = '0.2.0'
 top = '.'
 out = 'build'
 
-def options(ctx):
-    ctx.tool_options('compiler_cxx')
-    ctx.add_option('--dbdir', action='store', default='/var/db/logjam',
-        help='Directory to store DB information. [default: \'/var/db/logjam\']', dest='dbdir')
+def options(opt):
+    opt.load('compiler_cxx')
+    opt.load('waf_unit_test')
 
-def configure(ctx):
-    import Options
-
-    #Set the DB directory.
-    ctx.env.DBDIR = Options.options.dbdir
-    ctx.define('DBDIR', Options.options.dbdir)
-    ctx.env.vnum = '0.1.0'
+def configure(conf):
+    conf.load('compiler_cxx')
+    conf.load('waf_unit_test')
 
     #Set the compiler 
-    ctx.check_tool('compiler_cxx')
-    ctx.check_cxx(
-        header_name='histedit.h',
-        lib=['edit', 'curses'],
-        libpath = ['/usr/lib'],
-        includes='/usr/include/',
-        define_name='HAVE_EDITLINE'
-    )
-    ctx.check_cxx(
-        header_name='tcutil.h',
-        lib=['tokyocabinet'],
-        libpath=['/usr/local/lib', '/opt/local/lib/'],
-        includes=['/usr/local/include', '/opt/local/include/'],
-        mandatory=True
-    )
-    ctx.check_cxx(
-        header_name='lua.h',
-        lib=['lua5.1'],
-        libpath=['/usr/local/lib', '/opt/local/lib/', '/usr/lib'],
-        includes=[
-            '/usr/local/include',
-            '/opt/local/include',
-            '/usr/include',
-            '/usr/local/include/lua5.1',
-            '/opt/local/include/lua5.1',
-            '/usr/include/lua5.1'
-        ],
-        mandatory=True
-    )
-    ctx.check(
+    conf.check(
         header_name='openssl/ssl.h',
         lib=['ssl', 'crypto'],
         libpath=['/usr/local/lib', '/opt/local/lib', '/usr/lib'],
         includes=[
             '/usr/local/include',
             '/opt/local/include',
-            '/usr/include',
-            '/usr/local/include/lua5.1',
-            '/opt/local/include/lua5.1',
-            '/usr/include/lua5.1'
-        ],
+            '/usr/include'
+            ],
         mandatory=True
-    )
-    ctx.check_cxx(
-        header_name='sys/types.h',
-        define_name='HAVE_SYS_TYPES_H'
-    )
-    ctx.write_config_header('config.h')
+        )
+    conf.write_config_header('config.h')
 
-def build(ctx):
-    logjamd = ctx(
-        features = ['cxx', 'cprogram']
-        ,source = [
-                'src/lj/Base64.cpp'
-                ,'src/lj/Bson.cpp'
-                ,'src/lj/Log.cpp'
-                ,'src/lj/Stopclock.cpp'
-                ,'src/lj/Uuid.cpp'
-                ]
-        ,target = 'logjamd'
-        ,vnum = ctx.env.vnum
-        ,includes = [
-                '.'
-                ,'./src'
-                ,'/usr/local/include'
-                ,'/opt/local/include'
-                ,'/usr/include']
+def test(bld):
+    #bld.recurse('test')
+    pass
+
+def build(bld):
+    bld.load('compiler_cxx')
+    bld.load('waf_unit_test')
+
+    # setup unit test output.
+    from waflib.Tools import waf_unit_test
+    bld.add_post_fun(waf_unit_test.summary)
+
+    # build the shared components
+    bld.stlib(
+        source = [
+            'src/lj/Base64.cpp'
+            ,'src/lj/Bson.cpp'
+            ,'src/lj/Log.cpp'
+            ,'src/lj/Stopclock.cpp'
+            ,'src/lj/Uuid.cpp'
+        ]
+        ,target='lj'
         ,cxxflags = ['-O0', '-Wall', '-g', '-std=c++0x']
-        ,libpath = ['/usr/local/lib/', '/opt/local/lib/', '/usr/lib']
+        ,includes = [
+            './src'
+        ]
         ,linkflags = ['-g']
-        ,uselib = ['TCUTIL.H', 'DYSTOPIA.H', 'LUA.H', 'OPENSSL/SSL.H']
+        ,uselib = ['OPENSSL/SSL.H']
     )
+
+    # preform the unit tests
+    testnodes = bld.path.ant_glob('test/*.cpp')
+    for node in testnodes:
+        bld(
+            features=['cxx', 'cxxprogram', 'test']
+            ,includes=[
+                './test'
+                ,'./src'
+            ]
+            ,source=[node]
+            ,target=node.change_ext('')
+            ,use=['lj']
+            ,cxxflags = ['-O0', '-Wall', '-g', '-std=c++0x']
+            ,linkflags = ['-g']
+        )
 
