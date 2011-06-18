@@ -4,3 +4,4 @@ syntax: regexp
 ^logjammin\.xcodeproj/ewatson\.
 ^.waf-
 ^.lock-wscript$
+^.lock-wafbuild$
