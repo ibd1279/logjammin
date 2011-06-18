@@ -1,5 +1,0 @@
-<?lc if request:has_attribute("_error") then ?><div class="error">${request:attribute("_error")}</div><?lc end ?>
-<form method="POST">
-    <div>Are you sure you wish to delete &quot;${backlog:brief()}&quot;.</div>
-    <input type="submit" value="Yes" />
-</form>
