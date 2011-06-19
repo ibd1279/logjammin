@@ -134,3 +134,4 @@ namespace lj
         std::string label_;
     };
 }; // namespace lj
+#define LJ__Exception(msg) lj::Exception(__FILE__, std::string(__FUNCTION__).append(msg))
