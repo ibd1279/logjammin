@@ -1,7 +1,7 @@
 #pragma once
 /*!
- \file Stage_auth.h
- \brief Logjam server authentication stage definition.
+ \file logjamd/Stage_auth.h
+ \brief Logjam server stage authentication header.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -35,55 +35,16 @@
 
 #include "logjamd/Stage.h"
 
+#include <cstdint>
+
 namespace logjamd
 {
-    //! Client authentication processor.
-    /*!
-     \author Jason Watson
-     \version 1.0
-     \date October 26, 2010
-     */
-    class Stage_auth : public Stage
-    {
+    class Stage_auth : public Stage {
     public:
-        //! Default constructor.
-        Stage_auth();
-
-        //! Virtual destructor.
+        Stage_auth(logjamd::Connection* connection);
         virtual ~Stage_auth();
-
-        //! Method representing the logic of the processor.
-        /*!
-         \par
-         currently expects the following document:
-         \code
-         {
-             method='fake'
-             provider='local'
-             identity='admin',
-             token='insecure'
-         }
-         \endcode
-         If the document does not contain the four required keys,
-         authentication will fail.
-         \par
-         On failure, authentication returns \c this. On success, a
-         new command processor is returned.
-         \param request The request document to process.
-         \param connection The connection associated with the client.
-         \return The processor to use for the next request.
-         */
-        virtual Stage* logic(lj::Bson& request, Connection& connection);
-
+        virtual Stage* logic();
     private:
-        //! Hidden copy constructor.
-        /*!
-         \param orig Original object.
-         */
-        Stage_auth(const Stage_auth& orig);
-
-        //! attempt count.
-        unsigned char attempt_;
+        uint8_t attempts_;
     };
 };
-

@@ -56,18 +56,35 @@ def build(bld):
         ,uselib = ['OPENSSL/SSL.H']
     )
 
+    bld.program(
+        source = [
+            'src/logjamd/Connection_secure.cpp'
+            ,'src/logjamd/Server_secure.cpp'
+            ,'src/logjamd/Stage_auth.cpp'
+            ,'src/logjamd/logjamd.cpp'
+        ]
+        ,target='logjamd'
+        ,cxxflags = ['-O0', '-Wall', '-g', '-std=c++0x']
+        ,includes = [
+            './src'
+        ]
+        ,linkflags = ['-g']
+        ,use = ['lj']
+        ,uselib = ['OPENSSL/SSL.H']
+    )
+
     # preform the unit tests
     testnodes = bld.path.ant_glob('test/*.cpp')
     for node in testnodes:
         bld(
-            features=['cxx', 'cxxprogram', 'test']
-            ,includes=[
+            features = ['cxx', 'cxxprogram', 'test']
+            ,includes = [
                 './test'
                 ,'./src'
             ]
-            ,source=[node]
-            ,target=node.change_ext('')
-            ,use=['lj']
+            ,source = [node]
+            ,target = node.change_ext('')
+            ,use = ['lj']
             ,cxxflags = ['-O0', '-Wall', '-g', '-std=c++0x']
             ,linkflags = ['-g']
         )

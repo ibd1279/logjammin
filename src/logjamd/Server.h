@@ -33,29 +33,37 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "lj/Sockets.h"
-#include "lj/Bson.h"
-#include "lj/lunar.h"
+#include "lj/Document.h"
 #include <string>
 
 namespace logjamd
 {
-    //! request and connection dispatcher for the logjamd server.
-    class Server : public lj::Socket_dispatch {
+    class Connection;
+
+    //! Abstract base class for accepting connections.
+    class Server {
     public:
-        //! Constructor
-        /*!
-         \par The \c server_type parameter decides if the config, readonly,
-         or readwrite lua libraries are made available.
-         \param config The server configuration.
-         from.
-         */
-        Server(lj::Bson* config);
-        virtual ~Server();
-        virtual lj::Socket_dispatch* accept(int socket, const std::string& buffer);
-        virtual void read(const char* buffer, int sz);
+        Server(lj::Document* config) : config_(config)
+        {
+        }
+        virtual ~Server()
+        {
+            if (config_)
+            {
+                delete config_;
+            }
+        }
+        virtual void listen() = 0;
+        virtual void shutdown() = 0;
+        virtual const lj::Document& cfg() const
+        {
+            return *config_;
+        }
+        virtual lj::Document& config()
+        {
+            return *config_;
+        }
     private:
-        lua_State* lua_;
-        lj::Bson* config_;
+        lj::Document* config_;
     };
 };

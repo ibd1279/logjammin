@@ -1,6 +1,6 @@
 #pragma once
 /*!
- \file Connection.h
+ \file logjamd/Connection.h
  \brief Logjam server connection to a client definition.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
@@ -34,70 +34,39 @@
  */
 
 #include "lj/Bson.h"
-#include "lj/Sockets.h"
-
-extern "C" {
-#include "lualib.h"
-}
+#include "lj/Document.h"
+#include "logjamd/Server.h"
 
 namespace logjamd
 {
-    // forward declare Stage
-    class Stage;
-
-    //! Server to client connection.
-    /*!
-     \par
-     This class represents how the server keeps track of the command
-     processor and its changing state.
-     \author Jason Watson
-     \version 1.0
-     \date October 26, 2010
-     */
-    class Connection : public lj::Socket_dispatch {
+    class Connection {
     public:
-
-        //! Create a new connection object.
-        /*!
-         \par
-         The \c server_lua is used to generate the client threads.
-         \param client_ip The ip address of the client.
-         \param server_lua The lua state of the server.
-         \param server_config The server configuration.
-         */
-        Connection(const std::string& client_ip,
-                   lua_State* server_lua,
-                   const lj::Bson* server_config);
+        Connection(logjamd::Server* server,
+                lj::Document* state) : server_(server), state_(state)
+        {
+        }
 
         //! Destructor.
-        virtual ~Connection();
-        virtual lj::Socket_dispatch* accept(int socket,
-                                            const std::string& buffer);
-        virtual void read(const char* buffer, int sz);
-
-        //! Get the ip address of the client.
-        inline const std::string& ip() const { return ip_; };
-
-        //! Get the server configuration.
-        inline const lj::Bson& server_config() const { return *server_config_; };
-
-        //! Get the server lua object.
-        inline lua_State* lua() { return lua_; };
-        
-        //! Get the data directory path.
-        inline const std::string& data_directory() const { return data_dir_; };
+        virtual ~Connection()
+        {
+            if (state_)
+            {
+                delete state_;
+            }
+        }
+        virtual lj::bson::Node* read() = 0;
+        virtual void write(const lj::bson::Node& data) = 0;
+        virtual logjamd::Server& server()
+        {
+            return *server_;
+        }
+        virtual lj::Document& state()
+        {
+            return *state_;
+        }
     private:
-        char * in_;
-        int in_offset_;
-        int in_sz_;
-        bool in_post_length_;
-
-        const std::string ip_;
-        lua_State* lua_;
-        const lj::Bson* server_config_;
-        const std::string& data_dir_;
-
-        Stage* stage_;
+        logjamd::Server* server_;
+        lj::Document* state_;
     };
 };
 

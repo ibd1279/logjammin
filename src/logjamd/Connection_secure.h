@@ -1,6 +1,7 @@
+#pragma once
 /*!
- \file Stage.cpp
- \brief Logjam server stage abstract base implementation.
+ \file logjamd/Connection_connection.h
+ \brief Logjam server connection to a client definition.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -32,14 +33,23 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjamd/Stage.h"
+#include "logjamd/Connection.h"
 
+typedef struct bio_st BIO;
 namespace logjamd
 {
-    Stage::Stage()
+    class Connection_secure : public Connection
     {
-    }
-    Stage::~Stage()
-    {
-    }
-}
+    public:
+        Connection_secure(logjamd::Server* server,
+                lj::Document* state, ::BIO* io);
+        //! Destructor.
+        virtual ~Connection_secure();
+        virtual lj::bson::Node* read();
+        virtual void write(const lj::bson::Node& data);
+    private:
+        ::BIO* io_;
+    };
+};
+
+

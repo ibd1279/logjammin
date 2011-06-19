@@ -1,24 +1,25 @@
+#pragma once
 /*!
- \file logjamd/Server.cpp
- \brief Logjam server networking implementation.
+ \file logjamd/Server_secure.h
+ \brief Logjam server networking header.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
- 
+
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
- 
+
  * Redistributions of source code must retain the above copyright notice,
  this list of conditions and the following disclaimer.
- 
+
  * Redistributions in binary form must reproduce the above copyright notice,
  this list of conditions and the following disclaimer in the documentation
  and/or other materials provided with the distribution.
- 
+
  * Neither the name of the LogJammin nor the names of its contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
+
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -34,50 +35,19 @@
 
 #include "logjamd/Server.h"
 
-#include "logjamd/Connection.h"
-#include "logjamd/logjamd_lua.h"
-#include "logjamd/lua/Bson.h"
-#include "lj/Bson.h"
-#include "lj/Logger.h"
-#include "lj/Time_tracker.h"
-
-extern "C" {
-#include "lualib.h"
-}
-#include <sstream>
-#include <list>
-#include <sys/time.h>
+typedef struct bio_st BIO;
 
 namespace logjamd
 {
-    Server::Server(lj::Bson* config) : lua_(0), config_(config)
+    class Server_secure : public Server
     {
-        set_mode(Socket_dispatch::k_listen);
-
-        // prepare lua.
-        lua_ = luaL_newstate();
-        luaL_openlibs(lua_);
-
-        // This needs to change to be specific for the server type.
-        logjam_lua_init(lua_, config);
-    }
-    
-    Server::~Server()
-    {
-        lua_close(lua_);
-        delete config_;
-    }
-    
-    lj::Socket_dispatch* Server::accept(int socket, const std::string& remote_ip)
-    {
-        Connection* client = new Connection(remote_ip, lua_, config_);
-        client->set_socket(socket);
-        client->set_mode(Socket_dispatch::k_communicate);
-        return client;
-    }
-    
-    void Server::read(const char* buffer, int sz)
-    {
-    }
-    
-}; // namespace logjamd
+    public:
+        Server_secure(lj::Document* config);
+        virtual ~Server_secure();
+        virtual void listen();
+        virtual void shutdown();
+    private:
+        ::BIO* io_;
+        bool running_;
+    };
+};

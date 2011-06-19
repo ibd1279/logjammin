@@ -33,43 +33,26 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjamd/Connection.h"
-#include "lj/Bson.h"
+#include <memory>
 
 namespace logjamd
 {
-    //! Stage command base class.
-    /*!
-     \par
-     Base class represents the interface used by different stages in the
-     client connection.
-     \par
-     The \c Stage::logic(lj::Bson&,Connection&) method must be implemented by concrete implementations.
-     \author Jason Watson
-     \version 1.0
-     \date October 26, 2010
-     */
+    class Connection;
     class Stage {
     public:
-        //! Method representing the logic of the current stage.
-        /*!
-         \param request The request document to process.
-         \param connection The client connection
-         \return The processor to use for the next request. Null to terminate
-         the connection.
-         */
-        virtual Stage* logic(lj::Bson& request, Connection& connection) = 0;
-
-        //! Virtual destructor.
-        virtual ~Stage();
+        Stage(logjamd::Connection* connection) : connection_(connection)
+        {
+        }
+        virtual ~Stage()
+        {
+        }
+        virtual Stage* logic() = 0;
+        virtual logjamd::Connection* conn()
+        {
+            return connection_;
+        }
     protected:
-        //! Default constructor.
-        Stage();
     private:
-        //! Hidden copy constructor.
-        /*!
-         \param orig Original object.
-         */
-        Stage(const Stage& orig);
+        logjamd::Connection* connection_;
     };
 };
