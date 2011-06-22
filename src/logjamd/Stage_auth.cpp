@@ -33,6 +33,22 @@
  */
 
 #include "logjamd/Stage_auth.h"
+#include "logjamd/Connection.h"
+
+#include "lj/Uuid.h"
+#include "lj/Bson.h"
+
+#include <memory>
+
+namespace
+{
+    const lj::Uuid k_logjamd(lj::Uuid::k_nil, "logjamd", 7);
+    const lj::Uuid k_auth_method(k_logjamd, "auth_method", 11);
+    const lj::Uuid k_auth_method_fake(k_auth_method, "fake", 4);
+
+    const lj::Uuid k_auth_provider(k_logjamd, "auth_provider", 13);
+    const lj::Uuid k_auth_provider_local(k_auth_provider, "local", 5);
+};
 
 namespace logjamd
 {
@@ -48,9 +64,21 @@ namespace logjamd
     Stage* Stage_auth::logic()
     {
         attempts_++;
-        // Method, provider, identity, token.
-        delete this;
-        return NULL;
+        std::unique_ptr<lj::bson::Node> n(conn()->read());
+        lj::Uuid method(lj::bson::as_uuid(n->nav("method")));
+        lj::Uuid provider(lj::bson::as_uuid(n->nav("provider")));
+
+        if (k_auth_method_fake == method)
+        {
+            if (k_auth_provider_local == provider)
+            {
+                //std::string& identity = lj::bson::as_string(n->nav("identity"));
+                //std::string& token = lj::bson::as_string(n->nav("token"));
+                delete this;
+                return NULL;
+            }
+        }
+        return this;
     }
 };
 

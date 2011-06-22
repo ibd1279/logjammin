@@ -49,7 +49,11 @@ namespace logjamd
     Server_secure::Server_secure(lj::Document* config)
             : logjamd::Server(config), io_(NULL), running_(false)
     {
-        io_ = BIO_new_accept((char*)"localhost:12345");
+        std::string listen(lj::bson::as_string(cfg().get("server/listen")));
+        char* host_port = new char[listen.size()];
+        memcpy(host_port, listen.c_str(), listen.size());
+        io_ = BIO_new_accept(host_port);
+
         if (!io_)
         {
             ERR_print_errors_fp(stderr);

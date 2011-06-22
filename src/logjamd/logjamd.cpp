@@ -44,8 +44,10 @@
 //! Server main entry point.
 int main(int argc, char* const argv[]) {
     lj::Document* config = new lj::Document();
-    std::unique_ptr<logjamd::Server> server(new logjamd::Server_secure(config));
+    lj::Uuid sid;
+    config->set(sid, "server/listen", lj::bson::new_string("localhost:12345"));
 
+    logjamd::Server* server = new logjamd::Server_secure(config);
     server->listen();
     server->shutdown();
 
