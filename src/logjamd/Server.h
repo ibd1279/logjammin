@@ -53,6 +53,7 @@ namespace logjamd
                 delete config_;
             }
         }
+        virtual void startup() = 0;
         virtual void listen() = 0;
         virtual void shutdown() = 0;
         virtual const lj::Document& cfg() const

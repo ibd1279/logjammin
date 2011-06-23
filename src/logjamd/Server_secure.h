@@ -44,6 +44,7 @@ namespace logjamd
     public:
         Server_secure(lj::Document* config);
         virtual ~Server_secure();
+        virtual void startup();
         virtual void listen();
         virtual void shutdown();
     private:

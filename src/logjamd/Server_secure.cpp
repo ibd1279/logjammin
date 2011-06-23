@@ -49,6 +49,16 @@ namespace logjamd
     Server_secure::Server_secure(lj::Document* config)
             : logjamd::Server(config), io_(NULL), running_(false)
     {
+    }
+    Server_secure::~Server_secure()
+    {
+        if (io_)
+        {
+            BIO_free(io_);
+        }
+    }
+    void Server_secure::startup()
+    {
         std::string listen(lj::bson::as_string(cfg().get("server/listen")));
         char* host_port = new char[listen.size()];
         memcpy(host_port, listen.c_str(), listen.size());
@@ -64,13 +74,6 @@ namespace logjamd
         {
             ERR_print_errors_fp(stderr);
             throw LJ__Exception("Unable to setup the listener object.");
-        }
-    }
-    Server_secure::~Server_secure()
-    {
-        if (io_)
-        {
-            BIO_free(io_);
         }
     }
     void Server_secure::listen()

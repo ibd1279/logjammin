@@ -48,6 +48,7 @@ int main(int argc, char* const argv[]) {
     config->set(sid, "server/listen", lj::bson::new_string("localhost:12345"));
 
     logjamd::Server* server = new logjamd::Server_secure(config);
+    server->startup();
     server->listen();
     server->shutdown();
 
