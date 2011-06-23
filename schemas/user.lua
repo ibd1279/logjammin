@@ -1,6 +1,0 @@
-user = sc_new("user")
-sc_add_index(user, "tree", "name", "name", "lex")
-sc_add_unique(user, "name")
-sc_add_index(user, "tree", "login", "login", "lex")
-sc_add_unique(user, "login")
-sc_save("user", user)
