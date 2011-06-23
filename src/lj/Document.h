@@ -148,10 +148,15 @@ namespace lj
             taint(server);
             doc_->set_child("_/flag/suppressed", lj::bson::new_boolean(s));
         }
-        void set(const lj::Uuid& server, const std::string path, lj::bson::Node* value)
+        void set(const lj::Uuid& server, const std::string& path, lj::bson::Node* value)
         {
             taint(server);
             doc_->nav(".").set_child(path, value);
+        }
+        void push(const lj::Uuid& server, const std::string& path, lj::bson::Node* value)
+        {
+            taint(server);
+            doc_->nav(".").nav(path) << value;
         }
         void increment(const lj::Uuid& server, const std::string path, int amount)
         {

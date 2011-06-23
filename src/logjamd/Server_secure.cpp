@@ -44,6 +44,8 @@ extern "C"
 #include <openssl/err.h>
 }
 
+#include <iostream>
+
 namespace logjamd
 {
     Server_secure::Server_secure(lj::Document* config)
@@ -60,8 +62,22 @@ namespace logjamd
     void Server_secure::startup()
     {
         std::string listen(lj::bson::as_string(cfg().get("server/listen")));
-        char* host_port = new char[listen.size()];
-        memcpy(host_port, listen.c_str(), listen.size());
+        const lj::bson::Node& cluster = cfg().get("server/cluster");
+
+        // start peer connections.
+        for (auto iter = cluster.to_vector().begin();
+            cluster.to_vector().end() != iter;
+            ++iter)
+        {
+            std::string peer(lj::bson::as_string(*(*iter)));
+            char* peer_address = new char[peer.size() + 1];
+            memcpy(peer_address, peer.c_str(), peer.size() + 1);
+            delete[] peer_address;
+        }
+
+        // Start port listening.
+        char* host_port = new char[listen.size() + 1];
+        memcpy(host_port, listen.c_str(), listen.size() + 1);
         io_ = BIO_new_accept(host_port);
 
         if (!io_)
