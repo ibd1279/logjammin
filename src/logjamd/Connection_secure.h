@@ -49,6 +49,31 @@ namespace logjamd
         virtual void write(const lj::bson::Node& data);
     private:
         ::BIO* io_;
+        struct State
+        {
+            char* buffer;
+            int32_t offset;
+            int32_t size;
+            bool header;
+            inline int32_t avail() const { return size - offset; };
+            inline char* pos() { return buffer + offset; };
+            inline void reset(size_t sz) {
+                if (buffer)
+                {
+                    delete[] buffer;
+                }
+                buffer = NULL;
+                if (sz)
+                {
+                    buffer = new char[sz];
+                }
+                offset = 0;
+                size = sz;
+                header = true;
+            };
+        };
+        State read_;
+        State in_;
     };
 };
 

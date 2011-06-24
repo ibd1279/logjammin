@@ -34,6 +34,8 @@
 
 #include "logjamd/Connection_secure.h"
 
+#include <algorithm>
+
 extern "C"
 {
 #include <openssl/ssl.h>
@@ -45,7 +47,7 @@ extern "C"
 namespace logjamd
 {
     Connection_secure::Connection_secure(logjamd::Server* server,
-            lj::Document* state, ::BIO* io) : logjamd::Connection(server, state), io_(io)
+            lj::Document* state, ::BIO* io) : logjamd::Connection(server, state), io_(io), read_{NULL, 0, 0, true}, in_{NULL, 0, 0, true}
     {
     }
     Connection_secure::~Connection_secure()
@@ -54,37 +56,85 @@ namespace logjamd
         {
             BIO_free(io_);
         }
+        read_.reset(0);
+        in_.reset(0);
     }
     lj::bson::Node* Connection_secure::read()
     {
-        uint8_t length_buffer[4];
-        uint32_t found = 0;
-        while(4 > found)
+        lj::bson::Node* node = NULL;
+        while (!node)
         {
-            int tmp = BIO_read(io_, length_buffer + found, 4 - found);
-            if (0 >= tmp)
+            // initial setup logic
+            if (!read_.buffer)
             {
-                throw LJ__Exception("Unable to read from Connection.");
+                read_.reset(4);
             }
-            found += tmp;
-        }
+            if (!in_.buffer)
+            {
+                in_.reset(4096);
+            }
 
-        uint32_t length = *((uint32_t*)length_buffer);
-        uint8_t* document_buffer = new uint8_t[length];
-        found = 0;
-        while(length > found)
-        {
-            int tmp = BIO_read(io_, length_buffer + found, length - found);
-            if (0 >= tmp)
+            // read as much as we can.
+            int ret = BIO_read(io_, in_.pos(), in_.avail());
+            if (ret <= 0)
             {
-                delete[] document_buffer;
-                throw LJ__Exception("Unable to read from Connection.");
+                // deal with errors
+                if (BIO_should_retry(io_))
+                {
+                    //select wait?
+                    continue;
+                }
+                throw LJ__Exception("Unable to read from connection.");
             }
-            found += tmp;
+            in_.offset += ret;
+
+            if (read_.header)
+            {
+                // process the header.
+                if (read_.offset < read_.size)
+                {
+                    // we still need to fill the length
+                    int len = std::min<int>(in_.avail(), read_.avail());
+                    memcpy(read_.pos(), in_.pos(), len);
+                    read_.offset += len;
+                    in_.offset += len;
+                }
+
+                if (read_.avail() == 0)
+                {
+                    // We are done with the header, resize the buffer for
+                    // the message.
+                    read_.reset(*reinterpret_cast<int32_t*>(read_.buffer));
+                    *reinterpret_cast<int32_t*>(read_.buffer) = read_.size;
+                    read_.offset = 4;
+                    read_.header = false;
+                }
+            }
+
+            if (!read_.header)
+            {
+                // read the body until we have the completed message.
+                int len = std::min<int>(in_.avail(), read_.avail());
+                memcpy(read_.pos(), in_.pos(), len);
+                read_.offset += len;
+                in_.offset += len;
+            }
+
+            if (in_.avail() == 0)
+            {
+                // the input buffer is empty, reset it.
+                in_.reset(0);
+            }
+
+            if (read_.avail() == 0)
+            {
+                // we have a completed message. convert to a document to return.
+                node = new lj::bson::Node(lj::bson::Type::k_document,
+                        reinterpret_cast<uint8_t*>(read_.buffer));
+                read_.reset(0);
+            }
         }
-        lj::bson::Node* ptr = new lj::bson::Node(lj::bson::Type::k_document, document_buffer);
-        delete[] document_buffer;
-        return ptr;
+        return node;
     }
     void Connection_secure::write(const lj::bson::Node& data)
     {
