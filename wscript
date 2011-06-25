@@ -12,10 +12,21 @@ def configure(conf):
     conf.load('compiler_cxx')
     conf.load('waf_unit_test')
 
-    #Set the compiler 
     conf.check(
         header_name='openssl/ssl.h',
         lib=['ssl', 'crypto'],
+        libpath=['/usr/local/lib', '/opt/local/lib', '/usr/lib'],
+        includes=[
+            '/usr/local/include',
+            '/opt/local/include',
+            '/usr/include'
+            ],
+        mandatory=True
+        )
+
+    conf.check(
+        header_name='pthread.h',
+        lib=['pthread'],
         libpath=['/usr/local/lib', '/opt/local/lib', '/usr/lib'],
         includes=[
             '/usr/local/include',
@@ -45,6 +56,7 @@ def build(bld):
             ,'src/lj/Bson.cpp'
             ,'src/lj/Log.cpp'
             ,'src/lj/Stopclock.cpp'
+            ,'src/lj/Thread.cpp'
             ,'src/lj/Uuid.cpp'
         ]
         ,target='lj'
@@ -70,7 +82,7 @@ def build(bld):
         ]
         ,linkflags = ['-g']
         ,use = ['lj']
-        ,uselib = ['OPENSSL/SSL.H']
+        ,uselib = ['OPENSSL/SSL.H', 'PTHREAD.H']
     )
 
     # preform the unit tests
@@ -86,6 +98,6 @@ def build(bld):
             ,target = node.change_ext('')
             ,use = ['lj']
             ,cxxflags = ['-O0', '-Wall', '-g', '-std=c++0x']
-            ,linkflags = ['-g']
+            ,linkflags = ['-g', '-pthread']
         )
 
