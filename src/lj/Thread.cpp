@@ -32,9 +32,11 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "lj/Log.h"
 #include "lj/Thread.h"
 
-#include <iostream>
+#include <exception>
+#include <memory>
 
 namespace lj
 {
@@ -53,7 +55,7 @@ namespace lj
     
     Thread::~Thread()
     {
-        join();
+        abort();
     }
 
     bool Thread::running() const
@@ -97,34 +99,46 @@ namespace lj
         pthread_join(thread_, NULL);
     }
 
-    void Thread::run_entry()
-    {
-        work_->run();
-        lj::Work* work = work_;
-        work_ = NULL;
-        delete work;
-    }
-
-    void* Thread::call_entry()
-    {
-        void* result = work_->call();
-        lj::Work* work = work_;
-        work_ = NULL;
-        delete work;
-        return result;
-    }
-
     void* Thread::pthread_run(void* obj)
     {
-        reinterpret_cast<lj::Thread*>(obj)->run_entry();
+        lj::Thread* ptr = reinterpret_cast<lj::Thread*>(obj);
+        try
+        {
+            if (ptr->work_)
+            {
+                ptr->work_->run();
+            }
+        }
+        catch (const std::exception& ex)
+        {
+            lj::Log::warning("Thread aborted because of an uncaught exception: %s") << ex.what() << lj::Log::end;
+        }
+        catch (const std::exception* ex)
+        {
+            lj::Log::warning("Thread aborted because of an uncaught exception: %s") << ex->what() << lj::Log::end;
+        }
+        lj::Work* work = ptr->work_;
+        ptr->work_ = NULL;
+        delete work;
         return NULL;
     }
 
     void* Thread::pthread_call(void* obj)
     {
         lj::Thread* ptr = reinterpret_cast<lj::Thread*>(obj);
-        ptr->result_->result_ = ptr->call_entry();
+        ptr->result_->result_ = NULL;
+        try
+        {
+            ptr->result_->result_ = ptr->work_->call();
+        }
+        catch (...)
+        {
+            ptr->result_->exception_ = std::current_exception();
+        }
         ptr->result_->complete_ = true;
+        lj::Work* work = ptr->work_;
+        ptr->work_ = NULL;
+        delete work;
         return NULL;
     }
 };

@@ -64,10 +64,6 @@ namespace lj
 
         void join();
     private:
-        void run_entry();
-
-        void* call_entry();
-
         static void* pthread_run(void* obj);
 
         static void* pthread_call(void* obj);
@@ -84,17 +80,22 @@ namespace lj
         Future(lj::Thread* thread);
         bool complete() const;
         template<class T>
-        T* result()
+        T result()
         {
             if (!complete())
             {
                 thread_->join();
             }
-            return reinterpret_cast<T*>(result_);
+            if (!result_)
+            {
+                std::rethrow_exception(exception_);
+            }
+            return reinterpret_cast<T>(result_);
         }
     private:
         volatile bool complete_;
         void* volatile result_;
         lj::Thread* thread_;
+        std::exception_ptr exception_;
     };
 };

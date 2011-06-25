@@ -21,7 +21,7 @@ public:
     virtual void run()
     {
         lj::Uuid* id = new lj::Uuid();
-        for (int h = 0; h < 500 && !stop_; ++h)
+        for (int h = 0; h < 1000 && !stop_; ++h)
         {
             delete id;
             id = new lj::Uuid();
@@ -32,7 +32,7 @@ public:
     {
         lj::Stopclock clock;
         lj::Uuid* id = new lj::Uuid();
-        for (int h = 0; h < 500 && !stop_; ++h)
+        for (int h = 0; h < 1000 && !stop_; ++h)
         {
             delete id;
             id = new lj::Uuid();
@@ -48,6 +48,27 @@ public:
 private:
     volatile bool stop_;
 };
+
+class TestExceptionWork : public lj::Work
+{
+public:
+    TestExceptionWork()
+    {
+    }
+    virtual void run()
+    {
+        throw LJ__Exception("Run Exception");
+    }
+    virtual void* call()
+    {
+        throw LJ__Exception("Call Exception");
+    }
+    virtual void abort()
+    {
+        throw LJ__Exception("Abort Exception");
+    }
+};
+
 
 void testRun()
 {
@@ -65,7 +86,7 @@ void testCall()
 
     lj::Future* f = t.call(w);
     TEST_ASSERT(t.running() == true);
-    lj::Uuid* id = f->result<lj::Uuid>();
+    lj::Uuid* id = f->result<lj::Uuid*>();
     TEST_ASSERT(id != NULL);
     TEST_ASSERT(*id != lj::Uuid::k_nil);
 }
@@ -122,9 +143,40 @@ void testMultipleThreads()
 
     for (int h = 0; h < 10; ++h)
     {
-        TEST_ASSERT(*futures[h]->result<lj::Uuid>() != lj::Uuid::k_nil);
+        TEST_ASSERT(*futures[h]->result<lj::Uuid*>() != lj::Uuid::k_nil);
         delete futures[h];
         delete threads[h];
+    }
+}
+
+void testRunException()
+{
+    lj::Thread t;
+    lj::Work* w = new TestExceptionWork();
+
+    t.run(w);
+    t.join();
+    TEST_ASSERT(t.running() == false);
+}
+
+void testCallException()
+{
+    lj::Thread t;
+    lj::Work* w = new TestExceptionWork();
+
+    lj::Future* f = t.call(w);
+
+    try
+    {
+        f->result<void*>();
+        TEST_FAILED("Should have thrown an exception.");
+    }
+    catch (lj::Exception& ex)
+    {
+    }
+    catch (std::exception& ex)
+    {
+        TEST_FAILED("Should have been a correct typed exception.");
     }
 }
 
@@ -136,6 +188,8 @@ int main(int argc, char** argv)
         PREPARE_TEST(testAbort),
         PREPARE_TEST(testDualRun),
         PREPARE_TEST(testMultipleThreads),
+        PREPARE_TEST(testRunException),
+        PREPARE_TEST(testCallException),
         {0, ""}
     };
     return Test_util::runner("lj::Thread", tests);
