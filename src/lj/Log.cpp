@@ -34,7 +34,6 @@
 
 #include "lj/Log.h"
 
-#include <cstdarg>
 #include <cstdio>
 #include <cstring>
 #include <iostream>
@@ -245,14 +244,6 @@ namespace
     const std::string k_level_info_string("[INFORMATION] ");
     const std::string k_level_debug_string("[DEBUG]       ");
     
-    bool is_flag(char c)
-    {
-        return !(c == 'c' || c == 'd' || c == 'i' || c == 'e' || c == 'E' ||
-                c == 'f' || c == 'g' || c == 'G' || c == 'o' || c == 's' ||
-                c == 'u' || c == 'x' || c == 'X' || c == 'p' || c == 'n' ||
-                c == '%');
-    }
-    
 }; // namespace
     
 namespace lj
@@ -301,73 +292,6 @@ namespace lj
                 return Log::debug;
         }
     }
-    
-    /*
-    void Log::log(const std::string& fmt, ...)
-    {
-        if (enabled_)
-        {
-            Real_logger& logger = *(new Real_logger(stream_, level_, fmt));
-            va_list vl;
-            va_start(vl, fmt);
-            while (logger.size())
-            {
-                //find the first character that isn't a formatting flag.
-                int position = 1;
-                char data_type = logger.head().at(position);
-                int bytes = 4;
-                while (is_flag(data_type))
-                {
-                    if (data_type == 'l')
-                    {
-                        bytes = sizeof(int64_t);
-                    }
-                    data_type = logger.head().at(++position);
-                }
-
-                // Handle the next argument as the needed data type.
-                switch (data_type)
-                {
-                    case 's':
-                        logger << va_arg(vl, const char*);
-                        break;
-                    case 'd':
-                    case 'i':
-                        if (bytes == sizeof(int64_t))
-                        {
-                            logger << va_arg(vl, int64_t);
-                        }
-                        else
-                        {
-                            logger << va_arg(vl, int);
-                        }
-                        break;
-                    case 'u':
-                    case 'x':
-                    case 'X':
-                        if (bytes == sizeof(int64_t))
-                        {
-                            logger << va_arg(vl, uint64_t);
-                        }
-                        else
-                        {
-                            logger << va_arg(vl, unsigned int);
-                        }
-                        break;
-                    case 'c':
-                        logger << ((char)va_arg(vl, int));
-                        break;
-                    case 'p':
-                        logger << va_arg(vl, void*);
-                        break;
-                }
-            }
-            
-            va_end(vl);
-            
-            logger << end;
-        }
-    } */
     
     Log &Log::operator()(const std::string& fmt)
     {
