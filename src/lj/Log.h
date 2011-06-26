@@ -33,8 +33,9 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "Uuid.h"
+#include "lj/Uuid.h"
 
+#include <exception>
 #include <ostream>
 #include <string>
 
@@ -86,6 +87,13 @@ namespace lj
          \return The string describing the event level.
          */
         static const std::string& level_text(const Level& level);
+
+        //! Convert an event level into a Log object.
+        /*!
+         \param level The event level to convert.
+         \return The Log object for that event level.
+         */
+        static Log& for_level(const Level& level);
         
         //! Create a new log.
         /*!
@@ -243,71 +251,78 @@ namespace lj
          \param msg The message to write to the output.
          \return The current Log.
          */
-        inline Log &operator<<(uint64_t msg) { return write_unsigned_int(msg); };
+        inline Log& operator<<(uint64_t msg) { return write_unsigned_int(msg); };
         
         //! Log a value.
         /*!
          \param msg The message to write to the output.
          \return The current Log.
          */
-        inline Log &operator<<(int32_t msg) { return write_signed_int(msg); };
+        inline Log& operator<<(int32_t msg) { return write_signed_int(msg); };
         
         //! Log a value.
         /*!
          \param msg The message to write to the output.
          \return The current Log.
          */
-        inline Log &operator<<(uint32_t msg) { return write_unsigned_int(msg); };
+        inline Log& operator<<(uint32_t msg) { return write_unsigned_int(msg); };
         
         //! Log a value.
         /*!
          \param msg The message to write to the output.
          \return The current Log.
          */
-        inline Log &operator<<(int16_t msg) { return write_signed_int(msg); };
+        inline Log& operator<<(int16_t msg) { return write_signed_int(msg); };
         
         //! Log a value.
         /*!
          \param msg The message to write to the output.
          \return The current Log.
          */
-        inline Log &operator<<(uint16_t msg) { return write_unsigned_int(msg); };
+        inline Log& operator<<(uint16_t msg) { return write_unsigned_int(msg); };
         
         //! Log a value.
         /*!
          \param msg The message to write to the output.
          \return The current Log.
          */
-        inline Log &operator<<(int8_t msg) { return write_signed_int(msg); };
+        inline Log& operator<<(int8_t msg) { return write_signed_int(msg); };
         
         //! Log a value.
         /*!
          \param msg The message to write to the output.
          \return The current Log.
          */
-        inline Log &operator<<(uint8_t msg) { return write_unsigned_int(msg); };
+        inline Log& operator<<(uint8_t msg) { return write_unsigned_int(msg); };
         
         //! Log a value.
         /*!
          \param msg The message to write to the output.
          \return The current Log.
          */
-        inline Log &operator<<(bool msg) { return write_bool(msg); };
+        inline Log& operator<<(bool msg) { return write_bool(msg); };
         
         //! Log a value.
         /*!
          \param msg The message to write to the output.
          \return The current Log.
          */
-        inline Log &operator<<(void* msg) { return write_pointer(msg); };
+        inline Log& operator<<(void* msg) { return write_pointer(msg); };
         
         //! Log a unique id value.
         /*!
          \param msg The message to write to the output.
          \return The current Log.
          */
-        inline Log &operator<<(const Uuid& msg) { return write_string(msg.str()); };
+        inline Log& operator<<(const Uuid& msg) { return write_string(msg.str()); };
         
+        //! Log an exception.
+        /*!
+         \param ex The exception to log
+         \return The current Log.
+         */
+        inline Log& operator<<(const std::exception& ex) { return write_string(ex.what()); };
+
         //! Close the logger.
         /*!
          \param msg The message to write to the output.
@@ -324,9 +339,48 @@ namespace lj
         static Log info;      //!< Info event logger.
         static Log debug;     //!< Debug event logger.
         static End end;       //!< End object.
+
     protected:
         Level level_;    //!< event level associated with the logger.
         std::ostream* stream_; //!< stream to output the log messages to.
         bool enabled_;         //!< enabled flag.
+    };
+
+    //! Wrapper to execute a function and log exceptions.
+    /*!
+     \author Jason Watson <jwatson@slashopt.net>
+     \date June 25, 2011
+     */
+    template <class F>
+    class Log_exception
+    {
+    public:
+        Log_exception(lj::Log& log, F func) : log_(log), func_(func)
+        {
+        }
+
+        void operator()()
+        {
+            try
+            {
+                func_();
+            }
+            catch (const std::exception& ex)
+            {
+                log_("Unhandled exception: %s") << ex << Log::end;
+            }
+            catch (std::exception* ex)
+            {
+                log_("Unhandled exception: %s") << *ex << Log::end;
+                delete ex;
+            }
+            catch (...)
+            {
+                log_("Unhandled exception of unknown type.") << Log::end;
+            }
+        }
+    private:
+        Log& log_;
+        F func_;
     };
 }; // namespace lj

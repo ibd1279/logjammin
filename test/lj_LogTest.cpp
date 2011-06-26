@@ -5,12 +5,14 @@
  * Created on May 13, 2011, 7:48:07 PM
  */
 
+#include "testhelper.h"
+#include "lj/Exception.h"
+#include "lj/Log.h"
 #include <cstdlib>
 #include <cstdio>
 #include <iostream>
 #include <sstream>
-#include "lj/Log.h"
-#include "testhelper.h"
+#include <thread>
 
 void testWrite_disable()
 {
@@ -90,6 +92,36 @@ void testWrite_pointer()
     TEST_ASSERT(std::string(expected).compare(buffer.str()) == 0);
 }
 
+void testWrite_exception()
+{
+    std::ostringstream buffer;
+    lj::Log logger(lj::Log::Level::k_alert, &buffer);
+    logger("%s") << LJ__Exception("foo bar") << lj::Log::end;
+    char expected[1024];
+    sprintf(expected, "[ALERT]       %s Exception: %s - foo bar\n", __FILE__, __FUNCTION__);
+    TEST_ASSERT(std::string(expected).compare(buffer.str()) == 0);
+}
+
+void testLogException()
+{
+    std::ostringstream buffer;
+    lj::Log logger(lj::Log::Level::k_alert, &buffer);
+    std::thread t(lj::Log_exception<void (*)()>(logger, []()
+    {
+        lj::Uuid* ptr = new lj::Uuid();
+        for (int h = 0; h < 100; ++h)
+        {
+            delete ptr;
+            ptr = new lj::Uuid();
+        }
+        delete ptr;
+        throw LJ__Exception("random fail");
+    }));
+    t.join();
+    std::string expected("[ALERT]       Unhandled exception: ../test/lj_LogTest.cpp Exception: operator() - random fail\n");
+    TEST_ASSERT(expected.compare(buffer.str()) == 0);
+}
+
 int main(int argc, char** argv)
 {
     const Test_entry tests[] = {
@@ -98,6 +130,8 @@ int main(int argc, char** argv)
         PREPARE_TEST(testWrite_unsigned_int),
         PREPARE_TEST(testWrite_bool),
         PREPARE_TEST(testWrite_pointer),
+        PREPARE_TEST(testWrite_exception),
+        PREPARE_TEST(testLogException),
         {0, ""}
     };
     return Test_util::runner("lj::LogTest", tests);

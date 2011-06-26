@@ -279,6 +279,28 @@ namespace lj
                 return k_level_debug_string;
         }
     }
+    Log& Log::for_level(const Level& level)
+    {
+        switch (level)
+        {
+            case Level::k_emergency:
+                return Log::emergency;
+            case Level::k_alert:
+                return Log::alert;
+            case Level::k_critical:
+                return Log::critical;
+            case Level::k_error:
+                return Log::error;
+            case Level::k_warning:
+                return Log::warning;
+            case Level::k_notice:
+                return Log::notice;
+            case Level::k_info:
+                return Log::info;
+            default:
+                return Log::debug;
+        }
+    }
     
     void Log::log(const std::string& fmt, ...)
     {
