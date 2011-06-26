@@ -44,7 +44,136 @@ extern "C"
 #include <openssl/err.h>
 }
 
-#include <iostream>
+#include <algorithm>
+#include <mutex>
+#include <thread>
+
+namespace
+{
+    struct State
+    {
+        char* buffer;
+        int32_t offset;
+        int32_t size;
+        bool header;
+        inline int32_t avail() const { return size - offset; };
+        inline char* pos() { return buffer + offset; };
+        inline void reset(size_t sz) {
+            if (buffer)
+            {
+                delete[] buffer;
+            }
+            buffer = NULL;
+            if (sz)
+            {
+                buffer = new char[sz];
+            }
+            offset = 0;
+            size = sz;
+            header = true;
+        };
+    };
+
+    struct Connection_secure_state
+    {
+        State in_;
+        State out_;
+        State read_;
+        State write_;
+        Connection_secure* connection_;
+        BIO* io_;
+    };
+
+    class Server_secure_io
+    {
+    public:
+        Server_secure_io() : stop_(false), mutex_(), clients_()
+        {
+        }
+        Server_secure_io(const Server_secure_io& orig) = delete;
+        Server_secure_io& operator=(const Server_secure_io& orig) = delete;
+        ~Server_secure_io()
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            for (auto iter = clients_.begin();
+                clients_.end() != iter;
+                ++iter)
+            {
+                delete *iter;
+            }
+        }
+
+        int populate_sets(fd_set* rs, fd_set* ws)
+        {
+            FD_ZERO(rs);
+            FD_ZERO(ws);
+            int max_fd = 0;
+
+            std::lock_guard<std::mutex> _(mutex_);
+            for (auto iter = clients_.begin();
+                clients_.end() != iter;
+                ++iter)
+            {
+                int fd;
+                BIO_get_fd((*iter)->io_, &fd);
+
+                if ((*iter)->writing())
+                {
+                    FD_SET(fd, ws);
+                }
+                else
+                {
+                    FD_SET(fd, rs);
+                }
+
+                max_fd = std::max(max_fd, fd);
+            }
+            return max_fd;
+        }
+
+        void operator()()
+        {
+            fd_set rs;
+            fd_set ws;
+
+            while (!stop_)
+            {
+                int mx = populate_sets(&rs, &ws);
+                if (-1 == ::select(mx + 1, &rs, &ws, NULL, NULL))
+                {
+
+                }
+            }
+        }
+
+        void manage_client(logjamd::Connection_secure* client)
+        {
+            Connection_secure_state* state = new Connection_secure_state();
+            state->connection_ = client;
+            std::lock_guard<std::mutex> _(mutex_);
+            clients_.push_back(state);
+        }
+
+        void release_client(const logjamd::Connection_secure* client)
+        {
+            std::lock_guard<std::mutex> _(mutex_);
+            clients_.remove_if([&client](Connection_secure_state* value) -> bool
+            {
+                return client == value->connection_;
+            });
+            delete state;
+        }
+
+        void stop()
+        {
+            stop_ = true;
+        }
+    private:
+        bool stop_;
+        std::mutex mutex_;
+        std::list<logjamd::Connection_secure_state*> clients_;
+    };
+}; // namespace (anonymous)
 
 namespace logjamd
 {

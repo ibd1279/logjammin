@@ -35,6 +35,9 @@
 
 #include "logjamd/Connection.h"
 
+#include <mutex>
+#include <queue>
+
 typedef struct bio_st BIO;
 namespace logjamd
 {
@@ -47,33 +50,13 @@ namespace logjamd
         virtual ~Connection_secure();
         virtual lj::bson::Node* read();
         virtual void write(const lj::bson::Node& data);
+        void enque(lj::bson::Node* node);
+        lj::bson::Node* deque()
+        bool writing() const
     private:
-        ::BIO* io_;
-        struct State
-        {
-            char* buffer;
-            int32_t offset;
-            int32_t size;
-            bool header;
-            inline int32_t avail() const { return size - offset; };
-            inline char* pos() { return buffer + offset; };
-            inline void reset(size_t sz) {
-                if (buffer)
-                {
-                    delete[] buffer;
-                }
-                buffer = NULL;
-                if (sz)
-                {
-                    buffer = new char[sz];
-                }
-                offset = 0;
-                size = sz;
-                header = true;
-            };
-        };
-        State read_;
-        State in_;
+        std::mutex mutex_;
+        std::queue<lj::bson::Node*> read_queue_;
+        std::queue<lj::bson::Node*> write_queue_;
     };
 };
 

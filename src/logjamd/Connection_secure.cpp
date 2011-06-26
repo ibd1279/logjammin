@@ -138,19 +138,30 @@ namespace logjamd
     }
     void Connection_secure::write(const lj::bson::Node& data)
     {
-        size_t sz = data.size();
-        uint8_t* buffer = data.to_binary();
-        uint32_t sent = 0;
-        while(sz > sent)
+        std::lock_guard<std::mutex> _(mutex_);
+        write_queue_.push(new lj::bson::Node(data));
+    }
+    void Connection_secure::enque(lj::bson::Node* node)
+    {
+        std::lock_guard<std::mutex> _(mutex_);
+        read_queue_.push(node);
+    }
+
+    lj::bson::Node* Connection_secure::deque()
+    {
+        std::lock_guard<std::mutex> _(mutex_);
+        if (write_queue_.empty())
         {
-            int tmp = BIO_write(io_, buffer, sz);
-            if (0 > tmp)
-            {
-                delete[] buffer;
-                throw LJ__Exception("Unable to write to Connection.");
-            }
-            sent += tmp;
+            return NULL;
         }
-        delete[] buffer;
+        lj::bson::Node* node = write_queue_.front();
+        write_queue_.pop();
+        return node;
+    }
+
+    bool Connection_secure::writing() const
+    {
+        std::lock_guard<std::mutex> _(mutex_);
+        return write_queue_.empty();
     }
 };
