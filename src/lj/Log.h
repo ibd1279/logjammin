@@ -35,8 +35,10 @@
 
 #include "lj/Uuid.h"
 
+#include <cstdint>
 #include <exception>
 #include <ostream>
+#include <sstream>
 #include <string>
 
 namespace lj
@@ -131,7 +133,7 @@ namespace lj
             enabled_ = true;
             return *this;
         }
-        
+
         //! Log a message to the output stream.
         /*!
          \par
@@ -144,7 +146,12 @@ namespace lj
          \param fmt The format of the log message.
          \param ... The arguments to use for formatting.
          */
-        void log(const std::string& fmt, ...);
+        template <class ...Args>
+        void log(const std::string& fmt, const Args& ...args)
+        {
+            Log& logger = (*this)(fmt);
+            logger.sub_log(args...);
+        }
         
         //! Build a message for the output stream.
         /*!
@@ -244,70 +251,70 @@ namespace lj
          \param msg The message to write to the output.
          \return The current Log.
          */
-        inline Log& operator<<(int64_t msg) { return write_signed_int(msg); };
+        inline Log& operator<<(const int64_t msg) { return write_signed_int(msg); };
         
         //! Log a value.
         /*!
          \param msg The message to write to the output.
          \return The current Log.
          */
-        inline Log& operator<<(uint64_t msg) { return write_unsigned_int(msg); };
+        inline Log& operator<<(const uint64_t msg) { return write_unsigned_int(msg); };
         
         //! Log a value.
         /*!
          \param msg The message to write to the output.
          \return The current Log.
          */
-        inline Log& operator<<(int32_t msg) { return write_signed_int(msg); };
+        inline Log& operator<<(const int32_t msg) { return write_signed_int(msg); };
         
         //! Log a value.
         /*!
          \param msg The message to write to the output.
          \return The current Log.
          */
-        inline Log& operator<<(uint32_t msg) { return write_unsigned_int(msg); };
+        inline Log& operator<<(const uint32_t msg) { return write_unsigned_int(msg); };
         
         //! Log a value.
         /*!
          \param msg The message to write to the output.
          \return The current Log.
          */
-        inline Log& operator<<(int16_t msg) { return write_signed_int(msg); };
+        inline Log& operator<<(const int16_t msg) { return write_signed_int(msg); };
         
         //! Log a value.
         /*!
          \param msg The message to write to the output.
          \return The current Log.
          */
-        inline Log& operator<<(uint16_t msg) { return write_unsigned_int(msg); };
+        inline Log& operator<<(const uint16_t msg) { return write_unsigned_int(msg); };
         
         //! Log a value.
         /*!
          \param msg The message to write to the output.
          \return The current Log.
          */
-        inline Log& operator<<(int8_t msg) { return write_signed_int(msg); };
+        inline Log& operator<<(const int8_t msg) { return write_signed_int(msg); };
         
         //! Log a value.
         /*!
          \param msg The message to write to the output.
          \return The current Log.
          */
-        inline Log& operator<<(uint8_t msg) { return write_unsigned_int(msg); };
+        inline Log& operator<<(const uint8_t msg) { return write_unsigned_int(msg); };
         
         //! Log a value.
         /*!
          \param msg The message to write to the output.
          \return The current Log.
          */
-        inline Log& operator<<(bool msg) { return write_bool(msg); };
+        inline Log& operator<<(const bool msg) { return write_bool(msg); };
         
         //! Log a value.
         /*!
          \param msg The message to write to the output.
          \return The current Log.
          */
-        inline Log& operator<<(void* msg) { return write_pointer(msg); };
+        inline Log& operator<<(const void* msg) { return write_pointer(msg); };
         
         //! Log a unique id value.
         /*!
@@ -344,6 +351,19 @@ namespace lj
         Level level_;    //!< event level associated with the logger.
         std::ostream* stream_; //!< stream to output the log messages to.
         bool enabled_;         //!< enabled flag.
+    private:
+        void sub_log()
+        {
+            (*this) << end;
+        }
+
+        template <class A0, class ...Args>
+        void sub_log(const A0& a0, const Args& ...args)
+        {
+            (*this) << a0;
+            sub_log(args...);
+        }
+
     };
 
     //! Wrapper to execute a function and log exceptions.

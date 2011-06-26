@@ -302,6 +302,7 @@ namespace lj
         }
     }
     
+    /*
     void Log::log(const std::string& fmt, ...)
     {
         if (enabled_)
@@ -366,7 +367,7 @@ namespace lj
             
             logger << end;
         }
-    }
+    } */
     
     Log &Log::operator()(const std::string& fmt)
     {

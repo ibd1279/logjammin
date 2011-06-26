@@ -26,7 +26,7 @@ void testWrite_disable()
     logger.log("searching logs for [%s]", "test string");
     logger("searching logs for [%s]") << "test string" << lj::Log::end;
 
-    std::string expected = "[WARNING]     searching logs for [test string]\n[WARNING]     searching logs for [test string]\n";
+    std::string expected("[WARNING]     searching logs for [test string]\n[WARNING]     searching logs for [test string]\n");
     TEST_ASSERT(expected.compare(buffer.str()) == 0);
 }
 
@@ -49,7 +49,7 @@ void testWrite_signed_int()
     lj::Log logger(lj::Log::Level::k_emergency, &buffer);
     logger.log("%hd", 0xFFFF);
     logger("%hd") << (int16_t)0xFFFF << lj::Log::end;
-    logger.log("%lld", 0xAABB0011AABB0011LL);
+    logger.log("%lld", (int64_t)0xAABB0011AABB0011LL);
     logger("%lld") << (int64_t)0xAABB0011AABB0011LL << lj::Log::end;
     std::string expected = "[EMERGENCY]   -1\n[EMERGENCY]   -1\n[EMERGENCY]   -6144317190738083823\n[EMERGENCY]   -6144317190738083823\n";
     TEST_ASSERT(expected.compare(buffer.str()) == 0);
@@ -61,7 +61,7 @@ void testWrite_unsigned_int()
     lj::Log logger(lj::Log::Level::k_emergency, &buffer);
     logger.log("%hu", 65535);
     logger("%hu") << (uint16_t)65535 << lj::Log::end;
-    logger.log("%llu", 0xAABB0011AABB0011ULL);
+    logger.log("%llu", (uint64_t)0xAABB0011AABB0011ULL);
     logger("%llu") << (uint64_t)0xAABB0011AABB0011ULL << lj::Log::end;
     std::string expected = "[EMERGENCY]   65535\n[EMERGENCY]   65535\n[EMERGENCY]   12302426882971467793\n[EMERGENCY]   12302426882971467793\n";
     TEST_ASSERT(expected.compare(buffer.str()) == 0);
@@ -125,6 +125,7 @@ void testLogException()
 int main(int argc, char** argv)
 {
     const Test_entry tests[] = {
+        PREPARE_TEST(testWrite_disable),
         PREPARE_TEST(testWrite_string),
         PREPARE_TEST(testWrite_signed_int),
         PREPARE_TEST(testWrite_unsigned_int),
