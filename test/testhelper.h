@@ -16,8 +16,9 @@
 
 struct Test_failure
 {
-    Test_failure(const std::string& msg, const std::string& expr, const std::string& file,
-    const std::string& func, int line) : _msg(msg), _expr(expr), _file(file), _func(func), _line(line)
+    Test_failure(const std::string& msg, const std::string& expr,
+            const std::string& file, const std::string& func, int line) :
+            _msg(msg), _expr(expr), _file(file), _func(func), _line(line)
     {
     }
     std::string details(const std::string& suite_name, const std::string& test_name, float elapsed) const
