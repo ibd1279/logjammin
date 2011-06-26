@@ -22,7 +22,7 @@ def configure(conf):
             '/usr/include'
             ],
         mandatory=True
-        )
+    )
 
     conf.check(
         header_name='pthread.h',
