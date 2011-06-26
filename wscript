@@ -56,7 +56,6 @@ def build(bld):
             ,'src/lj/Bson.cpp'
             ,'src/lj/Log.cpp'
             ,'src/lj/Stopclock.cpp'
-            ,'src/lj/Thread.cpp'
             ,'src/lj/Uuid.cpp'
         ]
         ,target='lj'
