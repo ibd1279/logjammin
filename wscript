@@ -96,7 +96,14 @@ def build(bld):
             ,source = [node]
             ,target = node.change_ext('')
             ,use = ['lj']
-            ,cxxflags = ['-O0', '-Wall', '-g', '-std=c++0x']
+            ,cxxflags = [
+                '-O0'
+                ,'-Wall'
+                ,'-g'
+                ,'-std=c++0x'
+                ,'-fno-eliminate-unused-debug-types'
+                ,'-fno-inline'
+            ]
             ,linkflags = ['-g', '-pthread']
         )
 
