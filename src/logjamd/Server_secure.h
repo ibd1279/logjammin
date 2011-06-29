@@ -35,13 +35,15 @@
 
 #include "logjamd/Server.h"
 
-#include <thread>
+#include <list>
 
 typedef struct bio_st BIO;
 
 namespace logjamd
 {
-    class Server_secure : public Server
+    class Connection_secure;
+
+    class Server_secure : public logjamd::Server
     {
     public:
         Server_secure(lj::Document* config);
@@ -52,6 +54,6 @@ namespace logjamd
     private:
         ::BIO* io_;
         bool running_;
-        std::thread client_io_thread_;
+        std::list<logjamd::Connection_secure*> connections_;
     };
 };

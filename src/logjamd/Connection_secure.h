@@ -34,29 +34,33 @@
  */
 
 #include "logjamd/Connection.h"
-
-#include <mutex>
-#include <queue>
+#include <istream>
+#include <thread>
 
 typedef struct bio_st BIO;
 namespace logjamd
 {
-    class Connection_secure : public Connection
+    class Connection_secure : public logjamd::Connection
     {
     public:
         Connection_secure(logjamd::Server* server,
-                lj::Document* state);
-        //! Destructor.
+                lj::Document* state,
+                std::iostream* stream);
         virtual ~Connection_secure();
-        virtual lj::bson::Node* read();
-        virtual void write(const lj::bson::Node& data);
-        void enqueue(lj::bson::Node* node);
-        lj::bson::Node* dequeue();
-        bool writing();
+        virtual void start();
+        virtual void operator()();
+    protected:
+        inline std::iostream& io()
+        {
+            return *stream_;
+        }
+        inline std::thread& thread()
+        {
+            return *thread_;
+        }
     private:
-        std::mutex mutex_;
-        std::queue<lj::bson::Node*> read_queue_;
-        std::queue<lj::bson::Node*> write_queue_;
+        std::iostream* stream_;
+        std::thread* thread_;
     };
 };
 

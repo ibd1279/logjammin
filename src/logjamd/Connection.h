@@ -42,7 +42,9 @@ namespace logjamd
     class Connection {
     public:
         Connection(logjamd::Server* server,
-                lj::Document* state) : server_(server), state_(state)
+                lj::Document* state) :
+                server_(server),
+                state_(state)
         {
         }
 
@@ -54,8 +56,7 @@ namespace logjamd
                 delete state_;
             }
         }
-        virtual lj::bson::Node* read() = 0;
-        virtual void write(const lj::bson::Node& data) = 0;
+        virtual void start() = 0;
         virtual logjamd::Server& server()
         {
             return *server_;

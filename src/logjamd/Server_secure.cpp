@@ -34,8 +34,11 @@
 
 #include "logjamd/Connection_secure.h"
 #include "logjamd/Server_secure.h"
-#include "logjamd/Stage_auth.h"
+#include "lj/Bio_streambuf.h"
 #include "lj/Exception.h"
+#include <algorithm>
+#include <mutex>
+#include <thread>
 
 extern "C"
 {
@@ -44,204 +47,13 @@ extern "C"
 #include <openssl/err.h>
 }
 
-#include <algorithm>
-#include <mutex>
-#include <thread>
-
-namespace
-{
-    struct Buffer
-    {
-        char* buffer;
-        int32_t offset;
-        int32_t size;
-        bool header;
-        inline int32_t avail() const { return size - offset; };
-        inline char* pos() { return buffer + offset; };
-        inline void reset(size_t sz) {
-            if (buffer)
-            {
-                delete[] buffer;
-            }
-            buffer = NULL;
-            if (sz)
-            {
-                buffer = new char[sz];
-            }
-            offset = 0;
-            size = sz;
-            header = true;
-        };
-    };
-
-    struct State
-    {
-        State(logjamd::Connection_secure* connection, BIO* io)
-                : connection_(connection), io_(io)
-        {
-            in_.reset(4096);
-            out_.reset(0);
-            read_.reset(4);
-            write_.reset(0);
-        }
-        Buffer in_;
-        Buffer out_;
-        Buffer read_;
-        Buffer write_;
-        logjamd::Connection_secure* connection_;
-        BIO* io_;
-    };
-
-    class Server_io
-    {
-    public:
-        Server_io() : stop_(false), mutex_(), clients_()
-        {
-        }
-        Server_io(const Server_io& orig) = delete;
-        Server_io& operator=(const Server_io& orig) = delete;
-        ~Server_io()
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            for (auto iter = clients_.begin();
-                clients_.end() != iter;
-                ++iter)
-            {
-                delete *iter;
-            }
-        }
-
-        int populate_sets(fd_set* rs, fd_set* ws, std::map<int, State*>& cache)
-        {
-            FD_ZERO(rs);
-            FD_ZERO(ws);
-            int max_fd = 0;
-
-            std::lock_guard<std::mutex> _(mutex_);
-            for (auto iter = clients_.begin();
-                clients_.end() != iter;
-                ++iter)
-            {
-                int fd;
-                BIO_get_fd((*iter)->io_, &fd);
-
-                if ((*iter)->connection_->writing())
-                {
-                    FD_SET(fd, ws);
-                }
-                else
-                {
-                    FD_SET(fd, rs);
-                }
-
-                max_fd = std::max(max_fd, fd);
-                cache[fd] = *iter;
-            }
-            return max_fd;
-        }
-
-        template <class F>
-        void perform_io(F func, Buffer& buffer, State* state,
-                std::list<State*>& remove)
-        {
-            int nbytes = func(state->io_, buffer.pos(), buffer.avail());
-            if (nbytes <= 0)
-            {
-                // deal with temporary errors
-                if (!BIO_should_retry(state->io_))
-                {
-                    // remove the socket from future loops.
-                    remove.push_back(state);
-                }
-            }
-            else 
-            {
-                buffer.offset += nbytes;
-            }
-        }
-
-        void select()
-        {
-            fd_set rs;
-            fd_set ws;
-            std::map<int, State*> cache;
-
-            // Call into a smaller function for locking.
-            int mx = populate_sets(&rs, &ws, cache);
-
-            // Perform select on the open sockets.
-            if (-1 == ::select(mx + 1, &rs, &ws, NULL, NULL))
-            {
-                throw LJ__Exception("Unable to perform select.");
-            }
-
-            // Loop over the known sockets and see if they are
-            // ready for reading/writing.
-            std::list<State*> remove;
-            for (auto iter = cache.begin();
-                cache.end() != iter;
-                ++iter)
-            {
-                State* state = (*iter).second;
-                if (FD_ISSET((*iter).first, &rs))
-                {
-                    perform_io<int (*)(BIO*, void*, int)>(BIO_read,
-                            state->in_, state, remove);
-                }
-                else if (FD_ISSET((*iter).first, &ws))
-                {
-                    perform_io<int (*)(BIO*, const void*, int)>(BIO_write,
-                            state->out_, state, remove);
-                }
-            }
-
-            for (auto iter = remove.begin();
-                remove.end() != iter;
-                ++iter)
-            {
-                release_client(*iter);
-            }
-        }
-
-        void operator()()
-        {
-            while (!stop_)
-            {
-                select();
-            }
-        }
-
-        void manage_client(State* state)
-        {
-            std::lock_guard<std::mutex> _(mutex_);
-            clients_.push_back(state);
-        }
-
-        void release_client(const State* state)
-        {
-            std::lock_guard<std::mutex> _(mutex_);
-            clients_.remove_if([&state](State* value) -> bool
-            {
-                return state == value;
-            });
-            delete state;
-        }
-
-        void stop()
-        {
-            stop_ = true;
-        }
-    private:
-        bool stop_;
-        std::mutex mutex_;
-        std::list<State*> clients_;
-    };
-}; // namespace (anonymous)
-
 namespace logjamd
 {
-    Server_secure::Server_secure(lj::Document* config)
-            : logjamd::Server(config), io_(NULL), running_(false), client_io_thread_(NULL)
+    Server_secure::Server_secure(lj::Document* config) :
+            logjamd::Server(config),
+            io_(NULL),
+            running_(false),
+            connections_()
     {
     }
     Server_secure::~Server_secure()
@@ -251,42 +63,34 @@ namespace logjamd
             BIO_free(io_);
         }
 
-        if (client_io_thread_)
+        for (auto iter = connections_.begin();
+                connections_.end() != iter;
+                ++iter)
         {
-            client_io_thread_->join();
+            delete (*iter);
         }
     }
     void Server_secure::startup()
     {
         std::string listen(lj::bson::as_string(cfg().get("server/listen")));
-        const lj::bson::Node& cluster = cfg().get("server/cluster");
-
-        // start peer connections.
-        for (auto iter = cluster.to_vector().begin();
-            cluster.to_vector().end() != iter;
-            ++iter)
-        {
-            std::string peer(lj::bson::as_string(*(*iter)));
-            char* peer_address = new char[peer.size() + 1];
-            memcpy(peer_address, peer.c_str(), peer.size() + 1);
-            delete[] peer_address;
-        }
 
         // Start port listening.
         char* host_port = new char[listen.size() + 1];
         memcpy(host_port, listen.c_str(), listen.size() + 1);
-        io_ = BIO_new_accept(host_port);
 
+        // allocate the listener.
+        io_ = BIO_new_accept(host_port);
         if (!io_)
         {
-            ERR_print_errors_fp(stderr);
-            throw LJ__Exception("Unable to allocate IO object.");
+            std::string msg("Unable to allocate IO object. ");
+            throw LJ__Exception(msg + lj::openssl_get_error_string());
         }
 
+        // First accept sets things up, doesn't actually accept a connection.
         if (BIO_do_accept(io_) <= 0)
         {
-            ERR_print_errors_fp(stderr);
-            throw LJ__Exception("Unable to setup the listener object.");
+            std::string msg("Unable to setup the listener object. ");
+            throw LJ__Exception(msg + lj::openssl_get_error_string());
         }
     }
     void Server_secure::listen()
@@ -294,25 +98,30 @@ namespace logjamd
         running_ = true;
         while(running_)
         {
+            // Accept a connection.
             if (BIO_do_accept(io_) <= 0)
             {
-                ERR_print_errors_fp(stderr);
-                throw LJ__Exception("Unable to accept a connection.");
-            }
-            lj::Document* client_state = new lj::Document();
-            BIO* client_io = BIO_pop(io_);
-            logjamd::Connection_secure* client =
-                    new logjamd::Connection_secure(this, client_state);
-            State* state = new State(client, client_io);
-            logjamd::Stage* stage = new logjamd::Stage_auth(client);
-
-            while(stage)
-            {
-                stage = stage->logic();
+                std::string msg("Unable to accept a connection. ");
+                throw LJ__Exception(msg + lj::openssl_get_error_string());
             }
 
-            delete client;
-            running_ = false;
+            // Collect all the things we need for this connection.
+            lj::Document* connection_document = new lj::Document();
+            std::iostream* connection_stream = new std::iostream(
+                    new lj::Bio_streambuf<char>(BIO_pop(io_), 4096, 4096));
+
+            // Creat the new connection
+            Connection_secure* connection = new Connection_secure(
+                    this,
+                    connection_document,
+                    connection_stream);
+
+            // Kick off the thread for that connection.
+            connection->start();
+
+            // store a copy locally for management.
+            // TODO this needs to be flushed out 
+            connections_.push_back(connection);
         }
     }
     void Server_secure::shutdown()

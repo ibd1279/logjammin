@@ -46,50 +46,36 @@ extern "C"
 
 namespace logjamd
 {
-    Connection_secure::Connection_secure(logjamd::Server* server,
-            lj::Document* state) : logjamd::Connection(server, state)
+    Connection_secure::Connection_secure(
+            logjamd::Server* server,
+            lj::Document* state,
+            std::iostream* stream) :
+            logjamd::Connection(server, state),
+            stream_(stream),
+            thread_(NULL)
     {
     }
+
     Connection_secure::~Connection_secure()
     {
-    }
-    lj::bson::Node* Connection_secure::read()
-    {
-        std::lock_guard<std::mutex> _(mutex_);
-        if (read_queue_.empty())
+        if (thread_)
         {
-            return NULL;
+            thread_->join();
+            delete thread_;
         }
-        lj::bson::Node* node = read_queue_.front();
-        read_queue_.pop();
-        return node;
-    }
-    void Connection_secure::write(const lj::bson::Node& data)
-    {
-        std::lock_guard<std::mutex> _(mutex_);
-        write_queue_.push(new lj::bson::Node(data));
-    }
-    void Connection_secure::enqueue(lj::bson::Node* node)
-    {
-        std::lock_guard<std::mutex> _(mutex_);
-        read_queue_.push(node);
+
+        if (stream_)
+        {
+            delete stream_;
+        }
     }
 
-    lj::bson::Node* Connection_secure::dequeue()
+    void Connection_secure::start()
     {
-        std::lock_guard<std::mutex> _(mutex_);
-        if (write_queue_.empty())
-        {
-            return NULL;
-        }
-        lj::bson::Node* node = write_queue_.front();
-        write_queue_.pop();
-        return node;
+        thread_ = new std::thread(*this);
     }
 
-    bool Connection_secure::writing()
+    void Connection_secure::operator()()
     {
-        std::lock_guard<std::mutex> _(mutex_);
-        return write_queue_.empty();
     }
-};
+}; // namespace logjamd
