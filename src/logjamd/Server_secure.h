@@ -35,6 +35,8 @@
 
 #include "logjamd/Server.h"
 
+#include <thread>
+
 typedef struct bio_st BIO;
 
 namespace logjamd
@@ -50,5 +52,6 @@ namespace logjamd
     private:
         ::BIO* io_;
         bool running_;
+        std::thread client_io_thread_;
     };
 };

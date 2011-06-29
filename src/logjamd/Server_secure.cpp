@@ -50,7 +50,7 @@ extern "C"
 
 namespace
 {
-    struct State
+    struct Buffer
     {
         char* buffer;
         int32_t offset;
@@ -74,25 +74,33 @@ namespace
         };
     };
 
-    struct Connection_secure_state
+    struct State
     {
-        State in_;
-        State out_;
-        State read_;
-        State write_;
-        Connection_secure* connection_;
+        State(logjamd::Connection_secure* connection, BIO* io)
+                : connection_(connection), io_(io)
+        {
+            in_.reset(4096);
+            out_.reset(0);
+            read_.reset(4);
+            write_.reset(0);
+        }
+        Buffer in_;
+        Buffer out_;
+        Buffer read_;
+        Buffer write_;
+        logjamd::Connection_secure* connection_;
         BIO* io_;
     };
 
-    class Server_secure_io
+    class Server_io
     {
     public:
-        Server_secure_io() : stop_(false), mutex_(), clients_()
+        Server_io() : stop_(false), mutex_(), clients_()
         {
         }
-        Server_secure_io(const Server_secure_io& orig) = delete;
-        Server_secure_io& operator=(const Server_secure_io& orig) = delete;
-        ~Server_secure_io()
+        Server_io(const Server_io& orig) = delete;
+        Server_io& operator=(const Server_io& orig) = delete;
+        ~Server_io()
         {
             std::lock_guard<std::mutex> lock(mutex_);
             for (auto iter = clients_.begin();
@@ -103,7 +111,7 @@ namespace
             }
         }
 
-        int populate_sets(fd_set* rs, fd_set* ws)
+        int populate_sets(fd_set* rs, fd_set* ws, std::map<int, State*>& cache)
         {
             FD_ZERO(rs);
             FD_ZERO(ws);
@@ -117,7 +125,7 @@ namespace
                 int fd;
                 BIO_get_fd((*iter)->io_, &fd);
 
-                if ((*iter)->writing())
+                if ((*iter)->connection_->writing())
                 {
                     FD_SET(fd, ws);
                 }
@@ -127,39 +135,94 @@ namespace
                 }
 
                 max_fd = std::max(max_fd, fd);
+                cache[fd] = *iter;
             }
             return max_fd;
         }
 
-        void operator()()
+        template <class F>
+        void perform_io(F func, Buffer& buffer, State* state,
+                std::list<State*>& remove)
         {
-            fd_set rs;
-            fd_set ws;
-
-            while (!stop_)
+            int nbytes = func(state->io_, buffer.pos(), buffer.avail());
+            if (nbytes <= 0)
             {
-                int mx = populate_sets(&rs, &ws);
-                if (-1 == ::select(mx + 1, &rs, &ws, NULL, NULL))
+                // deal with temporary errors
+                if (!BIO_should_retry(state->io_))
                 {
-
+                    // remove the socket from future loops.
+                    remove.push_back(state);
                 }
+            }
+            else 
+            {
+                buffer.offset += nbytes;
             }
         }
 
-        void manage_client(logjamd::Connection_secure* client)
+        void select()
         {
-            Connection_secure_state* state = new Connection_secure_state();
-            state->connection_ = client;
+            fd_set rs;
+            fd_set ws;
+            std::map<int, State*> cache;
+
+            // Call into a smaller function for locking.
+            int mx = populate_sets(&rs, &ws, cache);
+
+            // Perform select on the open sockets.
+            if (-1 == ::select(mx + 1, &rs, &ws, NULL, NULL))
+            {
+                throw LJ__Exception("Unable to perform select.");
+            }
+
+            // Loop over the known sockets and see if they are
+            // ready for reading/writing.
+            std::list<State*> remove;
+            for (auto iter = cache.begin();
+                cache.end() != iter;
+                ++iter)
+            {
+                State* state = (*iter).second;
+                if (FD_ISSET((*iter).first, &rs))
+                {
+                    perform_io<int (*)(BIO*, void*, int)>(BIO_read,
+                            state->in_, state, remove);
+                }
+                else if (FD_ISSET((*iter).first, &ws))
+                {
+                    perform_io<int (*)(BIO*, const void*, int)>(BIO_write,
+                            state->out_, state, remove);
+                }
+            }
+
+            for (auto iter = remove.begin();
+                remove.end() != iter;
+                ++iter)
+            {
+                release_client(*iter);
+            }
+        }
+
+        void operator()()
+        {
+            while (!stop_)
+            {
+                select();
+            }
+        }
+
+        void manage_client(State* state)
+        {
             std::lock_guard<std::mutex> _(mutex_);
             clients_.push_back(state);
         }
 
-        void release_client(const logjamd::Connection_secure* client)
+        void release_client(const State* state)
         {
             std::lock_guard<std::mutex> _(mutex_);
-            clients_.remove_if([&client](Connection_secure_state* value) -> bool
+            clients_.remove_if([&state](State* value) -> bool
             {
-                return client == value->connection_;
+                return state == value;
             });
             delete state;
         }
@@ -171,14 +234,14 @@ namespace
     private:
         bool stop_;
         std::mutex mutex_;
-        std::list<logjamd::Connection_secure_state*> clients_;
+        std::list<State*> clients_;
     };
 }; // namespace (anonymous)
 
 namespace logjamd
 {
     Server_secure::Server_secure(lj::Document* config)
-            : logjamd::Server(config), io_(NULL), running_(false)
+            : logjamd::Server(config), io_(NULL), running_(false), client_io_thread_(NULL)
     {
     }
     Server_secure::~Server_secure()
@@ -186,6 +249,11 @@ namespace logjamd
         if (io_)
         {
             BIO_free(io_);
+        }
+
+        if (client_io_thread_)
+        {
+            client_io_thread_->join();
         }
     }
     void Server_secure::startup()
@@ -233,9 +301,11 @@ namespace logjamd
             }
             lj::Document* client_state = new lj::Document();
             BIO* client_io = BIO_pop(io_);
-            logjamd::Connection* client = new logjamd::Connection_secure(this,
-                    client_state, client_io);
+            logjamd::Connection_secure* client =
+                    new logjamd::Connection_secure(this, client_state);
+            State* state = new State(client, client_io);
             logjamd::Stage* stage = new logjamd::Stage_auth(client);
+
             while(stage)
             {
                 stage = stage->logic();

@@ -45,14 +45,14 @@ namespace logjamd
     {
     public:
         Connection_secure(logjamd::Server* server,
-                lj::Document* state, ::BIO* io);
+                lj::Document* state);
         //! Destructor.
         virtual ~Connection_secure();
         virtual lj::bson::Node* read();
         virtual void write(const lj::bson::Node& data);
-        void enque(lj::bson::Node* node);
-        lj::bson::Node* deque()
-        bool writing() const
+        void enqueue(lj::bson::Node* node);
+        lj::bson::Node* dequeue();
+        bool writing();
     private:
         std::mutex mutex_;
         std::queue<lj::bson::Node*> read_queue_;

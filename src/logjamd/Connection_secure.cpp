@@ -47,93 +47,21 @@ extern "C"
 namespace logjamd
 {
     Connection_secure::Connection_secure(logjamd::Server* server,
-            lj::Document* state, ::BIO* io) : logjamd::Connection(server, state), io_(io), read_{NULL, 0, 0, true}, in_{NULL, 0, 0, true}
+            lj::Document* state) : logjamd::Connection(server, state)
     {
     }
     Connection_secure::~Connection_secure()
     {
-        if (io_)
-        {
-            BIO_free(io_);
-        }
-        read_.reset(0);
-        in_.reset(0);
     }
     lj::bson::Node* Connection_secure::read()
     {
-        lj::bson::Node* node = NULL;
-        while (!node)
+        std::lock_guard<std::mutex> _(mutex_);
+        if (read_queue_.empty())
         {
-            // initial setup logic
-            if (!read_.buffer)
-            {
-                read_.reset(4);
-            }
-            if (!in_.buffer)
-            {
-                in_.reset(4096);
-            }
-
-            // read as much as we can.
-            int ret = BIO_read(io_, in_.pos(), in_.avail());
-            if (ret <= 0)
-            {
-                // deal with errors
-                if (BIO_should_retry(io_))
-                {
-                    //select wait?
-                    continue;
-                }
-                throw LJ__Exception("Unable to read from connection.");
-            }
-            in_.offset += ret;
-
-            if (read_.header)
-            {
-                // process the header.
-                if (read_.offset < read_.size)
-                {
-                    // we still need to fill the length
-                    int len = std::min<int>(in_.avail(), read_.avail());
-                    memcpy(read_.pos(), in_.pos(), len);
-                    read_.offset += len;
-                    in_.offset += len;
-                }
-
-                if (read_.avail() == 0)
-                {
-                    // We are done with the header, resize the buffer for
-                    // the message.
-                    read_.reset(*reinterpret_cast<int32_t*>(read_.buffer));
-                    *reinterpret_cast<int32_t*>(read_.buffer) = read_.size;
-                    read_.offset = 4;
-                    read_.header = false;
-                }
-            }
-
-            if (!read_.header)
-            {
-                // read the body until we have the completed message.
-                int len = std::min<int>(in_.avail(), read_.avail());
-                memcpy(read_.pos(), in_.pos(), len);
-                read_.offset += len;
-                in_.offset += len;
-            }
-
-            if (in_.avail() == 0)
-            {
-                // the input buffer is empty, reset it.
-                in_.reset(0);
-            }
-
-            if (read_.avail() == 0)
-            {
-                // we have a completed message. convert to a document to return.
-                node = new lj::bson::Node(lj::bson::Type::k_document,
-                        reinterpret_cast<uint8_t*>(read_.buffer));
-                read_.reset(0);
-            }
+            return NULL;
         }
+        lj::bson::Node* node = read_queue_.front();
+        read_queue_.pop();
         return node;
     }
     void Connection_secure::write(const lj::bson::Node& data)
@@ -141,13 +69,13 @@ namespace logjamd
         std::lock_guard<std::mutex> _(mutex_);
         write_queue_.push(new lj::bson::Node(data));
     }
-    void Connection_secure::enque(lj::bson::Node* node)
+    void Connection_secure::enqueue(lj::bson::Node* node)
     {
         std::lock_guard<std::mutex> _(mutex_);
         read_queue_.push(node);
     }
 
-    lj::bson::Node* Connection_secure::deque()
+    lj::bson::Node* Connection_secure::dequeue()
     {
         std::lock_guard<std::mutex> _(mutex_);
         if (write_queue_.empty())
@@ -159,7 +87,7 @@ namespace logjamd
         return node;
     }
 
-    bool Connection_secure::writing() const
+    bool Connection_secure::writing()
     {
         std::lock_guard<std::mutex> _(mutex_);
         return write_queue_.empty();
