@@ -38,9 +38,14 @@
 #include <ios>
 #include <iostream>
 #include <list>
-#include <openssl/ssl.h>
 #include <fstream>
 #include <sstream>
+
+extern "C"
+{
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+}
 
 namespace lj
 {
