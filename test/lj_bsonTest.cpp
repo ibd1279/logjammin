@@ -52,6 +52,8 @@ void testIstreamExtraction()
             | std::stringstream::binary);
     char* bytes = reinterpret_cast<char*>(doc.root.to_binary());
     ss.write(bytes, doc.root.size());
+    delete[] bytes;
+
     ss >> o;
 
     TEST_ASSERT(lj::bson::as_string(doc.root).compare(lj::bson::as_string(o)) == 0);
