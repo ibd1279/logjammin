@@ -35,6 +35,7 @@
  */
 
 #include "lj/Exception.h"
+#include "lj/Log.h"
 
 #include <cassert>
 #include <cstring>
@@ -50,6 +51,22 @@ extern "C"
 
 namespace lj
 {
+    //! Get the current openssl error strings.
+    /*!
+     \par
+     Convert openssl error messages from internal buffers to a 
+     stl string.
+     \return The OpenSSL error buffer as a string.
+     */
+    std::string openssl_get_error_string()
+    {
+        BIO* mem = BIO_new(BIO_s_mem());
+        ERR_print_errors(mem);
+        BUF_MEM* buf;
+        BIO_get_mem_ptr(mem, &buf);
+        return std::string(buf->data);
+    }
+
     //! streambuf implementation for BIO sockets.
     /*!
      \par
@@ -60,7 +77,7 @@ namespace lj
      \version 1.0
      \date June 28, 2011
      */
-    template < typename charT, typename traits = std::char_traits<charT> >
+    template < typename charT=char, typename traits=std::char_traits<charT> >
     class Bio_streambuf : public std::basic_streambuf<charT, traits>
     {
     public:
@@ -135,12 +152,16 @@ namespace lj
             {
                 if (!BIO_should_retry(io_))
                 {
-                    std::cout << "Unrecoverable BIO error." << std::endl;
+                    Log::debug("Unrecoverable BIO write error: %s") <<
+                            openssl_get_error_string() <<
+                            Log::end;
                     return traits::eof();
                 }
                 else
                 {
-                    std::cout << "?Recoverable? BIO error." << std::endl;
+                    Log::debug("Recoverable(?) BIO write error: %s") <<
+                            openssl_get_error_string() <<
+                            Log::end;
                     return traits::eof();
                 }
             }
@@ -171,7 +192,9 @@ namespace lj
                         len - sent_bytes);
                 if (0 >= nbytes)
                 {
-                    std::cout << "Sync error." << std::endl;
+                    Log::debug("Unrecoverable BIO sync error: %s") <<
+                            openssl_get_error_string() <<
+                            Log::end;
                     return traits::eof();
                 }
                 sent_bytes += nbytes;
@@ -199,7 +222,9 @@ namespace lj
             const int recv_bytes = BIO_read(io_, in_ + len, in_size_ - len);
             if (0 >= recv_bytes)
             {
-                std::cout << "underflow error." << std::endl;
+                Log::debug("Unrecoverable BIO read error: %s") <<
+                        openssl_get_error_string() <<
+                        Log::end;
                 return traits::eof();
             }
 
