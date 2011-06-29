@@ -39,6 +39,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
+#include <istream>
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -1342,3 +1343,40 @@ namespace lj
         }
     }; // namespace lj::bson
 }; // namespace lj
+
+std::istream& operator>> (std::istream& is, lj::bson::Node& val)
+{
+    int read_bytes = 0;
+    char len[4];
+    while (read_bytes < 4 && is.good())
+    {
+        is.read(len + read_bytes, 4 - read_bytes);
+        read_bytes += is.gcount();
+    }
+
+    if (!is.good())
+    {
+        throw LJ__Exception("Unable to read the length from the input stream.");
+    }
+
+    int32_t document_length = *reinterpret_cast<uint32_t*>(len);
+    char* document_buffer = new char[document_length];
+    memcpy(document_buffer, len, 4);
+    while (read_bytes < document_length && is.good())
+    {
+        is.read(document_buffer + read_bytes, document_length - read_bytes);
+        read_bytes += is.gcount();
+    }
+
+    if (!is.good())
+    {
+        throw LJ__Exception("Unable to read document from the input stream.");
+    }
+
+    val.set_value(lj::bson::Type::k_document,
+            reinterpret_cast<uint8_t*>(document_buffer));
+
+    delete[] document_buffer;
+
+    return is;
+}

@@ -794,3 +794,5 @@ namespace lj
         void increment(Node& b, int amount);
     }; // namespace lj::bson
 }; // namespace lj
+
+std::istream& operator>> (std::istream& is, lj::bson::Node& val);

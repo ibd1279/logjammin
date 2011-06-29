@@ -7,6 +7,7 @@
 
 #include "testhelper.h"
 #include "lj/Bson.h"
+#include <sstream>
 /*
  * Simple C++ Test Suite
  */
@@ -41,6 +42,18 @@ void testCopy_from()
     sample_doc doc;
     lj::bson::Node o;
     o.copy_from(doc.root);
+    TEST_ASSERT(lj::bson::as_string(doc.root).compare(lj::bson::as_string(o)) == 0);
+}
+void testIstreamExtraction()
+{
+    sample_doc doc;
+    lj::bson::Node o;
+    std::stringstream ss(std::stringstream::in | std::stringstream::out
+            | std::stringstream::binary);
+    char* bytes = reinterpret_cast<char*>(doc.root.to_binary());
+    ss.write(bytes, doc.root.size());
+    ss >> o;
+
     TEST_ASSERT(lj::bson::as_string(doc.root).compare(lj::bson::as_string(o)) == 0);
 }
 void testNullify()
@@ -577,6 +590,7 @@ int main(int argc, char** argv)
 {
     const Test_entry tests[] = {
         PREPARE_TEST(testCopy_from),
+        PREPARE_TEST(testIstreamExtraction),
         PREPARE_TEST(testNullify),
         PREPARE_TEST(testPath),
         PREPARE_TEST(testPath2),
