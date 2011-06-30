@@ -34,6 +34,7 @@
  */
 
 #include <memory>
+#include <string>
 
 namespace logjamd
 {
@@ -47,6 +48,7 @@ namespace logjamd
         {
         }
         virtual Stage* logic() = 0;
+        virtual std::string name() = 0;
         virtual logjamd::Connection* conn()
         {
             return connection_;

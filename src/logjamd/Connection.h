@@ -37,14 +37,18 @@
 #include "lj/Document.h"
 #include "logjamd/Server.h"
 
+#include <istream>
+
 namespace logjamd
 {
     class Connection {
     public:
         Connection(logjamd::Server* server,
-                lj::Document* state) :
+                lj::Document* state,
+                std::iostream* stream) :
                 server_(server),
-                state_(state)
+                state_(state),
+                stream_(stream)
         {
         }
 
@@ -54,6 +58,12 @@ namespace logjamd
             if (state_)
             {
                 delete state_;
+            }
+
+            if (stream_)
+            {
+                stream_->flush();
+                delete stream_;
             }
         }
         virtual void start() = 0;
@@ -65,9 +75,14 @@ namespace logjamd
         {
             return *state_;
         }
+        virtual std::iostream& io()
+        {
+            return *stream_;
+        }
     private:
         logjamd::Server* server_;
         lj::Document* state_;
+        std::iostream* stream_;
     };
 };
 

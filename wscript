@@ -67,14 +67,13 @@ def build(bld):
         ,uselib = ['OPENSSL/SSL.H']
     )
 
-    bld.program(
+    bld.stlib(
         source = [
             'src/logjamd/Connection_secure.cpp'
             ,'src/logjamd/Server_secure.cpp'
-            #,'src/logjamd/Stage_auth.cpp'
-            ,'src/logjamd/logjamd.cpp'
+            ,'src/logjamd/Stage_auth.cpp'
         ]
-        ,target='logjamd'
+        ,target='logjamserver'
         ,cxxflags = ['-O0', '-Wall', '-g', '-std=c++0x']
         ,includes = [
             './src'
@@ -82,6 +81,19 @@ def build(bld):
         ,linkflags = ['-g']
         ,use = ['lj']
         ,uselib = ['OPENSSL/SSL.H', 'PTHREAD.H']
+    )
+
+    bld.program(
+        source = [
+            'src/logjamd/logjamd.cpp'
+        ]
+        ,target='logjamd'
+        ,cxxflags = ['-O0', '-Wall', '-g', '-std=c++0x']
+        ,includes = [
+            './src'
+        ]
+        ,linkflags = ['-g']
+        ,use = ['lj', 'logjamserver']
     )
 
     # preform the unit tests
@@ -95,7 +107,7 @@ def build(bld):
             ]
             ,source = [node]
             ,target = node.change_ext('')
-            ,use = ['lj']
+            ,use = ['lj', 'logjamserver']
             ,cxxflags = [
                 '-O0'
                 ,'-Wall'

@@ -35,8 +35,9 @@
 #include "logjamd/Stage_auth.h"
 #include "logjamd/Connection.h"
 
-#include "lj/Uuid.h"
 #include "lj/Bson.h"
+#include "lj/Log.h"
+#include "lj/Uuid.h"
 
 #include <memory>
 
@@ -64,21 +65,42 @@ namespace logjamd
     Stage* Stage_auth::logic()
     {
         attempts_++;
-        std::unique_ptr<lj::bson::Node> n(conn()->read());
-        lj::Uuid method(lj::bson::as_uuid(n->nav("method")));
-        lj::Uuid provider(lj::bson::as_uuid(n->nav("provider")));
+        lj::bson::Node n;
+        conn()->io() >> n;
+        lj::Uuid method(lj::bson::as_uuid(n.nav("method")));
+        lj::Uuid provider(lj::bson::as_uuid(n.nav("provider")));
+        // identity
+        // token
+
+        lj::Log::info("Login request for %s/%s.")
+                << method
+                << provider
+                << lj::Log::end;
+
+        lj::bson::Node response;
+        response.set_child("stage", lj::bson::new_string(name()));
+        response.set_child("success", lj::bson::new_boolean(false));
 
         if (k_auth_method_fake == method)
         {
             if (k_auth_provider_local == provider)
             {
-                //std::string& identity = lj::bson::as_string(n->nav("identity"));
-                //std::string& token = lj::bson::as_string(n->nav("token"));
-                delete this;
+                lj::Log::info.log("Performing Fake/Local authentication.");
+                response.set_child("success", lj::bson::new_boolean(true));
+                conn()->io() << response;
+
                 return NULL;
             }
         }
-        return this;
+
+        lj::Log::info.log("Unknown auth type.");
+        conn()->io() << response;
+
+        return NULL;
+    }
+    std::string Stage_auth::name()
+    {
+        return std::string("Authentication");
     }
 };
 

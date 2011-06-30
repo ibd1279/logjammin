@@ -44,6 +44,7 @@ namespace logjamd
         Stage_auth(logjamd::Connection* connection);
         virtual ~Stage_auth();
         virtual Stage* logic();
+        virtual std::string name();
     private:
         uint8_t attempts_;
     };

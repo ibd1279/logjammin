@@ -33,6 +33,8 @@
  */
 
 #include "logjamd/Connection_secure.h"
+#include "logjamd/Stage.h"
+#include "logjamd/Stage_auth.h"
 
 #include <algorithm>
 
@@ -50,8 +52,7 @@ namespace logjamd
             logjamd::Server* server,
             lj::Document* state,
             std::iostream* stream) :
-            logjamd::Connection(server, state),
-            stream_(stream),
+            logjamd::Connection(server, state, stream),
             thread_(NULL)
     {
     }
@@ -63,11 +64,6 @@ namespace logjamd
             thread_->join();
             delete thread_;
         }
-
-        if (stream_)
-        {
-            delete stream_;
-        }
     }
 
     void Connection_secure::start()
@@ -77,5 +73,24 @@ namespace logjamd
 
     void Connection_secure::operator()()
     {
+        Stage* stage = new Stage_auth(this);
+
+        while (stage)
+        {
+            try
+            {
+                Stage* new_stage = stage->logic();
+
+                if (new_stage != stage)
+                {
+                    delete stage;
+                    stage = new_stage;
+                }
+            }
+            catch (const lj::Exception& ex)
+            {
+                stage = NULL;
+            }
+        }
     }
 }; // namespace logjamd

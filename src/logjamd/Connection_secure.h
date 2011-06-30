@@ -34,7 +34,6 @@
  */
 
 #include "logjamd/Connection.h"
-#include <istream>
 #include <thread>
 
 typedef struct bio_st BIO;
@@ -50,16 +49,11 @@ namespace logjamd
         virtual void start();
         virtual void operator()();
     protected:
-        inline std::iostream& io()
-        {
-            return *stream_;
-        }
         inline std::thread& thread()
         {
             return *thread_;
         }
     private:
-        std::iostream* stream_;
         std::thread* thread_;
     };
 };
