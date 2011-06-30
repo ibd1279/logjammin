@@ -358,11 +358,13 @@ namespace lj
              \par
              \c a \c = \c b is identical to calling \c a.copy_from(b).
              \param o The original Node object.
+             \return Reference to this object.
              \sa Node::copy_from()
              */
-            inline void operator=(const Node& o)
+            inline Node& operator=(const Node& o)
             {
                 copy_from(o);
+                return *this;
             }
 
             //! Takes a list of strings, and creates child documents when they do not exist.
@@ -795,4 +797,5 @@ namespace lj
     }; // namespace lj::bson
 }; // namespace lj
 
-std::istream& operator>> (std::istream& is, lj::bson::Node& val);
+std::istream& operator>>(std::istream& is, lj::bson::Node& val);
+std::ostream& operator<<(std::ostream& os, lj::bson::Node& val);

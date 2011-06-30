@@ -1344,7 +1344,7 @@ namespace lj
     }; // namespace lj::bson
 }; // namespace lj
 
-std::istream& operator>> (std::istream& is, lj::bson::Node& val)
+std::istream& operator>>(std::istream& is, lj::bson::Node& val)
 {
     int read_bytes = 0;
     char len[4];
@@ -1379,4 +1379,16 @@ std::istream& operator>> (std::istream& is, lj::bson::Node& val)
     delete[] document_buffer;
 
     return is;
+}
+
+std::ostream& operator<<(std::ostream& os, lj::bson::Node& val)
+{
+    char* data = reinterpret_cast<char*>(val.to_binary());
+    size_t sz = val.size();
+
+    os.write(data, sz);
+
+    delete[] data;
+
+    return os;
 }
