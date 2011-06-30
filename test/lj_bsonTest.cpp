@@ -44,6 +44,16 @@ void testCopy_from()
     o.copy_from(doc.root);
     TEST_ASSERT(lj::bson::as_string(doc.root).compare(lj::bson::as_string(o)) == 0);
 }
+
+void testAssignment()
+{
+    sample_doc doc;
+    lj::bson::Node o;
+
+    o = doc.root;
+    TEST_ASSERT(lj::bson::as_string(doc.root).compare(lj::bson::as_string(o)) == 0);
+}
+
 void testIstreamExtraction()
 {
     sample_doc doc;
@@ -592,6 +602,7 @@ int main(int argc, char** argv)
 {
     const Test_entry tests[] = {
         PREPARE_TEST(testCopy_from),
+        PREPARE_TEST(testAssignment),
         PREPARE_TEST(testIstreamExtraction),
         PREPARE_TEST(testNullify),
         PREPARE_TEST(testPath),
