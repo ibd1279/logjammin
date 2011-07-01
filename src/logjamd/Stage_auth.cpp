@@ -33,8 +33,10 @@
  */
 
 #include "logjamd/Stage_auth.h"
-#include "logjamd/Connection.h"
 
+#include "logjamd/Auth.h"
+#include "logjamd/Connection.h"
+#include "logjamd/constants.h"
 #include "lj/Bson.h"
 #include "lj/Log.h"
 #include "lj/Uuid.h"
@@ -43,12 +45,8 @@
 
 namespace
 {
-    const lj::Uuid k_logjamd(lj::Uuid::k_nil, "logjamd", 7);
-    const lj::Uuid k_auth_method(k_logjamd, "auth_method", 11);
-    const lj::Uuid k_auth_method_fake(k_auth_method, "fake", 4);
-
-    const lj::Uuid k_auth_provider(k_logjamd, "auth_provider", 13);
-    const lj::Uuid k_auth_provider_local(k_auth_provider, "local", 5);
+    const std::string k_unknown_auth_provider("Unknown auth provider.");
+    const std::string k_unknown_auth_method("Unknown auth method.");
 };
 
 namespace logjamd
@@ -67,33 +65,43 @@ namespace logjamd
         attempts_++;
         lj::bson::Node n;
         conn()->io() >> n;
-        lj::Uuid method(lj::bson::as_uuid(n.nav("method")));
-        lj::Uuid provider(lj::bson::as_uuid(n.nav("provider")));
+        lj::Uuid method_id(lj::bson::as_uuid(n.nav("method")));
+        lj::Uuid provider_id(lj::bson::as_uuid(n.nav("provider")));
         // identity
         // token
 
         lj::Log::info("Login request for %s/%s.")
-                << method
-                << provider
+                << provider_id
+                << method_id
                 << lj::Log::end;
 
         lj::bson::Node response;
         response.set_child("stage", lj::bson::new_string(name()));
         response.set_child("success", lj::bson::new_boolean(false));
 
-        if (k_auth_method_fake == method)
+        Auth_provider* provider = Auth_registry::provider(provider_id);
+        if (provider)
         {
-            if (k_auth_provider_local == provider)
+            Auth_method* method = provider->method(method_id);
+            if (method)
             {
-                lj::Log::info.log("Performing Fake/Local authentication.");
+                lj::Log::info.log("Performing local/password_hash authentication.");
                 response.set_child("success", lj::bson::new_boolean(true));
                 conn()->io() << response;
-
                 return NULL;
             }
+            else
+            {
+                lj::Log::info.log(k_unknown_auth_method);
+                response.set_child("message", lj::bson::new_string(k_unknown_auth_method));
+            }
+        }
+        else
+        {
+            lj::Log::info.log(k_unknown_auth_provider);
+            response.set_child("message", lj::bson::new_string(k_unknown_auth_provider));
         }
 
-        lj::Log::info.log("Unknown auth type.");
         conn()->io() << response;
 
         return NULL;

@@ -69,7 +69,8 @@ def build(bld):
 
     bld.stlib(
         source = [
-            'src/logjamd/Connection_secure.cpp'
+            'src/logjamd/Auth_local.cpp'
+            ,'src/logjamd/Connection_secure.cpp'
             ,'src/logjamd/Server_secure.cpp'
             ,'src/logjamd/Stage_auth.cpp'
         ]
