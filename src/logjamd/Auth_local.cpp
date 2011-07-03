@@ -39,6 +39,38 @@ namespace logjamd
 {
     std::map<lj::Uuid, Auth_provider*> Auth_registry::mapping_;
 
+    class User_local : public User
+    {
+    public:
+        User_local(const lj::Uuid& user_id) :
+                User(),
+                id_(user_id)
+        {
+        }
+
+        User_local(const User_local& orig) :
+                User(),
+                id_(orig.id_)
+        {
+        }
+
+        virtual ~User_local()
+        {
+        }
+
+        virtual User* clone() const
+        {
+            return new User_local(*this);
+        }
+
+        virtual const lj::Uuid& id() const
+        {
+            return id_;
+        }
+    private:
+        lj::Uuid id_;
+    };
+
     class Auth_method_password_hash : public Auth_method
     {
     public:
@@ -47,7 +79,7 @@ namespace logjamd
         }
         virtual User* authenticate(const lj::bson::Node& data)
         {
-            return NULL;
+            return new User_local(lj::Uuid::k_nil);
         }
     };
 

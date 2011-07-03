@@ -33,6 +33,7 @@ void testFakeLocal()
     std::string expected_stage("Authentication");
     TEST_ASSERT(expected_stage.compare(lj::bson::as_string(response["stage"])) == 0);
     TEST_ASSERT(lj::bson::as_boolean(response["success"]));
+    TEST_ASSERT(env.connection()->user() != NULL);
 }
 
 void testUnknownMethod()
@@ -53,6 +54,7 @@ void testUnknownMethod()
     TEST_ASSERT(expected_stage.compare(lj::bson::as_string(response["stage"])) == 0);
     TEST_ASSERT(!lj::bson::as_boolean(response["success"]));
     TEST_ASSERT(expected_msg.compare(lj::bson::as_string(response["message"])) == 0);
+    TEST_ASSERT(env.connection()->user() == NULL);
 }
 
 void testUnknownProvider()
@@ -73,6 +75,7 @@ void testUnknownProvider()
     TEST_ASSERT(expected_stage.compare(lj::bson::as_string(response["stage"])) == 0);
     TEST_ASSERT(!lj::bson::as_boolean(response["success"]));
     TEST_ASSERT(expected_msg.compare(lj::bson::as_string(response["message"])) == 0);
+    TEST_ASSERT(env.connection()->user() == NULL);
 }
 
 int main(int argc, char** argv)

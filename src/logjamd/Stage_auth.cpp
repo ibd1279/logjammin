@@ -47,6 +47,8 @@ namespace
 {
     const std::string k_unknown_auth_provider("Unknown auth provider.");
     const std::string k_unknown_auth_method("Unknown auth method.");
+    const std::string k_failed_auth_method("Authentication failed.");
+    const std::string k_succeeded_auth_method("Authentication succeeded");
 };
 
 namespace logjamd
@@ -67,6 +69,8 @@ namespace logjamd
         conn()->io() >> n;
         lj::Uuid method_id(lj::bson::as_uuid(n.nav("method")));
         lj::Uuid provider_id(lj::bson::as_uuid(n.nav("provider")));
+        // "data" node is expected to contain the following:
+        // realm
         // identity
         // token
 
@@ -86,9 +90,19 @@ namespace logjamd
             if (method)
             {
                 lj::Log::info.log("Performing local/password_hash authentication.");
-                response.set_child("success", lj::bson::new_boolean(true));
-                conn()->io() << response;
-                return NULL;
+                User* user = method->authenticate(n.nav("data"));
+                if (user)
+                {
+                    lj::Log::info.log(k_succeeded_auth_method);
+                    response.set_child("success", lj::bson::new_boolean(true));
+                    response.set_child("message", lj::bson::new_string(k_succeeded_auth_method));
+                    conn()->user(user);
+                }
+                else
+                {
+                    lj::Log::info.log(k_failed_auth_method);
+                    response.set_child("message", lj::bson::new_string(k_failed_auth_method));
+                }
             }
             else
             {

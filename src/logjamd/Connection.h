@@ -41,14 +41,19 @@
 
 namespace logjamd
 {
+    class User;
+    class Stage_auth;
+
     class Connection {
     public:
+        friend class Stage_auth;
         Connection(logjamd::Server* server,
                 lj::Document* state,
                 std::iostream* stream) :
                 server_(server),
                 state_(state),
-                stream_(stream)
+                stream_(stream),
+                user_(NULL)
         {
         }
 
@@ -79,10 +84,20 @@ namespace logjamd
         {
             return *stream_;
         }
+        virtual const User* user()
+        {
+            return user_;
+        }
+    protected:
+        virtual void user(logjamd::User* u)
+        {
+            user_ = u;
+        }
     private:
         logjamd::Server* server_;
         lj::Document* state_;
         std::iostream* stream_;
+        logjamd::User* user_;
     };
 };
 

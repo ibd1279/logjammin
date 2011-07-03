@@ -40,7 +40,25 @@
 
 namespace logjamd
 {
-    class User;
+    //! User base class.
+    class User
+    {
+    public:
+        User()
+        {
+        }
+
+        User(const User& orig) = delete;
+        User& operator=(const User& orig) = delete;
+
+        //! Empty destructor
+        virtual ~User()
+        {
+        }
+
+        virtual User* clone() const = 0;
+        virtual const lj::Uuid& id() const = 0;
+    };
 
     //! Authentication method base class.
     class Auth_method
