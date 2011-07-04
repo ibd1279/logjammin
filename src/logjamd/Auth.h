@@ -35,31 +35,12 @@
 
 #include "lj/Bson.h"
 #include "lj/Uuid.h"
+#include "logjamd/User.h"
 #include <cstdint>
 #include <map>
 
 namespace logjamd
 {
-    //! User base class.
-    class User
-    {
-    public:
-        User()
-        {
-        }
-
-        User(const User& orig) = delete;
-        User& operator=(const User& orig) = delete;
-
-        //! Empty destructor
-        virtual ~User()
-        {
-        }
-
-        virtual User* clone() const = 0;
-        virtual const lj::Uuid& id() const = 0;
-    };
-
     //! Authentication method base class.
     class Auth_method
     {
@@ -77,6 +58,20 @@ namespace logjamd
          \return NULL on login failure, A User pointer on success.
          */
         virtual User* authenticate(const lj::bson::Node& data) = 0;
+
+        //! Change the login credentials for the specific target user.
+        /*!
+         \par
+         This method changes the credentials for a target user. This will
+         modify the record for the user immediately and will impact all
+         current connections for that user.
+         \param requester The user requesting the change.
+         \param target The user to change the credentials for.
+         \param data The new credential data.
+         */
+        virtual void change_credentials(const User* requester,
+                const User* target,
+                const lj::bson::Node& data) = 0;
     };
 
     //! Authentication provider base class.
@@ -93,7 +88,7 @@ namespace logjamd
          logjamd::k_auth_provider constant and the name of the provider.
          \return the ID for this provider.
          */
-        virtual const lj::Uuid& provider_id() = 0;
+        virtual const lj::Uuid& provider_id() const = 0;
         
         //! Check to see if the provider supports the requested method.
         /*!

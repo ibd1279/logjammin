@@ -84,6 +84,7 @@ struct Test_util
                 std::cout << failure.details(suite_name, tests->n, (elapsed(test_start) / 1000000.0f)) << std::endl;
                 failures++;
             }
+            /*
             catch (const std::exception& ex)
             {
                 std::cout << Test_failure(std::string(ex.what()), "unknown", "unknown", "unknown", -1).details(suite_name, tests->n, (elapsed(test_start) / 1000000.0f)) << std::endl;
@@ -94,6 +95,7 @@ struct Test_util
                 std::cout << Test_failure(std::string(ex->what()), "unknown", "unknown", "unknown", -1).details(suite_name, tests->n, (elapsed(test_start) / 1000000.0f)) << std::endl;
                 failures++;
             }
+            */
             std::cout << "%TEST_FINISHED% time=";
             std::cout << std::setiosflags(std::ios::fixed) << std::setprecision(4);
             std::cout << (elapsed(test_start) / 1000000.0f);

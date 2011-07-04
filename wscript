@@ -69,7 +69,8 @@ def build(bld):
 
     bld.stlib(
         source = [
-            'src/logjamd/Auth_local.cpp'
+            'src/logjamd/Auth.cpp'
+            ,'src/logjamd/Auth_local.cpp'
             ,'src/logjamd/Connection_secure.cpp'
             ,'src/logjamd/Server_secure.cpp'
             ,'src/logjamd/Stage_auth.cpp'
@@ -98,7 +99,7 @@ def build(bld):
     )
 
     # preform the unit tests
-    testnodes = bld.path.ant_glob('test/*.cpp')
+    testnodes = bld.path.ant_glob('test/**/*.cpp')
     for node in testnodes:
         bld(
             features = ['cxx', 'cxxprogram', 'test']
