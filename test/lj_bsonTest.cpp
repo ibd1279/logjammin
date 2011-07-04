@@ -54,6 +54,16 @@ void testAssignment()
     TEST_ASSERT(lj::bson::as_string(doc.root).compare(lj::bson::as_string(o)) == 0);
 }
 
+void testAssignmentCrossTypes()
+{
+    // default constructor makes documents.
+    lj::bson::Node o;
+    sample_doc doc;
+
+    o = doc.root["str"];
+    TEST_ASSERT(lj::bson::as_string(doc.root["str"]).compare(lj::bson::as_string(o)) == 0);
+}
+
 void testIstreamExtraction()
 {
     sample_doc doc;
@@ -451,8 +461,9 @@ void testIncrement()
 }
 void testBinary_type_string()
 {
+    TEST_ASSERT(lj::bson::binary_type_string(lj::bson::Binary_type::k_bin_generic).compare("generic") == 0);
     TEST_ASSERT(lj::bson::binary_type_string(lj::bson::Binary_type::k_bin_function).compare("function") == 0);
-    TEST_ASSERT(lj::bson::binary_type_string(lj::bson::Binary_type::k_bin_binary).compare("binary") == 0);
+    TEST_ASSERT(lj::bson::binary_type_string(lj::bson::Binary_type::k_bin_binary).compare("binary (old)") == 0);
     TEST_ASSERT(lj::bson::binary_type_string(lj::bson::Binary_type::k_bin_uuid).compare("uuid") == 0);
     TEST_ASSERT(lj::bson::binary_type_string(lj::bson::Binary_type::k_bin_md5).compare("md5") == 0);
     TEST_ASSERT(lj::bson::binary_type_string(lj::bson::Binary_type::k_bin_user_defined).compare("user-defined") == 0);
@@ -603,6 +614,7 @@ int main(int argc, char** argv)
     const Test_entry tests[] = {
         PREPARE_TEST(testCopy_from),
         PREPARE_TEST(testAssignment),
+        PREPARE_TEST(testAssignmentCrossTypes),
         PREPARE_TEST(testIstreamExtraction),
         PREPARE_TEST(testNullify),
         PREPARE_TEST(testPath),

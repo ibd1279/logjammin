@@ -69,6 +69,7 @@ namespace lj
         //! Enumeration of Bson binary subtypes.
         enum class Binary_type : uint8_t
         {
+            k_bin_generic = 0x00,      //!< Generic Binary
             k_bin_function = 0x01,     //!< Function.
             k_bin_binary = 0x02,       //!< Binary String.
             k_bin_uuid = 0x03,         //!< UUID.
@@ -244,7 +245,7 @@ namespace lj
              \param type The bson type of the object.
              \param binary_type The binary sub-type for binary objects.
              */
-            Bson_type_exception(const std::string& msg, Type type, Binary_type binary_type = Binary_type::k_bin_user_defined) : lj::Exception("Bson", msg), type_(type), binary_type_(binary_type)
+            Bson_type_exception(const std::string& msg, Type type, Binary_type binary_type = Binary_type::k_bin_generic) : lj::Exception("Bson", msg), type_(type), binary_type_(binary_type)
             {
             }
             

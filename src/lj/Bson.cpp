@@ -137,8 +137,9 @@ namespace lj
             const std::string k_bson_type_string_array("array");
             const std::string k_bson_type_string_unknown("unknown");
 
+            const std::string k_bson_binary_type_string_generic("generic");
             const std::string k_bson_binary_type_string_function("function");
-            const std::string k_bson_binary_type_string_binary("binary");
+            const std::string k_bson_binary_type_string_binary("binary (old)");
             const std::string k_bson_binary_type_string_uuid("uuid");
             const std::string k_bson_binary_type_string_md5("md5");
             const std::string k_bson_binary_type_string_user_defined("user-defined");
@@ -185,6 +186,8 @@ namespace lj
             // namespace above.
             switch (subtype)
             {
+                case Binary_type::k_bin_generic:
+                    return k_bson_binary_type_string_generic;
                 case Binary_type::k_bin_function:
                     return k_bson_binary_type_string_function;
                 case Binary_type::k_bin_binary:
@@ -811,7 +814,7 @@ namespace lj
 
         std::string as_debug_string(const Node& b, int lvl)
         {
-            Binary_type binary_type = Binary_type::k_bin_user_defined;
+            Binary_type binary_type = Binary_type::k_bin_generic;
             long long l = 0;
             double d = 0.0;
             std::ostringstream buf;
@@ -935,7 +938,7 @@ namespace lj
 
         std::string as_string(const Node& b)
         {
-            Binary_type binary_type = Binary_type::k_bin_user_defined;
+            Binary_type binary_type = Binary_type::k_bin_generic;
             long long l = 0;
             double d = 0.0;
             std::ostringstream buf;
@@ -1322,7 +1325,7 @@ namespace lj
 
         Uuid as_uuid(const Node& b)
         {
-            Binary_type t = Binary_type::k_bin_user_defined;
+            Binary_type t = Binary_type::k_bin_generic;
             uint32_t sz;
             if (Type::k_null != b.type())
             {
