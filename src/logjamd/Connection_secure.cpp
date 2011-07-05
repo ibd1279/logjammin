@@ -89,8 +89,11 @@ namespace logjamd
             }
             catch (const lj::Exception& ex)
             {
+                delete stage;
                 stage = NULL;
             }
         }
+
+        // Close the connection.
     }
 }; // namespace logjamd

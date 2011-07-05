@@ -69,15 +69,6 @@ namespace logjamd
         conn()->io() >> n;
         lj::Uuid method_id(lj::bson::as_uuid(n.nav("method")));
         lj::Uuid provider_id(lj::bson::as_uuid(n.nav("provider")));
-        // "data" node is expected to contain the following:
-        // realm
-        // identity
-        // token
-
-        lj::Log::info("Login request for %s/%s.")
-                << provider_id
-                << method_id
-                << lj::Log::end;
 
         lj::bson::Node response;
         response.set_child("stage", lj::bson::new_string(name()));
@@ -118,7 +109,21 @@ namespace logjamd
 
         conn()->io() << response;
 
-        return NULL;
+        if (conn()->user())
+        {
+            return NULL;
+        }
+        else
+        {
+            if (attempts_ < 3)
+            {
+                return this;
+            }
+            else
+            {
+                return NULL;
+            }
+        }
     }
     std::string Stage_auth::name()
     {
