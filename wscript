@@ -57,6 +57,7 @@ def build(bld):
             ,'src/lj/Log.cpp'
             ,'src/lj/Stopclock.cpp'
             ,'src/lj/Uuid.cpp'
+            ,'src/scrypt/scrypt.cpp'
         ]
         ,target='lj'
         ,cxxflags = ['-O0', '-Wall', '-g', '-std=c++0x']
