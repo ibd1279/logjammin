@@ -36,46 +36,20 @@
 #include "logjamd/Auth.h"
 #include "logjamd/Auth_local.h"
 #include "logjamd/constants.h"
+#include "scrypt/scrypt.h"
+
+#include <cstdlib>
+#include <cstring>
 
 namespace 
 {
-    const lj::Uuid password_hash_method(logjamd::k_auth_method, "password_hash", 13);
+    const lj::Uuid k_password_hash_method(logjamd::k_auth_method, "password_hash", 13);
+    const std::string k_login_field("login");
+    const std::string k_password_field("password");
+    const std::string k_id_field("id");
+    const std::string k_salt_field("salt");
 
-    lj::Uuid compute_digest(const lj::bson::Node& data)
-    {
-        // Compute the realm.
-        const std::string realm_in(lj::bson::as_string(data["realm"]));
-        lj::Uuid realm(password_hash_method,
-                realm_in.c_str(), 
-                realm_in.size());
-
-        // Compute the login.
-        const std::string login_in(lj::bson::as_string(data["login"]));
-        lj::Uuid login(realm,
-                login_in.c_str(),
-                login_in.size());
-
-        // Compute the pword.
-        const std::string pword_in(lj::bson::as_string(data["pword"]));
-        lj::Uuid pword(login,
-                pword_in.c_str(),
-                pword_in.size());
-
-        // Compute the seed.
-        if (data.exists("oseed"))
-        {
-            lj::bson::Binary_type bt;
-            uint32_t sz;
-            const uint8_t* oseed_in = lj::bson::as_binary(data["oseed"],
-                    &bt,
-                    &sz);
-            return lj::Uuid(pword, oseed_in, sz);
-        }
-        else
-        {
-            return lj::Uuid(pword, pword_in.c_str(), pword_in.size());
-        }
-    }
+    const size_t derived_key_length = 128;
 };
 namespace logjamd
 {
@@ -87,33 +61,62 @@ namespace logjamd
     }
     User* Auth_method_password_hash::authenticate(const lj::bson::Node& data)
     {
-        lj::Uuid cred(compute_digest(data));
-        auto iter = users_by_credential_.find(cred);
+        const std::string login(lj::bson::as_string(data[k_login_field]));
+        auto iter = users_by_credential_.find(login);
         if (iter == users_by_credential_.end())
         {
-            lj::Log::debug("User not found for %s.")
-                    << static_cast<std::string>(cred)
+            lj::Log::debug("auth_local: User not found for %s.")
+                    << login
                     << lj::Log::end;
             // Credentials didn't match anyone.
             return NULL;
         }
         const lj::bson::Node* ptr = (*iter).second;
 
-        const std::string input(lj::bson::as_string(data["login"]));
-        const std::string expected(lj::bson::as_string(ptr->nav("login")));
-        if (input.compare(expected) != 0)
+        // Prepare scypt inputs
+        lj::Log::debug.log("auth_local: Calculating derived key (this may take a while).");
+        const size_t password_length = data[k_password_field].size();
+        const uint8_t* password = data[k_password_field].to_value();
+        const size_t salt_length = ptr->nav(k_salt_field).size();
+        const uint8_t* salt = ptr->nav(k_salt_field).to_value();
+
+        // TODO N, r and p should come from config.
+        int N = 1 << 12;
+        int r = 8;
+        int p = 1;
+        uint8_t derived_key[128];
+        crypto_scrypt(password,
+                password_length,
+                salt,
+                salt_length,
+                N,
+                r,
+                p,
+                derived_key,
+                128);
+
+        lj::bson::Binary_type bin_type = lj::bson::Binary_type::k_bin_generic;
+        uint32_t check_key_length = 0;
+        const uint8_t* check_key = lj::bson::as_binary(ptr->nav(k_password_field),
+                &bin_type,
+                &check_key_length);
+
+        for (int h = 0; h < 128; ++h)
         {
-            lj::Log::debug("Double check failed for %s.")
-                    << static_cast<std::string>(cred)
-                    << lj::Log::end;
-            return NULL;
+            if (derived_key[h] != check_key[h])
+            {
+                lj::Log::debug("auth_local: Credentials did not match for %s.")
+                        << login
+                        << lj::Log::end;
+                return NULL;
+            }
         }
 
-        const lj::Uuid id(lj::bson::as_uuid(ptr->nav("id")));
-        lj::Log::debug("Authenticated user %llu.")
-                << static_cast<uint64_t>(id)
+        lj::Log::debug("auth_local: Authenticated user %s.")
+                << login
                 << lj::Log::end;
-        return new User(id);
+        const lj::Uuid id(lj::bson::as_uuid(ptr->nav(k_id_field)));
+        return new User(id, login);
     }
 
     void Auth_method_password_hash::change_credentials(const User* requester,
@@ -130,38 +133,86 @@ namespace logjamd
         {
             lj::Log::debug.log("auth_local: No user found. creating record.");
             ptr = new lj::bson::Node();
-            ptr->set_child("id", lj::bson::new_uuid(target->id()));
-            ptr->set_child("cred", lj::bson::new_uuid(lj::Uuid::k_nil));
-            users_by_id_[target->id()] = ptr;
+            uint8_t temp_dk[1] = {0};
+            ptr->set_child(k_id_field,
+                    lj::bson::new_uuid(target->id()));
+            ptr->set_child(k_login_field,
+                    lj::bson::new_string(target->login()));
+            ptr->set_child(k_password_field,
+                    lj::bson::new_binary(temp_dk, 1, lj::bson::Binary_type::k_bin_generic));
+            ptr->set_child(k_salt_field,
+                    lj::bson::new_binary(temp_dk, 1, lj::bson::Binary_type::k_bin_generic));
+            users_by_id_[target->login()] = ptr;
         }
         else
         {
             ptr = (*iter).second;
         }
         
-        lj::Log::debug.log("auth_local: calculating digest for user.");
-        lj::bson::Node* new_login = new lj::bson::Node(data["login"]);
-        lj::Uuid new_cred(compute_digest(data));
+        lj::Log::debug.log("auth_local: calculating new derived key (this may take a while).");
+        // read a new random salt.
+        // TODO this is insecure. should use a better source of random digits.
+        uint8_t salt_buffer[128];
+        for (int h = 0; h < 128; ++h)
+        {
+            salt_buffer[h] = (rand() & 0xFF);
+        }
+        lj::bson::Node* salt_node = lj::bson::new_binary(
+                salt_buffer,
+                128,
+                lj::bson::Binary_type::k_bin_generic);
+        memset(salt_buffer, 0, 128);
+
+        // The salt and password include the bson header info. This is
+        // intentional, because it reduces the code complexity.
+        const size_t salt_length = salt_node->size();
+        const uint8_t* salt = salt_node->to_value();
+        const size_t password_length = data[k_password_field].size();
+        const uint8_t* password = data[k_password_field].to_value();
+
+        // TODO N, r and p should come from config.
+        int N = 1 << 12;
+        int r = 8;
+        int p = 1;
+        uint8_t derived_key[128];
+        crypto_scrypt(password,
+                password_length,
+                salt,
+                salt_length,
+                N,
+                r,
+                p,
+                derived_key,
+                128);
 
         // check if there is an old record to remove.
         if (users_by_id_.end() != iter)
         {
-            lj::Uuid old_cred(lj::bson::as_uuid(ptr->nav("cred")));
+            const std::string old_login(lj::bson::as_string(ptr->nav(k_login_field)));
             lj::Log::debug("auth_local: Removing old record for %s / %llu")
-                    << static_cast<std::string>(old_cred)
+                    << old_login
                     << static_cast<uint64_t>(target->id())
                     << lj::Log::end;
-            users_by_credential_.erase(old_cred);
+            users_by_credential_.erase(old_login);
         }
 
+        // TODO In theory, the user cannot log in during this point.
+
         // Record the new credential and mapping.
+        const std::string new_login(lj::bson::as_string(data[k_login_field]));
         lj::Log::debug("auth_local: Creating new record for %s / %llu")
-                << static_cast<std::string>(new_cred)
+                << new_login
                 << static_cast<uint64_t>(target->id())
                 << lj::Log::end;
-        ptr->set_child("cred", lj::bson::new_uuid(new_cred));
-        ptr->set_child("login", new_login);
-        users_by_credential_[new_cred] = ptr;
+
+        ptr->set_child(k_login_field,
+                lj::bson::new_string(new_login));
+        ptr->set_child(k_password_field,
+                lj::bson::new_binary(derived_key, derived_key_length, lj::bson::Binary_type::k_bin_generic));
+        ptr->set_child(k_salt_field,
+                salt_node);
+
+        users_by_credential_[new_login] = ptr;
     }
 }; // namespace logjamd
 
@@ -183,7 +234,7 @@ namespace logjamd
     Auth_method* Auth_provider_local::method(const lj::Uuid& method_id)
     {
         static Auth_method_password_hash method;
-        if (password_hash_method == method_id)
+        if (k_password_hash_method == method_id)
         {
             return &method;
         }

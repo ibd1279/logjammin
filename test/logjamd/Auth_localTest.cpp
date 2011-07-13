@@ -19,22 +19,19 @@ namespace
 
     struct creds
     {
-        creds(bool seed)
+        creds(bool alt_password)
         {
-            n.set_child("realm",
-                    lj::bson::new_string("localhost/unittest"));
             n.set_child("login",
-                    lj::bson::new_string("joe_developer"));
-            n.set_child("pword",
-                    lj::bson::new_string("1!aA2@bB"));
-            if (seed)
+                    lj::bson::new_string("admin"));
+            if (alt_password)
             {
-                uint8_t buf[8] = {1,2,3,4,5,6,7,8};
-                lj::bson::Node* oseed = lj::bson::new_binary(
-                        buf,
-                        8,
-                        lj::bson::Binary_type::k_bin_generic);
-                n.set_child("oseed", oseed);
+                n.set_child("password",
+                        lj::bson::new_string("abc123"));
+            }
+            else
+            {
+                n.set_child("password",
+                        lj::bson::new_string("1!aA2@bB"));
             }
         }
 
@@ -65,11 +62,12 @@ void testAuth_provider_method()
 void testAuth_method_authenticate()
 {
     Auth_method_password_hash method;
-    User user(lj::Uuid(12));
+    User user(lj::Uuid(12), "admin");
     creds first(false);
     method.change_credentials(&user, &user, first.n);
 
     User* result = method.authenticate(first.n);
+    TEST_ASSERT(result != NULL);
     TEST_ASSERT(result->id() == user.id());
 
     creds second(true);
@@ -79,7 +77,7 @@ void testAuth_method_authenticate()
 void testAuth_method_change_creds()
 {
     Auth_method_password_hash method;
-    User user(lj::Uuid(12));
+    User user(lj::Uuid(12), "admin");
     creds first(false);
     method.change_credentials(&user, &user, first.n);
     creds second(true);
@@ -89,6 +87,7 @@ void testAuth_method_change_creds()
     TEST_ASSERT(result == NULL);
 
     result = method.authenticate(second.n);
+    TEST_ASSERT(result != NULL);
     TEST_ASSERT(result->id() == user.id());
 }
 int main(int argc, char** argv)

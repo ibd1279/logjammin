@@ -47,7 +47,7 @@ namespace logjamd
                 const User* target,
                 const lj::bson::Node& data);
     private:
-        std::map<lj::Uuid, lj::bson::Node*> users_by_credential_;
+        std::map<std::string, lj::bson::Node*> users_by_credential_;
         std::map<lj::Uuid, lj::bson::Node*> users_by_id_;
     };
 
