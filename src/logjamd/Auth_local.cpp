@@ -50,6 +50,9 @@ namespace
     const std::string k_salt_field("salt");
 
     const size_t derived_key_length = 128;
+    const int k_N = 1 << 12;
+    const int k_r = 8;
+    const int k_p = 1;
 };
 namespace logjamd
 {
@@ -81,19 +84,16 @@ namespace logjamd
         const uint8_t* salt = ptr->nav(k_salt_field).to_value();
 
         // TODO N, r and p should come from config.
-        int N = 1 << 12;
-        int r = 8;
-        int p = 1;
-        uint8_t derived_key[128];
+        uint8_t derived_key[derived_key_length];
         crypto_scrypt(password,
                 password_length,
                 salt,
                 salt_length,
-                N,
-                r,
-                p,
+                k_N,
+                k_r,
+                k_p,
                 derived_key,
-                128);
+                derived_key_length);
 
         lj::bson::Binary_type bin_type = lj::bson::Binary_type::k_bin_generic;
         uint32_t check_key_length = 0;
@@ -101,7 +101,7 @@ namespace logjamd
                 &bin_type,
                 &check_key_length);
 
-        for (int h = 0; h < 128; ++h)
+        for (size_t h = 0; h < derived_key_length; ++h)
         {
             if (derived_key[h] != check_key[h])
             {
@@ -171,19 +171,16 @@ namespace logjamd
         const uint8_t* password = data[k_password_field].to_value();
 
         // TODO N, r and p should come from config.
-        int N = 1 << 12;
-        int r = 8;
-        int p = 1;
-        uint8_t derived_key[128];
+        uint8_t derived_key[derived_key_length];
         crypto_scrypt(password,
                 password_length,
                 salt,
                 salt_length,
-                N,
-                r,
-                p,
+                k_N,
+                k_r,
+                k_p,
                 derived_key,
-                128);
+                derived_key_length);
 
         // check if there is an old record to remove.
         if (users_by_id_.end() != iter)
