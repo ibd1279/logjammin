@@ -38,73 +38,76 @@
 #include <stdlib.h>
 #include <cstring>
 
-#define HAVE_POSIX_MEMALIGN
+#include "scrypt/scrypt.h"
 
-static inline uint32_t
-le32dec(const void *pp)
+namespace
 {
-        const uint8_t *p = (uint8_t const *)pp;
+    inline uint32_t
+    le32dec(const void *pp)
+    {
+            const uint8_t *p = (uint8_t const *)pp;
 
-        return ((uint32_t)(p[0]) + ((uint32_t)(p[1]) << 8) +
-            ((uint32_t)(p[2]) << 16) + ((uint32_t)(p[3]) << 24));
-}
+            return ((uint32_t)(p[0]) + ((uint32_t)(p[1]) << 8) +
+                ((uint32_t)(p[2]) << 16) + ((uint32_t)(p[3]) << 24));
+    }
 
-static inline void
-le32enc(void *pp, uint32_t x)
-{
-        uint8_t * p = (uint8_t *)pp;
+    inline void
+    le32enc(void *pp, uint32_t x)
+    {
+            uint8_t * p = (uint8_t *)pp;
 
-        p[0] = x & 0xff;
-        p[1] = (x >> 8) & 0xff;
-        p[2] = (x >> 16) & 0xff;
-        p[3] = (x >> 24) & 0xff;
-}
+            p[0] = x & 0xff;
+            p[1] = (x >> 8) & 0xff;
+            p[2] = (x >> 16) & 0xff;
+            p[3] = (x >> 24) & 0xff;
+    }
 
-static inline uint32_t
-be32dec(const void *pp)
-{
-        const uint8_t *p = (uint8_t const *)pp;
+    inline uint32_t
+    be32dec(const void *pp)
+    {
+            const uint8_t *p = (uint8_t const *)pp;
 
-        return ((uint32_t)(p[3]) + ((uint32_t)(p[2]) << 8) +
-            ((uint32_t)(p[1]) << 16) + ((uint32_t)(p[0]) << 24));
-}
+            return ((uint32_t)(p[3]) + ((uint32_t)(p[2]) << 8) +
+                ((uint32_t)(p[1]) << 16) + ((uint32_t)(p[0]) << 24));
+    }
 
-static inline void
-be32enc(void *pp, uint32_t x)
-{
-        uint8_t * p = (uint8_t *)pp;
+    inline void
+    be32enc(void *pp, uint32_t x)
+    {
+            uint8_t * p = (uint8_t *)pp;
 
-        p[3] = x & 0xff;
-        p[2] = (x >> 8) & 0xff;
-        p[1] = (x >> 16) & 0xff;
-        p[0] = (x >> 24) & 0xff;
-}
+            p[3] = x & 0xff;
+            p[2] = (x >> 8) & 0xff;
+            p[1] = (x >> 16) & 0xff;
+            p[0] = (x >> 24) & 0xff;
+    }
 
-/*
- * Encode a length len/4 vector of (uint32_t) into a length len vector of
- * (unsigned char) in big-endian form.  Assumes len is a multiple of 4.
- */
-static void
-be32enc_vect(unsigned char *dst, const uint32_t *src, size_t len)
-{
-        size_t i;
+    /*
+     * Encode a length len/4 vector of (uint32_t) into a length len vector of
+     * (unsigned char) in big-endian form.  Assumes len is a multiple of 4.
+     */
+    void
+    be32enc_vect(unsigned char *dst, const uint32_t *src, size_t len)
+    {
+            size_t i;
 
-        for (i = 0; i < len / 4; i++)
-                be32enc(dst + i * 4, src[i]);
-}
+            for (i = 0; i < len / 4; i++)
+                    be32enc(dst + i * 4, src[i]);
+    }
 
-/*
- * Decode a big-endian length len vector of (unsigned char) into a length
- * len/4 vector of (uint32_t).  Assumes len is a multiple of 4.
- */
-static void
-be32dec_vect(uint32_t *dst, const unsigned char *src, size_t len)
-{
-        size_t i;
+    /*
+     * Decode a big-endian length len vector of (unsigned char) into a length
+     * len/4 vector of (uint32_t).  Assumes len is a multiple of 4.
+     */
+    void
+    be32dec_vect(uint32_t *dst, const unsigned char *src, size_t len)
+    {
+            size_t i;
 
-        for (i = 0; i < len / 4; i++)
-                dst[i] = be32dec(src + i * 4);
-}
+            for (i = 0; i < len / 4; i++)
+                    dst[i] = be32dec(src + i * 4);
+    }
+};
 
 typedef struct SHA256Context {
         uint32_t state[8];
@@ -723,7 +726,6 @@ crypto_scrypt(const uint8_t * passwd, size_t passwdlen,
         }
 
         /* Allocate memory. */
-#ifdef HAVE_POSIX_MEMALIGN
         if ((errno = posix_memalign(&B0, 64, 128 * r * p)) != 0)
                 goto err0;
         B = (uint8_t *)(B0);
@@ -734,7 +736,6 @@ crypto_scrypt(const uint8_t * passwd, size_t passwdlen,
         if ((errno = posix_memalign(&V0, 64, 128 * r * N)) != 0)
                 goto err2;
         V = (uint32_t *)(V0);
-#endif
 #endif
 #ifdef MAP_ANON
         if ((V0 = mmap(NULL, 128 * r * N, PROT_READ | PROT_WRITE,
