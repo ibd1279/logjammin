@@ -42,8 +42,10 @@ namespace logjamd
     class User
     {
     public:
-        User(const lj::Uuid& user_id) :
-                id_(user_id)
+        User(const lj::Uuid& user_id,
+                const std::string& login) :
+                id_(user_id),
+                login_(login)
         {
         }
 
@@ -58,7 +60,7 @@ namespace logjamd
         //! Clone this user object to create a new copy.
         virtual User* clone() const
         {
-            return new User(id_);
+            return new User(id_, login_);
         }
 
         //! Get the id for this user.
@@ -66,7 +68,13 @@ namespace logjamd
         {
             return id_;
         }
+
+        virtual const std::string& login() const
+        {
+            return login_;
+        }
     private:
         lj::Uuid id_;
+        std::string login_;
     };
 };
