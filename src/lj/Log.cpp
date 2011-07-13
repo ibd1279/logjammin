@@ -140,7 +140,7 @@ namespace
             }
             else
             {
-                buffer_ << msg;
+                buffer_ << " " << msg;
             }
             return *this;
         }
@@ -157,7 +157,7 @@ namespace
             }
             else
             {
-                buffer_ << msg;
+                buffer_ << " " << msg;
             }
             return *this;
         }
@@ -174,7 +174,7 @@ namespace
             }
             else
             {
-                buffer_ << msg;
+                buffer_ << " " << msg;
             }
             return *this;
         }
@@ -198,7 +198,7 @@ namespace
             }
             else
             {
-                buffer_ << (msg ? "true" : "false");
+                buffer_ << (msg ? " true" : " false");
             }
             return *this;
         }
@@ -214,7 +214,7 @@ namespace
             }
             else
             {
-                sprintf(buffer, "%p", msg);
+                sprintf(buffer, " %p", msg);
                 buffer_ << msg;
             }
             delete[] buffer;
