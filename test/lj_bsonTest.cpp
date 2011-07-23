@@ -52,6 +52,26 @@ void testAssignment()
 
     o = doc.root;
     TEST_ASSERT(lj::bson::as_string(doc.root).compare(lj::bson::as_string(o)) == 0);
+    
+    try
+    {
+        o.set_value(lj::bson::Type::k_null, NULL);
+        o.set_value(lj::bson::Type::k_document, NULL);
+        o.set_value(lj::bson::Type::k_array, NULL);
+    }
+    catch (lj::bson::Bson_type_exception& ex)
+    {
+        TEST_FAILED("Null, document, and array should support null");
+    }
+
+    try
+    {
+        o.set_value(lj::bson::Type::k_int32, NULL);
+    }
+    catch (lj::bson::Bson_type_exception& ex)
+    {
+        // test was successful. this should throw an error.
+    }
 }
 
 void testAssignmentCrossTypes()
