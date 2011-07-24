@@ -314,7 +314,9 @@ namespace lj
              Create a new Node value based on the provided values. Used to create
              value nodes.
              \par
-             Data from \c v is copied to internal objects.
+             The value of v is copied out of the pointer \c v. For document
+             and array types, \v may be NULL. For value types, \c v must be
+             a valid pointer.
              \param t The type of node being created.
              \param v The value to associate with this node.
              \sa Node::set_value()
@@ -334,8 +336,9 @@ namespace lj
             //! Set the value of the document node based on a bson string.
             /*!
              \par
-             The value of v is copied out of the pointer \c v , and must be freed
-             by the calling application.
+             The value of v is copied out of the pointer \c v. For document
+             and array types, \v may be NULL. For value types, \c v must be
+             a valid pointer.
              \param t The new type of the document.
              \param v Array of data to read the new value from.
              */
@@ -666,6 +669,53 @@ namespace lj
          \return a new Node object.
          */
         Node* new_uuid(const lj::Uuid& uuid);
+
+        //! Create a new node from a json string.
+        /*!
+         \par
+         The input string is expected to be a well-formed json document
+         that will be parsed into a bson document node.
+         \par Extensions
+         The input json string is not exactly json. There are a couple of
+         additions to the json syntax that have been added to support bson
+         concepts that do not exist in json.
+
+         Binary values can be represented by prefixing a string with a capital
+         letter \c B.
+         \code
+         { "binary":B"Abd#=" }
+         \endcode
+
+         By default, all integer numbers are represented as 32 bit integers.
+         If you want a larger integer, you can suffix the number with a capital
+         letter \c L.
+         \code
+         { "bignum":9000000000L }
+         \endcode
+
+         Numbers can also contain commas.
+         \code
+         { "bignum":9,000,000,000 }
+         \endcode
+
+         A number is treated as an integer until it contains a dot.
+         \code
+         { "decimal":10.01 }
+         \endcode
+
+         Lastly, unquoted values are treated as a number until the first
+         non-numeric character is encounter.
+         \code
+         { "string":10.01lbs }
+         \endcode
+         \par Memory
+         Object should be released with delete.
+         \param val The string value to parse.
+         \return A new Node object.
+         \exception lj::Exception Upon encountering unparsable data in the
+         string.
+         */
+        Node* parse_string(const std::string val);
 
         //! Get the value of a Bson object as a C++ string in debug format.
         /*!

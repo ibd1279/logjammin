@@ -44,6 +44,7 @@
 #include <iostream>
 #include <list>
 #include <sstream>
+#include <stack>
 
 namespace lj
 {
@@ -281,7 +282,7 @@ namespace lj
 
             // process the void pointer provided based on the provided type.
             type_ = t;
-            if (v)
+            if (v || type_ == Type::k_null)
             {
                 long long sz = 0;
                 switch (type_)
@@ -341,6 +342,10 @@ namespace lj
                 {
                     value_.vector_ = new std::vector<Node*>();
                 }
+            }
+            else
+            {
+                throw Bson_type_exception("NULL pointer passed to non-structural node type.", t);
             }
 
             // Clean up any old memory.
@@ -811,6 +816,7 @@ namespace lj
             const uint8_t* const d = uuid.data(&sz);
             return new_binary(d, sz, Binary_type::k_bin_uuid);
         }
+
 
         std::string as_debug_string(const Node& b, int lvl)
         {
