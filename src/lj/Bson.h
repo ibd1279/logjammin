@@ -675,39 +675,6 @@ namespace lj
          \par
          The input string is expected to be a well-formed json document
          that will be parsed into a bson document node.
-         \par Extensions
-         The input json string is not exactly json. There are a couple of
-         additions to the json syntax that have been added to support bson
-         concepts that do not exist in json.
-
-         Binary values can be represented by prefixing a string with a capital
-         letter \c B.
-         \code
-         { "binary":B"Abd#=" }
-         \endcode
-
-         By default, all integer numbers are represented as 32 bit integers.
-         If you want a larger integer, you can suffix the number with a capital
-         letter \c L.
-         \code
-         { "bignum":9000000000L }
-         \endcode
-
-         Numbers can also contain commas.
-         \code
-         { "bignum":9,000,000,000 }
-         \endcode
-
-         A number is treated as an integer until it contains a dot.
-         \code
-         { "decimal":10.01 }
-         \endcode
-
-         Lastly, unquoted values are treated as a number until the first
-         non-numeric character is encounter.
-         \code
-         { "string":10.01lbs }
-         \endcode
          \par Memory
          Object should be released with delete.
          \param val The string value to parse.

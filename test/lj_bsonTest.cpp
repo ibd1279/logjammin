@@ -7,6 +7,7 @@
 
 #include "testhelper.h"
 #include "lj/Bson.h"
+#include "lj/Log.h"
 #include <sstream>
 /*
  * Simple C++ Test Suite
@@ -319,6 +320,29 @@ void testType()
     TEST_ASSERT(lj::bson::Type::k_array == doc.root["array"].type());
     TEST_ASSERT(lj::bson::Type::k_document == doc.root["bool"].type());
 }
+void testParse()
+{
+    lj::Log::debug.enable();
+    const std::string simple_array("[\n  \"1\",\n  \"hello\",\n  \"3\"\n]");
+    lj::bson::Node* result = lj::bson::parse_string(simple_array);
+    TEST_ASSERT(simple_array.compare(lj::bson::as_pretty_json(*result)) == 0);
+
+    const std::string complex_array("[\n\
+  [\n\
+    \"1\",\n\
+    [\n\
+      \"hello\"\n\
+    ],\n\
+    \"3\"\n\
+  ],\n\
+  [\n\
+    \"4\",\n\
+    \"5\"\n\
+  ]\n\
+]");
+    result = lj::bson::parse_string(complex_array);
+    TEST_ASSERT(complex_array.compare(lj::bson::as_pretty_json(*result)) == 0);
+}
 void testAs_binary()
 {
     sample_doc doc;
@@ -415,7 +439,7 @@ void testAs_pretty_json()
     300,\n\
     400,\n\
     500\n\
-  },\n\
+  ],\n\
   \"bin\":\"CgoKCgoKCgo=\",\n\
   \"bool\":{\n\
     \"false\":0,\n\
@@ -648,6 +672,7 @@ int main(int argc, char** argv)
         PREPARE_TEST(testTo_value),
         PREPARE_TEST(testTo_vector),
         PREPARE_TEST(testType),
+        PREPARE_TEST(testParse),
         PREPARE_TEST(testAs_binary),
         PREPARE_TEST(testAs_boolean),
         PREPARE_TEST(testAs_debug_string),

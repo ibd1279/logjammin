@@ -1120,7 +1120,7 @@ namespace lj
                 {
                     ret_val.append(indent.erase(indent.size() - 2));
                 }
-                return ret_val.append("}");
+                return ret_val.append((Type::k_array == b.type() ? "]" : "}"));
             }
             else
             {
