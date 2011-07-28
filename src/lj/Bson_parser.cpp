@@ -1,209 +1,412 @@
-#include "Bson.h"
-#include "Log.h"
+#include "lj/Bson.h"
+#include "lj/Exception.h"
 #include <cassert>
+#include <cstring>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <stack>
 
 namespace
 {
-    enum class Expected
-    {
-        k_key,
-        k_value
-    };
-
-    enum class Interpret
-    {
-        k_quoted,
-        k_unquoted,
-        k_post,
-    };
-
-    struct Parser_state
+    class Parser_exception : public lj::Exception
     {
     public:
-        Parser_state(const char* b, const char* e) :
-                expected(Expected::k_value),
-                interpret(Interpret::k_unquoted),
-                begin(b),
-                end(e),
-                c(b),
-                n(new lj::bson::Node()),
-                parents()
+        Parser_exception(const std::string& msg,
+                unsigned int col,
+                unsigned int line) :
+                lj::Exception("Json to Bson", msg),
+                col_(col),
+                line_(line)
         {
-        }
-        void push()
-        {
-            lj::Log::debug.log("bson parser: pushing a node.");
-            assert(n != NULL);
-            parents.push(n);
-            n = NULL;
-        }
-        void pop()
-        {
-            lj::Log::debug.log("bson parser: popping a node.");
-            assert(0 < parents.size());
-            n = parents.top();
-            parents.pop();
-        }
-        lj::bson::Node& node()
-        {
-            return *node_ptr();
-        }
-        lj::bson::Node* node_ptr()
-        {
-            if (!n)
-            {
-                n = new lj::bson::Node();
-            }
-            return n;
-        }
-        void node_reset()
-        {
-            n = new lj::bson::Node();
-        }
-        void key()
-        {
-            lj::Log::debug.log("bson parser: changing to key mode.");
-            expected = Expected::k_key;
-        }
-        void value()
-        {
-            lj::Log::debug.log("bson parser: changing to value mode.");
-            expected = Expected::k_value;
-        }
-        void quoted()
-        {
-            lj::Log::debug.log("bson parser: interpreting quoted value.");
-            interpret = Interpret::k_quoted;
-        }
-        void unquoted()
-        {
-            lj::Log::debug.log("bson parser: interpreting unquoted value.");
-            interpret = Interpret::k_unquoted;
-        }
-        void post()
-        {
-            lj::Log::debug.log("bson parser: interpreting post value.");
-            interpret = Interpret::k_post;
-        }
-        lj::bson::Node& parent()
-        {
-            return *parents.top();
-        }
-        char current()
-        {
-            return *c;
-        }
-        char current(ptrdiff_t dist)
-        {
-            return *(c + dist);
-        }
-        void advance(ptrdiff_t dist)
-        {
-            c += dist;
-        }
-        bool eof(ptrdiff_t dist =0)
-        {
-            return (c + dist) >= end;
         }
 
-        Expected expected;
-        Interpret interpret;
-        const char* begin;
-        const char* end;
-        const char* c;
+        Parser_exception(const Parser_exception& o) :
+                lj::Exception(o),
+                col_(o.col_),
+                line_(o.line_)
+        {
+        }
+
+        virtual ~Parser_exception() throw()
+        {
+        }
+
+        virtual std::string str() const
+        {
+            std::ostringstream oss;
+            oss << lj::Exception::str();
+            oss << " [line " << line_;
+            oss << " column " << col_;
+            oss << "]";
+            return oss.str();
+        }
     private:
-        lj::bson::Node* n;
-        std::stack<lj::bson::Node*> parents;
+        unsigned int col_;
+        unsigned int line_;
     };
 
-    void expecting_value(Parser_state& state)
+    class Parser_state
     {
-        std::string buffer;
-        char quote_character;
-        for (; !state.eof(); state.advance(1))
+    public:
+        Parser_state(const std::string& input) :
+                state_(State::k_pre),
+                begin_(NULL),
+                current_(NULL),
+                end_(NULL),
+                node_(NULL),
+                parents_(),
+                col_(1),
+                line_(1)
         {
-            if (Interpret::k_unquoted == state.interpret)
+            size_t input_size = input.size();
+            begin_ = new char[input_size];
+            end_ = begin_ + input_size;
+            memcpy(begin_, input.data(), input_size);
+            current_ = begin_;
+        }
+
+        ~Parser_state()
+        {
+            delete[] begin_;
+        }
+
+        lj::bson::Node* run()
+        {
+            do
             {
-                switch (state.current())
+                if (State::k_pre == state())
+                {
+                    extract_value();
+                }
+                else if (State::k_post == state())
+                {
+                    extract_separator();
+                }
+                else
+                {
+                    extract_key();
+                }
+            } while(next());
+            assert(NULL != node_);
+            return node_;
+        }
+    private:
+        enum class State
+        {
+            k_pre,
+            k_post,
+            k_key
+        };
+
+        State state_;
+        char* begin_;
+        const char* current_;
+        const char* end_;
+        lj::bson::Node* node_;
+        std::stack<lj::bson::Node*> parents_;
+        unsigned int col_;
+        unsigned int line_;
+
+        // Hidden because it is just the terminating function for a
+        // variadic template
+        inline bool is(const char c)
+        {
+            return false;
+        }
+
+        State state()
+        {
+            return state_;
+        }
+
+        inline void node_reset()
+        {
+            node_ = NULL;
+        }
+        inline lj::bson::Node& node()
+        {
+            if (!node_)
+            {
+                node_ = new lj::bson::Node();
+            }
+            return *node_;
+        }
+        inline lj::bson::Node& parent()
+        {
+            return *(parents_.top());
+        }
+        inline void push_array()
+        {
+            node().set_value(lj::bson::Type::k_array, NULL);
+            parents_.push(node_);
+            node_reset();
+        }
+        inline void push_document()
+        {
+            node().set_value(lj::bson::Type::k_document, NULL);
+            parents_.push(node_);
+            node_reset();
+        }
+        inline void pop()
+        {
+            assert(0 < parents_.size());
+            if (lj::bson::Type::k_array == parents_.top()->type() &&
+                NULL != node_)
+            {
+                *(parents_.top()) << node_;
+            }
+            node_ = parents_.top();
+            parents_.pop();
+            state_ = State::k_post;
+        }
+
+        inline bool is_valid(ptrdiff_t dist = 0)
+        {
+            return (current_ + dist) < end_;
+        }
+        inline const char at(ptrdiff_t dist = 0)
+        {
+            if (!is_valid(dist))
+            {
+                throw Parser_exception("Unexpected end of input.",
+                        col_,
+                        line_);
+            }
+            return *(current_ + dist);
+        }
+        bool next(ptrdiff_t dist = 1)
+        {
+            if (is_valid(dist))
+            {
+                for (int h = 0; h < dist; ++h)
+                {
+                    if (is(at(h), '\n'))
+                    {
+                        line_++;
+                        col_ = 1;
+                    }
+                    else
+                    {
+                        col_++;
+                    }
+                }
+                current_ += dist;
+                return true;
+            }
+            return false;
+        }
+        template <class C0, class ...Args>
+        bool is(const char c, const C0& test, const Args& ...args)
+        {
+            return (c == test ? true : is(c, args...));
+        }
+
+        inline void extract_null()
+        {
+            if (is(at(0), 'N', 'n') &&
+                is(at(1), 'U', 'u') &&
+                is(at(2), 'L', 'l') &&
+                is(at(3), 'L', 'l'))
+            {
+                std::unique_ptr<lj::bson::Node> n(lj::bson::new_null());
+                node().copy_from(*n);
+            }
+            else
+            {
+                throw Parser_exception("Unexpected value.",
+                        col_,
+                        line_);
+            }
+            next(3);
+            state_ = State::k_post;
+        }
+        inline void extract_true()
+        {
+            if (is(at(0), 'T', 't') &&
+                is(at(1), 'R', 'r') &&
+                is(at(2), 'U', 'u') &&
+                is(at(3), 'E', 'e'))
+            {
+                std::unique_ptr<lj::bson::Node> n(lj::bson::new_boolean(true));
+                node().copy_from(*n);
+            }
+            else
+            {
+                throw Parser_exception("Unexpected value.",
+                        col_,
+                        line_);
+            }
+            next(3);
+            state_ = State::k_post;
+        }
+        inline void extract_false()
+        {
+            if (is(at(0), 'F', 'f') &&
+                is(at(1), 'A', 'a') &&
+                is(at(2), 'L', 'l') &&
+                is(at(3), 'S', 's') &&
+                is(at(4), 'E', 'e'))
+            {
+                std::unique_ptr<lj::bson::Node> n(lj::bson::new_boolean(false));
+                node().copy_from(*n);
+            }
+            else
+            {
+                throw Parser_exception("Unexpected value.",
+                        col_,
+                        line_);
+            }
+            next(4);
+            state_ = State::k_post;
+        }
+        void extract_string()
+        {
+            char quote_character = at();
+            std::string buffer;
+            while(next())
+            {
+                // Not in the while statement because next modifies
+                // what at() reads from.
+                if (at() == quote_character)
+                {
+                    break;
+                }
+
+                if ('\\' == at())
+                {
+                    switch (at(1))
+                    {
+                        case '\"':
+                            buffer.push_back('\"');
+                            break;
+                        case '\\':
+                            buffer.push_back('\\');
+                            break;
+                        case '/':
+                            buffer.push_back('/');
+                            break;
+                        case 'b':
+                            buffer.push_back('\b');
+                            break;
+                        case 'f':
+                            buffer.push_back('\f');
+                            break;
+                        case 'n':
+                            buffer.push_back('\n');
+                            break;
+                        case 'r':
+                            buffer.push_back('\r');
+                            break;
+                        case 't':
+                            buffer.push_back('\t');
+                            break;
+                        default:
+                            buffer.push_back(at(1));
+                            break;
+                    }
+                    next();
+                }
+                else
+                {
+                    buffer.push_back(at());
+                }
+            }
+
+            std::unique_ptr<lj::bson::Node> n(lj::bson::new_string(buffer));
+            node().copy_from(*n);
+            state_ = State::k_post;
+        }
+
+        void extract_number()
+        {
+            std::string buffer;
+            buffer.push_back(at());
+
+            bool decimal = false;
+            if (is(at(), '.'))
+            {
+                decimal = true;
+            }
+
+            do
+            {
+                switch (at(1))
+                {
+                    case '.':
+                        if (decimal)
+                        {
+                            throw Parser_exception("Expected a digit.",
+                                    col_,
+                                    line_);
+                        }
+                        decimal = true;
+                        // fall through.
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                    case '8':
+                    case '9':
+                    case '0':
+                        buffer.push_back(at(1));
+                        break;
+                    default:
+                        if (decimal)
+                        {
+                            throw Parser_exception("Decimal not yet supported.",
+                                    col_,
+                                    line_);
+                        }
+                        else
+                        {
+                            std::unique_ptr<lj::bson::Node> n(lj::bson::new_int64(atol(buffer.c_str())));
+                            node().copy_from(*n);
+                        }
+                        state_ = State::k_post;
+                        return;
+                }
+            } while(next());
+        }
+
+        void extract_value()
+        {
+            while (State::k_pre == state_)
+            {
+                switch (at())
                 {
                     case ' ':
                     case '\n':
                     case '\r':
                     case '\t':
                         // throw away white space before a value.
+                        if (!next())
+                        {
+                            return;
+                        }
                         break;
                     case '\'':
                     case '\"':
                         // Hit a quote, so treat as a string.
-                        quote_character = state.current();
-                        state.quoted();
+                        extract_string();
                         break;
                     case 'T':
                     case 't':
                         // true keyword?
-                        if (state.eof(3))
-                        {
-                            throw LJ__Exception("Unexpected end of value.");
-                        }
-                        if ((state.current(1) == 'R' || state.current(1) == 'r') &&
-                            (state.current(2) == 'U' || state.current(2) == 'u') &&
-                            (state.current(3) == 'E' || state.current(3) == 'e'))
-                        {
-                            std::unique_ptr<lj::bson::Node> n(lj::bson::new_boolean(true));
-                            state.node().copy_from(*n);
-                        }
-                        else
-                        {
-                            throw LJ__Exception("Unexpected value.");
-                        }
-                        state.advance(3);
-                        state.post();
+                        extract_true();
                         break;
                     case 'F':
                     case 'f':
                         // false keyword?
-                        if (state.eof(4));
-                        {
-                            throw LJ__Exception("Unexpected end of value.");
-                        }
-                        if ((state.current(1) == 'A' || state.current(1) == 'a') &&
-                            (state.current(2) == 'L' || state.current(2) == 'l') &&
-                            (state.current(3) == 'S' || state.current(3) == 's') &&
-                            (state.current(4) == 'E' || state.current(4) == 'e'))
-                        {
-                            std::unique_ptr<lj::bson::Node> n(lj::bson::new_boolean(false));
-                            state.node().copy_from(*n);
-                        }
-                        else
-                        {
-                            throw LJ__Exception("Unexpected value.");
-                        }
-                        state.advance(4);
-                        state.post();
+                        extract_false();
                         break;
                     case 'N':
                     case 'n':
-                        // true keyword?
-                        if (state.eof(3))
-                        {
-                            throw LJ__Exception("Unexpected end of value.");
-                        }
-                        if ((state.current(1) == 'U' || state.current(1) == 'u') &&
-                            (state.current(2) == 'L' || state.current(2) == 'l') &&
-                            (state.current(3) == 'L' || state.current(3) == 'l'))
-                        {
-                            std::unique_ptr<lj::bson::Node> n(lj::bson::new_null());
-                            state.node().copy_from(*n);
-                        }
-                        else
-                        {
-                            throw LJ__Exception("Unexpected value.");
-                        }
-                        state.advance(3);
-                        state.post();
+                        // null keyword?
+                        extract_null();
                         break;
                     case '-':
                     case '1':
@@ -218,143 +421,135 @@ namespace
                     case '0':
                     case '.':
                         //Number.
-                        state.post();
+                        extract_number();
                         break;
                     case '[':
                         // An Array. Nesting
-                        state.node().set_value(lj::bson::Type::k_array, NULL);
-                        state.push();
+                        push_array();
+                        if (!next())
+                        {
+                            return;
+                        }
                         break;
                     case '{':
                         // A Document. Nesting
-                        state.node().set_value(lj::bson::Type::k_document, NULL);
-                        state.push();
-                        state.advance(1); // won't hit loop because of return.
-                        state.key();
+                        push_document();
+                        state_ = State::k_key;
                         return; // return, not break.
-                    case '}':
                     case ']':
                         // must be empty
-                        state.pop();
-                        state.post();
+                        pop();
                         break;
                     default:
-                        throw LJ__Exception("unexpected symbol.");
+                        throw Parser_exception("Unexpected character.",
+                                col_,
+                                line_);
                         break;
                 }
-                continue;
-            }
-            else if (Interpret::k_quoted == state.interpret)
+            } // while (State::k_pre == state_)
+        }
+
+        void extract_separator()
+        {
+            while (State::k_post == state_)
             {
-                for (; !state.eof() &&
-                    state.current() != quote_character;
-                    state.advance(1))
-                {
-                    if ('\\' == state.current() && state.eof(1))
-                    {
-                        state.advance(1);
-                        switch (state.current())
-                        {
-                            case '\"':
-                                buffer.push_back('\"');
-                                break;
-                            case '\\':
-                                buffer.push_back('\\');
-                                break;
-                            case '/':
-                                buffer.push_back('/');
-                                break;
-                            case 'b':
-                                buffer.push_back('\b');
-                                break;
-                            case 'f':
-                                buffer.push_back('\f');
-                                break;
-                            case 'n':
-                                buffer.push_back('\n');
-                                break;
-                            case 'r':
-                                buffer.push_back('\r');
-                                break;
-                            case 't':
-                                buffer.push_back('\t');
-                                break;
-                            default:
-                                buffer.push_back(state.current());
-                                break;
-                        }
-                        continue;
-                    }
-                    buffer.push_back(state.current());
-                }
-                if (state.eof())
-                {
-                    LJ__Exception("unexpected end of string.");
-                }
-                std::unique_ptr<lj::bson::Node> n(lj::bson::new_string(buffer));
-                buffer.clear();
-                state.node().copy_from(*n);
-                state.post();
-                continue;
-            }
-            else if (Interpret::k_post == state.interpret)
-            {
-                switch (state.current())
+                switch (at())
                 {
                     case ' ':
                     case '\n':
                     case '\r':
                     case '\t':
-                        // throw away white space before a value.
+                        // throw away white space
+                        if (!next())
+                        {
+                            return;
+                        }
                         break;
                     case '}':
-                        state.pop();
-                        // still post value.
-                        break;
                     case ']':
-                        state.parent() << state.node_ptr();
-                        state.pop();
-                        // still post value.
+                        pop();
+                        if (!next())
+                        {
+                            return;
+                        }
                         break;
                     case ',':
-                        if (lj::bson::Type::k_document == state.parent().type())
+                        if (lj::bson::Type::k_document == parent().type())
                         {
-                            state.node_reset();
-                            state.unquoted();
-                            state.advance(1); // return skips loop incr.
-                            state.key();
-                            return; // return, not break;
+                            node_reset();
+                            state_ = State::k_key;
                         }
                         else
                         {
-                            state.parent() << state.node_ptr();
-                            state.node_reset();
-                            state.unquoted();
+                            parent() << node_;
+                            node_reset();
+                            state_ = State::k_pre;
                         }
-                        break;
+                        return; // return, not break;
                     default:
-                        throw LJ__Exception("unexpected symbol.");
+                        throw Parser_exception("Unexpected character.",
+                                col_,
+                                line_);
                         break;
                 }
-                continue;
-            }
+            } // while (State::k_post == state_)
         }
-    }
+
+        void extract_key()
+        {
+            bool post_key = false;
+            while (State::k_key == state_)
+            {
+                switch (at())
+                {
+                    case ' ':
+                    case '\n':
+                    case '\r':
+                    case '\t':
+                        // throw away white space
+                        if (!next())
+                        {
+                            return;
+                        }
+                        break;
+                    case '\'':
+                    case '\"':
+                        if (post_key)
+                        {
+                            throw Parser_exception("Unexpected character.",
+                                    col_,
+                                    line_);
+                        }
+                        extract_string();
+                        parent().set_child(lj::bson::as_string(node()), node_);
+                        node().nullify();
+                        post_key = true;
+                        state_ = State::k_key;
+                        if (!next())
+                        {
+                            return;
+                        }
+                        break;
+                    case ':':
+                        state_ = State::k_pre;
+                        return;
+                    case '}':
+                        // must be empty
+                        pop();
+                        break;
+                    default:
+                        throw Parser_exception("Unexpected character.",
+                                col_,
+                                line_);
+                        break;
+                }
+            } // while (State::k_key == state_)
+        }
+    };
 };
 
 lj::bson::Node* lj::bson::parse_string(const std::string val)
 {
-    Parser_state state(val.c_str(), val.c_str() + val.size());
-    while (!state.eof())
-    {
-        if (Expected::k_value == state.expected)
-        {
-            expecting_value(state);
-        }
-        else
-        {
-            throw LJ__Exception("Not Implemented yet.");
-        }
-    }
-    return state.node_ptr();
+    Parser_state state(val);
+    return state.run();
 }

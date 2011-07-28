@@ -337,11 +337,71 @@ void testParse()
   ],\n\
   [\n\
     \"4\",\n\
-    \"5\"\n\
+    5\n\
   ]\n\
 ]");
     result = lj::bson::parse_string(complex_array);
     TEST_ASSERT(complex_array.compare(lj::bson::as_pretty_json(*result)) == 0);
+
+    const std::string simple_document("{\n\
+  \"foo\": 500,\n\
+  \"bar\": false,\n\
+  \"bool\": TRUE,\n\
+  \'nil\': null,\n\
+  \"str\": \'Some string.\'\n\
+}");
+    const std::string doc1_expected("{\n\
+  \"bar\":0,\n\
+  \"bool\":1,\n\
+  \"foo\":500,\n\
+  \"nil\":null,\n\
+  \"str\":\"Some string.\"\n\
+}");
+    result = lj::bson::parse_string(simple_document);
+    TEST_ASSERT(doc1_expected.compare(lj::bson::as_pretty_json(*result)) == 0);
+
+    const std::string complex_document("{\n\
+  \"foo\": 500,\n\
+  \"bar\": false,\n\
+  \"bool\": TRUE,\n\
+  \'nil\': null,\n\
+  \"str\": \'Some string.\',\n\
+  \"nested\": [ { \"tmp\": {}, \"breakme\": [], \"comment\": null },\n\
+                { \"tmp\": { \"a\": \'b\' }, \'breakme\': [1,2,3,4,5], \"comment\": \"this is annoying to create\" }],\n\
+  \"escape\": \'We don\\\'t need no\\nstinking escapes.\'\n\
+}");
+
+    const std::string doc2_expected("{\n\
+  \"bar\":0,\n\
+  \"bool\":1,\n\
+  \"escape\":\"We don\'t need no\n\
+stinking escapes.\",\n\
+  \"foo\":500,\n\
+  \"nested\":[\n\
+    {\n\
+      \"breakme\":[],\n\
+      \"comment\":null,\n\
+      \"tmp\":{}\n\
+    },\n\
+    {\n\
+      \"breakme\":[\n\
+        1,\n\
+        2,\n\
+        3,\n\
+        4,\n\
+        5\n\
+      ],\n\
+      \"comment\":\"this is annoying to create\",\n\
+      \"tmp\":{\n\
+        \"a\":\"b\"\n\
+      }\n\
+    }\n\
+  ],\n\
+  \"nil\":null,\n\
+  \"str\":\"Some string.\"\n\
+}");
+    result = lj::bson::parse_string(complex_document);
+    TEST_ASSERT(doc2_expected.compare(lj::bson::as_pretty_json(*result)) == 0);
 }
 void testAs_binary()
 {
