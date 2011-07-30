@@ -1,7 +1,6 @@
-#pragma once
 /*!
- \file Stage.h
- \brief Logjam server stage abstract base definition.
+ \file Stage_pre.cpp
+ \brief Logjam server stage pre connection implementation.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -33,54 +32,69 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "logjamd/Stage_pre.h"
+#include "logjamd/Connection.h"
+
 #include "lj/Bson.h"
 #include "lj/Log.h"
-#include <memory>
-#include <string>
+#include <locale>
+
+namespace
+{
+    const std::string k_bson_mode("bson\n");
+    const std::string k_json_mode("json\n");
+    const std::string k_http_mode("http ");
+    const std::string k_error_unknown_mode("Unknown mode: ");
+};
 
 namespace logjamd
 {
-    class Connection;
-    class Stage {
-    public:
-        Stage(logjamd::Connection* connection) : connection_(connection)
+    Stage_pre::Stage_pre(logjamd::Connection* connection)
+            : logjamd::Stage(connection)
+    {
+    }
+
+    Stage_pre::~Stage_pre()
+    {
+    }
+
+    Stage* Stage_pre::logic()
+    {
+        char buffer[6];
+        std::locale loc;
+        for (int h = 0; h < 5; ++h)
         {
+            char c;
+            conn()->io().get(c);
+            buffer[h] = std::tolower(c, loc);
         }
-        virtual ~Stage()
+        buffer[5] = '\0';
+
+        if (k_bson_mode.compare(buffer) == 0)
         {
+            log("Using BSON mode.") << lj::Log::end;
         }
-        virtual Stage* logic() = 0;
-        virtual std::string name() = 0;
-        virtual logjamd::Connection* conn()
+        else if (k_json_mode.compare(buffer) == 0)
         {
-            return connection_;
+            log("Using json mode.") << lj::Log::end;
         }
-    protected:
-        virtual lj::bson::Node empty_response()
+        else if (k_http_mode.compare(buffer) == 0)
         {
-            lj::bson::Node n;
-            n.set_child("stage", lj::bson::new_string(name()));
-            n.set_child("success", lj::bson::new_boolean(true));
-            n.set_child("message", lj::bson::new_string("ok"));
-            return n;
+            log("Using HTTP mode.") << lj::Log::end;
         }
-        virtual lj::bson::Node error_response(const std::string msg)
+        else
         {
-            lj::bson::Node n;
-            n.set_child("stage", lj::bson::new_string(name()));
-            n.set_child("success", lj::bson::new_boolean(false));
-            n.set_child("message", lj::bson::new_string(msg));
-            return n;
+            std::string mode(buffer, 4);
+            log("Unknown mode provided: %s") << mode << lj::Log::end;
+            conn()->io() << lj::bson::as_string(error_response(k_error_unknown_mode + mode));
+            return NULL;
         }
-        virtual lj::Log& log(const std::string fmt)
-        {
-            std::string real_fmt("%s: ");
-            real_fmt.append(fmt);
-            lj::Log& l = lj::Log::debug(real_fmt);
-            l << name();
-            return l;
-        }
-    private:
-        logjamd::Connection* connection_;
-    };
+    }
+
+    std::string Stage_pre::name()
+    {
+        return std::string("Pre-connection");
+    }
 };
+
+

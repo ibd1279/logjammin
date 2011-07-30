@@ -1,7 +1,7 @@
 #pragma once
 /*!
- \file Stage.h
- \brief Logjam server stage abstract base definition.
+ \file Stage_pre.h
+ \brief Logjam server stage pre connection header.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -33,54 +33,17 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "lj/Bson.h"
-#include "lj/Log.h"
-#include <memory>
-#include <string>
+#include "logjamd/Stage.h"
 
 namespace logjamd
 {
-    class Connection;
-    class Stage {
+    class Stage_pre : public Stage 
+    {
     public:
-        Stage(logjamd::Connection* connection) : connection_(connection)
-        {
-        }
-        virtual ~Stage()
-        {
-        }
-        virtual Stage* logic() = 0;
-        virtual std::string name() = 0;
-        virtual logjamd::Connection* conn()
-        {
-            return connection_;
-        }
-    protected:
-        virtual lj::bson::Node empty_response()
-        {
-            lj::bson::Node n;
-            n.set_child("stage", lj::bson::new_string(name()));
-            n.set_child("success", lj::bson::new_boolean(true));
-            n.set_child("message", lj::bson::new_string("ok"));
-            return n;
-        }
-        virtual lj::bson::Node error_response(const std::string msg)
-        {
-            lj::bson::Node n;
-            n.set_child("stage", lj::bson::new_string(name()));
-            n.set_child("success", lj::bson::new_boolean(false));
-            n.set_child("message", lj::bson::new_string(msg));
-            return n;
-        }
-        virtual lj::Log& log(const std::string fmt)
-        {
-            std::string real_fmt("%s: ");
-            real_fmt.append(fmt);
-            lj::Log& l = lj::Log::debug(real_fmt);
-            l << name();
-            return l;
-        }
-    private:
-        logjamd::Connection* connection_;
+        Stage_pre(logjamd::Connection* connection);
+        virtual ~Stage_pre();
+        virtual Stage* logic();
+        virtual std::string name();
     };
 };
+

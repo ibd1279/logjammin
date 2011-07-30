@@ -83,11 +83,21 @@ char* nodes_to_cstr(lj::bson::Node (&nodes)[LENGTH], size_t* sz)
     size_t offset = 0;
     for (unsigned h = 0; h < LENGTH; ++h)
     {
-        size_t node_size = nodes[h].size();
-        uint8_t* node_bytes = nodes[h].to_binary();
-        memcpy(buffer + offset, node_bytes, node_size);
-        delete[] node_bytes;
-        offset += node_size;
+        if (lj::bson::type_is_nested(nodes[h].type()))
+        {
+            size_t node_size = nodes[h].size();
+            uint8_t* node_bytes = nodes[h].to_binary();
+            memcpy(buffer + offset, node_bytes, node_size);
+            delete[] node_bytes;
+            offset += node_size;
+        }
+        else
+        {
+            std::string tmp = lj::bson::as_string(nodes[h]);
+            size_t node_size = tmp.size() + 1;
+            memcpy(buffer + offset, tmp.c_str(), node_size);
+            offset += node_size;
+        }
     }
     return buffer;
 }

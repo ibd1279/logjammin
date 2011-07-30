@@ -76,6 +76,7 @@ def build(bld):
             ,'src/logjamd/Connection_secure.cpp'
             ,'src/logjamd/Server_secure.cpp'
             ,'src/logjamd/Stage_auth.cpp'
+            ,'src/logjamd/Stage_pre.cpp'
         ]
         ,target='logjamserver'
         ,cxxflags = ['-O0', '-Wall', '-g', '-std=c++0x']
