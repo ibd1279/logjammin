@@ -34,6 +34,9 @@
 
 #include "logjamd/Stage_pre.h"
 #include "logjamd/Connection.h"
+#include "logjamd/Stage_auth.h"
+#include "logjamd/User.h"
+#include "logjamd/constants.h"
 
 #include "lj/Bson.h"
 #include "lj/Log.h"
@@ -73,14 +76,19 @@ namespace logjamd
         if (k_bson_mode.compare(buffer) == 0)
         {
             log("Using BSON mode.") << lj::Log::end;
+            return new Stage_auth(conn());
         }
         else if (k_json_mode.compare(buffer) == 0)
         {
             log("Using json mode.") << lj::Log::end;
+            conn()->user(new User(k_user_id_json, k_user_login_json));
+            // return the json stage.
         }
         else if (k_http_mode.compare(buffer) == 0)
         {
             log("Using HTTP mode.") << lj::Log::end;
+            conn()->user(new User(k_user_id_http, k_user_login_http));
+            // return the http stage.
         }
         else
         {

@@ -7,8 +7,11 @@
 
 #include "testhelper.h"
 #include "lj/Bson.h"
-#include "logjamd/mock_server.h"
+#include "logjamd/Stage_auth.h"
 #include "logjamd/Stage_pre.h"
+#include "logjamd/User.h"
+#include "logjamd/constants.h"
+#include "logjamd/mock_server.h"
 #include <memory>
 #include <sstream>
 
@@ -21,7 +24,12 @@ void testBSON()
 
     // perform the stage.
     logjamd::Stage_pre stage(env.connection());
-    stage.logic();
+    logjamd::Stage* next_stage = stage.logic();
+    
+    // Test the result
+    TEST_ASSERT(next_stage != NULL);
+    TEST_ASSERT(next_stage->name().compare(logjamd::Stage_auth(env.connection()).name()) == 0);
+    TEST_ASSERT(env.connection()->user() == NULL);
 }
 
 void testJSON()
@@ -34,6 +42,11 @@ void testJSON()
     // perform the stage.
     logjamd::Stage_pre stage(env.connection());
     stage.logic();
+
+    // Test the result
+    TEST_ASSERT(env.connection()->user() != NULL);
+    TEST_ASSERT(env.connection()->user()->id() == logjamd::k_user_id_json);
+    TEST_ASSERT(env.connection()->user()->login() == logjamd::k_user_login_json);
 }
 
 void testHTTP()
@@ -46,6 +59,11 @@ void testHTTP()
     // perform the stage.
     logjamd::Stage_pre stage(env.connection());
     stage.logic();
+
+    // Test the result
+    TEST_ASSERT(env.connection()->user() != NULL);
+    TEST_ASSERT(env.connection()->user()->id() == logjamd::k_user_id_http);
+    TEST_ASSERT(env.connection()->user()->login() == logjamd::k_user_login_http);
 }
 
 void testUnknown()

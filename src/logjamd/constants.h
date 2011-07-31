@@ -40,4 +40,8 @@ namespace logjamd
     const lj::Uuid k_logjamd_root(lj::Uuid::k_nil, "logjamd", 7);
     const lj::Uuid k_auth_method(k_logjamd_root, "auth_method", 11);
     const lj::Uuid k_auth_provider(k_logjamd_root, "auth_provider", 13);
+    const lj::Uuid k_user_id_json("00000000-0000-4006-8fbc-ee299933509f");
+    const std::string k_user_login_json("99_json_limited");
+    const lj::Uuid k_user_id_http("00000000-0000-4006-8952-d05d3161ec80");
+    const std::string k_user_login_http("98_http_limited");
 };
