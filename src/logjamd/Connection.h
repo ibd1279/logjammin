@@ -47,6 +47,7 @@ namespace logjamd
     class Connection {
     public:
         friend class Stage_auth;
+        friend class Stage_pre;
         Connection(logjamd::Server* server,
                 lj::Document* state,
                 std::iostream* stream) :
