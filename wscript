@@ -57,6 +57,7 @@ def build(bld):
             ,'src/lj/Bson_parser.cpp'
             ,'src/lj/Log.cpp'
             ,'src/lj/Stopclock.cpp'
+            ,'src/lj/Streambuf_pipe.cpp'
             ,'src/lj/Uuid.cpp'
             ,'src/scrypt/scrypt.cpp'
         ]
