@@ -74,7 +74,7 @@ namespace lj
          \return character read or EOF.
          */
         virtual int underflow();
-        
+
         //! std::streambuf override.
         /*!
          \return character written or EOF.
@@ -83,5 +83,7 @@ namespace lj
     private:
         std::stringstream i_;
         std::stringstream o_;
+        char ibuf_[1];
+        char obuf_[1];
     };
 }; // namespace lj

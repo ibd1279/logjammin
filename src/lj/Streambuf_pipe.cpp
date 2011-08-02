@@ -33,6 +33,7 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 #include "lj/Streambuf_pipe.h"
+#include <iostream>
 
 namespace lj
 {
@@ -41,8 +42,8 @@ namespace lj
             o_(std::ios_base::out|std::ios_base::in|std::ios_base::binary)
     {
         // All set to null to force under/over-flow states.
-        this->setp(NULL, NULL);
-        this->setg(NULL, NULL, NULL);
+        setp(NULL, NULL);
+        setg(NULL, NULL, NULL);
     }
 
     Streambuf_pipe::~Streambuf_pipe()
@@ -54,6 +55,8 @@ namespace lj
         int c = i_.get();
         if (!traits_type::eq_int_type(c, traits_type::eof()))
         {
+            ibuf_[0] = traits_type::to_char_type(c);
+            setg(ibuf_, ibuf_, ibuf_ + 1);
             return c;
         }
         return traits_type::eof();
