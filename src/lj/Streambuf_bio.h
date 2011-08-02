@@ -1,6 +1,6 @@
 #pragma once
 /*!
- \file lj/Bio_streambuf.h
+ \file lj/Streambuf_bio.h
  \brief LJ BIO streambuf header and implementation.
  \author Jason Watson
  
@@ -78,7 +78,7 @@ namespace lj
      \date June 28, 2011
      */
     template < typename charT=char, typename traits=std::char_traits<charT> >
-    class Bio_streambuf : public std::basic_streambuf<charT, traits>
+    class Streambuf_bio : public std::basic_streambuf<charT, traits>
     {
     public:
 
@@ -97,7 +97,7 @@ namespace lj
          \param io The BIO object.
          \param sz The maximum size of the buffer.
          */
-        Bio_streambuf(BIO* io, const size_t in_sz, const size_t out_sz)
+        Streambuf_bio(BIO* io, const size_t in_sz, const size_t out_sz)
                 : io_(io), in_size_(in_sz), out_size_(out_sz)
         {
             assert(sizeof(charT) == 1);
@@ -112,13 +112,13 @@ namespace lj
         }
 
         //! deleted copy constructor
-        Bio_streambuf(const Bio_streambuf&) = delete;
+        Streambuf_bio(const Streambuf_bio&) = delete;
 
         //! deleted assignment operator
-        Bio_streambuf& operator=(const Bio_streambuf&) = delete;
+        Streambuf_bio& operator=(const Streambuf_bio&) = delete;
         
         //! Destructor
-        virtual ~Bio_streambuf()
+        virtual ~Streambuf_bio()
         {
             if (in_)
             {

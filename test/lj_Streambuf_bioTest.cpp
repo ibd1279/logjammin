@@ -6,7 +6,7 @@
  */
 
 #include "testhelper.h"
-#include "lj/Bio_streambuf.h"
+#include "lj/Streambuf_bio.h"
 
 #include <istream>
 #include <ostream>
@@ -31,7 +31,7 @@ void testRead()
 {
     char* rand_array = random_stream();
     BIO* mem = BIO_new_mem_buf(rand_array, MEM_LENGTH);
-    lj::Bio_streambuf<char> buf(mem, 1024, 1);
+    lj::Streambuf_bio<char> buf(mem, 1024, 1);
     std::istream stream(&buf);
     for (int h = 0; h < MEM_LENGTH; ++h)
     {
@@ -40,7 +40,7 @@ void testRead()
         try
         {
             source = rand_array[h];
-            dest = lj::Bio_streambuf<char>::traits_type::to_char_type(stream.get());
+            dest = lj::Streambuf_bio<char>::traits_type::to_char_type(stream.get());
             TEST_ASSERT(source == dest);
         }
         catch (const Test_failure& ex)
@@ -57,7 +57,7 @@ void testWrite()
 {
     char* rand_array = random_stream();
     BIO* mem = BIO_new(BIO_s_mem());
-    lj::Bio_streambuf<char> buf(mem, 1, 1024);
+    lj::Streambuf_bio<char> buf(mem, 1, 1024);
     std::ostream stream(&buf);
     stream.write(rand_array, MEM_LENGTH);
     stream.flush();

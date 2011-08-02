@@ -34,7 +34,7 @@
 
 #include "logjamd/Connection_secure.h"
 #include "logjamd/Server_secure.h"
-#include "lj/Bio_streambuf.h"
+#include "lj/Streambuf_bio.h"
 #include "lj/Exception.h"
 #include <algorithm>
 #include <mutex>
@@ -108,7 +108,7 @@ namespace logjamd
             // Collect all the things we need for this connection.
             lj::Document* connection_document = new lj::Document();
             std::iostream* connection_stream = new std::iostream(
-                    new lj::Bio_streambuf<char>(BIO_pop(io_), 4096, 4096));
+                    new lj::Streambuf_bio<char>(BIO_pop(io_), 4096, 4096));
 
             // Creat the new connection
             Connection_secure* connection = new Connection_secure(
