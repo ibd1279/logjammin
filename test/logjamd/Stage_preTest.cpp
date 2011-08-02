@@ -19,8 +19,8 @@ void testBSON()
 {
     std::unique_ptr<lj::bson::Node> mode(lj::bson::new_string("BSON\n"));
     // Create the mock request.
-    Mock_environment<1> env;
-    env.node[0].copy_from(*mode);
+    Mock_environment env;
+    env.request() << "BSON\n";
 
     // perform the stage.
     logjamd::Stage_pre stage(env.connection());
@@ -34,10 +34,9 @@ void testBSON()
 
 void testJSON()
 {
-    std::unique_ptr<lj::bson::Node> mode(lj::bson::new_string("json\n"));
     // Create the mock request.
-    Mock_environment<1> env;
-    env.node[0].copy_from(*mode);
+    Mock_environment env;
+    env.request() << "json\n";
 
     // perform the stage.
     logjamd::Stage_pre stage(env.connection());
@@ -51,10 +50,9 @@ void testJSON()
 
 void testHTTP()
 {
-    std::unique_ptr<lj::bson::Node> mode(lj::bson::new_string("http "));
     // Create the mock request.
-    Mock_environment<1> env;
-    env.node[0].copy_from(*mode);
+    Mock_environment env;
+    env.request() << "http ";
 
     // perform the stage.
     logjamd::Stage_pre stage(env.connection());
@@ -68,10 +66,9 @@ void testHTTP()
 
 void testUnknown()
 {
-    std::unique_ptr<lj::bson::Node> mode(lj::bson::new_string("rtmp "));
     // Create the mock request.
-    Mock_environment<1> env;
-    env.node[0].copy_from(*mode);
+    Mock_environment env;
+    env.request() << "rtmp ";
 
     // perform the stage.
     logjamd::Stage_pre stage(env.connection());

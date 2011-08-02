@@ -53,12 +53,12 @@ void testSuccess()
             change_credentials(&first.u, &first.u, first.n);
 
     // Create the mock request.
-    Mock_environment<1> env;
-    env.node[0].set_child("method",
-            lj::bson::new_uuid(k_auth_method_password_hash));
-    env.node[0].set_child("provider",
-            lj::bson::new_uuid(k_auth_provider_local));
-    env.node[0].set_child("data", new lj::bson::Node(first.n));
+    Mock_environment env;
+    lj::bson::Node n;
+    n.set_child("method", lj::bson::new_uuid(k_auth_method_password_hash));
+    n.set_child("provider", lj::bson::new_uuid(k_auth_provider_local));
+    n.set_child("data", new lj::bson::Node(first.n));
+    env.request() << n;
 
     // perform the stage.
     logjamd::Stage_auth stage(env.connection());
@@ -84,12 +84,12 @@ void testBadData()
 
     // Create the mock request.
     creds second(true);
-    Mock_environment<1> env;
-    env.node[0].set_child("method",
-            lj::bson::new_uuid(k_auth_method_password_hash));
-    env.node[0].set_child("provider",
-            lj::bson::new_uuid(k_auth_provider_local));
-    env.node[0].set_child("data", new lj::bson::Node(second.n));
+    Mock_environment env;
+    lj::bson::Node n;
+    n.set_child("method", lj::bson::new_uuid(k_auth_method_password_hash));
+    n.set_child("provider", lj::bson::new_uuid(k_auth_provider_local));
+    n.set_child("data", new lj::bson::Node(second.n));
+    env.request() << n;
 
     // perform the stage.
     logjamd::Stage_auth stage(env.connection());
@@ -108,17 +108,22 @@ void testBadData()
 
 void testUnknownMethod()
 {
-    Mock_environment<1> env;
-    env.node[0].set_child("method",
+    // create the mock request.
+    Mock_environment env;
+    lj::bson::Node n;
+    n.set_child("method",
             lj::bson::new_uuid(logjamd::k_logjamd_root));
-    env.node[0].set_child("provider",
+    n.set_child("provider",
             lj::bson::new_uuid(k_auth_provider_local));
-    logjamd::Stage_auth stage(env.connection());
+    env.request() << n;
 
+    // perform the stage.
+    logjamd::Stage_auth stage(env.connection());
     stage.logic();
     lj::bson::Node response;
     env.response() >> response;
 
+    // Test the response.
     std::string expected_stage("Authentication");
     std::string expected_msg("Unknown auth method.");
     TEST_ASSERT(expected_stage.compare(lj::bson::as_string(response["stage"])) == 0);
@@ -129,17 +134,20 @@ void testUnknownMethod()
 
 void testUnknownProvider()
 {
-    Mock_environment<1> env;
-    env.node[0].set_child("method",
-            lj::bson::new_uuid(k_auth_method_password_hash));
-    env.node[0].set_child("provider",
-            lj::bson::new_uuid(logjamd::k_logjamd_root));
-    logjamd::Stage_auth stage(env.connection());
+    // Create the mock request.
+    Mock_environment env;
+    lj::bson::Node n;
+    n.set_child("method", lj::bson::new_uuid(k_auth_method_password_hash));
+    n.set_child("provider", lj::bson::new_uuid(logjamd::k_logjamd_root));
+    env.request() << n;
 
+    // Perform the stage.
+    logjamd::Stage_auth stage(env.connection());
     stage.logic();
     lj::bson::Node response;
     env.response() >> response;
 
+    // Test the response.
     std::string expected_stage("Authentication");
     std::string expected_msg("Unknown auth provider.");
     TEST_ASSERT(expected_stage.compare(lj::bson::as_string(response["stage"])) == 0);
