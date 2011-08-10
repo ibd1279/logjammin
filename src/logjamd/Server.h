@@ -33,7 +33,7 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "lj/Document.h"
+#include "lj/Bson.h"
 #include <string>
 
 namespace logjamd
@@ -43,7 +43,7 @@ namespace logjamd
     //! Abstract base class for accepting connections.
     class Server {
     public:
-        Server(lj::Document* config) : config_(config)
+        Server(lj::bson::Node* config) : config_(config)
         {
         }
         virtual ~Server()
@@ -56,15 +56,15 @@ namespace logjamd
         virtual void startup() = 0;
         virtual void listen() = 0;
         virtual void shutdown() = 0;
-        virtual const lj::Document& cfg() const
+        virtual const lj::bson::Node& cfg() const
         {
             return *config_;
         }
-        virtual lj::Document& config()
+        virtual lj::bson::Node& config()
         {
             return *config_;
         }
     private:
-        lj::Document* config_;
+        lj::bson::Node* config_;
     };
 };

@@ -10,7 +10,7 @@
 class Server_mock : public logjamd::Server
 {
 public:
-    Server_mock() : logjamd::Server(new lj::Document())
+    Server_mock() : logjamd::Server(new lj::bson::Node())
     {
     }
     virtual void startup()
@@ -28,7 +28,7 @@ class Connection_mock : public logjamd::Connection
 {
 public:
     Connection_mock(std::iostream* stream) :
-            logjamd::Connection(new Server_mock(), new lj::Document(), stream)
+            logjamd::Connection(new Server_mock(), new lj::bson::Node(), stream)
     {
     }
     virtual void start()

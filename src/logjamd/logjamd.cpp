@@ -43,12 +43,12 @@
 
 //! Server main entry point.
 int main(int argc, char* const argv[]) {
-    lj::Document* config = new lj::Document();
+    lj::bson::Node* config = new lj::bson::Node();
     lj::Uuid sid;
-    config->set(sid, "server/listen", lj::bson::new_string("localhost:12345"));
-    config->set(sid, "server/cluster", new lj::bson::Node(lj::bson::Type::k_array, NULL));
-    config->push(sid, "server/cluster", lj::bson::new_string("localhost:12345"));
-    config->push(sid, "server/cluster", lj::bson::new_string("localhost:12346"));
+    config->set_child("server/listen", lj::bson::new_string("localhost:12345"));
+    config->set_child("server/cluster", new lj::bson::Node(lj::bson::Type::k_array, NULL));
+    config->push_child("server/cluster", lj::bson::new_string("localhost:12345"));
+    config->push_child("server/cluster", lj::bson::new_string("localhost:12346"));
 
     logjamd::Server* server = new logjamd::Server_secure(config);
     server->startup();

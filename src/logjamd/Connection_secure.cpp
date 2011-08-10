@@ -50,7 +50,7 @@ namespace logjamd
 {
     Connection_secure::Connection_secure(
             logjamd::Server* server,
-            lj::Document* state,
+            lj::bson::Node* state,
             std::iostream* stream) :
             logjamd::Connection(server, state, stream),
             thread_(NULL)

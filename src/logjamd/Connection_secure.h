@@ -43,7 +43,7 @@ namespace logjamd
     {
     public:
         Connection_secure(logjamd::Server* server,
-                lj::Document* state,
+                lj::bson::Node* state,
                 std::iostream* stream);
         virtual ~Connection_secure();
         virtual void start();

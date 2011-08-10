@@ -34,8 +34,8 @@
  */
 
 #include "lj/Bson.h"
-#include "lj/Document.h"
 #include "logjamd/Server.h"
+#include "logjamd/User.h"
 
 #include <istream>
 
@@ -48,8 +48,18 @@ namespace logjamd
     public:
         friend class Stage_auth;
         friend class Stage_pre;
+
+        //! Constructor
+        /*!
+         \par
+         The user is initially NULL and can only be modified by
+         the connection object and the authorization stage.
+         \param server The server associated with this connection.
+         \param state Bson node for tracking the connection state.
+         \param stream The stream used for communication.
+         */
         Connection(logjamd::Server* server,
-                lj::Document* state,
+                lj::bson::Node* state,
                 std::iostream* stream) :
                 server_(server),
                 state_(state),
@@ -71,32 +81,88 @@ namespace logjamd
                 stream_->flush();
                 delete stream_;
             }
+
+            if (user_)
+            {
+                delete user_;
+            }
         }
+
+        //! Perform the connection logic.
+        /*!
+         \par
+         The logic for the connection object is unique to each connection
+         type. When start exits, the connection object will be deleted.
+         */
         virtual void start() = 0;
+
+        //! Get the server object.
+        /*!
+         \return The server object.
+         */
         virtual logjamd::Server& server()
         {
             return *server_;
         }
-        virtual lj::Document& state()
+
+        //! Get the connection state.
+        /*!
+         \return The connection state.
+         */
+        virtual lj::bson::Node& state()
         {
             return *state_;
         }
+
+        //! Get the io stream associated with this connection.
+        /*!
+         \return The connection stream.
+         */
         virtual std::iostream& io()
         {
             return *stream_;
         }
-        virtual const User* user()
+
+        //! Get the user associated with this connection.
+        /*!
+         \todo This should handle the un-authenticated case better. By
+         possibly returning null, most methods will need to test the result
+         before they can perform any logic. If a reference was returned and
+         the un-authenticated case had an "unauth user object" that returned
+         false for all ACL checks, that would simplify the calling code.
+         \return NULL for unauthenticated connections, a user otherwise.
+         */
+        const User* user()
         {
             return user_;
         }
     protected:
-        virtual void user(logjamd::User* u)
+        //! Set the user for this connection.
+        /*!
+         \par
+         This is hidden from the public scope. Only friends are meant to call
+         this method. Stage_auth is the only expected caller.
+         \param u The new user pointer.
+         */
+        void user(logjamd::User* u)
         {
             user_ = u;
         }
+
+        //! Get the IO pointer.
+        /*!
+         \par
+         This is hidden from the public scope. Only sub-classes are meant to
+         call this object as part of the copy construction.
+         \return Pointer to the connection stream.
+         */
+        virtual std::iostream* io_ptr()
+        {
+            return stream_;
+        }
     private:
         logjamd::Server* server_;
-        lj::Document* state_;
+        lj::bson::Node* state_;
         std::iostream* stream_;
         logjamd::User* user_;
     };

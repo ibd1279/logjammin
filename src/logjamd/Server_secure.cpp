@@ -49,7 +49,7 @@ extern "C"
 
 namespace logjamd
 {
-    Server_secure::Server_secure(lj::Document* config) :
+    Server_secure::Server_secure(lj::bson::Node* config) :
             logjamd::Server(config),
             io_(NULL),
             running_(false),
@@ -72,7 +72,7 @@ namespace logjamd
     }
     void Server_secure::startup()
     {
-        std::string listen(lj::bson::as_string(cfg().get("server/listen")));
+        std::string listen(lj::bson::as_string(cfg()["server/listen"]));
 
         // Start port listening.
         char* host_port = new char[listen.size() + 1];
@@ -106,14 +106,14 @@ namespace logjamd
             }
 
             // Collect all the things we need for this connection.
-            lj::Document* connection_document = new lj::Document();
+            lj::bson::Node* connection_state = new lj::bson::Node();
             std::iostream* connection_stream = new std::iostream(
                     new lj::Streambuf_bio<char>(BIO_pop(io_), 4096, 4096));
 
             // Creat the new connection
             Connection_secure* connection = new Connection_secure(
                     this,
-                    connection_document,
+                    connection_state,
                     connection_stream);
 
             // Kick off the thread for that connection.

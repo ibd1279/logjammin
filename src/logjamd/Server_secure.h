@@ -46,7 +46,7 @@ namespace logjamd
     class Server_secure : public logjamd::Server
     {
     public:
-        Server_secure(lj::Document* config);
+        Server_secure(lj::bson::Node* config);
         virtual ~Server_secure();
         virtual void startup();
         virtual void listen();

@@ -118,7 +118,7 @@ void testLogException()
         throw LJ__Exception("random fail");
     }));
     t.join();
-    std::string expected("[ALERT]       Unhandled exception: ../test/lj_LogTest.cpp Exception: operator() - random fail\n");
+    std::string expected("[ALERT]       Unhandled exception: ../test/LogTest.cpp Exception: operator() - random fail\n");
     TEST_ASSERT(expected.compare(buffer.str()) == 0);
 }
 
