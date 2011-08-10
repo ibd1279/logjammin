@@ -44,6 +44,7 @@ namespace logjamd
     class User;
     class Stage_auth;
 
+    //! Connection Base Class
     class Connection {
     public:
         friend class Stage_auth;
@@ -132,7 +133,7 @@ namespace logjamd
          false for all ACL checks, that would simplify the calling code.
          \return NULL for unauthenticated connections, a user otherwise.
          */
-        const User* user()
+        virtual const User* user()
         {
             return user_;
         }
@@ -149,22 +150,50 @@ namespace logjamd
             user_ = u;
         }
 
-        //! Get the IO pointer.
-        /*!
-         \par
-         This is hidden from the public scope. Only sub-classes are meant to
-         call this object as part of the copy construction.
-         \return Pointer to the connection stream.
-         */
-        virtual std::iostream* io_ptr()
+    private:
+        logjamd::Server* server_; //!< Server Pointer.
+        lj::bson::Node* state_;   //!< Connection State Pointer.
+        std::iostream* stream_;   //!< Stream Pointer.
+        logjamd::User* user_;     //!< User Pointer.
+    };
+
+    //! Use a different stream with an existing Connection.
+    /*!
+     \note User
+     This xlator does not copy the user over.
+     */
+    class Connection_xlator : public Connection
+    {
+    public:
+        //! Constructor
+        Connection_xlator(Connection* connection,
+                std::iostream* stream) :
+                Connection(NULL, NULL, stream),
+                real_connection_(connection)
         {
-            return stream_;
+        }
+
+        //! Destructor
+        virtual ~Connection_xlator()
+        {
+        }
+
+        //! Call start on the real connection.
+        virtual void start()
+        {
+        }
+
+        virtual logjamd::Server& server()
+        {
+            return real_connection_->server();
+        }
+
+        virtual lj::bson::Node& state()
+        {
+            return real_connection_->state();
         }
     private:
-        logjamd::Server* server_;
-        lj::bson::Node* state_;
-        std::iostream* stream_;
-        logjamd::User* user_;
+        Connection* real_connection_;
     };
 };
 
