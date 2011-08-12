@@ -8,6 +8,7 @@
 #include "testhelper.h"
 #include "lj/Bson.h"
 #include "logjamd/Stage_auth.h"
+#include "logjamd/Stage_json_adapt.h"
 #include "logjamd/Stage_pre.h"
 #include "logjamd/User.h"
 #include "logjamd/constants.h"
@@ -40,12 +41,10 @@ void testJSON()
 
     // perform the stage.
     logjamd::Stage_pre stage(env.connection());
-    stage.logic();
+    logjamd::Stage* next_stage = stage.logic();
 
     // Test the result
-    TEST_ASSERT(env.connection()->user() != NULL);
-    TEST_ASSERT(env.connection()->user()->id() == logjamd::k_user_id_json);
-    TEST_ASSERT(env.connection()->user()->login() == logjamd::k_user_login_json);
+    // TODO need a good test suite for this once we have a stage post auth.
 }
 
 void testHTTP()
@@ -91,6 +90,6 @@ int main(int argc, char** argv)
         PREPARE_TEST(testUnknown),
         {0, ""}
     };
-    return Test_util::runner("logjamd::Stage_auth", tests);
+    return Test_util::runner("logjamd::Stage_pre", tests);
 }
 

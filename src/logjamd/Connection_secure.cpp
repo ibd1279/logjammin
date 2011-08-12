@@ -53,7 +53,8 @@ namespace logjamd
             lj::bson::Node* state,
             std::iostream* stream) :
             logjamd::Connection(server, state, stream),
-            thread_(NULL)
+            thread_(NULL),
+            secure_(false)
     {
     }
 

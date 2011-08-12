@@ -48,6 +48,10 @@ namespace logjamd
         virtual ~Connection_secure();
         virtual void start();
         virtual void operator()();
+        virtual bool secure()
+        {
+            return secure_;
+        }
     protected:
         inline std::thread& thread()
         {
@@ -55,6 +59,7 @@ namespace logjamd
         }
     private:
         std::thread* thread_;
+        bool secure_;
     };
 };
 

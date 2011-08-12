@@ -46,6 +46,14 @@ namespace logjamd
         virtual ~Stage_json_adapt();
         virtual Stage* logic();
         virtual std::string name();
+        virtual Connection& faux_connection()
+        {
+            return faux_connection_;
+        }
+        virtual Stage* real_stage()
+        {
+            return real_stage_;
+        }
     private:
         lj::Streambuf_pipe pipe_;
         Connection_xlator faux_connection_;

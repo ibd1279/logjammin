@@ -74,13 +74,13 @@ namespace logjamd
         response.set_child("stage", lj::bson::new_string(name()));
         response.set_child("success", lj::bson::new_boolean(false));
 
+        log("Attempting Authentication.") << lj::Log::end;
         Auth_provider* provider = Auth_registry::provider(provider_id);
         if (provider)
         {
             Auth_method* method = provider->method(method_id);
             if (method)
             {
-                lj::Log::info.log("Performing local/password_hash authentication.");
                 User* user = method->authenticate(n.nav("data"));
                 if (user)
                 {

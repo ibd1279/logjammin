@@ -16,9 +16,6 @@
 
 namespace
 {
-    const lj::Uuid k_auth_method_password_hash(logjamd::k_auth_method, "password_hash", 13);
-    const lj::Uuid k_auth_provider_local(logjamd::k_auth_provider, "local", 5);
-
     struct creds
     {
         creds(bool alt_password) : n(), u(lj::Uuid(12), "admin")

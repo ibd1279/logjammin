@@ -137,6 +137,15 @@ namespace logjamd
         {
             return user_;
         }
+
+        //! Test if this is considered a secure connection.
+        /*!
+         \return True if the connection is secure, false otherwise.
+         */
+        virtual bool secure()
+        {
+            return false;
+        }
     protected:
         //! Set the user for this connection.
         /*!
@@ -191,6 +200,11 @@ namespace logjamd
         virtual lj::bson::Node& state()
         {
             return real_connection_->state();
+        }
+
+        virtual bool secure()
+        {
+            return real_connection_->secure();
         }
     private:
         Connection* real_connection_;

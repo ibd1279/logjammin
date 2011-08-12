@@ -32,8 +32,10 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "lj/Log.h"
 #include "logjamd/Stage_json_adapt.h"
 #include "logjamd/Stage_auth.h"
+#include "logjamd/constants.h"
 
 namespace logjamd
 {
@@ -56,13 +58,68 @@ namespace logjamd
 
     Stage* Stage_json_adapt::logic()
     {
-        // Deal with "un-auth" authentication.
+        Stage* next_stage = NULL;
+        if (conn()->secure() || conn()->user() != NULL)
+        {
+            std::string cmd;
+            if (!std::getline(conn()->io(), cmd).good())
+            {
+                // Handle a read error.
+            }
 
-        // Needs to read bytes from the real connection and write
-        // them into the pipe. then call logic on the real_stage_,
-        // read the bytes from the pipe and write them to the real
-        // connection.
-        return this;
+            std::unique_ptr<lj::bson::Node> request(lj::bson::parse_string(cmd));
+            lj::bson::Node response;
+            pipe_.sink() << *request;
+
+            next_stage = real_stage_->logic();
+
+            pipe_.source() >> response;
+            conn()->io() << response;
+        }
+        else
+        {
+            // If the conection is insecure, use default login.
+            log("Using insecure adapter authentication.") << lj::Log::end;
+
+            lj::bson::Node auth_request;
+            lj::bson::Node auth_response;
+            auth_request.set_child("method",
+                    lj::bson::new_uuid(lj::Uuid(k_auth_method,
+                            "password_hash",
+                            13)));
+            auth_request.set_child("provider",
+                    lj::bson::new_uuid(lj::Uuid(k_auth_provider,
+                            "local",
+                            5)));
+            auth_request.set_child("data/login",
+                    lj::bson::new_string(k_user_login_json));
+            auth_request.set_child("data/password",
+                    lj::bson::new_string(k_user_password_json));
+
+            pipe_.sink() << auth_request;
+
+            next_stage = real_stage_->logic();
+
+            pipe_.source() >> auth_response;
+            conn()->io() << lj::bson::as_string(auth_response);
+        }
+
+        if (next_stage)
+        {
+            log("Next stage is %s.") << next_stage->name() << lj::Log::end;
+            if (next_stage != real_stage_)
+            {
+                delete real_stage_;
+                real_stage_ = next_stage;
+            }
+            return this;
+        }
+        else
+        {
+            log("Disconnecting.") << lj::Log::end;
+            real_stage_ = NULL;
+            return NULL;
+        }
     }
 
     std::string Stage_json_adapt::name()
