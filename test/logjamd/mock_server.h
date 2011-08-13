@@ -1,3 +1,4 @@
+#include "lj/Log.h"
 #include "lj/Streambuf_pipe.h"
 #include "logjamd/Auth.h"
 #include "logjamd/Auth_local.h"
@@ -16,6 +17,12 @@ const lj::Uuid k_auth_method_password_hash(logjamd::k_auth_method,
 const lj::Uuid k_auth_provider_local(logjamd::k_auth_provider,
         "local",
         5);
+const lj::Uuid k_user_id_admin{0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x40, 0x00,
+                    0xb2, 0xb3, 0x67, 0x3f,
+                    0x1c, 0x1a, 0xf5, 0xda};
+const std::string k_user_login_admin("admin");
+const std::string k_user_password_admin("1!aA2@Bb");
 
 struct Json_auth
 {
@@ -27,9 +34,11 @@ struct Json_auth
                 lj::bson::new_string(logjamd::k_user_password_json));
 
         // Setup the user in the auth registry.
+        lj::Log::debug.disable();
         logjamd::Auth_registry::provider(k_auth_provider_local)->
                 method(k_auth_method_password_hash)->
                 change_credentials(&u, &u, n);
+        lj::Log::debug.enable();
     }
 
     lj::bson::Node n;
@@ -46,9 +55,33 @@ struct Http_auth
                 lj::bson::new_string(logjamd::k_user_password_http));
 
         // Setup the user in the auth registry.
+        lj::Log::debug.disable();
         logjamd::Auth_registry::provider(k_auth_provider_local)->
                 method(k_auth_method_password_hash)->
                 change_credentials(&u, &u, n);
+        lj::Log::debug.enable();
+    }
+
+    lj::bson::Node n;
+    logjamd::User u;
+};
+
+struct Admin_auth
+{
+    Admin_auth() : n(),
+            u(k_user_id_admin, k_user_login_admin)
+    {
+        n.set_child("login",
+                lj::bson::new_string(k_user_login_admin));
+        n.set_child("password",
+                lj::bson::new_string(k_user_password_admin));
+
+        // Setup the user in the auth registry.
+        lj::Log::debug.disable();
+        logjamd::Auth_registry::provider(k_auth_provider_local)->
+                method(k_auth_method_password_hash)->
+                change_credentials(&u, &u, n);
+        lj::Log::debug.enable();
     }
 
     lj::bson::Node n;
@@ -60,6 +93,7 @@ namespace auth_provider_namespace
     logjamd::Auth_provider_local provider_local;
     Json_auth json;
     Http_auth http;
+    Admin_auth admin;
 }
 
 class Server_mock : public logjamd::Server

@@ -14,40 +14,10 @@
 #include "logjamd/Stage_auth.h"
 #include "logjamd/constants.h"
 
-namespace
-{
-    struct creds
-    {
-        creds(bool alt_password) : n(), u(lj::Uuid(12), "admin")
-        {
-            n.set_child("login",
-                    lj::bson::new_string("admin"));
-            if (alt_password)
-            {
-                n.set_child("password",
-                        lj::bson::new_string("abc123"));
-            }
-            else
-            {
-                n.set_child("password",
-                        lj::bson::new_string("1!aA2@bB"));
-            }
-        }
-
-        lj::bson::Node n;
-        logjamd::User u;
-    };
-
-    logjamd::Auth_provider_local _;
-};
-
 void testSuccess()
 {
     // Create a user for testing.
-    creds first(false);
-    logjamd::Auth_registry::provider(k_auth_provider_local)->
-            method(k_auth_method_password_hash)->
-            change_credentials(&first.u, &first.u, first.n);
+    Admin_auth first;
 
     // Create the mock request.
     Mock_environment env;
@@ -59,9 +29,15 @@ void testSuccess()
 
     // perform the stage.
     logjamd::Stage_auth stage(env.connection());
-    stage.logic();
+    logjamd::Stage* next_stage = stage.logic();
     lj::bson::Node response;
     env.response() >> response;
+
+    // Test the next stage.
+    TEST_ASSERT(next_stage != NULL); // connection has next stage.
+    TEST_ASSERT(next_stage != &stage); // next stage is not auth.
+    TEST_ASSERT(next_stage->name().compare("Execution") == 0);
+    delete next_stage;
 
     // Test the response.
     std::string expected_stage("Authentication");
@@ -74,25 +50,26 @@ void testSuccess()
 void testBadData()
 {
     // Create a user for testing.
-    creds first(false);
-    logjamd::Auth_registry::provider(k_auth_provider_local)->
-            method(k_auth_method_password_hash)->
-            change_credentials(&first.u, &first.u, first.n);
+    Admin_auth first;
 
     // Create the mock request.
-    creds second(true);
+    first.n.set_child("password", lj::bson::new_string("wrong-password."));
     Mock_environment env;
     lj::bson::Node n;
     n.set_child("method", lj::bson::new_uuid(k_auth_method_password_hash));
     n.set_child("provider", lj::bson::new_uuid(k_auth_provider_local));
-    n.set_child("data", new lj::bson::Node(second.n));
+    n.set_child("data", new lj::bson::Node(first.n));
     env.request() << n;
 
     // perform the stage.
     logjamd::Stage_auth stage(env.connection());
-    stage.logic();
+    logjamd::Stage* next_stage = stage.logic();
     lj::bson::Node response;
     env.response() >> response;
+
+    // Test the next stage.
+    TEST_ASSERT(next_stage != NULL); // connection has next stage.
+    TEST_ASSERT(next_stage == &stage); // next stage should be same auth.
 
     // Test the response.
     std::string expected_stage("Authentication");
@@ -116,11 +93,13 @@ void testUnknownMethod()
 
     // perform the stage.
     logjamd::Stage_auth stage(env.connection());
-    stage.logic();
+    logjamd::Stage* next_stage = stage.logic();
     lj::bson::Node response;
     env.response() >> response;
 
     // Test the response.
+    TEST_ASSERT(next_stage != NULL);
+    TEST_ASSERT(next_stage == &stage);
     std::string expected_stage("Authentication");
     std::string expected_msg("Unknown auth method.");
     TEST_ASSERT(expected_stage.compare(lj::bson::as_string(response["stage"])) == 0);
@@ -140,11 +119,13 @@ void testUnknownProvider()
 
     // Perform the stage.
     logjamd::Stage_auth stage(env.connection());
-    stage.logic();
+    logjamd::Stage* next_stage = stage.logic();
     lj::bson::Node response;
     env.response() >> response;
 
     // Test the response.
+    TEST_ASSERT(next_stage != NULL);
+    TEST_ASSERT(next_stage == &stage);
     std::string expected_stage("Authentication");
     std::string expected_msg("Unknown auth provider.");
     TEST_ASSERT(expected_stage.compare(lj::bson::as_string(response["stage"])) == 0);
