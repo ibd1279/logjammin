@@ -36,6 +36,7 @@
 
 #include "logjamd/Auth.h"
 #include "logjamd/Connection.h"
+#include "logjamd/Stage_execute.h"
 #include "logjamd/constants.h"
 #include "lj/Bson.h"
 #include "lj/Log.h"
@@ -111,7 +112,7 @@ namespace logjamd
 
         if (conn()->user())
         {
-            return NULL;
+            return new Stage_execute(conn());
         }
         else
         {

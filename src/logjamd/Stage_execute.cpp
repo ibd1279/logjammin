@@ -68,5 +68,10 @@ namespace logjamd
 
         return this;
     }
+
+    std::string Stage_execute::name()
+    {
+        return std::string("Execution");
+    }
 };
 
