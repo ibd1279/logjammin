@@ -27,9 +27,12 @@ void testBSON()
     logjamd::Stage_pre stage(env.connection());
     logjamd::Stage* next_stage = stage.logic();
     
-    // Test the result
+    // Test the next stage.
     TEST_ASSERT(next_stage != NULL);
-    TEST_ASSERT(next_stage->name().compare(logjamd::Stage_auth(env.connection()).name()) == 0);
+    TEST_ASSERT(next_stage->name().compare("Authentication") == 0);
+    delete next_stage;
+
+    // Test the result
     TEST_ASSERT(env.connection()->user() == NULL);
 }
 
@@ -43,8 +46,21 @@ void testJSON()
     logjamd::Stage_pre stage(env.connection());
     logjamd::Stage* next_stage = stage.logic();
 
-    // Test the result
-    // TODO need a good test suite for this once we have a stage post auth.
+    // Test the next stage.
+    TEST_ASSERT(next_stage != NULL);
+    TEST_ASSERT(next_stage != &stage);
+    TEST_ASSERT(next_stage->name().compare("Execution") == 0);
+    logjamd::Stage_json_adapt* adapter =
+            dynamic_cast<logjamd::Stage_json_adapt*>(next_stage);
+    TEST_ASSERT(adapter != NULL);
+
+    // Test the result. JSON does an auto-login.
+    TEST_ASSERT(adapter->faux_connection().user() != NULL);
+    TEST_ASSERT(adapter->faux_connection().user()->id() == logjamd::k_user_id_json);
+    TEST_ASSERT(adapter->faux_connection().user()->login().compare(logjamd::k_user_login_json) == 0);
+
+    // Clean up the adapter stage.
+    delete next_stage;
 }
 
 void testHTTP()
