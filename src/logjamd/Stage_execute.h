@@ -43,37 +43,13 @@ namespace logjamd
      \version 1.0
      \date October 26, 2010
      */
-    class Stage_execute : public Stage
+    class Stage_execute : public Stage 
     {
     public:
-        //! Default constructor.
-        Stage_execute();
-
-        //! Hidden copy constructor.
-        /*!
-         \param orig Original object.
-         */
-        Stage_execute(const Stage_execute& orig) = delete;
-
-        //! Virtual destructor.
+        Stage_execute(logjamd::Connection* connection);
         virtual ~Stage_execute();
-
-        //! Method representing the logic of the processor.
-        /*!
-         \par
-         currently expects the following document:
-         \code
-         {
-             lj__command='<lua script>'
-         }
-         \endcode
-         \param request The request document to process.
-         \param connection The connection associated with the client.
-         \return The processor to use for the next request.
-         */
-        virtual Stage* logic(lj::Bson& request, Connection& connection);
-
-    private:
+        virtual Stage* logic();
+        virtual std::string name();
     };
 };
 
