@@ -54,11 +54,6 @@ void testJSON()
             dynamic_cast<logjamd::Stage_json_adapt*>(next_stage);
     TEST_ASSERT(adapter != NULL);
 
-    // Test the result. JSON does an auto-login.
-    TEST_ASSERT(adapter->faux_connection().user() != NULL);
-    TEST_ASSERT(adapter->faux_connection().user()->id() == logjamd::k_user_id_json);
-    TEST_ASSERT(adapter->faux_connection().user()->login().compare(logjamd::k_user_login_json) == 0);
-
     // Clean up the adapter stage.
     delete next_stage;
 }
