@@ -64,15 +64,16 @@ namespace logjamd
             std::string cmd;
             if (!std::getline(conn()->io(), cmd).good())
             {
-                // Handle a read error.
+                // TODO Handle a read error.
             }
 
-            std::unique_ptr<lj::bson::Node> request(lj::bson::parse_string(cmd));
-            lj::bson::Node response;
-            pipe_.sink() << *request;
+            lj::bson::Node request;
+            request.set_child("command", lj::bson::new_string(cmd));
+            pipe_.sink() << request;
 
             next_stage = real_stage_->logic();
 
+            lj::bson::Node response;
             pipe_.source() >> response;
             conn()->io() << response;
         }

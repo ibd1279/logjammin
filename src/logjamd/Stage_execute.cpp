@@ -39,6 +39,8 @@
 #include "lj/Stopclock.h"
 #include "logjamd/Connection.h"
 
+#include "lua5.1/lua.hpp"
+
 namespace logjamd
 {
     Stage_execute::Stage_execute(logjamd::Connection* connection) :
@@ -54,12 +56,21 @@ namespace logjamd
     {
         log("Executing command.") << lj::Log::end;
         lj::Stopclock timer;
-        timer.start();
 
         lj::bson::Node request;
         conn()->io() >> request;
 
         log("%s") << lj::bson::as_pretty_json(request) << lj::Log::end;
+
+        std::string cmd(lj::bson::as_string(request["command"]));
+        lua_State* L = lua_open();
+        luaL_openlibs(L);
+        luaL_loadbuffer(L,
+                cmd.c_str(),
+                cmd.size(),
+                "command");
+        lua_pcall(L, 0, LUA_MULTRET, 0);
+        lua_close(L);
 
         // Currently just echoing the request back.
         conn()->io() << request;

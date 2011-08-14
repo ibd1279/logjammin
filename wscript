@@ -34,12 +34,21 @@ def configure(conf):
             '/usr/include'
             ],
         mandatory=True
-        )
-    conf.write_config_header('config.h')
+    )
 
-def test(bld):
-    #bld.recurse('test')
-    pass
+    conf.check(
+        header_name='lua5.1/lua.hpp'
+        ,lib=['lua5.1']
+        ,libpath=['/usr/local/lib', '/opt/local/lib', '/usr/lib']
+        ,includes=[
+            '/usr/local/include'
+            ,'/opt/local/include'
+            ,'/usr/include'
+        ]
+        ,mandatory=True
+    )
+
+    conf.write_config_header('config.h')
 
 def build(bld):
     bld.load('compiler_cxx')
@@ -88,7 +97,7 @@ def build(bld):
         ]
         ,linkflags = ['-g']
         ,use = ['lj']
-        ,uselib = ['OPENSSL/SSL.H', 'PTHREAD.H']
+        ,uselib = ['OPENSSL/SSL.H', 'PTHREAD.H', 'LUA5.1/LUA.HPP']
     )
 
     bld.program(
