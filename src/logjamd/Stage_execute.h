@@ -35,6 +35,9 @@
 
 #include "logjamd/Stage.h"
 
+// Forward declare what we need from lua.
+struct lua_State;
+
 namespace logjamd
 {
     //! Client command processor.
@@ -50,6 +53,8 @@ namespace logjamd
         virtual ~Stage_execute();
         virtual Stage* logic();
         virtual std::string name();
+    private:
+        lua_State* L;
     };
 };
 
