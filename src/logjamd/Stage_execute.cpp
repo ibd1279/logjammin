@@ -38,21 +38,19 @@
 #include "lj/Log.h"
 #include "lj/Stopclock.h"
 #include "logjamd/Connection.h"
+#include "logjamd/Command_language.h"
 
-#include "lua5.1/lua.hpp"
+#include "lua/Command_language_lua.h"
 
 namespace logjamd
 {
     Stage_execute::Stage_execute(logjamd::Connection* connection) :
             Stage::Stage(connection)
     {
-        L = lua_open();
-        luaL_openlibs(L);
     }
 
     Stage_execute::~Stage_execute()
     {
-        lua_close(L);
     }
 
     Stage* Stage_execute::logic()
@@ -63,20 +61,20 @@ namespace logjamd
         lj::bson::Node request;
         conn()->io() >> request;
 
-        log("%s") << lj::bson::as_pretty_json(request) << lj::Log::end;
+        // TODO make this something that can be switched out.
+        Command_language* cmd_lang = new lua::Command_language_lua(
+                conn(),
+                &request);
 
-        std::string cmd(lj::bson::as_string(request["command"]));
-        luaL_loadbuffer(L,
-                cmd.c_str(),
-                cmd.size(),
-                "command");
-        lua_pcall(L, 0, LUA_MULTRET, 0);
+        log("Using %s for the command language.") << cmd_lang->name()
+                << lj::Log::end;
 
-        // Currently just echoing the request back.
-        conn()->io() << request;
+        lj::bson::Node response;
+        cmd_lang->perform(response);
+        conn()->io() << response;
+        delete cmd_lang;
 
         log("Elapsed %llu.") << timer.elapsed() << lj::Log::end;
-
         return new Stage_execute(conn());
     }
 

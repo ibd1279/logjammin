@@ -89,6 +89,7 @@ def build(bld):
             ,'src/logjamd/Stage_execute.cpp'
             ,'src/logjamd/Stage_json_adapt.cpp'
             ,'src/logjamd/Stage_pre.cpp'
+            ,'src/lua/Command_language_lua.cpp'
         ]
         ,target='logjamserver'
         ,cxxflags = ['-O0', '-Wall', '-g', '-std=c++0x']

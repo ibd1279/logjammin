@@ -1,7 +1,7 @@
 #pragma once
 /*!
- \file Stage.h
- \brief Logjam server stage abstract base definition.
+ \file logjamd/Command_language.h
+ \brief Logjam server networking header.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -34,54 +34,49 @@
  */
 
 #include "lj/Bson.h"
-#include "lj/Log.h"
-#include <memory>
 #include <string>
 
 namespace logjamd
 {
     class Connection;
-    class Stage
+
+    //! Abstract base class for implementing command languages
+    /*!
+     \par
+     Command_language objects are expected to be stateful. A new object
+     is created for every invocation.
+     */
+    class Command_language
     {
     public:
-        Stage(logjamd::Connection* connection) : connection_(connection)
+        //! Default constructor.
+        Command_language()
         {
         }
-        virtual ~Stage()
+
+        //! Tear down the environment.
+        /*!
+         \par
+         Clean up any resources un-necessary for this command object. Note
+         that the connection has a "state" object attached to it.
+         */
+        virtual ~Command_language()
         {
         }
-        virtual Stage* logic() = 0;
+
+        //! Perform the requested command.
+        /*!
+         \par
+         Executes the command part of the request. Any manipulation of the
+         response would be included in this method.
+         \param[out] response The response to the client.
+         */
+        virtual void perform(lj::bson::Node& response) = 0;
+
+        //! Name of the command language. Used for logging.
+        /*!
+         \return The friendly name of this command language.
+         */
         virtual std::string name() = 0;
-        virtual logjamd::Connection* conn()
-        {
-            return connection_;
-        }
-    protected:
-        virtual lj::bson::Node empty_response()
-        {
-            lj::bson::Node n;
-            n.set_child("stage", lj::bson::new_string(name()));
-            n.set_child("success", lj::bson::new_boolean(true));
-            n.set_child("message", lj::bson::new_string("ok"));
-            return n;
-        }
-        virtual lj::bson::Node error_response(const std::string msg)
-        {
-            lj::bson::Node n;
-            n.set_child("stage", lj::bson::new_string(name()));
-            n.set_child("success", lj::bson::new_boolean(false));
-            n.set_child("message", lj::bson::new_string(msg));
-            return n;
-        }
-        virtual lj::Log& log(const std::string fmt)
-        {
-            std::string real_fmt("%s: ");
-            real_fmt.append(fmt);
-            lj::Log& l = lj::Log::debug(real_fmt);
-            l << name();
-            return l;
-        }
-    private:
-        logjamd::Connection* connection_;
     };
 };

@@ -1,7 +1,6 @@
-#pragma once
 /*!
- \file Stage.h
- \brief Logjam server stage abstract base definition.
+ \file lua/Command_language_lua.cpp
+ \brief Logjam server networking header.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -33,55 +32,41 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "lj/Bson.h"
-#include "lj/Log.h"
-#include <memory>
-#include <string>
+#include "lua/Command_language_lua.h"
+#include "logjamd/Connection.h"
 
-namespace logjamd
+namespace lua
 {
-    class Connection;
-    class Stage
+    Command_language_lua::Command_language_lua(logjamd::Connection* conn,
+            lj::bson::Node* req) :
+            connection_(conn),
+            request_(req),
+            L(lua_open())
     {
-    public:
-        Stage(logjamd::Connection* connection) : connection_(connection)
-        {
-        }
-        virtual ~Stage()
-        {
-        }
-        virtual Stage* logic() = 0;
-        virtual std::string name() = 0;
-        virtual logjamd::Connection* conn()
-        {
-            return connection_;
-        }
-    protected:
-        virtual lj::bson::Node empty_response()
-        {
-            lj::bson::Node n;
-            n.set_child("stage", lj::bson::new_string(name()));
-            n.set_child("success", lj::bson::new_boolean(true));
-            n.set_child("message", lj::bson::new_string("ok"));
-            return n;
-        }
-        virtual lj::bson::Node error_response(const std::string msg)
-        {
-            lj::bson::Node n;
-            n.set_child("stage", lj::bson::new_string(name()));
-            n.set_child("success", lj::bson::new_boolean(false));
-            n.set_child("message", lj::bson::new_string(msg));
-            return n;
-        }
-        virtual lj::Log& log(const std::string fmt)
-        {
-            std::string real_fmt("%s: ");
-            real_fmt.append(fmt);
-            lj::Log& l = lj::Log::debug(real_fmt);
-            l << name();
-            return l;
-        }
-    private:
-        logjamd::Connection* connection_;
-    };
-};
+        luaL_openlibs(L);
+        // Register my extensions.
+        // Put the connection state in the scope.
+        // Put the request into the scope.
+    }
+
+    Command_language_lua::~Command_language_lua()
+    {
+        lua_close(L);
+    }
+
+    void Command_language_lua::perform(lj::bson::Node& response)
+    {
+        // Put the response into the scope.
+        std::string cmd(lj::bson::as_string(request_->nav("command")));
+        luaL_loadbuffer(L,
+                cmd.c_str(),
+                cmd.size(),
+                "command");
+        lua_pcall(L, 0, LUA_MULTRET, 0);
+    }
+
+    std::string Command_language_lua::name()
+    {
+        return "Lua";
+    }
+}; // namespace lua
