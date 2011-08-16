@@ -35,6 +35,33 @@
 #include "lua/Command_language_lua.h"
 #include "logjamd/Connection.h"
 
+namespace
+{
+    int print_to_response(lua_State* L)
+    {
+        // TODO Need to add some type checking in general.
+        lj::bson::Node* response =
+                static_cast<lj::bson::Node*>(lua_touserdata(L,
+                        lua_upvalueindex(1)));
+
+        // TODO This needs to be updated to do more than just the first arg.
+        // TODO getting a string is pretty common. Should be moved to a util.
+        const char* ptr = luaL_checkstring(L, -1);
+        if (ptr != NULL)
+        {
+            size_t l = lua_strlen(L, -1);
+            std::string tmp(ptr, l);
+            response->push_child("output", lj::bson::new_string(tmp));
+        }
+        else
+        {
+            response->push_child("output", lj::bson::new_string(""));
+        }
+        lua_pop(L, 1);
+        return 0;
+    };
+};
+
 namespace lua
 {
     Command_language_lua::Command_language_lua(logjamd::Connection* conn,
@@ -56,7 +83,14 @@ namespace lua
 
     void Command_language_lua::perform(lj::bson::Node& response)
     {
+        // Setup replaced methods.
+        lua_pushlightuserdata(L, &response);
+        lua_pushcclosure(L, &print_to_response, 1);
+        lua_setglobal(L, "print");
+
         // Put the response into the scope.
+        // TODO make a lua bson wrapper.
+
         std::string cmd(lj::bson::as_string(request_->nav("command")));
         luaL_loadbuffer(L,
                 cmd.c_str(),

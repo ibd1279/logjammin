@@ -69,7 +69,9 @@ namespace logjamd
         log("Using %s for the command language.") << cmd_lang->name()
                 << lj::Log::end;
 
-        lj::bson::Node response;
+        lj::bson::Node response(empty_response());
+        response.set_child("output",
+                new lj::bson::Node(lj::bson::Type::k_array, NULL));
         cmd_lang->perform(response);
         conn()->io() << response;
         delete cmd_lang;
