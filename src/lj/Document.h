@@ -161,7 +161,7 @@ namespace lj
         void increment(const lj::Uuid& server, const std::string path, int amount)
         {
             taint(server);
-            lj::bson::increment(doc_->nav(".").nav(path), 1);
+            lj::bson::increment(doc_->nav(".").nav(path), amount);
         }
         operator std::string() const
         {
