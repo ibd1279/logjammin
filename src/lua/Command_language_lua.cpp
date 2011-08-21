@@ -32,32 +32,38 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "lua/Command_language_lua.h"
 #include "logjamd/Connection.h"
+#include "lua/Bson.h"
+#include "lua/Command_language_lua.h"
+#include "lua/Document.h"
+#include "lua/Uuid.h"
+#include <sstream>
 
 namespace
 {
     int print_to_response(lua_State* L)
     {
-        // TODO Need to add some type checking in general.
-        lj::bson::Node* response =
-                static_cast<lj::bson::Node*>(lua_touserdata(L,
-                        lua_upvalueindex(1)));
+        lj::bson::Node* response = static_cast<lj::bson::Node*>(
+                lua_touserdata(L, lua_upvalueindex(1)));
 
-        // TODO This needs to be updated to do more than just the first arg.
-        // TODO getting a string is pretty common. Should be moved to a util.
-        const char* ptr = luaL_checkstring(L, -1);
-        if (ptr != NULL)
+        int top = lua_gettop(L);
+        std::ostringstream buffer;
+        lua_getglobal(L, "tostring");
+        for (int i = 1; i <= top; ++i)
         {
-            size_t l = lua_strlen(L, -1);
-            std::string tmp(ptr, l);
-            response->push_child("output", lj::bson::new_string(tmp));
+            lua_pushvalue(L, -1);
+            lua_pushvalue(L, i);
+            lua_call(L, 1, 1);
+
+            if (i > 1)
+            {
+                buffer << "\t";
+            }
+            buffer << lua::as_string(L, -1);
+            lua_pop(L, 1);
+            response->push_child("output", lj::bson::new_string(buffer.str()));
         }
-        else
-        {
-            response->push_child("output", lj::bson::new_string(""));
-        }
-        lua_pop(L, 1);
+        lua_pop(L, 1); // remove tostring function.
         return 0;
     };
 };
@@ -70,10 +76,17 @@ namespace lua
             request_(req),
             L(lua_open())
     {
+        // Standard libraries.
         luaL_openlibs(L);
+
         // Register my extensions.
-        // Put the connection state in the scope.
-        // Put the request into the scope.
+        Lunar<Bson>::Register(L);
+        Lunar<Bson_ro>::Register(L);
+        Lunar<Document>::Register(L);
+        Lunar<Uuid>::Register(L);
+
+        // XXX Put the connection state in the scope.
+        // XXX Put the request into the scope.
     }
 
     Command_language_lua::~Command_language_lua()

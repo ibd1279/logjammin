@@ -31,6 +31,7 @@ void testBasicCommands()
     // Test the output.
     lj::bson::Node response;
     env.response() >> response;
+    TEST_ASSERT(lj::bson::as_string(response["output/0"]).compare("Hello LJ") == 0);
     std::cout << lj::bson::as_string(response) << std::endl;
 
     // Clean up the adapter stage.
