@@ -16,6 +16,7 @@ void testBasicCommands()
     // Test command
     lj::bson::Node request;
     request.set_child("command", lj::bson::new_string( "print ('Hello LJ')\n\
+print ('testing', 'foobar', Uuid:new('{444df00e-95ce-4dd6-8f1c-6dc8b96f92d9}'))\n\
 print (Document:new())\n\
 print (Uuid:new())"));
     // Create the mock request.
@@ -35,6 +36,7 @@ print (Uuid:new())"));
     env.response() >> response;
     std::cout << lj::bson::as_string(response) << std::endl;
     TEST_ASSERT(lj::bson::as_string(response["output/0"]).compare("Hello LJ") == 0);
+    TEST_ASSERT(lj::bson::as_string(response["output/1"]).compare("testing\tfoobar\t{444df00e-95ce-4dd6-8f1c-6dc8b96f92d9}") == 0);
 
     // Clean up the adapter stage.
     delete next_stage;

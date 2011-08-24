@@ -61,8 +61,8 @@ namespace
             }
             buffer << lua::as_string(L, -1);
             lua_pop(L, 1);
-            response->push_child("output", lj::bson::new_string(buffer.str()));
         }
+        response->push_child("output", lj::bson::new_string(buffer.str()));
         lua_pop(L, 1); // remove tostring function.
         return 0;
     };
