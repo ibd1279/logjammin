@@ -268,10 +268,12 @@ namespace lj
             // issues with passing values into the same object:
             // e.g. a.set_value(a.type(), a.to_value()).
             uint8_t* old_data = NULL;
+            size_t old_size = 0;
             if (!type_is_nested(type()))
             {
                 // We capture this pointer because destroy will lose it
                 // and we need to free it later.
+                old_size = size();
                 old_data = value_.data_;
                 destroy(false);
             }
@@ -351,6 +353,7 @@ namespace lj
             // Clean up any old memory.
             if (old_data)
             {
+                memset(old_data, 0, old_size);
                 delete[] old_data;
             }
         }
@@ -664,6 +667,8 @@ namespace lj
             return sz;
         }    
 
+        // private, used by to_binary() to copy bytes into a preallocated
+        // array.
         size_t Node::copy_to_bson(uint8_t* ptr) const
         {
             size_t sz = size();
@@ -715,12 +720,19 @@ namespace lj
             return sz;
         }
         
+        // private, used to free the current resources in a standard way.
         void Node::destroy(bool should_delete_value)
         {
             if (type_is_value(type()) && should_delete_value)
             {
                 if (value_.data_)
                 {
+                    // The data section is overwritten for security reasons.
+                    // There isn't really a reason for this to be 0x55. I
+                    // just used that to check that the memory was getting
+                    // overwritten.
+                    size_t sz = size();
+                    memset(value_.data_, 0x55, sz);
                     delete[] value_.data_;
                 }
             }

@@ -320,6 +320,7 @@ void testType()
     TEST_ASSERT(lj::bson::Type::k_array == doc.root["array"].type());
     TEST_ASSERT(lj::bson::Type::k_document == doc.root["bool"].type());
 }
+
 void testParse()
 {
     lj::Log::debug.enable();
