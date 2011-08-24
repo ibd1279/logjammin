@@ -829,7 +829,6 @@ namespace lj
             return new_binary(d, sz, Binary_type::k_bin_uuid);
         }
 
-
         std::string as_debug_string(const Node& b, int lvl)
         {
             Binary_type binary_type = Binary_type::k_bin_generic;
