@@ -47,6 +47,18 @@ def configure(conf):
         ]
         ,mandatory=True
     )
+    
+    conf.check(
+        header_name='crypto++/cryptlib.h'
+        ,lib=['crypto++']
+        ,libpath=['/usr/local/lib', '/opt/local/lib', '/usr/lib']
+        ,includes=[
+            '/usr/local/include'
+            ,'/opt/local/include'
+            ,'/usr/include'
+        ]
+        ,mandatory=True
+    )
 
     conf.write_config_header('config.h')
 
@@ -76,7 +88,8 @@ def build(bld):
             './src'
         ]
         ,linkflags = ['-g']
-        ,uselib = ['OPENSSL/SSL.H']
+        ,uselib = ['OPENSSL/SSL.H'
+            ,'CRYPTO++/CRYPTLIB.H']
     )
 
     bld.stlib(

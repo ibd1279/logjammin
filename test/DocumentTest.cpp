@@ -7,6 +7,7 @@
 
 #include "testhelper.h"
 #include "lj/Document.h"
+#include "scrypt/scrypt.h"
 
 struct sample_data
 {
@@ -110,6 +111,33 @@ void testWash()
     TEST_ASSERT(doc.vclock().exists((std::string)data.server));
     TEST_ASSERT(lj::bson::as_uint64(doc.vclock().nav((std::string)data.server)) == 2);
 }
+
+void testEncrypt()
+{
+    sample_data data;
+    lj::Document doc(new lj::bson::Node(data.doc), false);
+
+    uint8_t dk[CryptoPP::AES::MAX_KEYLENGTH];
+    try
+    {
+        CryptoPP::AutoSeededRandomPool rng;
+
+        uint8_t salt[CryptoPP::AES::MAX_KEYLENGTH];
+        rng.GenerateBlock(salt, sizeof(salt));
+
+        std::string password = "some random string the user must provide.";
+        crypto_scrypt((uint8_t*)password.data(), password.size(),
+                salt, sizeof(salt), 1 << 10, 8, 2, dk, sizeof(dk));
+    }
+    catch (CryptoPP::Exception& ex)
+    {
+        throw LJ__Exception(ex.what());
+    }
+
+    doc.encrypt(dk, sizeof(dk));
+    doc.decrypt(dk, sizeof(dk));
+}
+
 int main(int argc, char** argv)
 {
     const Test_entry tests[] = {
@@ -118,6 +146,7 @@ int main(int argc, char** argv)
         PREPARE_TEST(testSuppress),
         PREPARE_TEST(testVersion),
         PREPARE_TEST(testWash),
+        PREPARE_TEST(testEncrypt),
         {0, ""}
     };
     return Test_util::runner("lj::Document", tests);

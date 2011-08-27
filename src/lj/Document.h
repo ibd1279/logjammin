@@ -36,6 +36,12 @@
 #include "lj/Bson.h"
 #include "lj/Uuid.h"
 
+#include "crypto++/aes.h"
+#include "crypto++/eax.h"
+#include "crypto++/filters.h"
+#include "crypto++/osrng.h"
+#include "crypto++/secblock.h"
+
 #include <cstdint>
 #include <string>
 
@@ -127,11 +133,20 @@ namespace lj
         {
             return dirty_;
         }
+        inline bool encrypted() const
+        {
+            bool flag = lj::bson::as_boolean(doc_->nav("_/flag/encrypted"));
+            return flag || !doc_->exists(".") || doc_->exists("#");
+        }
         inline const lj::bson::Node& get(const std::string& path) const
         {
+            if (encrypted())
+            {
+                throw LJ__Exception("not allowed on encrypted doc.");
+            }
             return doc_->nav(".").nav(path);
         }
-        
+
         void wash()
         {
             dirty_ = false;
@@ -143,23 +158,142 @@ namespace lj
             doc_->set_child("_/id", lj::bson::new_uuid(lj::Uuid(k)));
             doc_->set_child("_/vclock", new lj::bson::Node());
         }
+
+        void encrypt(uint8_t* key, int key_size)
+        {
+            // Only accept 256bit keys.
+            if (key_size != CryptoPP::AES::MAX_KEYLENGTH)
+            {
+                throw LJ__Exception("encrypt key must 256bits");
+            }
+            if (encrypted())
+            {
+                throw LJ__Exception("double encryption requested.");
+            }
+
+            // Create the IV.
+            CryptoPP::AutoSeededRandomPool rng;
+            byte iv[CryptoPP::AES::BLOCKSIZE * 16];
+            rng.GenerateBlock(iv, sizeof(iv));
+
+            // Setup the encrypter.
+            CryptoPP::EAX<CryptoPP::AES>::Encryption enc;
+            enc.SetKeyWithIV(key, key_size, iv, sizeof(iv));
+
+            // Encrypt the document.
+            uint8_t* data = doc_->to_binary();
+            try
+            {
+                std::string ct;
+                CryptoPP::ArraySource(data, doc_->size(), true,
+                        new CryptoPP::AuthenticatedEncryptionFilter(enc,
+                                new CryptoPP::StringSink(ct)));
+
+                // Rebuild the document.
+                doc_->set_child("_/flag/encrypted",
+                        lj::bson::new_boolean(true));
+                doc_->set_child(".", NULL);
+                doc_->set_child("#", lj::bson::new_binary(
+                        (const uint8_t*)ct.data(), ct.size(),
+                        lj::bson::Binary_type::k_bin_user_defined));
+                doc_->set_child("_/vector", lj::bson::new_binary(
+                        (const uint8_t*)iv, sizeof(iv),
+                        lj::bson::Binary_type::k_bin_user_defined));
+            }
+            catch (CryptoPP::Exception& ex)
+            {
+                throw LJ__Exception(ex.what());
+            }
+
+            // clean up.
+            delete[] data;
+        }
+
+        void decrypt(uint8_t* key, int key_size)
+        {
+            // Only accept 256bit keys.
+            if (key_size != CryptoPP::AES::MAX_KEYLENGTH)
+            {
+                throw LJ__Exception("decrypt key must 256bits");
+            }
+            if (!encrypted())
+            {
+                throw LJ__Exception("double decryption requested.");
+            }
+
+            // Get the IV.
+            lj::bson::Binary_type bt;
+            uint32_t iv_size;
+            const uint8_t* iv = lj::bson::as_binary(doc_->nav("_/vector"),
+                    &bt,
+                    &iv_size);
+
+            // Setup the decrypter.
+            CryptoPP::EAX<CryptoPP::AES>::Decryption dec;
+            dec.SetKeyWithIV(key, key_size, iv, iv_size);
+
+            // decrypt the document.
+            uint32_t data_size;
+            const uint8_t* data = lj::bson::as_binary(doc_->nav("#"),
+                    &bt,
+                    &data_size);
+            try
+            {
+                std::string value;
+                CryptoPP::ArraySource(data,
+                        data_size,
+                        true,
+                        new CryptoPP::AuthenticatedDecryptionFilter(dec,
+                                new CryptoPP::StringSink(value)));
+
+                // Rebuilding the document is going to invalidate these
+                // pointers.
+                data = NULL;
+                iv = NULL;
+
+                // Rebuild the document.
+                doc_->set_value(lj::bson::Type::k_document,
+                        (const uint8_t*)value.data());
+            }
+            catch (CryptoPP::Exception& ex)
+            {
+                throw LJ__Exception(ex.what());
+            }
+        }
+        
         void suppress(const lj::Uuid& server, const bool s)
         {
+            if (encrypted())
+            {
+                throw LJ__Exception("not allowed on encrypted doc.");
+            }
             taint(server);
             doc_->set_child("_/flag/suppressed", lj::bson::new_boolean(s));
         }
         void set(const lj::Uuid& server, const std::string& path, lj::bson::Node* value)
         {
+            if (encrypted())
+            {
+                throw LJ__Exception("not allowed on encrypted doc.");
+            }
             taint(server);
             doc_->nav(".").set_child(path, value);
         }
         void push(const lj::Uuid& server, const std::string& path, lj::bson::Node* value)
         {
+            if (encrypted())
+            {
+                throw LJ__Exception("not allowed on encrypted doc.");
+            }
             taint(server);
             doc_->nav(".").nav(path) << value;
         }
         void increment(const lj::Uuid& server, const std::string path, int amount)
         {
+            if (encrypted())
+            {
+                throw LJ__Exception("not allowed on encrypted doc.");
+            }
             taint(server);
             lj::bson::increment(doc_->nav(".").nav(path), amount);
         }
@@ -181,6 +315,7 @@ namespace lj
             doc_->set_child("_/parent", lj::bson::new_null());
             doc_->set_child("_/vclock", new lj::bson::Node());
             doc_->set_child("_/flag/suppressed", lj::bson::new_boolean(false));
+            doc_->set_child("_/flag/encrypted", lj::bson::new_boolean(false));
             doc_->set_child("_/key", lj::bson::new_null());
             doc_->set_child("_/id", lj::bson::new_null());
             doc_->set_child("version", lj::bson::new_int32(100));
