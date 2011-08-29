@@ -159,7 +159,7 @@ namespace lj
             doc_->set_child("_/vclock", new lj::bson::Node());
         }
 
-        void encrypt(uint8_t* key, int key_size)
+        void encrypt(const lj::Uuid& server, uint8_t* key, int key_size)
         {
             // Only accept 256bit keys.
             if (key_size != CryptoPP::AES::MAX_KEYLENGTH)
@@ -190,6 +190,7 @@ namespace lj
                                 new CryptoPP::StringSink(ct)));
 
                 // Rebuild the document.
+                taint(server);
                 doc_->set_child("_/flag/encrypted",
                         lj::bson::new_boolean(true));
                 doc_->set_child(".", NULL);
@@ -252,8 +253,12 @@ namespace lj
                 iv = NULL;
 
                 // Rebuild the document.
+                lj::bson::Node* underscore = new lj::bson::Node(doc_->nav("_"));
                 doc_->set_value(lj::bson::Type::k_document,
                         (const uint8_t*)value.data());
+                doc_->set_child("_", underscore);
+                doc_->set_child("_/flag/encrypted",
+                        lj::bson::new_boolean(false));
             }
             catch (CryptoPP::Exception& ex)
             {

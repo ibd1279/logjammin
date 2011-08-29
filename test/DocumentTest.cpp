@@ -134,8 +134,16 @@ void testEncrypt()
         throw LJ__Exception(ex.what());
     }
 
-    doc.encrypt(dk, sizeof(dk));
+    doc.wash();
+    TEST_ASSERT(doc.encrypted() == false);
+    TEST_ASSERT(doc.dirty() == false);
+    doc.encrypt(data.server, dk, sizeof(dk));
+    TEST_ASSERT(doc.encrypted() == true);
+    TEST_ASSERT(doc.dirty() == true);
+    doc.wash();
     doc.decrypt(dk, sizeof(dk));
+    TEST_ASSERT(doc.encrypted() == false);
+    TEST_ASSERT(doc.dirty() == false);
 }
 
 int main(int argc, char** argv)

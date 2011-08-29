@@ -53,6 +53,9 @@ namespace lua
         ,LUNAR_METHOD(Document, set)
         ,LUNAR_METHOD(Document, push)
         ,LUNAR_METHOD(Document, increment)
+        ,LUNAR_METHOD(Document, encrypted)
+        ,LUNAR_METHOD(Document, encrypt)
+        ,LUNAR_METHOD(Document, decrypt)
         ,LUNAR_METHOD(Document, __tostring)
         ,LUNAR_METHOD(Document, __index)
         ,{0, 0}
@@ -210,6 +213,58 @@ namespace lua
         {
             // XXX Change this to get the server from somewhere.
             doc_->increment(lj::Uuid::k_nil, tmp, amt);
+        }
+        catch (lj::Exception& ex)
+        {
+            lua_pushstring(L, ex.str().c_str());
+            lua_error(L);
+        }
+        return 0;
+    }
+
+    int Document::encrypted(lua_State* L)
+    {
+        int top = lua_gettop(L);
+        if (0 == top)
+        {
+            lua_pushboolean(L, doc_->encrypted());
+        }
+        else
+        {
+            lua_pushstring(L, "Expected 0 arguments.");
+            lua_error(L);
+        }
+        return 1;
+    }
+
+    int Document::encrypt(lua_State* L)
+    {
+        std::string key_name(as_string(L, -1));
+        // XXX Change this to get the key from somewhere.
+        uint8_t key[32] = {0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
+                0,1,2,3,4,5,6,7,8,9,0,1};
+        try
+        {
+            // XXX Change this to get the server from somewhere.
+            doc_->encrypt(lj::Uuid::k_nil, key, sizeof(key));
+        }
+        catch (lj::Exception& ex)
+        {
+            lua_pushstring(L, ex.str().c_str());
+            lua_error(L);
+        }
+        return 0;
+    }
+
+    int Document::decrypt(lua_State* L)
+    {
+        std::string key_name(as_string(L, -1));
+        // XXX Change this to get the key from somewhere.
+        uint8_t key[32] = {0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
+                0,1,2,3,4,5,6,7,8,9,0,1};
+        try
+        {
+            doc_->decrypt(key, sizeof(key));
         }
         catch (lj::Exception& ex)
         {
