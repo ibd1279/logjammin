@@ -1,6 +1,7 @@
 #include "lj/Bson.h"
 #include "lj/Exception.h"
 #include <cassert>
+#include <cstddef>
 #include <cstring>
 #include <iostream>
 #include <memory>
