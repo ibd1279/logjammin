@@ -146,6 +146,42 @@ namespace logjamd
         {
             return false;
         }
+
+        //! Store an encryption key with the connection.
+        /*!
+         \par
+         Each connection type must have a mechanism for securely storing the
+         encryption keys for a connection instance. Implementations are
+         expected to copy the provided key data to memory they will manage.
+         Management of that memory includes erasing/overwriting the value
+         and releasing the memory.
+         \par
+         The caller is responsible managing the security of the void pointer
+         provided to the method. That includes securely handling the memory
+         after the key is stored .
+         \param identifier The identifier to associate with the key
+         \param key The pointer to the key data.
+         \param sz The size of the key.
+         */
+        virtual void set_crypto_key(const std::string& identifier,
+                const void* key,
+                int sz) = 0;
+
+        //! Retreive an encryption key from the connection.
+        /*!
+        \par
+        Each connection type must have a mechanism for securly storing the
+        encryption keys for a connection instance. Implementations are
+        expected to erase/overwrite the value of that data when the connection
+        is destroyed.
+        \par
+        The caller is not responsible for the pointer returned by this method.
+        \param identifier The identifier associated with the key
+        \param sz Where to store the size of the key.
+        \return Pointer to the key data. Null if the identifier is unknown.
+        */
+        virtual const void* get_crypto_key(const std::string& identifier,
+                int* sz) = 0;
     protected:
         //! Set the user for this connection.
         /*!
@@ -190,6 +226,7 @@ namespace logjamd
         //! Call start on the real connection.
         virtual void start()
         {
+            real_connection_->start();
         }
 
         virtual logjamd::Server& server()
@@ -205,6 +242,19 @@ namespace logjamd
         virtual bool secure()
         {
             return real_connection_->secure();
+        }
+
+        virtual void set_crypto_key(const std::string& identifier,
+                const void* key,
+                int sz)
+        {
+            real_connection_->set_crypto_key(identifier, key, sz);
+        }
+
+        virtual const void* get_crypto_key(const std::string& identifier,
+                int* sz)
+        {
+            return real_connection_->get_crypto_key(identifier, sz);
         }
     private:
         Connection* real_connection_;

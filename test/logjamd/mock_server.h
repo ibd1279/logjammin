@@ -5,11 +5,14 @@
 #include "logjamd/Server.h"
 #include "logjamd/Connection.h"
 #include "logjamd/constants.h"
+#include "crypto++/secblock.h"
 
 #include <cstdio>
 #include <cstring>
 #include <istream>
+#include <map>
 #include <sstream>
+#include <string>
 
 const lj::Uuid k_auth_method_password_hash(logjamd::k_auth_method,
         "password_hash",
@@ -115,14 +118,51 @@ public:
 
 class Connection_mock : public logjamd::Connection
 {
+private:
+    std::map<std::string, CryptoPP::SecBlock<uint8_t>*> keys_;
 public:
     Connection_mock(std::iostream* stream) :
-            logjamd::Connection(new Server_mock(), new lj::bson::Node(), stream)
+            logjamd::Connection(new Server_mock(), new lj::bson::Node(), stream),
+            keys_()
     {
+    }
+    ~Connection_mock()
+    {
+        for (auto iter = keys_.begin();
+                keys_.end() != iter;
+                ++iter)
+        {
+            delete (*iter).second;
+        }
     }
     virtual void start()
     {
     }
+    void set_crypto_key(const std::string& identifier,
+            const void* key,
+            int sz)
+    {
+        keys_[identifier] = new CryptoPP::SecBlock<uint8_t>(
+                static_cast<const uint8_t*>(key),
+                sz);
+    }
+    const void* get_crypto_key(
+            const std::string& identifier,
+            int* sz)
+    {
+        auto iter = keys_.find(identifier);
+        if(keys_.end() != iter)
+        {
+            *sz = (*iter).second->size();
+            return (*iter).second->data();
+        }
+        else
+        {
+            *sz = 0;
+            return NULL;
+        }
+    }
+
 };
 
 class Mock_environment

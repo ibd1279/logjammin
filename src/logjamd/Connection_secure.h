@@ -34,6 +34,9 @@
  */
 
 #include "logjamd/Connection.h"
+#include "crypto++/secblock.h"
+#include <map>
+#include <string>
 #include <thread>
 
 typedef struct bio_st BIO;
@@ -52,6 +55,11 @@ namespace logjamd
         {
             return secure_;
         }
+        virtual void set_crypto_key(const std::string& identifier,
+                const void* key,
+                int sz);
+        virtual const void* get_crypto_key(const std::string& identifier,
+                int* sz);
     protected:
         inline std::thread& thread()
         {
@@ -60,6 +68,7 @@ namespace logjamd
     private:
         std::thread* thread_;
         bool secure_;
+        std::map<std::string, CryptoPP::SecBlock<uint8_t>* > keys_;
     };
 };
 

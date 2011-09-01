@@ -38,14 +38,6 @@
 
 #include <algorithm>
 
-extern "C"
-{
-#include <openssl/ssl.h>
-#include <openssl/bio.h>
-#include <openssl/err.h>
-}
-
-
 namespace logjamd
 {
     Connection_secure::Connection_secure(
@@ -54,7 +46,8 @@ namespace logjamd
             std::iostream* stream) :
             logjamd::Connection(server, state, stream),
             thread_(NULL),
-            secure_(false)
+            secure_(false),
+            keys_()
     {
     }
 
@@ -64,6 +57,14 @@ namespace logjamd
         {
             thread_->join();
             delete thread_;
+        }
+
+        // Delete all the crypto keys.
+        for (auto iter = keys_.begin();
+                keys_.end() != iter;
+                ++iter)
+        {
+            delete (*iter).second;
         }
     }
 
@@ -96,5 +97,31 @@ namespace logjamd
         }
 
         // Close the connection.
+    }
+
+    void Connection_secure::set_crypto_key(const std::string& identifier,
+            const void* key,
+            int sz)
+    {
+        keys_[identifier] = new CryptoPP::SecBlock<uint8_t>(
+                static_cast<const uint8_t*>(key),
+                sz);
+    }
+
+    const void* Connection_secure::get_crypto_key(
+            const std::string& identifier,
+            int* sz)
+    {
+        auto iter = keys_.find(identifier);
+        if(keys_.end() != iter)
+        {
+            *sz = (*iter).second->size();
+            return (*iter).second->data();
+        }
+        else
+        {
+            *sz = 0;
+            return NULL;
+        }
     }
 }; // namespace logjamd
