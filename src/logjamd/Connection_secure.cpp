@@ -34,7 +34,7 @@
 
 #include "logjamd/Connection_secure.h"
 #include "logjamd/Stage.h"
-#include "logjamd/Stage_auth.h"
+#include "logjamd/Stage_pre.h"
 
 #include <algorithm>
 
@@ -70,12 +70,12 @@ namespace logjamd
 
     void Connection_secure::start()
     {
-        thread_ = new std::thread(*this);
+        thread_ = new std::thread([this]() { this->execute(); });
     }
 
-    void Connection_secure::operator()()
+    void Connection_secure::execute()
     {
-        Stage* stage = new Stage_auth(this);
+        Stage* stage = new Stage_pre(this);
 
         while (stage)
         {

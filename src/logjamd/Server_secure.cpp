@@ -63,6 +63,7 @@ namespace logjamd
             BIO_free(io_);
         }
 
+        lj::Log::debug.log("Deleting all connections for server %p", (const void*)this);
         for (auto iter = connections_.begin();
                 connections_.end() != iter;
                 ++iter)
@@ -110,7 +111,7 @@ namespace logjamd
             std::iostream* connection_stream = new std::iostream(
                     new lj::Streambuf_bio<char>(BIO_pop(io_), 4096, 4096));
 
-            // Creat the new connection
+            // Create the new connection
             Connection_secure* connection = new Connection_secure(
                     this,
                     connection_state,

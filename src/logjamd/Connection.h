@@ -34,6 +34,7 @@
  */
 
 #include "lj/Bson.h"
+#include "lj/Log.h"
 #include "logjamd/Server.h"
 #include "logjamd/User.h"
 

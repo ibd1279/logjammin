@@ -50,7 +50,7 @@ namespace logjamd
                 std::iostream* stream);
         virtual ~Connection_secure();
         virtual void start();
-        virtual void operator()();
+        virtual void execute();
         virtual bool secure()
         {
             return secure_;

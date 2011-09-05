@@ -74,6 +74,11 @@ namespace logjamd
         }
         buffer[5] = '\0';
 
+        if ('\r' == buffer[4])
+        {
+            buffer[4] = '\n';
+        }
+
         if (k_bson_mode.compare(buffer) == 0)
         {
             log("Using BSON mode.") << lj::Log::end;
