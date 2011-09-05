@@ -239,14 +239,26 @@ namespace lua
 
     int Document::encrypt(lua_State* L)
     {
-        std::string key_name(as_string(L, -1));
-        // XXX Change this to get the key from somewhere.
-        uint8_t key[32] = {0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
-                0,1,2,3,4,5,6,7,8,9,0,1};
+        // use the provided arg to look up the crypto keys.
+        lua_getglobal(L, "get_crypto_key");
+        lua_insert(L, -2);
+        lua_call(L, 1, 1);
+
+        // Get the returned value. nil will cause an error bumping us out.
+        Bson_ro* val = Lunar<Bson_ro>::check(L, -1);
+
+        // Create a copy of the data. It is possible that the pop below
+        // will cause the returned value to GC.
+        lj::bson::Binary_type bt;
+        uint32_t sz;
+        const uint8_t* key_data = lj::bson::as_binary(val->node(), &bt, &sz);
+        CryptoPP::SecByteBlock key(key_data, sz);
+        lua_pop(L, 1);
+
         try
         {
             // XXX Change this to get the server from somewhere.
-            doc_->encrypt(lj::Uuid::k_nil, key, sizeof(key));
+            doc_->encrypt(lj::Uuid::k_nil, key.data(), key.size());
         }
         catch (lj::Exception& ex)
         {
@@ -258,13 +270,25 @@ namespace lua
 
     int Document::decrypt(lua_State* L)
     {
-        std::string key_name(as_string(L, -1));
-        // XXX Change this to get the key from somewhere.
-        uint8_t key[32] = {0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
-                0,1,2,3,4,5,6,7,8,9,0,1};
+        // use the provided arg to look up the crypto keys.
+        lua_getglobal(L, "get_crypto_key");
+        lua_insert(L, -2);
+        lua_call(L, 1, 1);
+
+        // Get the returned value. nil will cause an error bumping us out.
+        Bson_ro* val = Lunar<Bson_ro>::check(L, -1);
+
+        // Create a copy of the data. It is possible that the pop below
+        // will cause the returned value to GC.
+        lj::bson::Binary_type bt;
+        uint32_t sz;
+        const uint8_t* key_data = lj::bson::as_binary(val->node(), &bt, &sz);
+        CryptoPP::SecByteBlock key(key_data, sz);
+        lua_pop(L, 1);
+
         try
         {
-            doc_->decrypt(key, sizeof(key));
+            doc_->decrypt(key.data(), key.size());
         }
         catch (lj::Exception& ex)
         {

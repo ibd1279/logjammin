@@ -66,6 +66,31 @@ namespace
         lua_pop(L, 1); // remove tostring function.
         return 0;
     }
+    int get_crypto_key(lua_State* L)
+    {
+        logjamd::Connection* connection = static_cast<logjamd::Connection*>(
+                lua_touserdata(L, lua_upvalueindex(1)));
+        std::string identifier(lua::as_string(L, -1));
+        int sz;
+        const void* data = connection->get_crypto_key(identifier, &sz);
+
+        if (data)
+        {
+            std::unique_ptr<lj::bson::Node> ptr(lj::bson::new_binary(
+                    static_cast<const uint8_t*>(data),
+                    sz,
+                    lj::bson::Binary_type::k_bin_user_defined));
+            lua::Bson_ro* key_data = new lua::Bson_ro(*ptr);
+            lua::Lunar<lua::Bson_ro>::push(L, key_data, true);
+        }
+        else
+        {
+            // if the key was unknown, push nil.
+            lua_pushnil(L);
+        }
+
+        return 1;
+    }
 };
 
 namespace lua
@@ -84,6 +109,11 @@ namespace lua
         Lunar<Bson_ro>::Register(L);
         Lunar<Document>::Register(L);
         Lunar<Uuid>::Register(L);
+
+        // One-off functions.
+        lua_pushlightuserdata(L, conn);
+        lua_pushcclosure(L, &get_crypto_key, 1);
+        lua_setglobal(L, "get_crypto_key");
 
         // XXX Put the connection state in the scope.
         // XXX Put the request into the scope.
