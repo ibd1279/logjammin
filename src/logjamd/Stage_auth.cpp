@@ -50,6 +50,8 @@ namespace
     const std::string k_unknown_auth_method("Unknown auth method.");
     const std::string k_failed_auth_method("Authentication failed.");
     const std::string k_succeeded_auth_method("Authentication succeeded");
+    const std::string k_keys_ignored("Authentication succeeded, but ignoring keys on an insecure connection.");
+    const std::string k_keys_warning("Authentication succeeded, setting up keys on an insecure channel.");
 };
 
 namespace logjamd
@@ -105,26 +107,68 @@ namespace logjamd
         else
         {
             lj::Log::info.log(k_unknown_auth_provider);
-            response.set_child("message", lj::bson::new_string(k_unknown_auth_provider));
+            response.set_child("message",
+                    lj::bson::new_string(k_unknown_auth_provider));
         }
 
-        conn()->io() << response;
-
+        Stage* next_stage = NULL;
         if (conn()->user())
         {
-            return new Stage_execute(conn());
+            // TODO impersonation
+
+            // key setup.
+            if (n.exists("keys"))
+            {
+                lj::bson::Node& keys = n["keys"];
+                bool force_keys = lj::bson::as_boolean(
+                        n["i_know_connection_is_insecure"]);
+                if (conn()->secure() || force_keys)
+                {
+                    // Notify the user if being forced to use keys.
+                    if (force_keys)
+                    {
+                        response.set_child("message",
+                                lj::bson::new_string(k_keys_warning));
+                    }
+
+                    for (auto iter = keys.to_vector().begin();
+                            keys.to_vector().end() != iter;
+                            ++iter)
+                    {
+                        std::string name(lj::bson::as_string(
+                                (*iter)->nav("name")));
+                        uint32_t sz;
+                        lj::bson::Binary_type bt;
+                        const uint8_t* data = lj::bson::as_binary(
+                                (*iter)->nav("data"),
+                                &bt,
+                                &sz);
+                        conn()->set_crypto_key(name, data, sz);
+                    }
+                }
+                else
+                {
+                    response.set_child("message",
+                            lj::bson::new_string(k_keys_ignored));
+                }
+            }
+
+            next_stage = new Stage_execute(conn());
         }
         else
         {
             if (attempts_ < 3)
             {
-                return this;
+                next_stage = this;
             }
             else
             {
-                return NULL;
+                next_stage = NULL;
             }
         }
+
+        conn()->io() << response;
+        return next_stage;
     }
     std::string Stage_auth::name()
     {
