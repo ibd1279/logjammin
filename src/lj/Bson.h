@@ -670,6 +670,16 @@ namespace lj
          */
         Node* new_uuid(const lj::Uuid& uuid);
 
+        //! Create a new array Bson object.
+        /*!
+         \par
+         An array bson object. May contain child nodes.
+         \par
+         Result should be released with delete.
+         \return a new Node object.
+         */
+        Node* new_array();
+
         //! Create a new node from a json string.
         /*!
          \par

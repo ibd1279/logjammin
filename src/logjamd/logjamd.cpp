@@ -33,8 +33,11 @@
  */
 
 #include "lj/Document.h"
+#include "logjamd/Auth.h"
+#include "logjamd/Auth_local.h"
 #include "logjamd/Server.h"
 #include "logjamd/Server_secure.h"
+#include "logjamd/constants.h"
 
 #include <cstdlib>
 #include <cstring>
@@ -46,10 +49,27 @@ int main(int argc, char* const argv[]) {
     lj::bson::Node* config = new lj::bson::Node();
     lj::Uuid sid;
     config->set_child("server/listen", lj::bson::new_string("localhost:12345"));
-    config->set_child("server/cluster", new lj::bson::Node(lj::bson::Type::k_array, NULL));
+    config->set_child("server/cluster", lj::bson::new_array());
     config->push_child("server/cluster", lj::bson::new_string("localhost:12345"));
     config->push_child("server/cluster", lj::bson::new_string("localhost:12346"));
 
+    // TODO This is completely in the wrong place, but it has to be here
+    // to make the telnet stuff work during development right now.
+    logjamd::Auth_provider_local local_auth;
+    logjamd::User u(logjamd::k_user_id_json, logjamd::k_user_login_json);
+    lj::bson::Node n;
+    n.set_child("login",
+            lj::bson::new_string(logjamd::k_user_login_json));
+    n.set_child("password",
+            lj::bson::new_string(logjamd::k_user_password_json));
+    const lj::Uuid k_auth_method_password_hash(logjamd::k_auth_method,
+            "password_hash",
+            13);
+    logjamd::Auth_registry::provider(local_auth.provider_id())->
+            method(k_auth_method_password_hash)->
+            change_credentials(&u, &u, n);
+
+    // Run the server.
     logjamd::Server* server = new logjamd::Server_secure(config);
     server->startup();
     server->listen();

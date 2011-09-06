@@ -257,6 +257,11 @@ namespace logjamd
         {
             return real_connection_->get_crypto_key(identifier, sz);
         }
+
+        virtual Connection& real_connection()
+        {
+            return *real_connection_;
+        }
     private:
         Connection* real_connection_;
     };

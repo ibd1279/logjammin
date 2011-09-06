@@ -59,23 +59,30 @@ namespace logjamd
     Stage* Stage_json_adapt::logic()
     {
         Stage* next_stage = NULL;
-        if (conn()->secure() || conn()->user() != NULL)
+        if (conn()->secure() || faux_connection().user() != NULL)
         {
             std::string cmd;
             if (!std::getline(conn()->io(), cmd).good())
             {
                 // TODO Handle a read error.
+                lj::Log::warning.log("Some kind of read error.");
+                next_stage = NULL;
             }
+            else
+            {
+                lj::bson::Node request;
+                request.set_child("command", lj::bson::new_string(cmd));
+                lj::Log::debug.log("Using %s for the request.", lj::bson::as_string(request));
+                pipe_.sink() << request;
 
-            lj::bson::Node request;
-            request.set_child("command", lj::bson::new_string(cmd));
-            pipe_.sink() << request;
+                next_stage = real_stage_->logic();
 
-            next_stage = real_stage_->logic();
-
-            lj::bson::Node response;
-            pipe_.source() >> response;
-            conn()->io() << response;
+                lj::bson::Node response;
+                pipe_.source() >> response;
+                lj::Log::debug.log("Using %s for the response.", lj::bson::as_string(response));
+                conn()->io() << lj::bson::as_pretty_json(response) << std::endl;;
+                conn()->io().flush();
+            }
         }
         else
         {
@@ -102,7 +109,8 @@ namespace logjamd
             next_stage = real_stage_->logic();
 
             pipe_.source() >> auth_response;
-            conn()->io() << lj::bson::as_string(auth_response);
+            conn()->io() << lj::bson::as_pretty_json(auth_response) << std::endl;
+            conn()->io().flush();
         }
 
         if (next_stage)
