@@ -34,6 +34,7 @@
  */
 
 #include "logjamd/Command_language.h"
+#include "lua/Bson.h"
 #include "lua5.1/lua.hpp"
 
 namespace lua
@@ -55,5 +56,6 @@ namespace lua
         logjamd::Connection* connection_;
         lj::bson::Node* request_;
         lua_State* L;
+        lua::Bson* state_;
     };
 };

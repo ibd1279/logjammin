@@ -43,8 +43,8 @@ namespace
 {
     int print_to_response(lua_State* L)
     {
-        lj::bson::Node* response = static_cast<lj::bson::Node*>(
-                lua_touserdata(L, lua_upvalueindex(1)));
+        lua::Bson* response = lua::Lunar<lua::Bson>::check(L,
+                lua_upvalueindex(1));
 
         int top = lua_gettop(L);
         std::ostringstream buffer;
@@ -62,10 +62,12 @@ namespace
             buffer << lua::as_string(L, -1);
             lua_pop(L, 1);
         }
-        response->push_child("output", lj::bson::new_string(buffer.str()));
+        response->node().push_child("output",
+                lj::bson::new_string(buffer.str()));
         lua_pop(L, 1); // remove tostring function.
         return 0;
     }
+
     int get_crypto_key(lua_State* L)
     {
         logjamd::Connection* connection = static_cast<logjamd::Connection*>(
@@ -99,7 +101,8 @@ namespace lua
             lj::bson::Node* req) :
             connection_(conn),
             request_(req),
-            L(lua_open())
+            L(lua_open()),
+            state_(new Bson(connection_->state()))
     {
         // Standard libraries.
         luaL_openlibs(L);
@@ -115,31 +118,50 @@ namespace lua
         lua_pushcclosure(L, &get_crypto_key, 1);
         lua_setglobal(L, "get_crypto_key");
 
-        // XXX Put the connection state in the scope.
-        // XXX Put the request into the scope.
+        // Put the connection state in the scope.
+        Lunar<Bson>::push(L, state_, false);
+        lua_setglobal(L, "SESSION");
+
+        // Put the request into the scope.
+        Lunar<Bson>::push(L, new Bson(*request_), true);
+        lua_setglobal(L, "REQUEST");
     }
 
     Command_language_lua::~Command_language_lua()
     {
+        connection_->state().copy_from(state_->node());
+        delete state_;
         lua_close(L);
     }
 
     void Command_language_lua::perform(lj::bson::Node& response)
     {
         // Setup replaced methods.
-        lua_pushlightuserdata(L, &response);
+        std::unique_ptr<Bson> response_wrapper(new Bson(response));
+        Lunar<Bson>::push(L, response_wrapper.get(), false);
         lua_pushcclosure(L, &print_to_response, 1);
         lua_setglobal(L, "print");
 
         // Put the response into the scope.
-        // TODO make a lua bson wrapper.
+        Lunar<Bson>::push(L, response_wrapper.get(), false);
+        lua_setglobal(L, "RESPONSE");
 
         std::string cmd(lj::bson::as_string(request_->nav("command")));
         luaL_loadbuffer(L,
                 cmd.c_str(),
                 cmd.size(),
                 "command");
-        lua_pcall(L, 0, LUA_MULTRET, 0);
+        int err = lua_pcall(L, 0, LUA_MULTRET, 0);
+        if (0 != err)
+        {
+            std::string error_msg(as_string(L, -1));
+            response_wrapper->node().set_child("message",
+                    lj::bson::new_string(error_msg));
+            response_wrapper->node().set_child("success",
+                    lj::bson::new_boolean(false));
+        }
+
+        response.copy_from(response_wrapper->node());
     }
 
     std::string Command_language_lua::name()
