@@ -72,14 +72,12 @@ namespace logjamd
             {
                 lj::bson::Node request;
                 request.set_child("command", lj::bson::new_string(cmd));
-                lj::Log::debug.log("Using %s for the request.", lj::bson::as_string(request));
                 pipe_.sink() << request;
 
                 next_stage = real_stage_->logic();
 
                 lj::bson::Node response;
                 pipe_.source() >> response;
-                lj::Log::debug.log("Using %s for the response.", lj::bson::as_string(response));
                 conn()->io() << lj::bson::as_pretty_json(response) << std::endl;;
                 conn()->io().flush();
             }
@@ -115,7 +113,6 @@ namespace logjamd
 
         if (next_stage)
         {
-            log("Next stage is %s.") << next_stage->name() << lj::Log::end;
             if (next_stage != real_stage_)
             {
                 delete real_stage_;

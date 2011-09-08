@@ -33,6 +33,8 @@ namespace lua
         static void Register(lua_State *L)
         {
             lua_newtable(L);
+            int mt = lua_gettop(L);
+            lua_newtable(L);
             int methods = lua_gettop(L);
             luaL_newmetatable(L, T::LUNAR_CLASS_NAME);
             int metatable = lua_gettop(L);
@@ -54,13 +56,17 @@ namespace lua
             
             lua_pushcfunction(L, gc_T);
             set(L, metatable, "__gc");
+
+            // stack: {mM, m, M}
             
-            lua_newtable(L);                // mt for method table
+            lua_pushvalue(L, mt);           // mt for method table
             lua_pushcfunction(L, new_T);
             lua_pushvalue(L, -1);           // dup new_T function
             set(L, methods, "new");         // add new_T to method table
             set(L, -3, "__call");           // mt.__call = new_T
             lua_setmetatable(L, methods);
+
+            // stack: {mM, m, M}
             
             // fill method table with methods from class T
             for (RegType *l = T::LUNAR_METHODS; l->name; l++) {
@@ -69,8 +75,11 @@ namespace lua
                 lua_pushlightuserdata(L, (void*)l);
                 lua_pushcclosure(L, thunk, 1);
 
-                // Change from original lunar to allow modifying the metatable.
-                if(tmp.substr(0, 2).compare("__") == 0)
+                if (tmp.compare("__index") == 0)
+                {
+                    lua_settable(L, mt);
+                }
+                else if(tmp.substr(0, 2).compare("__") == 0)
                 {
                     lua_settable(L, metatable);
                 }
@@ -80,7 +89,7 @@ namespace lua
                 }
             }
             
-            lua_pop(L, 2);  // drop metatable and method table
+            lua_pop(L, 3);  // drop metatable and method table
         }
         
         //! Call named lua method from userdata method table

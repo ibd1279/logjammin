@@ -73,10 +73,11 @@ namespace logjamd
         response.set_child("output",
                 new lj::bson::Node(lj::bson::Type::k_array, NULL));
         cmd_lang->perform(response);
+        response.set_child("elapsed", lj::bson::new_uint64(timer.elapsed()));
         conn()->io() << response;
         delete cmd_lang;
 
-        log("Elapsed %llu.") << timer.elapsed() << lj::Log::end;
+        log("Elapsed %llu ns.") << timer.elapsed() << lj::Log::end;
         return new Stage_execute(conn());
     }
 

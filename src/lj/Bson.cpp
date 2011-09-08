@@ -1102,11 +1102,12 @@ namespace lj
                     if (!type_is_native(n->type()) && !type_is_nested(n->type()))
                     {
                         buf << "\"";
-                    }
-                    buf << as_pretty_json(*n, lvl + 1);
-                    if (!type_is_native(n->type()) && !type_is_nested(n->type()))
-                    {
+                        buf << escape(as_pretty_json(*n, lvl + 1));
                         buf << "\"";
+                    }
+                    else 
+                    {
+                        buf << as_pretty_json(*n, lvl + 1);
                     }
                     buf << ",\n";
                 };
