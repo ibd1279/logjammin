@@ -63,10 +63,6 @@ namespace lj
                     {
                         r.push_back('\\');
                     }
-                    else if (c == '\n')
-                    {
-                        r.append("\\n\\");
-                    }
                     r.push_back(c);
                 }
                 return r;
