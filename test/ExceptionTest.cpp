@@ -1,5 +1,5 @@
 /* 
- * File:   lj_Exception.cpp
+ * File:   ExceptionTest.cpp
  * Author: jwatson
  *
  * Created on May 10, 2011, 11:46:43 PM
@@ -7,6 +7,7 @@
 
 #include "testhelper.h"
 #include "lj/Exception.h"
+#include "test/ExceptionTest_driver.h"
 
 void testException() {
     lj::Exception exception("Test System", "Sample Message");
@@ -16,10 +17,6 @@ void testException() {
 }
 
 int main(int argc, char** argv) {
-    const Test_entry tests[] = {
-        PREPARE_TEST(testException),
-        {0, ""}
-    };
     return Test_util::runner("lj::ExceptionTest", tests);
 }
 

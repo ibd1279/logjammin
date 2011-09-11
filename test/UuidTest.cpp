@@ -7,6 +7,7 @@
 
 #include "testhelper.h"
 #include "lj/Uuid.h"
+#include "test/UuidTest_driver.h"
 
 void testStr()
 {
@@ -86,15 +87,6 @@ void testVersion5()
 
 int main(int argc, char** argv)
 {
-    const Test_entry tests[] = {
-        PREPARE_TEST(testStr),
-        PREPARE_TEST(testRandom),
-        PREPARE_TEST(testData),
-        PREPARE_TEST(testNamespaceDNS),
-        PREPARE_TEST(testNamespaceURL),
-        PREPARE_TEST(testVersion5),
-        {0, ""}
-    };
     return Test_util::runner("lj::UuidTest", tests);
 }
 

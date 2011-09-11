@@ -1,5 +1,5 @@
 /* 
- * File:   lj__DocumentTest.cpp
+ * File:   DocumentTest.cpp
  * Author: jwatson
  *
  * Created on Jun 13, 2011, 10:28:02 PM
@@ -8,6 +8,7 @@
 #include "testhelper.h"
 #include "lj/Document.h"
 #include "scrypt/scrypt.h"
+#include "test/DocumentTest_driver.h"
 
 struct sample_data
 {
@@ -148,15 +149,6 @@ void testEncrypt()
 
 int main(int argc, char** argv)
 {
-    const Test_entry tests[] = {
-        PREPARE_TEST(testIncrement),
-        PREPARE_TEST(testRekey),
-        PREPARE_TEST(testSuppress),
-        PREPARE_TEST(testVersion),
-        PREPARE_TEST(testWash),
-        PREPARE_TEST(testEncrypt),
-        {0, ""}
-    };
     return Test_util::runner("lj::Document", tests);
 }
 

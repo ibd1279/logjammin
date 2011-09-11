@@ -1,6 +1,5 @@
 /* 
- * File:   lj_base64.cpp
- * Author: jwatson
+ * File:   Stage_preTest.cpp
  *
  * Created on May 11, 2011, 12:17:37 AM
  */
@@ -15,6 +14,8 @@
 #include "logjamd/mock_server.h"
 #include <memory>
 #include <sstream>
+
+#include "test/logjamd/Stage_preTest_driver.h"
 
 void testBSON()
 {
@@ -94,13 +95,6 @@ void testUnknown()
 
 int main(int argc, char** argv)
 {
-    const Test_entry tests[] = {
-        PREPARE_TEST(testBSON),
-        PREPARE_TEST(testJSON),
-        PREPARE_TEST(testHTTP),
-        PREPARE_TEST(testUnknown),
-        {0, ""}
-    };
     return Test_util::runner("logjamd::Stage_pre", tests);
 }
 

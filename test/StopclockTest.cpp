@@ -1,5 +1,5 @@
 /* 
- * File:   lj_StopclockTest.cpp
+ * File:   StopclockTest.cpp
  * Author: jwatson
  *
  * Created on May 18, 2011, 10:02:49 PM
@@ -12,6 +12,7 @@
 #include "lj/Stopclock.h"
 #include "lj/Uuid.h"
 #include "testhelper.h"
+#include "test/StopclockTest_driver.h"
 
 void testNormal()
 {
@@ -80,12 +81,6 @@ void testRestart()
 
 int main(int argc, char** argv)
 {
-    const Test_entry tests[] = {
-        PREPARE_TEST(testNormal),
-        PREPARE_TEST(testStop),
-        PREPARE_TEST(testRestart),
-        {0, ""}
-    };
     return Test_util::runner("lj::StopclockTest", tests);
 }
 

@@ -1,4 +1,6 @@
 # vim: filetype=python
+import re
+
 APPNAME = 'logjammin'
 VERSION = '0.2.0'
 top = '.'
@@ -131,13 +133,27 @@ def build(bld):
     )
 
     # preform the unit tests
-    testnodes = bld.path.ant_glob('test/**/*.cpp')
-    for node in testnodes:
+
+    test_pattern = re.compile("void test(\w+)\s*\(\s*\)")
+    test_nodes = bld.path.ant_glob('test/**/*.cpp')
+    for node in test_nodes:
+        drivernode = node.change_ext('_driver.h', '.cpp')
+        cases = re.findall(test_pattern, node.read())
+        output = ['#include "testhelper.h"']
+        for case in cases:
+            output.append('void test' + case + '();')
+        output.append('const Test_entry tests[] = {')
+        for case in cases:
+            output.append('  PREPARE_TEST(test' + case + '),')
+        output.append('  {0, ""} };')
+        code = '\n'.join(output)
+        drivernode.write(code)
         bld(
             features = ['cxx', 'cxxprogram', 'test']
             ,includes = [
                 './test'
                 ,'./src'
+                ,'./build'
             ]
             ,source = [node]
             ,target = node.change_ext('')

@@ -1,5 +1,5 @@
 /* 
- * File:   lj_base64.cpp
+ * File:   Auth_localTest.cpp
  * Author: jwatson
  *
  * Created on May 11, 2011, 12:17:37 AM
@@ -9,6 +9,8 @@
 #include "logjamd/Auth.h"
 #include "logjamd/Auth_local.h"
 #include "logjamd/constants.h"
+
+#include "test/logjamd/Auth_localTest_driver.h"
 
 using namespace logjamd;
 
@@ -92,13 +94,6 @@ void testAuth_method_change_creds()
 }
 int main(int argc, char** argv)
 {
-    const Test_entry tests[] = {
-        PREPARE_TEST(testAuth_registry_enable),
-        PREPARE_TEST(testAuth_provider_method),
-        PREPARE_TEST(testAuth_method_authenticate),
-        PREPARE_TEST(testAuth_method_change_creds),
-        {0, ""}
-    };
     return Test_util::runner("logjamd::Auth_local", tests);
 }
 

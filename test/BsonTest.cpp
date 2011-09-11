@@ -1,5 +1,5 @@
 /* 
- * File:   lj__bsonTest.cpp
+ * File:   BsonTest.cpp
  * Author: jwatson
  *
  * Created on Jun 1, 2011, 11:22:46 PM
@@ -9,9 +9,7 @@
 #include "lj/Bson.h"
 #include "lj/Log.h"
 #include <sstream>
-/*
- * Simple C++ Test Suite
- */
+#include "test/BsonTest_driver.h"
 
 struct sample_doc
 {
@@ -716,45 +714,6 @@ void testType_min_size()
 }
 int main(int argc, char** argv)
 {
-    const Test_entry tests[] = {
-        PREPARE_TEST(testCopy_from),
-        PREPARE_TEST(testAssignment),
-        PREPARE_TEST(testAssignmentCrossTypes),
-        PREPARE_TEST(testIstreamExtraction),
-        PREPARE_TEST(testNullify),
-        PREPARE_TEST(testPath),
-        PREPARE_TEST(testPath2),
-        PREPARE_TEST(testSize),
-        PREPARE_TEST(testExists),
-        PREPARE_TEST(testNav),
-        PREPARE_TEST(testNav2),
-        PREPARE_TEST(testTo_binary),
-        PREPARE_TEST(testTo_map),
-        PREPARE_TEST(testTo_value),
-        PREPARE_TEST(testTo_vector),
-        PREPARE_TEST(testType),
-        PREPARE_TEST(testParse),
-        PREPARE_TEST(testAs_binary),
-        PREPARE_TEST(testAs_boolean),
-        PREPARE_TEST(testAs_debug_string),
-        PREPARE_TEST(testAs_string),
-        PREPARE_TEST(testAs_pretty_json),
-        PREPARE_TEST(testAs_int32),
-        PREPARE_TEST(testAs_int64),
-        PREPARE_TEST(testAs_uint64),
-        PREPARE_TEST(testAs_uuid),
-        PREPARE_TEST(testEscape_path),
-        PREPARE_TEST(testIncrement),
-        PREPARE_TEST(testBinary_type_string),
-        PREPARE_TEST(testType_string),
-        PREPARE_TEST(testType_is_native),
-        PREPARE_TEST(testType_is_nested),
-        PREPARE_TEST(testType_is_number),
-        PREPARE_TEST(testType_is_quotable),
-        PREPARE_TEST(testType_is_value),
-        PREPARE_TEST(testType_min_size),
-        {0, ""}
-    };
     return Test_util::runner("lj::bson", tests);
 }
 

@@ -1,6 +1,5 @@
 /* 
- * File:   lj_base64.cpp
- * Author: jwatson
+ * File:   Stage_executeTest.cpp
  *
  * Created on May 11, 2011, 12:17:37 AM
  */
@@ -10,6 +9,8 @@
 #include "logjamd/mock_server.h"
 #include "logjamd/Stage_execute.h"
 #include "logjamd/constants.h"
+
+#include "test/logjamd/Stage_executeTest_driver.h"
 
 void testBasicCommands()
 {
@@ -45,10 +46,6 @@ print (Uuid:new())"));
 
 int main(int argc, char** argv)
 {
-    const Test_entry tests[] = {
-        PREPARE_TEST(testBasicCommands),
-        {0, ""}
-    };
     return Test_util::runner("logjamd::Stage_execute", tests);
 }
 

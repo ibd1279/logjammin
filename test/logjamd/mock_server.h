@@ -1,3 +1,7 @@
+/*!
+ \file mock_server.h
+ \brief Header for a mocked out logjamd server implementation.
+ */
 #include "lj/Log.h"
 #include "lj/Streambuf_pipe.h"
 #include "logjamd/Auth.h"

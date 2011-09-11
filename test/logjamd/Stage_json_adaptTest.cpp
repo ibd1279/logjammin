@@ -1,6 +1,5 @@
 /* 
- * File:   lj_base64.cpp
- * Author: jwatson
+ * File:   Stage_json_adaptTest.cpp
  *
  * Created on May 11, 2011, 12:17:37 AM
  */
@@ -12,6 +11,7 @@
 #include "logjamd/Stage_pre.h"
 #include "logjamd/constants.h"
 
+#include "test/logjamd/Stage_json_adaptTest_driver.h"
 void testJsonAuthInsecure()
 {
     // Create the mock request.
@@ -40,10 +40,6 @@ void testJsonAuthInsecure()
 
 int main(int argc, char** argv)
 {
-    const Test_entry tests[] = {
-        PREPARE_TEST(testJsonAuthInsecure),
-        {0, ""}
-    };
     return Test_util::runner("logjamd::Stage_json_adapt", tests);
 }
 

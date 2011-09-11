@@ -1,6 +1,5 @@
 /* 
- * File:   Log_test.cpp
- * Author: jwatson
+ * File:   LogTest.cpp
  *
  * Created on May 13, 2011, 7:48:07 PM
  */
@@ -13,6 +12,7 @@
 #include <iostream>
 #include <sstream>
 #include <thread>
+#include "test/LogTest_driver.h"
 
 void testWrite_disable()
 {
@@ -124,17 +124,6 @@ void testLogException()
 
 int main(int argc, char** argv)
 {
-    const Test_entry tests[] = {
-        PREPARE_TEST(testWrite_disable),
-        PREPARE_TEST(testWrite_string),
-        PREPARE_TEST(testWrite_signed_int),
-        PREPARE_TEST(testWrite_unsigned_int),
-        PREPARE_TEST(testWrite_bool),
-        PREPARE_TEST(testWrite_pointer),
-        PREPARE_TEST(testWrite_exception),
-        PREPARE_TEST(testLogException),
-        {0, ""}
-    };
     return Test_util::runner("lj::LogTest", tests);
 }
 

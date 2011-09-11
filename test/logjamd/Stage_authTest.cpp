@@ -1,6 +1,5 @@
 /* 
- * File:   lj_base64.cpp
- * Author: jwatson
+ * File:   Stage_authTest.cpp
  *
  * Created on May 11, 2011, 12:17:37 AM
  */
@@ -13,6 +12,8 @@
 #include "logjamd/User.h"
 #include "logjamd/Stage_auth.h"
 #include "logjamd/constants.h"
+
+#include "test/logjamd/Stage_authTest_driver.h"
 
 void testSuccess()
 {
@@ -136,13 +137,6 @@ void testUnknownProvider()
 
 int main(int argc, char** argv)
 {
-    const Test_entry tests[] = {
-        PREPARE_TEST(testSuccess),
-        PREPARE_TEST(testBadData),
-        PREPARE_TEST(testUnknownMethod),
-        PREPARE_TEST(testUnknownProvider),
-        {0, ""}
-    };
     return Test_util::runner("logjamd::Stage_auth", tests);
 }
 

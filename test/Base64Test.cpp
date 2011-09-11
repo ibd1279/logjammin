@@ -1,12 +1,12 @@
 /* 
- * File:   lj_base64.cpp
- * Author: jwatson
+ * File:   Base64Test.cpp
  *
  * Created on May 11, 2011, 12:17:37 AM
  */
 
 #include "testhelper.h"
 #include "lj/Base64.h"
+#include "test/Base64Test_driver.h"
 
 void testBase64()
 {
@@ -25,10 +25,6 @@ void testBase64()
 
 int main(int argc, char** argv)
 {
-    const Test_entry tests[] = {
-        PREPARE_TEST(testBase64),
-        {0, ""}
-    };
     return Test_util::runner("lj::Base64", tests);
 }
 

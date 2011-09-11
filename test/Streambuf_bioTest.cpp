@@ -1,5 +1,5 @@
 /* 
- * File:   lj_base64.cpp
+ * File:   Streambuf_bioTest.cpp
  * Author: jwatson
  *
  * Created on May 11, 2011, 12:17:37 AM
@@ -11,6 +11,8 @@
 #include <istream>
 #include <ostream>
 #include <fstream>
+
+#include "test/Streambuf_bioTest_driver.h"
 
 #define MEM_LENGTH (1024*1024)
 
@@ -87,11 +89,6 @@ void testWrite()
 
 int main(int argc, char** argv)
 {
-    const Test_entry tests[] = {
-        PREPARE_TEST(testRead),
-        PREPARE_TEST(testWrite),
-        {0, ""}
-    };
     return Test_util::runner("lj::Base64", tests);
 }
 

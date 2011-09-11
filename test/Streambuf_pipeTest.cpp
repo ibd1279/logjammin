@@ -1,5 +1,5 @@
 /* 
- * File:   lj_base64.cpp
+ * File:   Streambuf_pipeTest.cpp
  * Author: jwatson
  *
  * Created on May 11, 2011, 12:17:37 AM
@@ -11,6 +11,8 @@
 #include <istream>
 #include <ostream>
 #include <fstream>
+
+#include "test/Streambuf_pipeTest_driver.h"
 
 #define MEM_LENGTH (1024*1024)
 
