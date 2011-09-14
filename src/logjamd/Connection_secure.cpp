@@ -70,7 +70,9 @@ namespace logjamd
 
     void Connection_secure::start()
     {
-        thread_ = new std::thread([this]() { this->execute(); });
+        thread_ = new lj::Thread();
+        thread_->run([this]() { this->execute(); },
+                [this]() { lj::Log::debug.log("Connection Thread Exited."); });
     }
 
     void Connection_secure::execute()

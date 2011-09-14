@@ -33,6 +33,7 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "lj/Thread.h"
 #include "logjamd/Connection.h"
 #include "crypto++/secblock.h"
 #include <map>
@@ -61,12 +62,12 @@ namespace logjamd
         virtual const void* get_crypto_key(const std::string& identifier,
                 int* sz);
     protected:
-        inline std::thread& thread()
+        inline lj::Thread& thread()
         {
             return *thread_;
         }
     private:
-        std::thread* thread_;
+        lj::Thread* thread_;
         bool secure_;
         std::map<std::string, CryptoPP::SecBlock<uint8_t>* > keys_;
     };
