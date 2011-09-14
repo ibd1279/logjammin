@@ -9,7 +9,7 @@
 #include "logjamd/Server.h"
 #include "logjamd/Connection.h"
 #include "logjamd/constants.h"
-#include "crypto++/secblock.h"
+#include "cryptopp/secblock.h"
 
 #include <cstdio>
 #include <cstring>

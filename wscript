@@ -39,7 +39,7 @@ def configure(conf):
     )
 
     conf.check(
-        header_name='lua5.1/lua.hpp'
+        header_name='lua.hpp'
         ,lib=['lua5.1']
         ,libpath=['/usr/local/lib', '/opt/local/lib', '/usr/lib']
         ,includes=[
@@ -51,8 +51,8 @@ def configure(conf):
     )
     
     conf.check(
-        header_name='crypto++/cryptlib.h'
-        ,lib=['crypto++']
+        header_name='cryptopp/cryptlib.h'
+        ,lib=['cryptopp']
         ,libpath=['/usr/local/lib', '/opt/local/lib', '/usr/lib']
         ,includes=[
             '/usr/local/include'
@@ -92,7 +92,7 @@ def build(bld):
         ]
         ,linkflags = ['-g']
         ,uselib = ['OPENSSL/SSL.H'
-            ,'CRYPTO++/CRYPTLIB.H']
+            ,'CRYPTOPP/CRYPTLIB.H']
     )
 
     bld.stlib(
@@ -117,7 +117,7 @@ def build(bld):
         ]
         ,linkflags = ['-g']
         ,use = ['lj']
-        ,uselib = ['OPENSSL/SSL.H', 'PTHREAD.H', 'LUA5.1/LUA.HPP']
+        ,uselib = ['OPENSSL/SSL.H', 'PTHREAD.H', 'LUA.HPP']
     )
 
     bld.program(

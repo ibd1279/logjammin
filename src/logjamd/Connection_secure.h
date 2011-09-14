@@ -35,7 +35,7 @@
 
 #include "lj/Thread.h"
 #include "logjamd/Connection.h"
-#include "crypto++/secblock.h"
+#include "cryptopp/secblock.h"
 #include <map>
 #include <string>
 #include <thread>

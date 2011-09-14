@@ -35,7 +35,7 @@
 
 #include "logjamd/Command_language.h"
 #include "lua/Bson.h"
-#include "lua5.1/lua.hpp"
+#include "lua.hpp"
 
 namespace lua
 {

@@ -36,11 +36,11 @@
 #include "lj/Bson.h"
 #include "lj/Uuid.h"
 
-#include "crypto++/aes.h"
-#include "crypto++/eax.h"
-#include "crypto++/filters.h"
-#include "crypto++/osrng.h"
-#include "crypto++/secblock.h"
+#include "cryptopp/aes.h"
+#include "cryptopp/eax.h"
+#include "cryptopp/filters.h"
+#include "cryptopp/osrng.h"
+#include "cryptopp/secblock.h"
 
 #include <cstdint>
 #include <string>
