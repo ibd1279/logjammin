@@ -368,39 +368,102 @@ namespace lj
 
     //! Wrapper to execute a function and log exceptions.
     /*!
+     \par
+     If this is found to be useful beyond some thread stuff, it might be worth
+     making it more robust. Like capturing return types, etc.
      \author Jason Watson <jwatson@slashopt.net>
      \date June 25, 2011
      */
-    template <class F>
-    class Log_exception
+    class Catch_and_log
     {
     public:
-        Log_exception(lj::Log& log, F func) : log_(log), func_(func)
+        //! Create a new wrapper.
+        /*!
+         \par
+         The logger provided is used to writing all caught exceptions.
+         \param log The output log.
+         */
+        Catch_and_log(lj::Log& log) : log_(log)
         {
         }
 
-        void operator()()
+        //! Attempt a function.
+        /*!
+         \par
+         Attempt to execute a function. If the function is successful,
+         nothing is written to the logs and \c true is returned. If the
+         function call is unsuccessful, the exception is written to the logs
+         and \c false is returned.
+         \tparam F Function type. Can be a functor, a function, or a lambda.
+         \param func The function to call. Must take zero arguments.
+         \return true if the call was successful, false otherwise.
+         */
+        template <class F>
+        bool attempt(F func)
         {
             try
             {
-                func_();
+                func();
             }
             catch (const std::exception& ex)
             {
                 log_("Unhandled exception: %s") << ex << Log::end;
+                return false;
             }
             catch (std::exception* ex)
             {
                 log_("Unhandled exception: %s") << *ex << Log::end;
                 delete ex;
+                return false;
             }
             catch (...)
             {
                 log_("Unhandled exception of unknown type.") << Log::end;
+                return false;
             }
+            return true;
         }
+
+        //! Attempt a method.
+        /*!
+         \par
+         Attempt to execute a method. If the method is successful,
+         nothing is written to the logs and \c true is returned. If the
+         method call is unsuccessful, the exception is written to the logs
+         and \c false is returned.
+         \tparam T Type of the object.
+         \tparam F Type of the method on the object.
+         \param obj The object reference to call the method on.
+         \param func The method to invoke on the object.
+         \return true if the call was successful, false otherwise.
+         */
+        template <class T, class F>
+        bool attempt(T& obj, F (T::*func)())
+        {
+            try
+            {
+                (obj.*(func))();
+            }
+            catch (const std::exception& ex)
+            {
+                log_("Unhandled exception: %s") << ex << Log::end;
+                return false;
+            }
+            catch (std::exception* ex)
+            {
+                log_("Unhandled exception: %s") << *ex << Log::end;
+                delete ex;
+                return false;
+            }
+            catch (...)
+            {
+                log_("Unhandled exception of unknown type.") << Log::end;
+                return false;
+            }
+            return true;
+        }
+
     private:
         Log& log_;
-        F func_;
     };
 }; // namespace lj

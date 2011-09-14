@@ -102,23 +102,48 @@ void testWrite_exception()
     TEST_ASSERT(std::string(expected).compare(buffer.str()) == 0);
 }
 
-void testLogException()
+void testCatch_and_log_1()
 {
     std::ostringstream buffer;
     lj::Log logger(lj::Log::Level::k_alert, &buffer);
-    std::thread t(lj::Log_exception<void (*)()>(logger, []()
+    lj::Catch_and_log foo(logger);
+    foo.attempt([] ()
     {
-        lj::Uuid* ptr = new lj::Uuid();
-        for (int h = 0; h < 100; ++h)
-        {
-            delete ptr;
-            ptr = new lj::Uuid();
-        }
-        delete ptr;
         throw LJ__Exception("random fail");
-    }));
-    t.join();
+    });
     std::string expected("[ALERT]       Unhandled exception: ../test/LogTest.cpp Exception: operator() - random fail\n");
+    TEST_ASSERT(expected.compare(buffer.str()) == 0);
+}
+
+void random_fail()
+{
+    throw LJ__Exception("random fail");
+}
+void testCatch_and_log_2()
+{
+    std::ostringstream buffer;
+    lj::Log logger(lj::Log::Level::k_alert, &buffer);
+    lj::Catch_and_log foo(logger);
+    foo.attempt(random_fail);
+    std::string expected("[ALERT]       Unhandled exception: ../test/LogTest.cpp Exception: random_fail - random fail\n");
+    TEST_ASSERT(expected.compare(buffer.str()) == 0);
+}
+
+struct random_obj
+{
+    void random_fail()
+    {
+        throw LJ__Exception("random fail");
+    }
+};
+void testCatch_and_log_3()
+{
+    std::ostringstream buffer;
+    lj::Log logger(lj::Log::Level::k_alert, &buffer);
+    lj::Catch_and_log foo(logger);
+    random_obj obj;
+    foo.attempt(obj, &random_obj::random_fail);
+    std::string expected("[ALERT]       Unhandled exception: ../test/LogTest.cpp Exception: random_fail - random fail\n");
     TEST_ASSERT(expected.compare(buffer.str()) == 0);
 }
 
