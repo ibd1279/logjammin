@@ -34,18 +34,14 @@
 
 #include "Uuid.h"
 
+#include "cryptopp/sha.h"
+
 #include <cstdlib>
 #include <ios>
 #include <iostream>
 #include <list>
 #include <fstream>
 #include <sstream>
-
-extern "C"
-{
-#include <openssl/ssl.h>
-#include <openssl/err.h>
-}
 
 namespace lj
 {
@@ -155,13 +151,12 @@ namespace lj
         size_t ns_sz;
         const uint8_t* ns_ptr = ns.data(&ns_sz);
         
-        SHA_CTX ctx;
-        SHA1_Init(&ctx);
-        SHA1_Update(&ctx, ns_ptr, ns_sz);
-        SHA1_Update(&ctx, name, name_sz);
-        
-        uint8_t tmp[20];
-        SHA1_Final(tmp, &ctx);
+        CryptoPP::SHA hash;
+        hash.Update(ns_ptr, ns_sz);
+        hash.Update(static_cast<const uint8_t*>(name), name_sz);
+
+        uint8_t tmp[CryptoPP::SHA::DIGESTSIZE];
+        hash.Final(tmp);
         memcpy(data_, tmp, 16);
         
         data_[6] &= 0x0f; // time high/ver.
