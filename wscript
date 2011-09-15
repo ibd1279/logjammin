@@ -60,6 +60,19 @@ def configure(conf):
 
     conf.write_config_header('config.h')
 
+def make_test_driver(node, test_pattern):
+    drivernode = node.change_ext('_driver.h', '.cpp')
+    cases = re.findall(test_pattern, node.read())
+    output = ['#pragma once', '#include "testhelper.h"']
+    for case in cases:
+        output.append('void test' + case + '();')
+    output.append('const Test_entry tests[] = {')
+    for case in cases:
+        output.append('  PREPARE_TEST(test' + case + '),')
+    output.append('  {0, ""} };')
+    code = '\n'.join(output)
+    drivernode.write(code)
+
 def build(bld):
     bld.load('compiler_cxx')
     bld.load('waf_unit_test')
@@ -134,17 +147,7 @@ def build(bld):
     test_pattern = re.compile("void test(\w+)\s*\(\s*\)")
     test_nodes = bld.path.ant_glob('test/**/*.cpp')
     for node in test_nodes:
-        drivernode = node.change_ext('_driver.h', '.cpp')
-        cases = re.findall(test_pattern, node.read())
-        output = ['#include "testhelper.h"']
-        for case in cases:
-            output.append('void test' + case + '();')
-        output.append('const Test_entry tests[] = {')
-        for case in cases:
-            output.append('  PREPARE_TEST(test' + case + '),')
-        output.append('  {0, ""} };')
-        code = '\n'.join(output)
-        drivernode.write(code)
+        make_test_driver(node, test_pattern)
         bld(
             features = ['cxx', 'cxxprogram', 'test']
             ,includes = [
@@ -154,6 +157,7 @@ def build(bld):
             ]
             ,source = [node]
             ,target = node.change_ext('')
+            ,args = ['foo']
             ,use = ['lj', 'logjamserver']
             ,cxxflags = [
                 '-O0'
