@@ -84,6 +84,16 @@ void testVersion5()
     TEST_ASSERT(result3 != result4);
 }
 
+void testInteger()
+{
+    uint64_t expected = 0xFFFFFFFFFFFFFFFFULL;
+    lj::Uuid foo(expected);
+    uint64_t result = static_cast<uint64_t>(foo);
+    TEST_ASSERT(expected == result);
+    foo = lj::Uuid(static_cast<uint64_t>(0));
+    result = static_cast<uint64_t>(foo);
+    TEST_ASSERT(0 == result);
+}
 
 int main(int argc, char** argv)
 {

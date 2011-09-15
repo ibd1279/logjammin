@@ -97,12 +97,23 @@ namespace lj
         //! Version 5 constructor.
         /*!
          \par
-         The namespace and identifier are hased to create a version 5 UUID.
+         The namespace and name are hased to create a version 5 UUID.
          \param ns The namespace uuid
          \param name The name.
          \param name_sz The length of the id byte array.
          */
         Uuid(const Uuid& ns, const void* name, const size_t name_sz);
+
+        //! Version 5 constructor.
+        /*!
+         \par
+         The namespace and name are hased to create a version 5 UUID.
+         Identical to Uuid::Uuid(const Uuid&, const void*, const size_t)
+         except that it gets the size from the string.
+         \param ns The namespace uuid
+         \param name The name.
+         */
+        Uuid(const Uuid& ns, const std::string& name);
 
         //! Id constructor.
         /*!

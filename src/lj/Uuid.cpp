@@ -35,6 +35,7 @@
 #include "Uuid.h"
 
 #include "cryptopp/sha.h"
+#include "cryptopp/osrng.h"
 
 #include <cstdlib>
 #include <ios>
@@ -53,11 +54,8 @@ namespace lj
     
     Uuid::Uuid()
     {
-        std::ifstream rand("/dev/urandom");
-        for (int i = 0; i < 16; ++i)
-        {
-            data_[i] = static_cast<uint8_t>(rand.get() & 0xffULL);
-        }
+        CryptoPP::AutoSeededRandomPool rng;
+        rng.GenerateBlock(data_, 16);
 
         // setting the version.
         data_[6] &= 0x0f;
@@ -165,6 +163,25 @@ namespace lj
         data_[8] |= 0x80;
     }
 
+    Uuid::Uuid(const Uuid& ns, const std::string& name)
+    {
+        size_t ns_sz;
+        const uint8_t* ns_ptr = ns.data(&ns_sz);
+        
+        CryptoPP::SHA hash;
+        hash.Update(ns_ptr, ns_sz);
+        hash.Update(reinterpret_cast<const uint8_t*>(name.data()), name.size());
+
+        uint8_t tmp[CryptoPP::SHA::DIGESTSIZE];
+        hash.Final(tmp);
+        memcpy(data_, tmp, 16);
+        
+        data_[6] &= 0x0f; // time high/ver.
+        data_[6] |= 0x50;
+        data_[8] &= 0x3f; //clock seq high/reserved
+        data_[8] |= 0x80;
+    }
+
     Uuid::Uuid(const uint64_t o)
     {
         // Load the provided key into the data array, avoiding
@@ -180,13 +197,12 @@ namespace lj
         data_[8] = static_cast<uint8_t>((o & 0x000000000000000fULL) << 2ULL);
 
         // Populate everything else with random values.
-        std::ifstream rand("/dev/urandom");
-        data_[8] |= static_cast<uint8_t>(rand.get() & 0x03ULL);
+        CryptoPP::AutoSeededRandomPool rng;
+        rng.GenerateBlock(data_ + 8, 8);
 
-        for (int i = 9; i < 16; ++i)
-        {
-            data_[i] = static_cast<uint8_t>(rand.get() & 0xffULL);
-        }
+        // Store some data in byte 9.
+        data_[8] &= 0x03;
+        data_[8] |= static_cast<uint8_t>((o & 0x000000000000000fULL) << 2ULL);
 
         // setting the version.
         data_[6] &= 0x0f;
