@@ -38,27 +38,23 @@ def configure(conf):
         mandatory=True
     )
 
-    conf.check(
-        header_name='lua.hpp'
-        ,lib=['lua5.1']
-        ,libpath=['/usr/local/lib', '/opt/local/lib', '/usr/lib']
-        ,includes=[
-            '/usr/local/include'
-            ,'/opt/local/include'
-            ,'/usr/include'
+    conf.check_cfg(
+        package='lua5.1'
+        ,args=[
+            '--cflags'
+            ,'--libs'
         ]
+        ,uselib_store='LUA'
         ,mandatory=True
     )
-    
-    conf.check(
-        header_name='cryptopp/cryptlib.h'
-        ,lib=['cryptopp']
-        ,libpath=['/usr/local/lib', '/opt/local/lib', '/usr/lib']
-        ,includes=[
-            '/usr/local/include'
-            ,'/opt/local/include'
-            ,'/usr/include'
+
+    conf.check_cfg(
+        package='libcrypto++'
+        ,args=[
+            '--cflags'
+            ,'--libs'
         ]
+        ,uselib_store='CRYPTOPP'
         ,mandatory=True
     )
 
@@ -92,7 +88,7 @@ def build(bld):
         ]
         ,linkflags = ['-g']
         ,uselib = ['OPENSSL/SSL.H'
-            ,'CRYPTOPP/CRYPTLIB.H']
+            ,'CRYPTOPP']
     )
 
     bld.stlib(
@@ -117,7 +113,7 @@ def build(bld):
         ]
         ,linkflags = ['-g']
         ,use = ['lj']
-        ,uselib = ['OPENSSL/SSL.H', 'PTHREAD.H', 'LUA.HPP']
+        ,uselib = ['OPENSSL/SSL.H', 'PTHREAD.H', 'LUA']
     )
 
     bld.program(
