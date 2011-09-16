@@ -147,9 +147,20 @@ def build(bld):
         ,use = ['lj', 'logjamserver']
     )
 
-    # preform the unit tests
+    # prepare the lua testing headers:
+    quotes = re.compile("\"")
+    newline = re.compile(r"\n")
+    escape = re.compile(r"\\")
+    lua_nodes = bld.path.ant_glob('test/lua/*.lua')
+    for node in lua_nodes:
+        tmp = node.read()
+        tmp = re.sub(escape, r"\\\\", tmp)
+        tmp = re.sub(quotes, r"\"", tmp)
+        tmp = re.sub(newline, r"\\n\\\n", tmp)
+        node.change_ext('_lua.h', '.lua').write("\"" + tmp + "\"\n")
 
-    test_pattern = re.compile("void test(\w+)\s*\(\s*\)")
+    # preform the unit tests
+    test_pattern = re.compile(r"void test(\w+)\s*\(\s*\)")
     test_nodes = bld.path.ant_glob('test/**/*.cpp')
     for node in test_nodes:
         make_test_driver(node, test_pattern)
