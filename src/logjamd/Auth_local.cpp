@@ -61,6 +61,12 @@ namespace logjamd
     }
     Auth_method_password_hash::~Auth_method_password_hash()
     {
+        for (auto iter = users_by_id_.begin();
+                users_by_id_.end() != iter;
+                ++iter)
+        {
+            delete (*iter).second;
+        }
     }
     User* Auth_method_password_hash::authenticate(const lj::bson::Node& data)
     {

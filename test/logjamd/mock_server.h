@@ -123,10 +123,12 @@ public:
 class Connection_mock : public logjamd::Connection
 {
 private:
+    logjamd::Server* server_;
     std::map<std::string, CryptoPP::SecBlock<uint8_t>*> keys_;
 public:
     Connection_mock(std::iostream* stream) :
             logjamd::Connection(new Server_mock(), new lj::bson::Node(), stream),
+            server_(&server()),
             keys_()
     {
     }
@@ -138,6 +140,7 @@ public:
         {
             delete (*iter).second;
         }
+        delete server_;
     }
     virtual void start()
     {
