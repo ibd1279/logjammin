@@ -148,16 +148,20 @@ def build(bld):
     )
 
     # prepare the lua testing headers:
-    quotes = re.compile("\"")
-    newline = re.compile(r"\n")
-    escape = re.compile(r"\\")
     lua_nodes = bld.path.ant_glob('test/lua/*.lua')
+    lua_files = [
+        '#include <string>',
+        '#include <map>',
+        'const std::map<std::string, std::string> lua_files {'
+    ]
     for node in lua_nodes:
-        tmp = node.read()
-        tmp = re.sub(escape, r"\\\\", tmp)
-        tmp = re.sub(quotes, r"\"", tmp)
-        tmp = re.sub(newline, r"\\n\\\n", tmp)
-        node.change_ext('_lua.h', '.lua').write("\"" + tmp + "\"\n")
+        lua_files.append(
+            "    {\"" + node.abspath().rsplit('/', 1)[-1] + "\"," +
+            "\"" + node.abspath() + "\"},"
+        )
+    lua_files.append("    {\"\", \"\"}};")
+    lua_files.append("const std::string& path_for(const std::string& f){auto i=lua_files.find(f);return(i != lua_files.end()?i->second:lua_files.find(\"\")->second);}")
+    bld.path.make_node("build/test/lua_files.h").write('\n'.join(lua_files));
 
     # preform the unit tests
     test_pattern = re.compile(r"void test(\w+)\s*\(\s*\)")
