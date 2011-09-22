@@ -93,6 +93,46 @@ namespace
 
         return 1;
     }
+
+    int simple_assert(lua_State* L)
+    {
+        int top = lua_gettop(L);
+
+        // Ignore empty asserts.
+        if (top == 0)
+        {
+            return 0;
+        }
+        else if (top > 2)
+        {
+            luaL_error(L, "Assert called with too many args.");
+        }
+
+        // First argument must be a boolean.
+        if (!lua_isboolean(L, 1))
+        {
+            luaL_error(L, "Assert requires a boolean type.");
+        }
+
+        if (lua_toboolean(L, 1) == true)
+        {
+            lua_pop(L, top);
+        }
+        else
+        {
+            if (top == 1)
+            {
+                luaL_error(L, "Assert failed.");
+            }
+            else
+            {
+                // top of the stack is already the error message.
+                lua_error(L);
+            }
+        }
+
+        return 0;
+    }
 };
 
 namespace lua
@@ -117,6 +157,9 @@ namespace lua
         lua_pushlightuserdata(L, conn);
         lua_pushcclosure(L, &get_crypto_key, 1);
         lua_setglobal(L, "get_crypto_key");
+
+        lua_pushcfunction(L, &simple_assert);
+        lua_setglobal(L, "ASSERT");
 
         // Put the connection state in the scope.
         Lunar<Bson>::push(L, state_, false);
