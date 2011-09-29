@@ -44,6 +44,7 @@ namespace lua
         ,LUNAR_METHOD(Bson, nullify)
         ,LUNAR_METHOD(Bson, path)
         ,LUNAR_METHOD(Bson, set_null)
+        ,LUNAR_METHOD(Bson, set_document)
         ,LUNAR_METHOD(Bson, set_array)
         ,LUNAR_METHOD(Bson, set_boolean)
         ,LUNAR_METHOD(Bson, set_string)
@@ -123,19 +124,55 @@ namespace lua
         return 0;
     }
 
-    int Bson::set_array(lua_State* L)
+    int Bson::set_document(lua_State* L)
     {
-        std::string tmp(lua::as_string(L, -1));
+        int top = lua_gettop(L);
+        std::string tmp(lua::as_string(L, 1));
         try
         {
-            node_.set_child(tmp,
-                    new lj::bson::Node(lj::bson::Type::k_array, NULL));
+            if (top == 2)
+            {
+                Bson* val = Lunar<Bson>::check(L, 2);
+                node_.set_child(tmp,
+                        new lj::bson::Node(val->node()));
+            }
+            else
+            {
+                node_.set_child(tmp, new lj::bson::Node());
+            }
         }
         catch (lj::Exception& ex)
         {
             lua_pushstring(L, ex.str().c_str());
             lua_error(L);
         }
+        lua_pop(L, top);
+        return 0;
+    }
+
+    int Bson::set_array(lua_State* L)
+    {
+        int top = lua_gettop(L);
+        std::string tmp(lua::as_string(L, -1));
+        try
+        {
+            if (top == 2)
+            {
+                Bson* val = Lunar<Bson>::check(L, 2);
+                node_.set_child(tmp,
+                        new lj::bson::Node(val->node()));
+            }
+            else
+            {
+                node_.set_child(tmp, lj::bson::new_array());
+            }
+        }
+        catch (lj::Exception& ex)
+        {
+            lua_pushstring(L, ex.str().c_str());
+            lua_error(L);
+        }
+        lua_pop(L, top);
         return 0;
     }
 
