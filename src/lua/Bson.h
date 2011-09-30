@@ -42,12 +42,14 @@ namespace lua
     class Bson
     {
     private:
-        lj::bson::Node node_;
+        std::shared_ptr<lj::bson::Node> node_;
     public:
         static const char LUNAR_CLASS_NAME[];
         static Lunar<Bson>::RegType LUNAR_METHODS[];
         Bson(lua_State* L);
         Bson(const lj::bson::Node& val);
+        Bson(std::shared_ptr<lj::bson::Node>& root,
+                const std::string& path);
         virtual ~Bson();
         lj::bson::Node& node();
         int type(lua_State* L);

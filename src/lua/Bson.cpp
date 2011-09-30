@@ -63,12 +63,18 @@ namespace lua
     };
 
     Bson::Bson(lua_State* L) :
-            node_()
+            node_(new lj::bson::Node())
     {
     }
 
     Bson::Bson(const lj::bson::Node& val) :
-            node_(val)
+            node_(new lj::bson::Node(val))
+    {
+    }
+
+    Bson::Bson(std::shared_ptr<lj::bson::Node>& root,
+            const std::string& path) : 
+            node_(root, root->path(path))
     {
     }
 
@@ -78,19 +84,19 @@ namespace lua
 
     lj::bson::Node& Bson::node()
     {
-        return node_;
+        return *node_;
     }
 
     int Bson::type(lua_State* L)
     {
-        std::string tmp(lj::bson::type_string(node_.type()));
+        std::string tmp(lj::bson::type_string(node_->type()));
         lua_pushstring(L, tmp.c_str());
         return 1;
     }
 
     int Bson::nullify(lua_State* L)
     {
-        node_.nullify();
+        node_->nullify();
         return 0;
     }
 
@@ -99,7 +105,7 @@ namespace lua
         std::string tmp(lua::as_string(L, -1));
         try
         {
-            Lunar<lua::Bson>::push(L, new Bson(node_.nav(tmp)), true);
+            Lunar<lua::Bson>::push(L, new Bson(node_, tmp), true);
         }
         catch (lj::Exception& ex)
         {
@@ -114,7 +120,7 @@ namespace lua
         std::string tmp(lua::as_string(L, -1));
         try
         {
-            node_.set_child(tmp, lj::bson::new_null());
+            node_->set_child(tmp, lj::bson::new_null());
         }
         catch (lj::Exception& ex)
         {
@@ -133,12 +139,12 @@ namespace lua
             if (top == 2)
             {
                 Bson* val = Lunar<Bson>::check(L, 2);
-                node_.set_child(tmp,
+                node_->set_child(tmp,
                         new lj::bson::Node(val->node()));
             }
             else
             {
-                node_.set_child(tmp, new lj::bson::Node());
+                node_->set_child(tmp, new lj::bson::Node());
             }
         }
         catch (lj::Exception& ex)
@@ -159,12 +165,12 @@ namespace lua
             if (top == 2)
             {
                 Bson* val = Lunar<Bson>::check(L, 2);
-                node_.set_child(tmp,
+                node_->set_child(tmp,
                         new lj::bson::Node(val->node()));
             }
             else
             {
-                node_.set_child(tmp, lj::bson::new_array());
+                node_->set_child(tmp, lj::bson::new_array());
             }
         }
         catch (lj::Exception& ex)
@@ -181,7 +187,7 @@ namespace lua
         std::string tmp(lua::as_string(L, -2));
         try
         {
-            node_.set_child(tmp,
+            node_->set_child(tmp,
                     lj::bson::new_boolean(lua_toboolean(L, -1)));
         }
         catch (lj::Exception& ex)
@@ -197,7 +203,7 @@ namespace lua
         std::string tmp(lua::as_string(L, -2));
         try
         {
-            node_.set_child(tmp,
+            node_->set_child(tmp,
                     lj::bson::new_string(lua::as_string(L, -1)));
         }
         catch (lj::Exception& ex)
@@ -213,7 +219,7 @@ namespace lua
         std::string tmp(lua::as_string(L, -2));
         try
         {
-            node_.set_child(tmp,
+            node_->set_child(tmp,
                     lj::bson::new_int32(lua_tointeger(L, -1)));
         }
         catch (lj::Exception& ex)
@@ -229,7 +235,7 @@ namespace lua
         std::string tmp(lua::as_string(L, -2));
         try
         {
-            node_.set_child(tmp,
+            node_->set_child(tmp,
                     lj::bson::new_int64(lua_tointeger(L, -1)));
         }
         catch (lj::Exception& ex)
@@ -246,7 +252,7 @@ namespace lua
         try
         {
             Uuid* val = Lunar<Uuid>::check(L, -1);
-            node_.set_child(tmp,
+            node_->set_child(tmp,
                     lj::bson::new_uuid(val->id()));
         }
         catch (lj::Exception& ex)
@@ -259,7 +265,7 @@ namespace lua
 
     int Bson::as_string(lua_State* L)
     {
-        std::string tmp(lj::bson::as_string(node_));
+        std::string tmp(lj::bson::as_string(*node_));
         lua_pushstring(L, tmp.c_str());
         return 1;
     }
@@ -272,10 +278,10 @@ namespace lua
 
     int Bson::as_table(lua_State* L)
     {
-        if (lj::bson::Type::k_document == node_.type())
+        if (lj::bson::Type::k_document == node_->type())
         {
             std::map<std::string, lj::bson::Node*> tmp =
-                    node_.to_map();
+                    node_->to_map();
             lua_createtable(L, 0, tmp.size());
             int table = lua_gettop(L);
             for (auto iter = tmp.begin();
@@ -289,10 +295,10 @@ namespace lua
                 lua_rawset(L, table);
             }
         }
-        else if (lj::bson::Type::k_array == node_.type())
+        else if (lj::bson::Type::k_array == node_->type())
         {
             std::vector<lj::bson::Node*> tmp = 
-                    node_.to_vector();
+                    node_->to_vector();
             lua_createtable(L, tmp.size(), 0);
             int table = lua_gettop(L);
             int i = 1;
@@ -315,21 +321,21 @@ namespace lua
 
     int Bson::as_number(lua_State* L)
     {
-        int64_t tmp = lj::bson::as_int64(node_);
+        int64_t tmp = lj::bson::as_int64(*node_);
         lua_pushinteger(L, tmp);
         return 1;
     }
 
     int Bson::as_boolean(lua_State* L)
     {
-        bool tmp = lj::bson::as_boolean(node_);
+        bool tmp = lj::bson::as_boolean(*node_);
         lua_pushboolean(L, tmp);
         return 1;
     }
 
     int Bson::__tostring(lua_State* L)
     {
-        std::string tmp(lj::bson::as_pretty_json(node_));
+        std::string tmp(lj::bson::as_pretty_json(*node_));
         lua_pushstring(L, tmp.c_str());
         return 1;
     }
@@ -341,7 +347,7 @@ namespace lua
 
     int Bson::as_uuid(lua_State* L)
     {
-        Lunar<Uuid>::push(L, new Uuid(lj::bson::as_uuid(node_)), true);
+        Lunar<Uuid>::push(L, new Uuid(lj::bson::as_uuid(*node_)), true);
         return 1;
     }
 
