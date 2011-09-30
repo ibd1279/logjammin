@@ -43,6 +43,7 @@ namespace lua
         LUNAR_METHOD(Bson, type)
         ,LUNAR_METHOD(Bson, nullify)
         ,LUNAR_METHOD(Bson, path)
+        ,LUNAR_METHOD(Bson, clone)
         ,LUNAR_METHOD(Bson, set_null)
         ,LUNAR_METHOD(Bson, set_document)
         ,LUNAR_METHOD(Bson, set_array)
@@ -106,6 +107,29 @@ namespace lua
         try
         {
             Lunar<lua::Bson>::push(L, new Bson(node_, tmp), true);
+        }
+        catch (lj::Exception& ex)
+        {
+            lua_pushstring(L, ex.str().c_str());
+            lua_error(L);
+        }
+        return 1;
+    }
+
+    int Bson::clone(lua_State* L)
+    {
+        int top = lua_gettop(L);
+        try
+        {
+            if (top == 1)
+            {
+                std::string tmp(lua::as_string(L, -1));
+                Lunar<lua::Bson>::push(L, new Bson(node_->nav(tmp)), true);
+            }
+            else
+            {
+                Lunar<lua::Bson>::push(L, new Bson(*node_), true);
+            }
         }
         catch (lj::Exception& ex)
         {
@@ -395,4 +419,29 @@ namespace lua
         }
         return 1;
     }
+
+    int Bson_ro::clone(lua_State* L)
+    {
+        int top = lua_gettop(L);
+        try
+        {
+            const lj::bson::Node& cnode(node());
+            if (top == 1)
+            {
+                std::string tmp(lua::as_string(L, -1));
+                Lunar<lua::Bson_ro>::push(L, new Bson_ro(cnode.nav(tmp)), true);
+            }
+            else
+            {
+                Lunar<lua::Bson_ro>::push(L, new Bson_ro(cnode), true);
+            }
+        }
+        catch (lj::Exception& ex)
+        {
+            lua_pushstring(L, ex.str().c_str());
+            lua_error(L);
+        }
+        return 1;
+    }
+
 }; // namespace lua

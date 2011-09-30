@@ -73,18 +73,21 @@ namespace lua
                 std::string tmp(l->name);
                 lua_pushstring(L, l->name);
                 lua_pushlightuserdata(L, (void*)l);
-                lua_pushcclosure(L, thunk, 1);
 
                 if (tmp.compare("__index") == 0)
                 {
-                    lua_settable(L, mt);
+                    lua_pushvalue(L, methods);
+                    lua_pushcclosure(L, index_T, 2);
+                    lua_settable(L, metatable);
                 }
                 else if(tmp.substr(0, 2).compare("__") == 0)
                 {
+                    lua_pushcclosure(L, thunk, 1);
                     lua_settable(L, metatable);
                 }
                 else
                 {
+                    lua_pushcclosure(L, thunk, 1);
                     lua_settable(L, methods);
                 }
             }
@@ -218,16 +221,19 @@ namespace lua
         }
         
     private:
-        static void inject_method(lua_State *L,
-                const char *name,
-                RegType *l,
-                int table)
+        static int index_T(lua_State *L)
         {
-            int methods = (table > 0 ? table : lua_gettop(L) - table + 1);
-            lua_pushstring(L, name);
-            lua_pushlightuserdata(L, (void*)l);
-            lua_pushcclosure(L, thunk, 1);
-            lua_settable(L, methods);
+            // [obj, key]
+            lua_pushvalue(L, -1); // [obj, key, key]
+            lua_gettable(L, lua_upvalueindex(2)); // [obj, key, method]
+            if (lua_isnil(L, -1)) // no method?
+            {
+                lua_pop(L, 1); // [obj, key]
+                return thunk(L);
+            }
+            lua_insert(L, 1); // [method, obj, key]
+            lua_pop(L, 2); // [method]
+            return 1;
         }
         
         Lunar() = delete;  // hide default constructor

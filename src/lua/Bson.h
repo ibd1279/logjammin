@@ -55,6 +55,7 @@ namespace lua
         int type(lua_State* L);
         int nullify(lua_State* L);
         virtual int path(lua_State* L);
+        virtual int clone(lua_State* L);
         int set_null(lua_State* L);
         int set_document(lua_State* L);
         int set_array(lua_State* L);
@@ -82,6 +83,7 @@ namespace lua
         Bson_ro(const lj::bson::Node& val);
         virtual ~Bson_ro();
         virtual int path(lua_State* L);
+        virtual int clone(lua_State* L);
     }; // class Bson_ro
 
 }; // namespace lua
