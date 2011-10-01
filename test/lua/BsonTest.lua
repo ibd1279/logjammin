@@ -64,5 +64,32 @@ ASSERT(obj2:as_string() == 'null')
 ASSERT(tostring(obj1) == expected)
 
 -- test index
-io.write(RESPONSE['output']:as_string() .. '\n')
-io.write(tostring(obj1.test) .. '\n')
+expected = [=[{
+  "array":[],
+  "bool":{
+    "false":0,
+    "true":1
+  },
+  "int32":2147483640,
+  "int64":4294967300,
+  "null":null,
+  "string":"a test string",
+  "uuid":"{100f0e0d-0c0b-0a09-0807-060504030201}/1157159078456959122"
+}]=]
+ASSERT(tostring(obj1['test']) == expected)
+ASSERT(tostring(obj1.test) == expected);
+
+-- test read-only
+obj3 = obj1:clone_immutable('test')
+ASSERT(tostring(obj3) == expected)
+-- how exactly can I test this? 
+
+-- test the constructor
+obj4 = Bson:new(obj1.test)
+ASSERT(tostring(obj4) == expected)
+obj4:set_string('string', 'another test string')
+ASSERT(tostring(obj4) ~= expected)
+obj4 = Bson_ro:new(obj4)
+ASSERT(tostring(obj4) ~= expected)
+obj5 = Bson:new('{"foo":"testing","bar":100}')
+ASSERT(obj5:as_string() == '{"bar":100, "foo":"testing"}')

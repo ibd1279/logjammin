@@ -56,6 +56,7 @@ namespace lua
         int nullify(lua_State* L);
         virtual int path(lua_State* L);
         virtual int clone(lua_State* L);
+        int clone_immutable(lua_State* L);
         int set_null(lua_State* L);
         int set_document(lua_State* L);
         int set_array(lua_State* L);
