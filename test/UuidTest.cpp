@@ -95,6 +95,30 @@ void testInteger()
     TEST_ASSERT(0 == result);
 }
 
+void testLessThan()
+{
+    lj::Uuid low(100000);
+    lj::Uuid high(900000);
+    TEST_ASSERT(low < high);
+    TEST_ASSERT(!(low > high));
+    TEST_ASSERT(!(high < low));
+    TEST_ASSERT(high > low);
+    TEST_ASSERT(!(low > low));
+    TEST_ASSERT(!(low < low));
+}
+
+void testLessThanOrEqual()
+{
+    lj::Uuid low(100000);
+    lj::Uuid high(900000);
+    TEST_ASSERT(low <= high);
+    TEST_ASSERT(!(low >= high));
+    TEST_ASSERT(!(high <= low));
+    TEST_ASSERT(high >= low);
+    TEST_ASSERT((low >= low));
+    TEST_ASSERT((low <= low));
+}
+
 int main(int argc, char** argv)
 {
     return Test_util::runner("lj::UuidTest", tests);

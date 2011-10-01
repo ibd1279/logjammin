@@ -237,14 +237,15 @@ namespace lj
 
     bool Uuid::operator<(const Uuid& o) const
     {
-        for (uint8_t i = 0; i < 16; ++i)
+        uint8_t i;
+        for (i = 0; i < 16; ++i)
         {
-            if (data_[i] < o.data_[i])
+            if (data_[i] != o.data_[i])
             {
-                return true;
+                break;
             }
         }
-        return false;
+        return data_[i] < o.data_[i];
     }
 
     Uuid::operator std::string() const

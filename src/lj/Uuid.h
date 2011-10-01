@@ -170,14 +170,14 @@ namespace lj
          \param o The right hand value.
          \return true if this object is greater than \c o, false otherwise.
          */
-        inline bool operator>(const Uuid& o) const { return !(((*this) == o) || ((*this) < o)); };
+        inline bool operator>(const Uuid& o) const { return (o < (*this)); };
 
         //! Greater than or equal operator.
         /*!
          \param o The right hand value.
          \return true if this object is greater than or equal to \c o, false otherwise.
          */
-        inline bool operator>=(const Uuid& o) const { return !((*this) < o); };
+        inline bool operator>=(const Uuid& o) const { return (o <= (*this)); };
 
         //! String conversion
         /*!
