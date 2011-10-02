@@ -6,7 +6,7 @@
 #include "lj/Bson.h"
 #include "lua/Command_language_lua.h"
 #include "logjamd/mock_server.h"
-#include "test/lua/Command_language_luaTest_driver.h"
+#include "test/lua/luaTest_driver.h"
 
 #include "test/lua_files.h"
 #include <ios>
@@ -105,6 +105,14 @@ void testBson()
     harness.env().connection()->set_crypto_key("test", key, 32);
     lj::bson::Node response(
             harness.perform(path_for("BsonTest.lua")));
+}
+
+void testUuid()
+{
+    Invoke_script_test<lua::Command_language_lua> harness;
+    harness.env().connection()->set_crypto_key("test", key, 32);
+    lj::bson::Node response(
+            harness.perform(path_for("UuidTest.lua")));
 }
 
 int main(int argc, char** argv)

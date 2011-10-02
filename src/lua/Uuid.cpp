@@ -42,6 +42,7 @@ namespace lua
         ,LUNAR_METHOD(Uuid, __le)
         ,LUNAR_METHOD(Uuid, __lt)
         ,LUNAR_METHOD(Uuid, __eq)
+        ,LUNAR_METHOD(Uuid, key)
         ,{0, 0}
     };
 
@@ -62,6 +63,7 @@ namespace lua
                     id_ = lj::Uuid(as_string(L, -1));
                     break;
                 case LUA_TLIGHTUSERDATA:
+                case LUA_TUSERDATA:
                     id_ = Lunar<Uuid>::check(L, -1)->id();
                     break;
                 default:
@@ -93,14 +95,14 @@ namespace lua
     int Uuid::__le(lua_State* L)
     {
         Uuid* right = Lunar<Uuid>::check(L, -1);
-        lua_pushboolean(L, id_ <= right->id());
+        lua_pushboolean(L, id() <= right->id());
         return 1;
     }
 
     int Uuid::__lt(lua_State* L)
     {
         Uuid* right = Lunar<Uuid>::check(L, -1);
-        lua_pushboolean(L, id_ < right->id());
+        lua_pushboolean(L, id() < right->id());
         return 1;
     }
 
@@ -114,6 +116,12 @@ namespace lua
     int Uuid::__tostring(lua_State* L)
     {
         lua_pushstring(L, static_cast<std::string>(id_).c_str());
+        return 1;
+    }
+
+    int Uuid::key(lua_State* L)
+    {
+        lua_pushinteger(L, static_cast<uint64_t>(id_));
         return 1;
     }
 }; // namespace lua

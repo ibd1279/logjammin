@@ -54,5 +54,6 @@ namespace lua
         int __eq(lua_State* L);
         int __tostring(lua_State* L);
         int __index(lua_State* L);
+        int key(lua_State* L);
     }; // class Uuid
 }; // namespace lua
