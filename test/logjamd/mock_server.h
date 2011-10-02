@@ -11,6 +11,7 @@
 #include "logjamd/constants.h"
 #include "cryptopp/secblock.h"
 
+#include <cassert>
 #include <cstdio>
 #include <cstring>
 #include <istream>
@@ -42,9 +43,11 @@ struct Json_auth
 
         // Setup the user in the auth registry.
         lj::Log::debug.disable();
-        logjamd::Auth_registry::provider(k_auth_provider_local)->
-                method(k_auth_method_password_hash)->
-                change_credentials(&u, &u, n);
+        auto provider = logjamd::Auth_registry::provider(k_auth_provider_local);
+        assert(provider);
+        auto method = provider->method(k_auth_method_password_hash);
+        assert(method);
+        method->change_credentials(&u, &u, n);
         lj::Log::debug.enable();
     }
 
