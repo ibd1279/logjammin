@@ -79,10 +79,15 @@ expected = [=[{
 ASSERT(tostring(obj1['test']) == expected)
 ASSERT(tostring(obj1.test) == expected);
 
--- test read-only
+-- test read-only and most of the "as_*" methods.
 obj3 = obj1:clone_immutable('test')
 ASSERT(tostring(obj3) == expected)
--- how exactly can I test this? 
+u1 = Uuid:new("{100f0e0d-0c0b-0a09-0807-060504030201}")
+ASSERT(obj3.uuid:as_uuid() == u1)
+ASSERT(obj3.int64:as_number() == 4294967300)
+ASSERT(obj3.int32:as_number() == 2147483640)
+ASSERT(obj3.bool['false']:as_boolean() == false)
+ASSERT(obj3:as_nil() == nil)
 
 -- test the constructor
 obj4 = Bson:new(obj1.test)
