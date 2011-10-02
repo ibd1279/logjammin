@@ -14,7 +14,7 @@
 
 #include "test/Streambuf_pipeTest_driver.h"
 
-#define MEM_LENGTH (1024*1024)
+#define MEM_LENGTH (512*1024)
 
 char* random_stream()
 {
