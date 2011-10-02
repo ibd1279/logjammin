@@ -69,6 +69,20 @@ void testRekey()
     TEST_ASSERT((uint64_t)doc.id() == 200);
     TEST_ASSERT(!doc.vclock().exists((std::string)data.server));
 }
+void testBranch()
+{
+    sample_data data;
+    lj::Document doc(new lj::bson::Node(data.doc["bool"]), false);
+    doc.rekey(data.server, 100);
+    doc.wash();
+    const lj::Uuid expected_parent1(doc.id());
+    lj::Document* doc2 = doc.branch(data.server, 200);
+    doc2->wash();
+    TEST_ASSERT(doc2->key() == 200);
+    TEST_ASSERT(doc2->parent() == expected_parent1);
+    TEST_ASSERT(static_cast<uint64_t>(doc2->id()) == 200);
+    delete doc2;
+}
 void testSuppress()
 {
     sample_data data;

@@ -82,7 +82,10 @@ namespace lj
         {
             seed();
         }
-        Document(lj::bson::Node* doc, bool is_document) : doc_(NULL), dirty_(true)
+        Document(lj::bson::Node* doc,
+                bool is_document) :
+                doc_(NULL),
+                dirty_(true)
         {
             if (is_document)
             {
@@ -147,16 +150,54 @@ namespace lj
             return doc_->nav(".").nav(path);
         }
 
+        //! Wash the dirty flag off the object.
+        /*!
+         A record is dirty/tainted if it has been modified after creation.
+         This method is used to clear the dirty flag and treat the object
+         as if it has not been modified.
+         */
         void wash()
         {
             dirty_ = false;
         }
+
+        //! Update the keys for this document.
+        /*!
+         This is useful for changing the ID of an existing lj::Document. This
+         maintains the parent relationships.
+         \par
+         The vclock for the object is cleared as part of rekeying. This is
+         because the rekeyed object is considered in a pristine state.
+         \param server The server for the vclock changes.
+         \param k The new key to use for rekeying the IDs of the document.
+         */
         void rekey(const lj::Uuid& server, const uint64_t k)
         {
+            // parent relationships are updated in the taint method.
             taint(server);
             doc_->set_child("_/key", lj::bson::new_uint64(k));
             doc_->set_child("_/id", lj::bson::new_uuid(lj::Uuid(k)));
             doc_->set_child("_/vclock", new lj::bson::Node());
+        }
+
+        //! Create a new branched child of this document.
+        /*!
+         This is primarily useful for duplicating data. This maintains
+         the parent relationships.
+         \param server The server for the vclock changes.
+         \param k The new key for the branched object.
+         \return The new child.
+         \sa rekey
+         */
+        lj::Document* branch(const lj::Uuid& server, const uint64_t k)
+        {
+            // duplicate the document.
+            lj::bson::Node* data = new lj::bson::Node(*doc_);
+            lj::Document* child = new lj::Document(data, true);
+
+            // rekey the new document. sets the parent. 
+            child->rekey(server, k);
+            return child;
         }
 
         void encrypt(const lj::Uuid& server, uint8_t* key, int key_size)
