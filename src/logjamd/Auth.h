@@ -35,6 +35,7 @@
 
 #include "lj/Bson.h"
 #include "lj/Uuid.h"
+#include "lj/Log.h"
 #include "logjamd/User.h"
 #include <cstdint>
 #include <map>
@@ -145,6 +146,8 @@ namespace logjamd
             auto iter = mapping_.find(id);
             if (mapping_.end() == iter)
             {
+                lj::Log::info.log("Provider %s not found.",
+                        static_cast<std::string>(id));
                 return NULL;
             }
 

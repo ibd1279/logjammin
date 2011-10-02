@@ -231,7 +231,7 @@ namespace logjamd
     }
     const lj::Uuid& Auth_provider_local::provider_id() const
     {
-        static const lj::Uuid id(k_auth_provider, "local", 5);
+        static const lj::Uuid id(k_auth_provider, "local");
         return id;
     }
     Auth_method* Auth_provider_local::method(const lj::Uuid& method_id)
