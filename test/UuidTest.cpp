@@ -99,24 +99,30 @@ void testLessThan()
 {
     lj::Uuid low(100000);
     lj::Uuid high(900000);
+    lj::Uuid dup(low);
     TEST_ASSERT(low < high);
     TEST_ASSERT(!(low > high));
     TEST_ASSERT(!(high < low));
     TEST_ASSERT(high > low);
     TEST_ASSERT(!(low > low));
     TEST_ASSERT(!(low < low));
+    TEST_ASSERT(!(low > dup));
+    TEST_ASSERT(!(low < dup));
 }
 
 void testLessThanOrEqual()
 {
     lj::Uuid low(100000);
     lj::Uuid high(900000);
+    lj::Uuid dup(low);
     TEST_ASSERT(low <= high);
     TEST_ASSERT(!(low >= high));
     TEST_ASSERT(!(high <= low));
     TEST_ASSERT(high >= low);
     TEST_ASSERT((low >= low));
     TEST_ASSERT((low <= low));
+    TEST_ASSERT((low >= dup));
+    TEST_ASSERT((low <= dup));
 }
 
 int main(int argc, char** argv)
