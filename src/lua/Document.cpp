@@ -50,6 +50,7 @@ namespace lua
         ,LUNAR_METHOD(Document, get)
         ,LUNAR_METHOD(Document, wash)
         ,LUNAR_METHOD(Document, rekey)
+        ,LUNAR_METHOD(Document, branch)
         ,LUNAR_METHOD(Document, set)
         ,LUNAR_METHOD(Document, push)
         ,LUNAR_METHOD(Document, increment)
@@ -67,9 +68,9 @@ namespace lua
     {
     }
 
-    Document::Document(lj::Document* val) :
+    Document::Document(lj::Document* val, bool gc) :
             doc_(val),
-            gc_(false)
+            gc_(gc)
     {
     }
 
@@ -169,6 +170,16 @@ namespace lua
         // XXX Change this to get the server from somewhere.
         doc_->rekey(lj::Uuid::k_nil, key);
         return 0;
+    }
+
+    int Document::branch(lua_State* L)
+    {
+        // XXX Change this to get the server from somewhere.
+        lj::Document* dup = doc_->branch(lj::Uuid::k_nil, doc_->key());
+        Lunar<lua::Document>::push(L,
+                new lua::Document(dup, true),
+                true);
+        return 1;
     }
 
     int Document::set(lua_State* L)

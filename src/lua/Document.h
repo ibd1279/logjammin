@@ -47,7 +47,7 @@ namespace lua
         static const char LUNAR_CLASS_NAME[];
         static Lunar<Document>::RegType LUNAR_METHODS[];
         Document(lua_State* L);
-        Document(lj::Document* val);
+        Document(lj::Document* val, bool gc = false);
         ~Document();
         int parent(lua_State* L);
         int vclock(lua_State* L);
@@ -59,6 +59,7 @@ namespace lua
         int get(lua_State* L);
         int wash(lua_State* L);
         int rekey(lua_State* L);
+        int branch(lua_State* L);
         int set(lua_State* L);
         int push(lua_State* L);
         int increment(lua_State* L);
