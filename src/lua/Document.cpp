@@ -174,8 +174,20 @@ namespace lua
 
     int Document::branch(lua_State* L)
     {
-        // XXX Change this to get the server from somewhere.
-        lj::Document* dup = doc_->branch(lj::Uuid::k_nil, doc_->key());
+        int top = lua_gettop(L);
+
+        lj::Document* dup;
+        if (top == 1)
+        {
+            uint64_t key = lua_tointeger(L, -1);
+            // XXX Change this to get the server from somewhere.
+            dup = doc_->branch(lj::Uuid::k_nil, key);
+        }
+        else
+        {
+            // XXX Change this to get the server from somewhere.
+            dup = doc_->branch(lj::Uuid::k_nil, doc_->key());
+        }
         Lunar<lua::Document>::push(L,
                 new lua::Document(dup, true),
                 true);

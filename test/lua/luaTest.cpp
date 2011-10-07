@@ -1,5 +1,5 @@
 /* 
- * File:   Command_language_luaTest.cpp
+ * luaTest.cpp
  */
 
 #include "testhelper.h"
@@ -113,6 +113,14 @@ void testUuid()
     harness.env().connection()->set_crypto_key("test", key, 32);
     lj::bson::Node response(
             harness.perform(path_for("UuidTest.lua")));
+}
+
+void testDocument()
+{
+    Invoke_script_test<lua::Command_language_lua> harness;
+    harness.env().connection()->set_crypto_key("test", key, 32);
+    lj::bson::Node response(
+            harness.perform(path_for("DocumentTest.lua")));
 }
 
 int main(int argc, char** argv)
