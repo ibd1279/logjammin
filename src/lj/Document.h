@@ -173,11 +173,19 @@ namespace lj
          */
         void rekey(const lj::Uuid& server, const uint64_t k)
         {
+            // Get the old key value before we modify anything.
+            const uint64_t old_key = key();
+
             // parent relationships are updated in the taint method.
             taint(server);
             doc_->set_child("_/key", lj::bson::new_uint64(k));
             doc_->set_child("_/id", lj::bson::new_uuid(lj::Uuid(k)));
-            doc_->set_child("_/vclock", new lj::bson::Node());
+
+            // We only reset the vclock if key has actually changed.
+            if (k != old_key)
+            {
+                doc_->set_child("_/vclock", new lj::bson::Node());
+            }
         }
 
         //! Create a new branched child of this document.
@@ -196,6 +204,7 @@ namespace lj
             lj::Document* child = new lj::Document(data, true);
 
             // rekey the new document. sets the parent. 
+            child->wash();
             child->rekey(server, k);
             return child;
         }
