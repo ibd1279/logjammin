@@ -39,19 +39,6 @@ def configure(conf):
     )
 
     conf.check(
-        header_name='lua.hpp'
-        ,lib=['lua5.1']
-        ,libpath=['/usr/local/lib', '/opt/local/lib', '/usr/lib']
-        ,includes=[
-            '/usr/local/include'
-            ,'/opt/local/include'
-            ,'/usr/include'
-            ,'/usr/include/lua5.1'
-        ]
-        ,mandatory=True
-    )
-    
-    conf.check(
         header_name='cryptopp/cryptlib.h'
         ,lib=['cryptopp']
         ,libpath=['/usr/local/lib', '/opt/local/lib', '/usr/lib']
@@ -63,6 +50,31 @@ def configure(conf):
         ,mandatory=True
     )
 
+    conf.check(
+        header_name='lua.hpp'
+        ,lib=['lua5.1']
+        ,libpath=['/usr/local/lib', '/opt/local/lib', '/usr/lib']
+        ,includes=[
+            '/usr/local/include'
+            ,'/opt/local/include'
+            ,'/usr/include'
+            ,'/usr/include/lua5.1'
+        ]
+        ,mandatory=True
+    )
+
+    conf.check(
+        header_name='v8.h'
+        ,lib=['v8']
+        ,libpath=['/usr/local/lib', '/opt/local/lib', '/usr/lib']
+        ,includes=[
+            '/usr/local/include'
+            ,'/opt/local/include'
+            ,'/usr/include'
+        ]
+        ,mandatory=True
+    )
+    
     conf.write_config_header('config.h')
 
 def make_test_driver(node, test_pattern):
