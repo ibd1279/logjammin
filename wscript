@@ -131,6 +131,7 @@ def build(bld):
             ,'src/logjamd/Stage_execute.cpp'
             ,'src/logjamd/Stage_json_adapt.cpp'
             ,'src/logjamd/Stage_pre.cpp'
+            ,'src/js/Command_language_js.cpp'
             ,'src/lua/Bson.cpp'
             ,'src/lua/Command_language_lua.cpp'
             ,'src/lua/Document.cpp'
@@ -143,7 +144,7 @@ def build(bld):
         ]
         ,linkflags = ['-g']
         ,use = ['lj']
-        ,uselib = ['OPENSSL/SSL.H', 'PTHREAD.H', 'LUA.HPP']
+        ,uselib = ['OPENSSL/SSL.H', 'PTHREAD.H', 'LUA.HPP', 'V8.H']
     )
 
     bld.program(
