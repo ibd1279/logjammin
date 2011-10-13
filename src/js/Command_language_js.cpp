@@ -35,6 +35,34 @@
 #include "logjamd/Connection.h"
 #include "js/Command_language_js.h"
 
+namespace
+{
+    v8::Handle<v8::Value> print_to_response(const v8::Arguments& args)
+    {
+        std::ostringstream buffer;
+        for(int h = 0; args.Length() > h; ++h)
+        {
+            v8::HandleScope handle_scope;
+            v8::String::Utf8Value str(args[h]);
+            if (0 < h)
+            {
+                buffer << "\t";
+            }
+            buffer << std::string(*str, str.length());
+        }
+        // add the buffer to the response object here.
+        return v8::Undefined();
+    }
+
+    v8::Persistent<v8::Context> allocate_context()
+    {
+        v8::Handle<v8::ObjectTemplate> global = v8::ObjectTemplate::New();
+        global->Set(v8::String::New("print"),
+                v8::FunctionTemplate::New(print_to_response));
+        return v8::Context::New(NULL, global);
+    }
+}; // namespace (anonymous)
+
 namespace js
 {
     Command_language_js::Command_language_js(logjamd::Connection* conn,
@@ -50,9 +78,10 @@ namespace js
 
     void Command_language_js::perform(lj::bson::Node& response)
     {
-        // Directly from http://code.google.com/apis/v8/get_started.html
+        // XXX Mostly copy and paste from the V8 website.
+        // Needs to be cleaned up.
         v8::HandleScope handle_scope;
-        v8::Persistent<v8::Context> context = v8::Context::New();
+        v8::Persistent<v8::Context> context(allocate_context());
         v8::Context::Scope context_scope(context);
         std::string cmd(lj::bson::as_string(request_->nav("command")));
         v8::Handle<v8::String> source =
