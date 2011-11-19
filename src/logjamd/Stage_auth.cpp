@@ -77,7 +77,7 @@ namespace logjamd
         response.set_child("stage", lj::bson::new_string(name()));
         response.set_child("success", lj::bson::new_boolean(false));
 
-        log("Attempting Authentication.") << lj::Log::end;
+        log("Attempting Authentication.").end();
         Auth_provider* provider = Auth_registry::provider(provider_id);
         if (provider)
         {
@@ -87,31 +87,31 @@ namespace logjamd
                 User* user = method->authenticate(n.nav("data"));
                 if (user)
                 {
-                    lj::Log::info.log(k_succeeded_auth_method);
+                    lj::log::out<lj::Info>(k_succeeded_auth_method);
                     response.set_child("success", lj::bson::new_boolean(true));
                     response.set_child("message", lj::bson::new_string(k_succeeded_auth_method));
                     conn()->user(user);
                 }
                 else
                 {
-                    lj::Log::info.log(k_failed_auth_method);
+                    lj::log::out<lj::Info>(k_failed_auth_method);
                     response.set_child("message", lj::bson::new_string(k_failed_auth_method));
                 }
             }
             else
             {
-                lj::Log::info.log(k_unknown_auth_method);
+                lj::log::out<lj::Info>(k_unknown_auth_method);
                 response.set_child("message", lj::bson::new_string(k_unknown_auth_method));
             }
         }
         else
         {
-            lj::Log::info.log(k_unknown_auth_provider);
+            lj::log::out<lj::Info>(k_unknown_auth_provider);
             response.set_child("message",
                     lj::bson::new_string(k_unknown_auth_provider));
         }
 
-        Stage* next_stage = NULL;
+        Stage* next_stage = nullptr;
         if (conn()->user())
         {
             // TODO impersonation

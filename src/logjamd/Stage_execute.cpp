@@ -55,7 +55,7 @@ namespace logjamd
 
     Stage* Stage_execute::logic()
     {
-        log("Executing command.") << lj::Log::end;
+        log("Executing command.").end();
         lj::Stopclock timer;
 
         lj::bson::Node request;
@@ -66,8 +66,7 @@ namespace logjamd
                 conn(),
                 &request);
 
-        log("Using %s for the command language.") << cmd_lang->name()
-                << lj::Log::end;
+        log("Using %s for the command language.").end(cmd_lang->name());
 
         lj::bson::Node response(empty_response());
         response.set_child("output",
@@ -77,7 +76,7 @@ namespace logjamd
         conn()->io() << response;
         delete cmd_lang;
 
-        log("Elapsed %llu ns.") << timer.elapsed() << lj::Log::end;
+        log("Elapsed %llu ns.").end(timer.elapsed());
         return new Stage_execute(conn());
     }
 

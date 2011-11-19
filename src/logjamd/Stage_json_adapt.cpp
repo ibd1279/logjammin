@@ -52,21 +52,21 @@ namespace logjamd
         if (real_stage_)
         {
             delete real_stage_;
-            real_stage_ = NULL;
+            real_stage_ = nullptr;
         }
     }
 
     Stage* Stage_json_adapt::logic()
     {
-        Stage* next_stage = NULL;
-        if (conn()->secure() || faux_connection().user() != NULL)
+        Stage* next_stage = nullptr;
+        if (conn()->secure() || faux_connection().user() != nullptr)
         {
             std::string cmd;
             if (!std::getline(conn()->io(), cmd).good())
             {
                 // TODO Handle a read error.
-                lj::Log::warning.log("Some kind of read error.");
-                next_stage = NULL;
+                lj::log::out<lj::Warning>("Some kind of read error.");
+                next_stage = nullptr;
             }
             else
             {
@@ -85,7 +85,7 @@ namespace logjamd
         else
         {
             // If the conection is insecure, use default login.
-            log("Using insecure adapter authentication.") << lj::Log::end;
+            log("Using insecure adapter authentication.").end();
 
             lj::bson::Node auth_request;
             lj::bson::Node auth_response;
@@ -122,9 +122,9 @@ namespace logjamd
         }
         else
         {
-            log("Disconnecting.") << lj::Log::end;
-            real_stage_ = NULL;
-            return NULL;
+            log("Disconnecting.").end();
+            real_stage_ = nullptr;
+            return nullptr;
         }
     }
 

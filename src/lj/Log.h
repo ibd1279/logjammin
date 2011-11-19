@@ -1,7 +1,7 @@
 #pragma once
 /*!
  \file lj/Log.h
- \brief LJ Logger header.
+ \brief LJ Log header.
  \author Jason Watson
  Copyright (c) 2010, Jason Watson
  All rights reserved.
@@ -37,369 +37,474 @@
 
 #include <cstdint>
 #include <exception>
-#include <ostream>
+#include <list>
 #include <sstream>
 #include <string>
 
 namespace lj
 {
-    //! Log base class.
+    //! Base class for Logging Levels.
     /*!
-     \par
-     This logger does nothing when disabled. When enabled, it returns a real
-     logger that actually outputs data.
-     \author Jason Watson
      \version 1.0
-     \date April 15, 2010
+     \date November 16, 2011
      */
-    class Log {
+    class LogLevel
+    {
+    private:
+        const std::string name_;
+        const int level_;
     public:
-    
-        //! Different logging levels.
+        //! Create a new logging level.
         /*!
-         \par
-         These levels are based on syslog levels.
+         \param n The logging level name.
+         \param l The logging level number.
          */
-        enum class Level
+        LogLevel(const char* n,
+                const int l) :
+                name_(n),
+                level_(l)
         {
-            k_emergency, //!< emergency event level.
-            k_alert,     //!< alert event level.
-            k_critical,  //!< critical event level.
-            k_error,     //!< error event level.
-            k_warning,   //!< warning event level.
-            k_notice,    //!< notice event level.
-            k_info,      //!< info event level.
-            k_debug      //!< debug event level.
-        };
-        
-        //! End the log message and write it out.
+        }
+
+        //! standard destructor
+        virtual ~LogLevel()
+        {
+        }
+
+        //! Get the logging level name.
         /*!
-         \par
-         This is used to end building a log message.  When the underlying logger
-         receives this object, it should flush the log message and delete
-         itself.
+         \return The logging level name.
          */
+        const std::string& name() const
+        {
+            return name_;
+        }
+
+        //! Get the logging level number.
+        /*!
+         \return The logging level number.
+         */
+        const int level() const
+        {
+            return level_;
+        }
+    };
+
+    //! Emergency Logging Level
+    /*!
+     \version 1.0
+     \date November 16, 2011
+     */
+    struct Emergency : public LogLevel
+    {
+        Emergency() : LogLevel("EMERGENCY", 0)
+        {
+        }
+    };
+
+    //! Alert Logging Level
+    /*!
+     \version 1.0
+     \date November 16, 2011
+     */
+    struct Alert : public LogLevel
+    {
+        Alert() : LogLevel("ALERT", 1)
+        {
+        }
+    };
+
+    //! Critical Logging Level
+    /*!
+     \version 1.0
+     \date November 16, 2011
+     */
+    struct Critical : public LogLevel
+    {
+        Critical() : LogLevel("CRITICAL", 2)
+        {
+        }
+    };
+
+    //! Error Logging Level
+    /*!
+     \version 1.0
+     \date November 16, 2011
+     */
+    struct Error : public LogLevel
+    {
+        Error() : LogLevel("ERROR", 3)
+        {
+        }
+    };
+
+    //! Warning Logging Level
+    /*!
+     \version 1.0
+     \date November 16, 2011
+     */
+    struct Warning : public LogLevel
+    {
+        Warning() : LogLevel("WARNING", 4)
+        {
+        }
+    };
+
+    //! Notice Logging Level
+    /*!
+     \version 1.0
+     \date November 16, 2011
+     */
+    struct Notice : public LogLevel
+    {
+        Notice() : LogLevel("NOTICE", 5)
+        {
+        }
+    };
+
+    //! Info Logging Level
+    /*!
+     \version 1.0
+     \date November 16, 2011
+     */
+    struct Info : public LogLevel
+    {
+        Info() : LogLevel("INFORMATION", 6)
+        {
+        }
+    };
+
+    //! Debug Logging Level
+    /*!
+     \version 1.0
+     \date November 16, 2011
+     */
+    struct Debug : public LogLevel
+    {
+        Debug() : LogLevel("DEBUG", 7)
+        {
+        }
+    };
+
+    namespace log
+    {
+        //! type for closing a logger object.
         struct End
         {
         };
-        
-        //! Convert an event level into a string.
-        /*!
-         \param level The event level to convert.
-         \return The string describing the event level.
-         */
-        static const std::string& level_text(const Level& level);
 
-        //! Convert an event level into a Log object.
-        /*!
-         \param level The event level to convert.
-         \return The Log object for that event level.
-         */
-        static Log& for_level(const Level& level);
-        
-        //! Create a new log.
+        extern End end;
+
+        //! Logger Base class.
         /*!
          \par
-         The provided std::ostream is not managed by the Log object. The application
-         will need to release the pointer when shutting down.
-         \param lvl The event level associated with this logger.
-         \param s The stream to use for output messages.
+         Provides a default implementation for logging, which is a no-op.
          */
-        Log(Level lvl, std::ostream *s) : level_(lvl), stream_(s), enabled_(true)
+        class Logger
         {
-        }
+        public:
+            //! Constructor used by the Log template.
+            /*!
+             \param lvl The logging level string.
+             \param fmt The log formatting string.
+             */
+            Logger(const std::string lvl,
+                    const std::string& fmt)
+            {
+            }
+
+            //! Empty destructor.
+            virtual ~Logger()
+            {
+            }
+        protected:
+            //! Write a string to the output stream.
+            /*!
+             \param msg The message to write.
+             \return The current Log.
+             */
+            virtual Logger& write_string(const std::string& msg)
+            {
+                return *this;
+            }
+            
+            //! Write a signed integer to the output stream.
+            /*!
+             \param msg The message to write to the output.
+             \return The current Log.
+             */
+            virtual Logger& write_signed_int(const int64_t msg)
+            {
+                return *this;
+            }
+            
+            //! Write an unsigned integer to the output stream.
+            /*!
+             \param msg The message to write to the output.
+             \return The current Log.
+             */
+            virtual Logger& write_unsigned_int(const uint64_t msg)
+            {
+                return *this;
+            }
+            
+            //! Write a bool to the output stream.
+            /*!
+             \param msg The message to write to the output.
+             \return The current Log.
+             */
+            virtual Logger& write_bool(const bool msg)
+            {
+                return *this;
+            }
+            
+            //! Write a pointer address to the output stream.
+            /*!
+             \param msg The message to write to the output.
+             \return The current Log.
+             */
+            virtual Logger& write_pointer(const void* msg)
+            {
+                return *this;
+            }
+            
+            //! End the current log message.
+            /*!
+             \return The current Log.
+             */
+            virtual void write_end()
+            {
+            }
+            
+        public:
+            //! Log a value.
+            /*!
+             \param msg The message to write to the output.
+             \return The current Log.
+             */
+            inline Logger& operator<<(const std::string& msg) { return write_string(msg); };
+            
+            //! Log a value.
+            /*!
+             \param msg The message to write to the output.
+             \return The current Log.
+             */
+            inline Logger& operator<<(const char* msg) { return write_string(msg == 0 ? std::string("NULL") : std::string(msg)); };
+            
+            //! Log a value.
+            /*!
+             \param msg The message to write to the output.
+             \return The current Log.
+             */
+            inline Logger& operator<<(const int64_t msg) { return write_signed_int(msg); };
+            
+            //! Log a value.
+            /*!
+             \param msg The message to write to the output.
+             \return The current Log.
+             */
+            inline Logger& operator<<(const uint64_t msg) { return write_unsigned_int(msg); };
+            
+            //! Log a value.
+            /*!
+             \param msg The message to write to the output.
+             \return The current Log.
+             */
+            inline Logger& operator<<(const int32_t msg) { return write_signed_int(msg); };
+            
+            //! Log a value.
+            /*!
+             \param msg The message to write to the output.
+             \return The current Log.
+             */
+            inline Logger& operator<<(const uint32_t msg) { return write_unsigned_int(msg); };
+            
+            //! Log a value.
+            /*!
+             \param msg The message to write to the output.
+             \return The current Log.
+             */
+            inline Logger& operator<<(const int16_t msg) { return write_signed_int(msg); };
+            
+            //! Log a value.
+            /*!
+             \param msg The message to write to the output.
+             \return The current Log.
+             */
+            inline Logger& operator<<(const uint16_t msg) { return write_unsigned_int(msg); };
+            
+            //! Log a value.
+            /*!
+             \param msg The message to write to the output.
+             \return The current Log.
+             */
+            inline Logger& operator<<(const int8_t msg) { return write_signed_int(msg); };
+            
+            //! Log a value.
+            /*!
+             \param msg The message to write to the output.
+             \return The current Log.
+             */
+            inline Logger& operator<<(const uint8_t msg) { return write_unsigned_int(msg); };
+            
+            //! Log a value.
+            /*!
+             \param msg The message to write to the output.
+             \return The current Log.
+             */
+            inline Logger& operator<<(const bool msg) { return write_bool(msg); };
+            
+            //! Log a value.
+            /*!
+             \param msg The message to write to the output.
+             \return The current Log.
+             */
+            inline Logger& operator<<(const void* msg) { return write_pointer(msg); };
+            
+            //! Log a unique id value.
+            /*!
+             \param msg The message to write to the output.
+             \return The current Log.
+             */
+            inline Logger& operator<<(const Uuid& msg) { return write_string(msg.str()); };
+            
+            //! Log an exception.
+            /*!
+             \param ex The exception to log
+             \return The current Log.
+             */
+            inline Logger& operator<<(const std::exception& ex) { return write_string(ex.what()); };
+
+            //! Close the logger.
+            /*!
+             \param msg The message to write to the output.
+             \return The current Log.
+             */
+            inline void operator<<(const End &msg) { write_end(); };
+
+            //! Helper function to make logging a single function call.
+            void end()
+            {
+                (*this) << lj::log::end;
+            }
+
+            //! Helper function to make logging a single function call.
+            template <class A0, class ...Args>
+            void end(const A0& a0, const Args& ...args)
+            {
+                (*this) << a0;
+                end(args...);
+            }
+        };
+
+        class Logger_stream : public Logger
+        {
+        public:
+            //! Constructor.
+            /*!
+             \param lvl The logging level string.
+             \param fmt The logging format string.
+             */
+            Logger_stream(const std::string lvl,
+                    const std::string& fmt,
+                    std::ostream* stream);
+            //! Destructor.
+            virtual ~Logger_stream();
+        protected:
+            virtual Logger& write_string(const std::string& msg);
+            virtual Logger& write_signed_int(const int64_t msg);
+            virtual Logger& write_unsigned_int(const uint64_t msg);
+            virtual Logger& write_bool(const bool msg);
+            virtual Logger& write_pointer(const void* msg);
+            virtual void write_end();
+        private:
+            std::list<std::string> parts_;
+            std::ostringstream buffer_;
+            std::ostream* stream_;
+        };
         
-        //! Log destructor
-        virtual ~Log()
+        //! Logger that outputs to cout.
+        class Logger_cout : public Logger_stream
         {
-        }
+        public:
+            //! Constructor.
+            /*!
+             \param lvl The logging level string.
+             \param fmt The logging format string.
+             */
+            Logger_cout(const std::string lvl,
+                    const std::string& fmt);
+            //! Destructor.
+            virtual ~Logger_cout();
+        };
         
-        //! Disable logging.
-        /*!
-         \return The current Log.
-         */
-        Log& disable()
+        //! Check or set the enabled flags for a level.
+        template <class Level>
+        bool enabled_flag(bool* new_state = nullptr)
         {
-            enabled_  = false;
-            return *this;
-        }
-        
-        //! Enable logging.
-        /*!
-         \return The current Log.
-         */
-        Log& enable()
-        {
-            enabled_ = true;
-            return *this;
+            static bool state = true;
+            if (new_state)
+            {
+                state = *new_state;
+            }
+            return state;
         }
 
-        //! Log a message to the output stream.
+        //! Enable logging for a level.
+        template <class Level>
+        void enable()
+        {
+            bool state = true;
+            enabled_flag<Level>(&state);
+        }
+
+        //! Disable logging for a level.
+        template <class Level>
+        void disable()
+        {
+            bool state = false;
+            enabled_flag<Level>(&state);
+        }
+
+        //! Create a logger that functions like a iostream.
         /*!
          \par
-         Log the given message to the output stream.  If additional parameters
-         are provided, they are substituted into the strin before writing
-         it to the output stream.
-         \code
-         Log::debug("X = %d and Y = %d for %s", x, y, "foo");
-         \endcode
+         This functions tests the Logging level to see if it is enabled.
+         and a new logger object is created based on that result.
          \param fmt The format of the log message.
-         \param ... The arguments to use for formatting.
+         \tparam Level The logging level of the message.
+         \return A logger for passing arguments.
          */
-        template <class ...Args>
-        void log(const std::string& fmt, const Args& ...args)
+        template <class Level>
+        Logger& format(const std::string& fmt)
         {
-            Log& logger = (*this)(fmt);
-            logger.sub_log(args...);
+            if (enabled_flag<Level>())
+            {
+                Level lvl;
+                return *(new Logger_cout(lvl.name(), fmt));
+            }
+            else
+            {
+                Level lvl;
+                return *(new Logger(lvl.name(), fmt));
+            }
         }
-        
-        //! Build a message for the output stream.
+
+        //! Write out a single log line with no arguments.
         /*!
          \par
-         A Log object is loaded with the provided format and returned for
-         passing arguments to. When all arguments have been passed to the
-         Log object, the caller should pass \c Log::end as an argument to
-         flush the message to the output stream.
-         \par
-         The logger deletes itself when it is passed \c Log::end.
-         \code
-         Log::debug.log("X = %d and Y = %d for %s") << x << y << "foo" << Log::end;
-         Log* log = &Log::debug.log("%s logging in %d times");
-         (*log) << "fooUser";
-         (*log) << 24;
-         (*log) << Log::end;
-         \endcode
-         \param fmt The format of the log message.
-         \return The current Log.
+         Creates, outputs, and automatically destroys a logger object.
+         \param msg The log message.
+         \tparam Level The logging level of the message.
          */
-        Log& operator()(const std::string& fmt);
-        
-        //! Write a string to the output stream.
-        /*!
-         \param msg The message to write.
-         \return The current Log.
-         */
-        virtual Log& write_string(const std::string& msg)
+        template <class Level>
+        void out(const std::string& fmt)
         {
-            return *this;
-        }
-        
-        //! Write a signed integer to the output stream.
-        /*!
-         \param msg The message to write to the output.
-         \return The current Log.
-         */
-        virtual Log& write_signed_int(const int64_t msg)
-        {
-            return *this;
-        }
-        
-        //! Write an unsigned integer to the output stream.
-        /*!
-         \param msg The message to write to the output.
-         \return The current Log.
-         */
-        virtual Log& write_unsigned_int(const uint64_t msg)
-        {
-            return *this;
-        }
-        
-        //! Write a bool to the output stream.
-        /*!
-         \param msg The message to write to the output.
-         \return The current Log.
-         */
-        virtual Log& write_bool(const bool msg)
-        {
-            return *this;
-        }
-        
-        //! Write a pointer address to the output stream.
-        /*!
-         \param msg The message to write to the output.
-         \return The current Log.
-         */
-        virtual Log& write_pointer(const void* msg)
-        {
-            return *this;
-        }
-        
-        //! End the current log message.
-        /*!
-         \return The current Log.
-         */
-        virtual void write_end()
-        {
-        }
-        
-        //! Log a value.
-        /*!
-         \param msg The message to write to the output.
-         \return The current Log.
-         */
-        inline Log& operator<<(const std::string& msg) { return write_string(msg); };
-        
-        //! Log a value.
-        /*!
-         \param msg The message to write to the output.
-         \return The current Log.
-         */
-        inline Log& operator<<(const char* msg) { return write_string(msg == 0 ? std::string("NULL") : std::string(msg)); };
-        
-        //! Log a value.
-        /*!
-         \param msg The message to write to the output.
-         \return The current Log.
-         */
-        inline Log& operator<<(const int64_t msg) { return write_signed_int(msg); };
-        
-        //! Log a value.
-        /*!
-         \param msg The message to write to the output.
-         \return The current Log.
-         */
-        inline Log& operator<<(const uint64_t msg) { return write_unsigned_int(msg); };
-        
-        //! Log a value.
-        /*!
-         \param msg The message to write to the output.
-         \return The current Log.
-         */
-        inline Log& operator<<(const int32_t msg) { return write_signed_int(msg); };
-        
-        //! Log a value.
-        /*!
-         \param msg The message to write to the output.
-         \return The current Log.
-         */
-        inline Log& operator<<(const uint32_t msg) { return write_unsigned_int(msg); };
-        
-        //! Log a value.
-        /*!
-         \param msg The message to write to the output.
-         \return The current Log.
-         */
-        inline Log& operator<<(const int16_t msg) { return write_signed_int(msg); };
-        
-        //! Log a value.
-        /*!
-         \param msg The message to write to the output.
-         \return The current Log.
-         */
-        inline Log& operator<<(const uint16_t msg) { return write_unsigned_int(msg); };
-        
-        //! Log a value.
-        /*!
-         \param msg The message to write to the output.
-         \return The current Log.
-         */
-        inline Log& operator<<(const int8_t msg) { return write_signed_int(msg); };
-        
-        //! Log a value.
-        /*!
-         \param msg The message to write to the output.
-         \return The current Log.
-         */
-        inline Log& operator<<(const uint8_t msg) { return write_unsigned_int(msg); };
-        
-        //! Log a value.
-        /*!
-         \param msg The message to write to the output.
-         \return The current Log.
-         */
-        inline Log& operator<<(const bool msg) { return write_bool(msg); };
-        
-        //! Log a value.
-        /*!
-         \param msg The message to write to the output.
-         \return The current Log.
-         */
-        inline Log& operator<<(const void* msg) { return write_pointer(msg); };
-        
-        //! Log a unique id value.
-        /*!
-         \param msg The message to write to the output.
-         \return The current Log.
-         */
-        inline Log& operator<<(const Uuid& msg) { return write_string(msg.str()); };
-        
-        //! Log an exception.
-        /*!
-         \param ex The exception to log
-         \return The current Log.
-         */
-        inline Log& operator<<(const std::exception& ex) { return write_string(ex.what()); };
-
-        //! Close the logger.
-        /*!
-         \param msg The message to write to the output.
-         \return The current Log.
-         */
-        inline void operator<<(const End &msg) { write_end(); };
-        
-        static Log emergency; //!< Emergency event logger.
-        static Log alert;     //!< Alert event logger.
-        static Log critical;  //!< Critical event logger.
-        static Log error;     //!< Error event logger.
-        static Log warning;   //!< Warning event logger.
-        static Log notice;    //!< Notice event logger.
-        static Log info;      //!< Info event logger.
-        static Log debug;     //!< Debug event logger.
-        static End end;       //!< End object.
-
-    protected:
-        Level level_;    //!< event level associated with the logger.
-        std::ostream* stream_; //!< stream to output the log messages to.
-        bool enabled_;         //!< enabled flag.
-    private:
-        void sub_log()
-        {
-            (*this) << end;
+            format<Level>(fmt).end();
         }
 
-        template <class A0, class ...Args>
-        void sub_log(const A0& a0, const Args& ...args)
-        {
-            (*this) << a0;
-            sub_log(args...);
-        }
-
-    };
-
-    //! Wrapper to execute a function and log exceptions.
-    /*!
-     \par
-     If this is found to be useful beyond some thread stuff, it might be worth
-     making it more robust. Like capturing return types, etc.
-     \author Jason Watson <jwatson@slashopt.net>
-     \date June 25, 2011
-     */
-    class Catch_and_log
-    {
-    public:
-        //! Create a new wrapper.
-        /*!
-         \par
-         The logger provided is used to writing all caught exceptions.
-         \param log The output log.
-         */
-        Catch_and_log(lj::Log& log) : log_(log)
-        {
-        }
-
-        //! Attempt a function.
-        /*!
-         \par
-         Attempt to execute a function. If the function is successful,
-         nothing is written to the logs and \c true is returned. If the
-         function call is unsuccessful, the exception is written to the logs
-         and \c false is returned.
-         \tparam F Function type. Can be a functor, a function, or a lambda.
-         \param func The function to call. Must take zero arguments.
-         \return true if the call was successful, false otherwise.
-         */
         template <class F>
-        bool attempt(F func)
+        bool attempt(Logger& logger, F func)
         {
             try
             {
@@ -407,63 +512,39 @@ namespace lj
             }
             catch (const std::exception& ex)
             {
-                log_("Unhandled exception: %s") << ex << Log::end;
+                logger.end("Unhandled Exception", ex);
                 return false;
             }
             catch (std::exception* ex)
             {
-                log_("Unhandled exception: %s") << *ex << Log::end;
+                logger.end("Unhandled Exception", ex);
                 delete ex;
                 return false;
             }
             catch (...)
             {
-                log_("Unhandled exception of unknown type.") << Log::end;
+                logger.end("Unhandled Exception", "non-exception type");
                 return false;
             }
             return true;
         }
 
-        //! Attempt a method.
+        //! Log any exceptions encountered while executing a function.
         /*!
          \par
-         Attempt to execute a method. If the method is successful,
-         nothing is written to the logs and \c true is returned. If the
-         method call is unsuccessful, the exception is written to the logs
-         and \c false is returned.
-         \tparam T Type of the object.
-         \tparam F Type of the method on the object.
-         \param obj The object reference to call the method on.
-         \param func The method to invoke on the object.
-         \return true if the call was successful, false otherwise.
+         This executes a function inside a try/catch block. The resulting
+         exception, if understood, is output as a log message.
+         \param func The function to execute. The return type is ignored
+         and it cannot take any arguments.
+         \tparam Level the logging level of the exception messages.
+         \tparam F the type of the function.
+         \return True if the function call was successful. False if an
+         exception was caught.
          */
-        template <class T, class F>
-        bool attempt(T& obj, F (T::*func)())
+        template <class Level, class F>
+        bool attempt(F func)
         {
-            try
-            {
-                (obj.*(func))();
-            }
-            catch (const std::exception& ex)
-            {
-                log_("Unhandled exception: %s") << ex << Log::end;
-                return false;
-            }
-            catch (std::exception* ex)
-            {
-                log_("Unhandled exception: %s") << *ex << Log::end;
-                delete ex;
-                return false;
-            }
-            catch (...)
-            {
-                log_("Unhandled exception of unknown type.") << Log::end;
-                return false;
-            }
-            return true;
+            return attempt<F>(format<Level>("%s: %s"), func);
         }
-
-    private:
-        Log& log_;
-    };
+    }; // namespace lj::log
 }; // namespace lj

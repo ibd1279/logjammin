@@ -49,6 +49,7 @@ namespace
     const std::string k_id_field("id");
     const std::string k_salt_field("salt");
 
+    // XXX These values should come from the build configure.
     const size_t derived_key_length = 128;
     const int k_N = 1 << 12;
     const int k_r = 8;
@@ -74,22 +75,22 @@ namespace logjamd
         auto iter = users_by_credential_.find(login);
         if (iter == users_by_credential_.end())
         {
-            lj::Log::debug("auth_local: User not found for %s.")
+            lj::log::format<lj::Debug>("auth_local: User not found for %s.")
                     << login
-                    << lj::Log::end;
+                    << lj::log::end;
             // Credentials didn't match anyone.
-            return NULL;
+            return nullptr;
         }
         const lj::bson::Node* ptr = (*iter).second;
 
-        // Prepare scypt inputs
-        lj::Log::debug.log("auth_local: Calculating derived key (this may take a while).");
+        // Prepare scrypt inputs
+        lj::log::format<lj::Debug>("auth_local: Calculating derived key.");
         const size_t password_length = data[k_password_field].size();
         const uint8_t* password = data[k_password_field].to_value();
         const size_t salt_length = ptr->nav(k_salt_field).size();
         const uint8_t* salt = ptr->nav(k_salt_field).to_value();
 
-        // TODO N, r and p should come from config.
+        // calculate the derived key.
         uint8_t derived_key[derived_key_length];
         crypto_scrypt(password,
                 password_length,
@@ -101,26 +102,30 @@ namespace logjamd
                 derived_key,
                 derived_key_length);
 
+        // Get the stored derived key.
         lj::bson::Binary_type bin_type = lj::bson::Binary_type::k_bin_generic;
         uint32_t check_key_length = 0;
         const uint8_t* check_key = lj::bson::as_binary(ptr->nav(k_password_field),
                 &bin_type,
                 &check_key_length);
 
+        // Compare the two keys. Abort if they don't match.
         for (size_t h = 0; h < derived_key_length; ++h)
         {
             if (derived_key[h] != check_key[h])
             {
-                lj::Log::debug("auth_local: Credentials did not match for %s.")
+                lj::log::format<lj::Debug>(
+                        "auth_local: Credentials did not match for %s.")
                         << login
-                        << lj::Log::end;
-                return NULL;
+                        << lj::log::end;
+                return nullptr;
             }
         }
 
-        lj::Log::debug("auth_local: Authenticated user %s.")
+        // Login successful, return the user object.
+        lj::log::format<lj::Debug>("auth_local: Authenticated user %s.")
                 << login
-                << lj::Log::end;
+                << lj::log::end;
         const lj::Uuid id(lj::bson::as_uuid(ptr->nav(k_id_field)));
         return new User(id, login);
     }
@@ -131,13 +136,15 @@ namespace logjamd
     {
         // TODO Something should be done with requester.
 
-        lj::Log::debug.log("auth_local: Finding existing user for %s",
-                target->id());
+        lj::log::format<lj::Debug>("auth_local: Finding existing user for %s")
+                << target->id()
+                << lj::log::end;
         auto iter = users_by_id_.find(target->id());
         lj::bson::Node* ptr;
         if (users_by_id_.end() == iter)
         {
-            lj::Log::debug.log("auth_local: No user found. creating record.");
+            lj::log::out<lj::Debug>(
+                    "auth_local: No user found. creating record.");
             ptr = new lj::bson::Node();
             uint8_t temp_dk[1] = {0};
             ptr->set_child(k_id_field,
@@ -155,9 +162,9 @@ namespace logjamd
             ptr = (*iter).second;
         }
         
-        lj::Log::debug.log("auth_local: calculating new derived key (this may take a while).");
+        lj::log::out<lj::Debug>("auth_local: calculating new derived key.");
         // read a new random salt.
-        // TODO this is insecure. should use a better source of random digits.
+        // TODO this is insecure. should use crypto++ rand
         uint8_t salt_buffer[128];
         for (int h = 0; h < 128; ++h)
         {
@@ -176,7 +183,7 @@ namespace logjamd
         const size_t password_length = data[k_password_field].size();
         const uint8_t* password = data[k_password_field].to_value();
 
-        // TODO N, r and p should come from config.
+        // calculate the derived key.
         uint8_t derived_key[derived_key_length];
         crypto_scrypt(password,
                 password_length,
@@ -191,22 +198,26 @@ namespace logjamd
         // check if there is an old record to remove.
         if (users_by_id_.end() != iter)
         {
-            const std::string old_login(lj::bson::as_string(ptr->nav(k_login_field)));
-            lj::Log::debug("auth_local: Removing old record for %s / %llu")
+            const std::string old_login(
+                    lj::bson::as_string(ptr->nav(k_login_field)));
+            lj::log::format<lj::Debug>(
+                    "auth_local: Removing old record for %s / %llu")
                     << old_login
                     << static_cast<uint64_t>(target->id())
-                    << lj::Log::end;
+                    << lj::log::end;
             users_by_credential_.erase(old_login);
         }
 
-        // TODO In theory, the user cannot log in during this point.
+        // In theory, the user cannot log in during this point.
+        // TODO Existing sessions should probably be disconnected here.
 
         // Record the new credential and mapping.
         const std::string new_login(lj::bson::as_string(data[k_login_field]));
-        lj::Log::debug("auth_local: Creating new record for %s / %llu")
+        lj::log::format<lj::Debug>(
+                "auth_local: Creating new record for %s / %llu")
                 << new_login
                 << static_cast<uint64_t>(target->id())
-                << lj::Log::end;
+                << lj::log::end;
 
         ptr->set_child(k_login_field,
                 lj::bson::new_string(new_login));
@@ -223,17 +234,20 @@ namespace logjamd
 {
     Auth_provider_local::Auth_provider_local()
     {
-        lj::Log::info.log("Adding the Local auth provider.");
+        lj::log::out<lj::Info>("Adding the Local auth provider.");
         Auth_registry::enable(this);
     }
+
     Auth_provider_local::~Auth_provider_local()
     {
     }
+
     const lj::Uuid& Auth_provider_local::provider_id() const
     {
         static const lj::Uuid id(k_auth_provider, "local");
         return id;
     }
+
     Auth_method* Auth_provider_local::method(const lj::Uuid& method_id)
     {
         static Auth_method_password_hash method;
@@ -241,7 +255,7 @@ namespace logjamd
         {
             return &method;
         }
-        return NULL;
+        return nullptr;
     }
 }; // namespace logjamd
 

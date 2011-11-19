@@ -69,7 +69,7 @@ void testRun2()
     auto func = [&x]() { for (x = 0; x < 100; ++x); };
     lj::Thread::Lambda_work<std::function<void()>, std::function<void()> >* w =
             new lj::Thread::Lambda_work<std::function<void()>, std::function<void()> >(func, 
-            [&x]() { lj::Log::alert.log("outputting %d", x); });
+            [&x]() { lj::log::format<lj::Alert>("outputting %d").end(x); });
     t.run(w);
     TEST_ASSERT(t.running() == true);
     t.join();
@@ -82,7 +82,7 @@ void testRun3()
     lj::Thread t;
 
     t.run ([&x]() { for (x = 0; x < 100; ++x); },
-            [&x]() { lj::Log::alert.log("outputting %d", x); });
+            [&x]() { lj::log::format<lj::Alert>("outputting %d").end(x); });
     TEST_ASSERT(t.running() == true);
     t.join();
     TEST_ASSERT(t.running() == false);

@@ -321,7 +321,7 @@ void testType()
 
 void testParse()
 {
-    lj::Log::debug.enable();
+    lj::log::enable<lj::Debug>();
     const std::string simple_array("[\n  \"1\",\n  \"hello\",\n  \"3\"\n]");
     lj::bson::Node* result = lj::bson::parse_string(simple_array);
     TEST_ASSERT(simple_array.compare(lj::bson::as_pretty_json(*result)) == 0);

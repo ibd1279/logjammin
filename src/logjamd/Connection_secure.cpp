@@ -45,7 +45,7 @@ namespace logjamd
             lj::bson::Node* state,
             std::iostream* stream) :
             logjamd::Connection(server, state, stream),
-            thread_(NULL),
+            thread_(nullptr),
             secure_(false),
             keys_()
     {
@@ -71,8 +71,8 @@ namespace logjamd
     void Connection_secure::start()
     {
         thread_ = new lj::Thread();
-        thread_->run([this]() { this->execute(); },
-                [this]() { lj::Log::debug.log("Connection Thread Exited."); });
+        thread_->run([this] { this->execute(); },
+                [this] { lj::log::out<lj::Debug>("Connection Thread Exited."); });
     }
 
     void Connection_secure::execute()
@@ -94,7 +94,7 @@ namespace logjamd
             catch (const lj::Exception& ex)
             {
                 delete stage;
-                stage = NULL;
+                stage = nullptr;
             }
         }
 
@@ -123,7 +123,7 @@ namespace logjamd
         else
         {
             *sz = 0;
-            return NULL;
+            return nullptr;
         }
     }
 }; // namespace logjamd

@@ -146,9 +146,9 @@ namespace logjamd
             auto iter = mapping_.find(id);
             if (mapping_.end() == iter)
             {
-                lj::Log::info.log("Provider %s not found.",
+                lj::log::format<lj::Info>("Provider %s not found.").end(
                         static_cast<std::string>(id));
-                return NULL;
+                return nullptr;
             }
 
             return (*iter).second;

@@ -63,7 +63,9 @@ namespace logjamd
             BIO_free(io_);
         }
 
-        lj::Log::debug.log("Deleting all connections for server %p", (const void*)this);
+        lj::log::format<lj::Debug>("Deleting all connections for server %p")
+                << (const void*)this
+                << lj::log::end;
         for (auto iter = connections_.begin();
                 connections_.end() != iter;
                 ++iter)

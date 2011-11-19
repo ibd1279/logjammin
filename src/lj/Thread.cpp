@@ -46,7 +46,7 @@ namespace lj
     {
         if (running())
         {
-            lj::Log::notice.log("Aborting thread from destructor");
+            log::format<Notice>("Aborting thread from destructor").end();
             abort();
         }
     }
@@ -59,7 +59,7 @@ namespace lj
         }
 
         work_ = work;
-        pthread_create(&thread_, NULL, &lj::Thread::pthread_run, this);
+        pthread_create(&thread_, nullptr, &lj::Thread::pthread_run, this);
     }
 
     void Thread::abort()
@@ -75,7 +75,7 @@ namespace lj
     {
         if (running())
         {
-            pthread_join(thread_, NULL);
+            pthread_join(thread_, nullptr);
         }
     }
 
@@ -83,18 +83,16 @@ namespace lj
     {
         lj::Thread* ptr = static_cast<lj::Thread*>(obj);
         pthread_cleanup_push(lj::Thread::pthread_cleanup, obj);
-        lj::Catch_and_log critical(lj::Log::critical);
-        critical.attempt(*(ptr->work_), &lj::Work::run);
+        log::attempt<Critical>([ptr] { ptr->work_->run(); });
         pthread_cleanup_pop(1);
-        return NULL;
+        return nullptr;
     }
 
     void Thread::pthread_cleanup(void* obj)
     {
         lj::Thread* ptr = static_cast<lj::Thread*>(obj);
-        lj::Catch_and_log critical(lj::Log::critical);
-        critical.attempt(*(ptr->work_), &lj::Work::cleanup);
-        ptr->work_ = NULL;
+        log::attempt<Critical>([ptr] { ptr->work_->cleanup(); });
+        ptr->work_ = nullptr;
     }
 };
 

@@ -137,6 +137,7 @@ void testUnknownProvider()
 
 int main(int argc, char** argv)
 {
+    Mock_server_init ctx;
     return Test_util::runner("logjamd::Stage_auth", tests);
 }
 

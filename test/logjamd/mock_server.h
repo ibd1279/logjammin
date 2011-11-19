@@ -42,13 +42,13 @@ struct Json_auth
                 lj::bson::new_string(logjamd::k_user_password_json));
 
         // Setup the user in the auth registry.
-        lj::Log::debug.disable();
+        lj::log::disable<lj::Debug>();
         auto provider = logjamd::Auth_registry::provider(k_auth_provider_local);
         assert(provider);
         auto method = provider->method(k_auth_method_password_hash);
         assert(method);
         method->change_credentials(&u, &u, n);
-        lj::Log::debug.enable();
+        lj::log::enable<lj::Debug>();
     }
 
     lj::bson::Node n;
@@ -65,11 +65,11 @@ struct Http_auth
                 lj::bson::new_string(logjamd::k_user_password_http));
 
         // Setup the user in the auth registry.
-        lj::Log::debug.disable();
+        lj::log::disable<lj::Debug>();
         logjamd::Auth_registry::provider(k_auth_provider_local)->
                 method(k_auth_method_password_hash)->
                 change_credentials(&u, &u, n);
-        lj::Log::debug.enable();
+        lj::log::enable<lj::Debug>();
     }
 
     lj::bson::Node n;
@@ -87,24 +87,24 @@ struct Admin_auth
                 lj::bson::new_string(k_user_password_admin));
 
         // Setup the user in the auth registry.
-        lj::Log::debug.disable();
+        lj::log::disable<lj::Debug>();
         logjamd::Auth_registry::provider(k_auth_provider_local)->
                 method(k_auth_method_password_hash)->
                 change_credentials(&u, &u, n);
-        lj::Log::debug.enable();
+        lj::log::enable<lj::Debug>();
     }
 
     lj::bson::Node n;
     logjamd::User u;
 };
 
-namespace auth_provider_namespace
+struct Mock_server_init
 {
     logjamd::Auth_provider_local provider_local;
     Json_auth json;
     Http_auth http;
     Admin_auth admin;
-}
+};
 
 class Server_mock : public logjamd::Server
 {

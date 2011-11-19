@@ -47,7 +47,7 @@ namespace lj
     void Stopclock::start()
     {
         struct timeval now;
-        gettimeofday(&now, NULL);
+        gettimeofday(&now, nullptr);
         start_usec = now.tv_usec;
         start_sec = now.tv_sec;
     }
@@ -65,7 +65,7 @@ namespace lj
         if (start_sec)
         {
             struct timeval now;
-            gettimeofday(&now, NULL);
+            gettimeofday(&now, nullptr);
             return (((now.tv_sec - start_sec) * 1000000ULL) +
                     (now.tv_usec - start_usec));
         }

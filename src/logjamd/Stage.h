@@ -65,7 +65,7 @@ namespace logjamd
             n.set_child("message", lj::bson::new_string("ok"));
             return n;
         }
-        virtual lj::bson::Node error_response(const std::string msg)
+        virtual lj::bson::Node error_response(const std::string& msg)
         {
             lj::bson::Node n;
             n.set_child("stage", lj::bson::new_string(name()));
@@ -73,13 +73,11 @@ namespace logjamd
             n.set_child("message", lj::bson::new_string(msg));
             return n;
         }
-        virtual lj::Log& log(const std::string fmt)
+        virtual lj::log::Logger& log(const std::string& fmt)
         {
             std::string real_fmt("%s: ");
             real_fmt.append(fmt);
-            lj::Log& l = lj::Log::debug(real_fmt);
-            l << name();
-            return l;
+            return lj::log::format<lj::Debug>(real_fmt) << name();
         }
     private:
         logjamd::Connection* connection_;

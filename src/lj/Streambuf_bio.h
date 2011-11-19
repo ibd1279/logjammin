@@ -152,16 +152,16 @@ namespace lj
             {
                 if (!BIO_should_retry(io_))
                 {
-                    Log::debug("Unrecoverable BIO write error: %s") <<
-                            openssl_get_error_string() <<
-                            Log::end;
+                    log::format<Debug>("Unrecoverable BIO write error: %s")
+                            << openssl_get_error_string()
+                            << log::end;
                     return traits::eof();
                 }
                 else
                 {
-                    Log::debug("Recoverable(?) BIO write error: %s") <<
-                            openssl_get_error_string() <<
-                            Log::end;
+                    log::format<Debug>("Recoverable(?) BIO write error: %s")
+                            << openssl_get_error_string()
+                            << log::end;
                     return traits::eof();
                 }
             }
@@ -192,9 +192,9 @@ namespace lj
                         len - sent_bytes);
                 if (0 >= nbytes)
                 {
-                    Log::debug("Unrecoverable BIO sync error: %s") <<
-                            openssl_get_error_string() <<
-                            Log::end;
+                    log::format<Debug>("Unrecoverable BIO sync error: %s")
+                            << openssl_get_error_string()
+                            << log::end;
                     return traits::eof();
                 }
                 sent_bytes += nbytes;
@@ -222,9 +222,9 @@ namespace lj
             const int recv_bytes = BIO_read(io_, in_ + len, in_size_ - len);
             if (0 >= recv_bytes)
             {
-                Log::debug("Unrecoverable BIO read error: %s") <<
-                        openssl_get_error_string() <<
-                        Log::end;
+                log::format<Debug>("Unrecoverable BIO read error: %s")
+                        << openssl_get_error_string()
+                        << log::end;
                 return traits::eof();
             }
 

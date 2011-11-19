@@ -81,29 +81,30 @@ namespace logjamd
 
         if (k_bson_mode.compare(buffer) == 0)
         {
-            log("Using BSON mode.") << lj::Log::end;
+            log("Using BSON mode.").end();
             return new Stage_auth(conn());
         }
         else if (k_json_mode.compare(buffer) == 0)
         {
-            log("Using json mode.") << lj::Log::end;
+            log("Using json mode.").end();
             Stage* next_stage = new Stage_json_adapt(conn());
             return next_stage->logic();
             // return the json stage.
         }
         else if (k_http_mode.compare(buffer) == 0)
         {
-            log("Using HTTP mode.") << lj::Log::end;
+            log("Using HTTP mode.").end();
             conn()->user(new User(k_user_id_http, k_user_login_http));
             // return the http stage.
         }
         else
         {
             std::string mode(buffer, 4);
-            log("Unknown mode provided: %s") << mode << lj::Log::end;
+            log("Unknown mode provided: %s").end(mode);
             conn()->io() << lj::bson::as_string(error_response(k_error_unknown_mode + mode));
-            return NULL;
+            return nullptr;
         }
+        return nullptr;
     }
 
     std::string Stage_pre::name()
