@@ -37,13 +37,18 @@
 #include "logjamd/Stage_auth.h"
 #include "logjamd/constants.h"
 
+namespace
+{
+};
+
 namespace logjamd
 {
     Stage_json_adapt::Stage_json_adapt(Connection* connection) :
             Stage(connection),
             pipe_(),
             faux_connection_(connection, new std::iostream(&pipe_)),
-            real_stage_(new Stage_auth(&faux_connection_))
+            real_stage_(new Stage_auth(&faux_connection_)),
+            language_("js")
     {
     }
 
@@ -58,28 +63,58 @@ namespace logjamd
 
     Stage* Stage_json_adapt::logic()
     {
+        // default next-stage is to disconnect.
         Stage* next_stage = nullptr;
+
         if (conn()->secure() || faux_connection().user() != nullptr)
         {
+            // If we already have a user, or the connection is secure.
+
+            // TODO handle multi-line commands.
             std::string cmd;
-            if (!std::getline(conn()->io(), cmd).good())
+            std::getline(conn()->io(), cmd);
+            if (!conn()->io().good())
             {
-                // TODO Handle a read error.
+                // Handle a read error.
                 lj::log::out<lj::Warning>("Some kind of read error.");
                 next_stage = nullptr;
             }
             else
             {
-                lj::bson::Node request;
-                request.set_child("command", lj::bson::new_string(cmd));
-                pipe_.sink() << request;
+                if (cmd.compare("change-language-js") == 0)
+                {
+                    language_ = "js";
+                    next_stage = real_stage_;
+                    conn()->io() << "language changed." << std::endl;
+                    conn()->io().flush();
+                }
+                else if (cmd.compare("change-language-lua") == 0)
+                {
+                    language_ = "lua";
+                    next_stage = real_stage_;
+                    conn()->io() << "language changed." << std::endl;
+                    conn()->io().flush();
+                }
+                else
+                {
+                    // Create the request.
+                    lj::bson::Node request;
+                    request.set_child("command",
+                            lj::bson::new_string(cmd));
+                    request.set_child("language",
+                            lj::bson::new_string(language_));
+                    pipe_.sink() << request;
 
-                next_stage = real_stage_->logic();
+                    // process the request.
+                    next_stage = real_stage_->logic();
 
-                lj::bson::Node response;
-                pipe_.source() >> response;
-                conn()->io() << lj::bson::as_pretty_json(response) << std::endl;;
-                conn()->io().flush();
+                    // convert the response into json.
+                    lj::bson::Node response;
+                    pipe_.source() >> response;
+                    conn()->io() << lj::bson::as_pretty_json(response)
+                            << std::endl;;
+                    conn()->io().flush();
+                }
             }
         }
         else

@@ -58,6 +58,7 @@ namespace logjamd
         lj::Streambuf_pipe pipe_;
         Connection_xlator faux_connection_;
         Stage* real_stage_;
+        std::string language_;
     };
 };
 
