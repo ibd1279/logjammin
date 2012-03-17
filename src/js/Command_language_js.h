@@ -1,9 +1,9 @@
 #pragma once
 /*!
  \file js/Command_language_js.h
- \brief Logjam server networking header.
+ \brief Logjam server Javascript command language wrapper.
  \author Jason Watson
- Copyright (c) 2010, Jason Watson
+ Copyright (c) 2011, Jason Watson
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
