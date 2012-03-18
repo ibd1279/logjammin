@@ -1,7 +1,8 @@
 /*!
  \file js/Bson.cpp
- \brief Logjam server Javascript Bson wrapper.
+ \brief Logjam server Javascript Bson wrapper implementation.
  \author Jason Watson
+
  Copyright (c) 2012, Jason Watson
  All rights reserved.
 
@@ -33,19 +34,44 @@
  */
 
 #include "js/Bson.h"
-#include "lj/Bson.h"
 
 namespace js
 {
-    namespace bson
-    {
-        lj::bson::Node* unwrap_node(v8::Handle<v8::Object> obj)
-        {
-            v8::Handle<v8::External> field = v8::Handle<v8::External>::Cast(
-                    obj->GetInternalField(0));
-            void* ptr = field->Value();
-            return static_cast<lj::bson::Node*>(ptr);
-        }
-    }; // namespace bson
-}; // namespace js
+    Jesuit<Bson>::Cache Bson::JESUIT_CACHE;
+    Jesuit<Bson>::Accessors Bson::JESUIT_ACCESSORS[] = {
+        JESUIT_ACCESSOR(Bson, type),
+        {0,0,0,0,0,0}
+    };
 
+    Bson::Bson() :
+            node_(new lj::bson::Node())
+    {
+    }
+
+    Bson::Bson(const lj::bson::Node& val) :
+            node_(new lj::bson::Node(val))
+    {
+    }
+
+    Bson::Bson(std::shared_ptr<lj::bson::Node>& root,
+            const std::string& path) :
+            node_(root, root->path(path))
+    {
+    }
+
+    Bson::~Bson()
+    {
+    }
+
+    lj::bson::Node& Bson::node()
+    {
+        return *node_;
+    }
+
+    v8::Handle<v8::Value> Bson::type(v8::Local<v8::String> prop,
+                    const v8::AccessorInfo& info)
+    {
+        std::string tmp(lj::bson::type_string(node_->type()));
+        return v8::String::New(tmp.data(), tmp.size());
+    }
+}; // namespace js

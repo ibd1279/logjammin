@@ -3,6 +3,7 @@
  \file js/Bson.h
  \brief Logjam server Javascript Bson wrapper.
  \author Jason Watson
+
  Copyright (c) 2012, Jason Watson
  All rights reserved.
 
@@ -34,20 +35,25 @@
  */
 
 #include "lj/Bson.h"
-#include "v8.h"
+#include "js/jesuit.h"
 
 namespace js
 {
-    //! JavaScript command language implementation.
-    namespace bson
+    //! JavaScript wrapper for Bson.
+    class Bson
     {
-        //! Unwrap a bson Node object.
-        /*!
-         \par
-         Unwrap a v8 bson object. Turn it back into a c++ pointer.
-         \param obj Object to unwrap.
-         \return the pointer.
-         */
-        lj::bson::Node* unwrap_node(v8::Handle<v8::Object> obj);
-    }; // namespace bson
+    public:
+        static Jesuit<Bson>::Cache JESUIT_CACHE;
+        static Jesuit<Bson>::Accessors JESUIT_ACCESSORS[];
+        Bson();
+        Bson(const lj::bson::Node& val);
+        Bson(std::shared_ptr<lj::bson::Node>& root,
+                const std::string& path);
+        virtual ~Bson();
+        lj::bson::Node& node();
+        v8::Handle<v8::Value> type(v8::Local<v8::String> prop,
+                        const v8::AccessorInfo& info);
+    private:
+        std::shared_ptr<lj::bson::Node> node_;
+    };
 }; // namespace js
