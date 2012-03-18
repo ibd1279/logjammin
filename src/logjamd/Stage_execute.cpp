@@ -41,6 +41,7 @@
 #include "logjamd/Command_language.h"
 
 #include "lua/Command_language_lua.h"
+#include "js/Command_language_js.h"
 
 namespace logjamd
 {
@@ -61,10 +62,20 @@ namespace logjamd
         lj::bson::Node request;
         conn()->io() >> request;
 
-        // TODO make this something that can be switched out.
-        Command_language* cmd_lang = new lua::Command_language_lua(
-                conn(),
-                &request);
+        // TODO make this pull from a mappings table or something.
+        Command_language* cmd_lang = NULL;
+        if (lj::bson::as_string(request["language"]).compare("js") == 0)
+        {
+            cmd_lang = new js::Command_language_js(
+                    conn(),
+                    &request);
+        }
+        else
+        {
+            cmd_lang = new lua::Command_language_lua(
+                    conn(),
+                    &request);
+        }
 
         log("Using %s for the command language.").end(cmd_lang->name());
 

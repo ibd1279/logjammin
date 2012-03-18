@@ -34,6 +34,7 @@
 
 #include "lj/Bson.h"
 #include "lua/Bson.h"
+#include "lua/Uuid.h"
 
 namespace lua
 {

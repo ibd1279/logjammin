@@ -32,13 +32,20 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjamd/Connection.h"
+#include "js/Bson.h"
 #include "js/Command_language_js.h"
+#include "logjamd/Connection.h"
+#include "lj/Log.h"
 
 namespace
 {
     v8::Handle<v8::Value> print_to_response(const v8::Arguments& args)
     {
+        v8::Handle<v8::External> external = v8::Handle<v8::External>::Cast(
+                args.Data());
+        lj::bson::Node* response = static_cast<lj::bson::Node*>(
+                external->Value());
+
         std::ostringstream buffer;
         for(int h = 0; args.Length() > h; ++h)
         {
@@ -50,15 +57,38 @@ namespace
             }
             buffer << std::string(*str, str.length());
         }
-        // add the buffer to the response object here.
+
+        response->push_child("output",
+                lj::bson::new_string(buffer.str()));
+
+        return v8::Undefined();
+    }
+    
+    v8::Handle<v8::Value> change_adapt_language(const v8::Arguments& args)
+    {
+        v8::Handle<v8::External> external = v8::Handle<v8::External>::Cast(
+                args.Data());
+        lj::bson::Node* response = static_cast<lj::bson::Node*>(
+                external->Value());
+
+        v8::HandleScope handle_scope;
+        v8::String::Utf8Value lang(args[0]);
+        response->set_child("next_language",
+                lj::bson::new_string(std::string(*lang, lang.length())));
         return v8::Undefined();
     }
 
-    v8::Persistent<v8::Context> allocate_context()
+    v8::Persistent<v8::Context> allocate_context(lj::bson::Node& response)
     {
         v8::Handle<v8::ObjectTemplate> global = v8::ObjectTemplate::New();
-        global->Set(v8::String::New("print"),
-                v8::FunctionTemplate::New(print_to_response));
+
+        v8::Handle<v8::FunctionTemplate> print = v8::FunctionTemplate::New(
+                print_to_response,
+                v8::External::New(&response));
+        global->Set(v8::String::New("print"), print);
+
+        global->Set(v8::String::New("change_language"),
+                v8::FunctionTemplate::New(change_adapt_language));
         return v8::Context::New(NULL, global);
     }
 }; // namespace (anonymous)
@@ -78,10 +108,11 @@ namespace js
 
     void Command_language_js::perform(lj::bson::Node& response)
     {
+        lj::log::format<lj::Info>("perform js command language.").end();
         // XXX Mostly copy and paste from the V8 website.
         // Needs to be cleaned up.
         v8::HandleScope handle_scope;
-        v8::Persistent<v8::Context> context(allocate_context());
+        v8::Persistent<v8::Context> context(allocate_context(response));
         v8::Context::Scope context_scope(context);
         std::string cmd(lj::bson::as_string(request_->nav("command")));
         v8::Handle<v8::String> source =

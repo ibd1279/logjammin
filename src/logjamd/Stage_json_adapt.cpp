@@ -81,18 +81,11 @@ namespace logjamd
             }
             else
             {
-                if (cmd.compare("change-language-js") == 0)
+                log("Using \"%s\" for the command.").end(cmd);
+                if (cmd.compare("") == 0)
                 {
-                    language_ = "js";
                     next_stage = real_stage_;
-                    conn()->io() << "language changed." << std::endl;
-                    conn()->io().flush();
-                }
-                else if (cmd.compare("change-language-lua") == 0)
-                {
-                    language_ = "lua";
-                    next_stage = real_stage_;
-                    conn()->io() << "language changed." << std::endl;
+                    conn()->io() << "no op." << std::endl;
                     conn()->io().flush();
                 }
                 else
@@ -111,6 +104,12 @@ namespace logjamd
                     // convert the response into json.
                     lj::bson::Node response;
                     pipe_.source() >> response;
+                    if (response.exists("next_language"))
+                    {
+                        language_ =
+                                lj::bson::as_string(response["next_language"]);
+                        response.set_child("next_language", NULL);
+                    }
                     conn()->io() << lj::bson::as_pretty_json(response)
                             << std::endl;;
                     conn()->io().flush();

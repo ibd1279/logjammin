@@ -68,6 +68,18 @@ namespace
         return 0;
     }
 
+    int change_adapt_language(lua_State* L)
+    {
+        lua::Bson* response = lua::Lunar<lua::Bson>::check(L,
+                lua_upvalueindex(1));
+
+        std::string language(lua::as_string(L, -1));
+        response->node().set_child("next_language",
+                lj::bson::new_string(language));
+        lua_pop(L, 1); // remove the language.
+        return 0;
+    }
+
     int get_crypto_key(lua_State* L)
     {
         logjamd::Connection* connection = static_cast<logjamd::Connection*>(
@@ -182,8 +194,11 @@ namespace lua
         // Setup replaced methods.
         std::unique_ptr<Bson> response_wrapper(new Bson(response));
         Lunar<Bson>::push(L, response_wrapper.get(), false);
+        lua_pushvalue(L, -1);
         lua_pushcclosure(L, &print_to_response, 1);
         lua_setglobal(L, "print");
+        lua_pushcclosure(L, &change_adapt_language, 1);
+        lua_setglobal(L, "change_language");
 
         // Put the response into the scope.
         Lunar<Bson>::push(L, response_wrapper.get(), false);

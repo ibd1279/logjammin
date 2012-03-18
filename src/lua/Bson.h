@@ -35,7 +35,6 @@
 
 #include "lj/Bson.h"
 #include "lua/lunar.h"
-#include "lua/Uuid.h"
 
 namespace lua
 {
