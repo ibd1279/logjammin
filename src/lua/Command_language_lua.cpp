@@ -80,6 +80,16 @@ namespace
         return 0;
     }
 
+    int close_connection(lua_State* L)
+    {
+        lua::Bson* response = lua::Lunar<lua::Bson>::check(L,
+                lua_upvalueindex(1));
+
+        response->node().set_child("shutdown", lj::bson::new_boolean(true));
+
+        return 0;
+    }
+
     int get_crypto_key(lua_State* L)
     {
         logjamd::Connection* connection = static_cast<logjamd::Connection*>(
@@ -189,16 +199,19 @@ namespace lua
         lua_close(L);
     }
 
-    void Command_language_lua::perform(lj::bson::Node& response)
+    bool Command_language_lua::perform(lj::bson::Node& response)
     {
         // Setup replaced methods.
         std::unique_ptr<Bson> response_wrapper(new Bson(response));
         Lunar<Bson>::push(L, response_wrapper.get(), false);
         lua_pushvalue(L, -1);
+        lua_pushvalue(L, -1);
         lua_pushcclosure(L, &print_to_response, 1);
         lua_setglobal(L, "print");
         lua_pushcclosure(L, &change_adapt_language, 1);
         lua_setglobal(L, "change_language");
+        lua_pushcclosure(L, &close_connection, 1);
+        lua_setglobal(L, "exit");
 
         // Put the response into the scope.
         Lunar<Bson>::push(L, response_wrapper.get(), false);
@@ -220,6 +233,14 @@ namespace lua
         }
 
         response.copy_from(response_wrapper->node());
+
+        bool keep_alive = true;
+        if (response.exists("shutdown"))
+        {
+            response.set_child("shutdown", NULL);
+            keep_alive = false;
+        }
+        return keep_alive;
     }
 
     std::string Command_language_lua::name()

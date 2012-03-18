@@ -82,13 +82,13 @@ namespace logjamd
         lj::bson::Node response(empty_response());
         response.set_child("output",
                 new lj::bson::Node(lj::bson::Type::k_array, NULL));
-        cmd_lang->perform(response);
+        bool result = cmd_lang->perform(response);
         response.set_child("elapsed", lj::bson::new_uint64(timer.elapsed()));
         conn()->io() << response;
         delete cmd_lang;
 
         log("Elapsed %llu ns.").end(timer.elapsed());
-        return new Stage_execute(conn());
+        return result ? new Stage_execute(conn()) : NULL;
     }
 
     std::string Stage_execute::name()

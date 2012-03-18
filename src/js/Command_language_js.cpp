@@ -78,6 +78,16 @@ namespace
         return v8::Undefined();
     }
 
+    v8::Handle<v8::Value> close_connection(const v8::Arguments& args)
+    {
+        v8::Handle<v8::External> external = v8::Handle<v8::External>::Cast(
+                args.Data());
+        lj::bson::Node* response = static_cast<lj::bson::Node*>(
+                external->Value());
+        response->set_child("shutdown", lj::bson::new_boolean(true));
+        return v8::Undefined();
+    }
+
     v8::Persistent<v8::Context> allocate_context(lj::bson::Node& response)
     {
         v8::Handle<v8::ObjectTemplate> global = v8::ObjectTemplate::New();
@@ -87,8 +97,16 @@ namespace
                 v8::External::New(&response));
         global->Set(v8::String::New("print"), print);
 
-        global->Set(v8::String::New("change_language"),
-                v8::FunctionTemplate::New(change_adapt_language));
+        v8::Handle<v8::FunctionTemplate> chlang = v8::FunctionTemplate::New(
+                change_adapt_language,
+                v8::External::New(&response));
+        global->Set(v8::String::New("change_language"), chlang);
+
+        v8::Handle<v8::FunctionTemplate> closeconn = v8::FunctionTemplate::New(
+                close_connection,
+                v8::External::New(&response));
+        global->Set(v8::String::New("exit"), closeconn);
+
         return v8::Context::New(NULL, global);
     }
 }; // namespace (anonymous)
@@ -106,9 +124,8 @@ namespace js
     {
     }
 
-    void Command_language_js::perform(lj::bson::Node& response)
+    bool Command_language_js::perform(lj::bson::Node& response)
     {
-        lj::log::format<lj::Info>("perform js command language.").end();
         // XXX Mostly copy and paste from the V8 website.
         // Needs to be cleaned up.
         v8::HandleScope handle_scope;
@@ -123,6 +140,14 @@ namespace js
         v8::String::AsciiValue ascii(result);
         response.set_child("message",
                 lj::bson::new_string(*ascii));
+
+        bool keep_alive = true;
+        if (response.exists("shutdown"))
+        {
+            response.set_child("shutdown", NULL);
+            keep_alive = false;
+        }
+        return keep_alive;
     }
 
     std::string Command_language_js::name()

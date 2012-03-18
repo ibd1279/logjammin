@@ -70,8 +70,9 @@ namespace logjamd
          Executes the command part of the request. Any manipulation of the
          response would be included in this method.
          \param[out] response The response to the client.
+         \return True if the connection should stay open. False to close.
          */
-        virtual void perform(lj::bson::Node& response) = 0;
+        virtual bool perform(lj::bson::Node& response) = 0;
 
         //! Name of the command language. Used for logging.
         /*!

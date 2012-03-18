@@ -49,7 +49,7 @@ namespace lua
         //! Default destructor.
         virtual ~Command_language_lua();
 
-        virtual void perform(lj::bson::Node& response);
+        virtual bool perform(lj::bson::Node& response);
 
         virtual std::string name();
     private:

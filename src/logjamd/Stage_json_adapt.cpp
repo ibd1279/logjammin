@@ -81,39 +81,29 @@ namespace logjamd
             }
             else
             {
-                log("Using \"%s\" for the command.").end(cmd);
-                if (cmd.compare("") == 0)
-                {
-                    next_stage = real_stage_;
-                    conn()->io() << "no op." << std::endl;
-                    conn()->io().flush();
-                }
-                else
-                {
-                    // Create the request.
-                    lj::bson::Node request;
-                    request.set_child("command",
-                            lj::bson::new_string(cmd));
-                    request.set_child("language",
-                            lj::bson::new_string(language_));
-                    pipe_.sink() << request;
+                // Create the request.
+                lj::bson::Node request;
+                request.set_child("command",
+                        lj::bson::new_string(cmd));
+                request.set_child("language",
+                        lj::bson::new_string(language_));
+                pipe_.sink() << request;
 
-                    // process the request.
-                    next_stage = real_stage_->logic();
+                // process the request.
+                next_stage = real_stage_->logic();
 
-                    // convert the response into json.
-                    lj::bson::Node response;
-                    pipe_.source() >> response;
-                    if (response.exists("next_language"))
-                    {
-                        language_ =
-                                lj::bson::as_string(response["next_language"]);
-                        response.set_child("next_language", NULL);
-                    }
-                    conn()->io() << lj::bson::as_pretty_json(response)
-                            << std::endl;;
-                    conn()->io().flush();
+                // convert the response into json.
+                lj::bson::Node response;
+                pipe_.source() >> response;
+                if (response.exists("next_language"))
+                {
+                    language_ =
+                            lj::bson::as_string(response["next_language"]);
+                    response.set_child("next_language", NULL);
                 }
+                conn()->io() << lj::bson::as_pretty_json(response)
+                        << std::endl;;
+                conn()->io().flush();
             }
         }
         else
