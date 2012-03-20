@@ -40,7 +40,8 @@ namespace js
     Jesuit<Bson>::Cache Bson::JESUIT_CACHE;
     Jesuit<Bson>::Accessors Bson::JESUIT_ACCESSORS[] = {
         JESUIT_ACCESSOR(Bson, type),
-        {0,0,0,0,0,0}
+        //JESUIT_METHOD(Bson, nullify),
+        JESUIT_END
     };
 
     Bson::Bson() :
@@ -73,5 +74,11 @@ namespace js
     {
         std::string tmp(lj::bson::type_string(node_->type()));
         return v8::String::New(tmp.data(), tmp.size());
+    }
+
+    v8::Handle<v8::Value> Bson::nullify(const v8::Arguments& args)
+    {
+        node().nullify();
+        return v8::Undefined();
     }
 }; // namespace js

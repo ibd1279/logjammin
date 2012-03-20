@@ -131,6 +131,10 @@ namespace js
         v8::HandleScope handle_scope;
         v8::Persistent<v8::Context> context(allocate_context(response));
         v8::Context::Scope context_scope(context);
+
+        context->Global()->Set(v8::String::NewSymbol("foo"),
+                js::Jesuit<js::Bson>::wrap(new js::Bson()));
+
         std::string cmd(lj::bson::as_string(request_->nav("command")));
         v8::Handle<v8::String> source =
                 v8::String::New(cmd.c_str(), cmd.length());
