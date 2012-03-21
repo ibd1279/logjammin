@@ -40,7 +40,7 @@ namespace js
     Jesuit<Bson>::Cache Bson::JESUIT_CACHE;
     Jesuit<Bson>::Accessors Bson::JESUIT_ACCESSORS[] = {
         JESUIT_ACCESSOR(Bson, type),
-        //JESUIT_METHOD(Bson, nullify),
+        JESUIT_METHOD(Bson, nullify),
         JESUIT_END
     };
 

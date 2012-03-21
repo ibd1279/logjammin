@@ -52,7 +52,7 @@ namespace js
         virtual ~Bson();
         lj::bson::Node& node();
         v8::Handle<v8::Value> type(v8::Local<v8::String> prop,
-                        const v8::AccessorInfo& info);
+                const v8::AccessorInfo& info);
         v8::Handle<v8::Value> nullify(const v8::Arguments& args);
     private:
         std::shared_ptr<lj::bson::Node> node_;
