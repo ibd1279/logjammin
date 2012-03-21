@@ -41,6 +41,7 @@ namespace js
     Jesuit<Bson>::Accessors Bson::JESUIT_ACCESSORS[] = {
         JESUIT_ACCESSOR(Bson, type),
         JESUIT_METHOD(Bson, nullify),
+        JESUIT_METHOD(Bson, path),
         JESUIT_END
     };
 
@@ -80,5 +81,13 @@ namespace js
     {
         node().nullify();
         return v8::Undefined();
+    }
+
+    v8::Handle<v8::Value> Bson::path(const v8::Arguments& args)
+    {
+        v8::String::Utf8Value str(args[0]);
+        std::string path(*str, str.length());
+        js::Bson* obj = new js::Bson(node_, path);
+        return js::Jesuit<js::Bson>::wrap(obj);
     }
 }; // namespace js
