@@ -62,7 +62,7 @@ namespace js
      js::Jesuit<Foo>::Accessor Foo::JESUIT_ACCESSORS[] = {
          JESUIT_ACCESSOR(Foo, "bar"), // for bar()
          // JESUIT_ACCESSOR_PAIR(Foo, "bar"), // for get_bar() and set_bar()
-         {0,0,0,0,0,0}
+         JESUIT_END
      };
      \endcode
      \todo Doesn't handle index based handlers yet.
@@ -74,6 +74,16 @@ namespace js
     class Jesuit
     {
     public:
+        //! function Member function pointer def.
+        /*!
+         \par
+         This is very similar to the v8 definition for functions
+         setters.  The main difference is that this is specifically
+         typed to be member functions, not static functions.
+         */
+        typedef v8::Handle<v8::Value> (T::*mfp_func)(
+                const v8::Arguments& args);
+
         //! Getter Member function pointer def.
         /*!
          \par
@@ -129,12 +139,14 @@ namespace js
         typedef v8::Handle<v8::Array> (T::*mfp_enum)(
                 const v8::AccessorInfo& info);
 
+        //! Cache type used to ensure all objects share a template.
         typedef v8::Persistent<v8::ObjectTemplate> Cache;
 
         //! Accessor Registration Type.
         struct Accessors
         {
             const char* property; //!< Name of the accessor.
+            mfp_func method; //!< function method pointer.
             mfp_get getter; //!< getter method pointer.
             mfp_set setter; //!< setter member pointer.
             mfp_qry query; //!< query a property.
@@ -143,6 +155,12 @@ namespace js
         };
 
         //! Wrap a pointer for V8.
+        /*!
+         \par
+         Takes a pointer of type T and turns it into a v8 object.
+         \param obj The object pointer to wrap.
+         \return The v8 object in a handle.
+         */
         static v8::Handle<v8::Object> wrap(T* obj)
         {
             v8::HandleScope handle_scope;
@@ -150,9 +168,9 @@ namespace js
             if(T::JESUIT_CACHE.IsEmpty())
             {
                 v8::Handle<v8::ObjectTemplate> raw = make_template();
-                T::JESUIT_CACHE = raw;
+                T::JESUIT_CACHE = v8::Persistent<v8::ObjectTemplate>::New(raw);
             }
-            v8::Handle<v8::ObjectTemplate> templ = T::JESUIT;
+            v8::Handle<v8::ObjectTemplate> templ = T::JESUIT_CACHE;
 
             v8::Handle<v8::Object> result = templ->NewInstance();
             v8::Handle<v8::External> obj_ptr = v8::External::New(obj);
@@ -183,21 +201,36 @@ namespace js
             // Register all the accessors for the class.
             // TODO Should this support index accessors?
             for (Accessors* reg = T::JESUIT_ACCESSORS;
-                    reg->getter != NULL;
+                    reg->getter != NULL || reg->method != NULL;
                     ++reg)
             {
-                if (reg->property != NULL)
+                if (reg->property != NULL && reg->getter != NULL)
                 {
                     result->SetAccessor(v8::String::NewSymbol(reg->property),
                             getter_thunk,
                             setter_thunk,
                             v8::External::New(reg));
                 }
+                else if (reg->property != NULL && reg->method != NULL)
+                {
+                    if (std::string("call_as_function").compare(reg->property) == 0)
+                    {
+                        result->SetCallAsFunctionHandler(
+                                method_thunk,
+                                v8::External::New(reg));
+                    }
+                    else
+                    {
+                        result->Set(v8::String::NewSymbol(reg->property),
+                                v8::FunctionTemplate::New(method_thunk,
+                                        v8::External::New(reg)));
+                    }
+                }
                 else
                 {
                     result->SetNamedPropertyHandler(
                             getter_thunk,
-                            setter_thunk,
+                            named_setter_thunk,
                             query_thunk,
                             delete_thunk,
                             enum_thunk,
@@ -207,6 +240,24 @@ namespace js
 
             // allow the result to escape from the handle scope.
             return handle_scope.Close(result);
+        }
+
+        //! Convert a static method call into an instance method call.
+        static v8::Handle<v8::Value> method_thunk(
+                const v8::Arguments& args)
+        {
+            v8::Handle<v8::External> reg_wrapper =
+                    v8::Handle<v8::External>::Cast(args.Data());
+            Accessors* reg = static_cast<Accessors*>(
+                    reg_wrapper->Value());
+
+            v8::Handle<v8::Value> hidden_pointer =
+                    args.Holder()->GetInternalField(0);
+            v8::Handle<v8::External> obj_wrapper =
+                    v8::Handle<v8::External>::Cast(hidden_pointer);
+            T* obj = static_cast<T*>(obj_wrapper->Value());
+
+            return (obj->*(reg->method))(args);
         }
 
         //! Convert a static method call into an instance method call.
@@ -228,7 +279,28 @@ namespace js
         }
 
         //! Convert a static method call into an instance method call.
-        static v8::Handle<v8::Value> setter_thunk(v8::Local<v8::String> prop,
+        static void setter_thunk(
+                v8::Local<v8::String> prop,
+                v8::Local<v8::Value> value,
+                const v8::AccessorInfo& info)
+        {
+            v8::Handle<v8::External> reg_wrapper =
+                    v8::Handle<v8::External>::Cast(info.Data());
+            Accessors* reg = static_cast<Accessors*>(
+                    reg_wrapper->Value());
+
+            v8::Handle<v8::Value> hidden_pointer =
+                    info.Holder()->GetInternalField(0);
+            v8::Handle<v8::External> obj_wrapper =
+                    v8::Handle<v8::External>::Cast(hidden_pointer);
+            T* obj = static_cast<T*>(obj_wrapper->Value());
+
+            (obj->*(reg->setter))(prop, value, info);
+        }
+
+        //! Convert a static method call into an instance method call.
+        static v8::Handle<v8::Value> named_setter_thunk(
+                v8::Local<v8::String> prop,
                 v8::Local<v8::Value> value,
                 const v8::AccessorInfo& info)
         {
@@ -296,11 +368,14 @@ namespace js
                     v8::Handle<v8::External>::Cast(hidden_pointer);
             T* obj = static_cast<T*>(obj_wrapper->Value());
 
-            return (obj->*(reg->deleter))(info);
+            return (obj->*(reg->enumerator))(info);
         }
     };
-#define JESUIT_ACCESSOR(Class, Prop) {#Prop, &Class::Prop, 0, 0, 0, 0}
-#define JESUIT_ACCESSOR_PAIR(Class, Prop) {#Prop, &Class::get_##Prop, &Class::set_##Prop, 0, 0, 0}
-#define JESUIT_NAME_HANDLER(Class, Prefix) {0, &Class::Prefix##_get, &Class::Prefix##_set, &Class::Prefix##_query, &Class::Prefix##_delete, &Class::Prefix##_enum}
 }; // namespace js
+#define JESUIT_CALL_AS(Class, Meth) {"call_as_function", &Class::Meth, 0, 0, 0, 0, 0}
+#define JESUIT_METHOD(Class, Prop) {#Prop, &Class::Prop, 0, 0, 0, 0, 0}
+#define JESUIT_ACCESSOR(Class, Prop) {#Prop, 0, &Class::Prop, 0, 0, 0, 0}
+#define JESUIT_ACCESSOR_PAIR(Class, Prop) {#Prop, 0, &Class::get_##Prop, &Class::set_##Prop, 0, 0, 0}
+#define JESUIT_NAME_HANDLER(Class, Prefix) {0, 0, &Class::Prefix##_get, &Class::Prefix##_set, &Class::Prefix##_query, &Class::Prefix##_delete, &Class::Prefix##_enum}
+#define JESUIT_END {0, 0, 0, 0, 0, 0, 0}
 
