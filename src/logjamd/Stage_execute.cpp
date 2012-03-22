@@ -43,6 +43,12 @@
 #include "lua/Command_language_lua.h"
 #include "js/Command_language_js.h"
 
+namespace
+{
+    const std::string k_language_js("js");
+    const std::string k_language_lua("lua");
+};
+
 namespace logjamd
 {
     Stage_execute::Stage_execute(logjamd::Connection* connection) :
@@ -64,7 +70,7 @@ namespace logjamd
 
         // TODO make this pull from a mappings table or something.
         Command_language* cmd_lang = NULL;
-        if (lj::bson::as_string(request["language"]).compare("js") == 0)
+        if (lj::bson::as_string(request["language"]).compare(k_language_js) == 0)
         {
             cmd_lang = new js::Command_language_js(
                     conn(),
