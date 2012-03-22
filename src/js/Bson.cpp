@@ -39,9 +39,11 @@ namespace js
 {
     Jesuit<Bson>::Cache Bson::JESUIT_CACHE;
     Jesuit<Bson>::Accessors Bson::JESUIT_ACCESSORS[] = {
-        JESUIT_ACCESSOR(Bson, type),
         JESUIT_METHOD(Bson, nullify),
         JESUIT_METHOD(Bson, path),
+        JESUIT_CALL_AS(Bson, path),
+        JESUIT_ACCESSOR(Bson, value),
+        JESUIT_ACCESSOR(Bson, type),
         JESUIT_END
     };
 
@@ -73,7 +75,7 @@ namespace js
     v8::Handle<v8::Value> Bson::type(v8::Local<v8::String> prop,
                     const v8::AccessorInfo& info)
     {
-        std::string tmp(lj::bson::type_string(node_->type()));
+        std::string tmp(lj::bson::type_string(node().type()));
         return v8::String::New(tmp.data(), tmp.size());
     }
 
@@ -89,5 +91,43 @@ namespace js
         std::string path(*str, str.length());
         js::Bson* obj = new js::Bson(node_, path);
         return js::Jesuit<js::Bson>::wrap(obj);
+    }
+
+    v8::Handle<v8::Value> Bson::value(v8::Local<v8::String> prop,
+                    const v8::AccessorInfo& info)
+    {
+        v8::Handle<v8::Value> result;
+        if (lj::bson::type_is_nested(node().type()))
+        {
+            result = js::Jesuit<js::Bson>::wrap(this);
+        }
+        else if (lj::bson::Type::k_null == node().type())
+        {
+            result = v8::Null();
+        }
+        else if (lj::bson::type_is_quotable(node().type()))
+        {
+            std::string value = lj::bson::as_string(node());
+            result = v8::String::New(value.data(), value.size());
+        }
+        else if (lj::bson::Type::k_int32 == node().type())
+        {
+            // handle int32 as an js int.
+            result = v8::Integer::New(lj::bson::as_int32(node()));
+        }
+        else if (lj::bson::type_is_number(node().type()))
+        {
+            // everything else won't fit, so treat as a double. :(
+            result = v8::Number::New(lj::bson::as_int64(node()));
+        }
+        else if (lj::bson::Type::k_boolean == node().type())
+        {
+            result = lj::bson::as_boolean(node()) ? v8::True() : v8::False();
+        }
+        else
+        {
+            result = v8::Undefined();
+        }
+        return result;
     }
 }; // namespace js

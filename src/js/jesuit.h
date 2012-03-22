@@ -213,9 +213,18 @@ namespace js
                 }
                 else if (reg->property != NULL && reg->method != NULL)
                 {
-                    result->Set(v8::String::NewSymbol(reg->property),
-                            v8::FunctionTemplate::New(method_thunk,
-                                    v8::External::New(reg)));
+                    if (std::string("call_as_function").compare(reg->property) == 0)
+                    {
+                        result->SetCallAsFunctionHandler(
+                                method_thunk,
+                                v8::External::New(reg));
+                    }
+                    else
+                    {
+                        result->Set(v8::String::NewSymbol(reg->property),
+                                v8::FunctionTemplate::New(method_thunk,
+                                        v8::External::New(reg)));
+                    }
                 }
                 else
                 {
@@ -363,6 +372,7 @@ namespace js
         }
     };
 }; // namespace js
+#define JESUIT_CALL_AS(Class, Meth) {"call_as_function", &Class::Meth, 0, 0, 0, 0, 0}
 #define JESUIT_METHOD(Class, Prop) {#Prop, &Class::Prop, 0, 0, 0, 0, 0}
 #define JESUIT_ACCESSOR(Class, Prop) {#Prop, 0, &Class::Prop, 0, 0, 0, 0}
 #define JESUIT_ACCESSOR_PAIR(Class, Prop) {#Prop, 0, &Class::get_##Prop, &Class::set_##Prop, 0, 0, 0}
