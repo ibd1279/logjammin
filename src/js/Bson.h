@@ -54,9 +54,19 @@ namespace js
         v8::Handle<v8::Value> type(v8::Local<v8::String> prop,
                 const v8::AccessorInfo& info);
         v8::Handle<v8::Value> nullify(const v8::Arguments& args);
+        v8::Handle<v8::Value> clone(const v8::Arguments& args);
         v8::Handle<v8::Value> path(const v8::Arguments& args);
         v8::Handle<v8::Value> value(v8::Local<v8::String> prop,
                 const v8::AccessorInfo& info);
+        v8::Handle<v8::Value> setNull(const v8::Arguments& args);
+        v8::Handle<v8::Value> setDocument(const v8::Arguments& args);
+        v8::Handle<v8::Value> setArray(const v8::Arguments& args);
+        v8::Handle<v8::Value> setBoolean(const v8::Arguments& args);
+        v8::Handle<v8::Value> setString(const v8::Arguments& args);
+        v8::Handle<v8::Value> setInt32(const v8::Arguments& args);
+        v8::Handle<v8::Value> setInt64(const v8::Arguments& args);
+        v8::Handle<v8::Value> setUuid(const v8::Arguments& args);
+        v8::Handle<v8::Value> toString(const v8::Arguments& args);
     private:
         std::shared_ptr<lj::bson::Node> node_;
     };
