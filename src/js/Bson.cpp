@@ -39,11 +39,21 @@ namespace js
 {
     Jesuit<Bson>::Cache Bson::JESUIT_CACHE;
     Jesuit<Bson>::Accessors Bson::JESUIT_ACCESSORS[] = {
+        JESUIT_ACCESSOR(Bson, type),
         JESUIT_METHOD(Bson, nullify),
+        JESUIT_METHOD(Bson, clone),
         JESUIT_METHOD(Bson, path),
         JESUIT_CALL_AS(Bson, path),
         JESUIT_ACCESSOR(Bson, value),
-        JESUIT_ACCESSOR(Bson, type),
+        JESUIT_METHOD(Bson, setNull),
+        JESUIT_METHOD(Bson, setDocument),
+        JESUIT_METHOD(Bson, setArray),
+        JESUIT_METHOD(Bson, setBoolean),
+        JESUIT_METHOD(Bson, setString),
+        JESUIT_METHOD(Bson, setInt32),
+        JESUIT_METHOD(Bson, setInt64),
+        JESUIT_METHOD(Bson, setUuid),
+        JESUIT_METHOD(Bson, toString),
         JESUIT_END
     };
 
@@ -83,6 +93,12 @@ namespace js
     {
         node().nullify();
         return v8::Undefined();
+    }
+
+    v8::Handle<v8::Value> Bson::clone(const v8::Arguments& args)
+    {
+        js::Bson* obj = new js::Bson(node());
+        return js::Jesuit<js::Bson>::wrap(obj);
     }
 
     v8::Handle<v8::Value> Bson::path(const v8::Arguments& args)
@@ -128,6 +144,110 @@ namespace js
         {
             result = v8::Undefined();
         }
+        return result;
+    }
+
+    v8::Handle<v8::Value> Bson::setNull(const v8::Arguments& args)
+    {
+        v8::String::Utf8Value str(args[0]);
+        std::string path(*str, str.length());
+        node().set_child(path, lj::bson::new_null());
+        return js::Jesuit<js::Bson>::wrap(this);
+    }
+
+    v8::Handle<v8::Value> Bson::setDocument(const v8::Arguments& args)
+    {
+        v8::String::Utf8Value str(args[0]);
+        std::string path(*str, str.length());
+        if (args.Length() == 2)
+        {
+            // This copies the value into the current document.
+            // It feels like a link would work better, but I would
+            // need to do some serious playing with the shared_ptr
+            // to prevent accidental GC
+            // TODO this should do something nice with plain objects
+            // using named fields.
+            v8::Handle<v8::Object> tmp = v8::Handle<v8::Object>::Cast(args[1]);
+            js::Bson* obj = js::Jesuit<js::Bson>::unwrap(tmp);
+            node().set_child(path, new lj::bson::Node(obj->node()));
+        }
+        else
+        {
+            node().set_child(path, new lj::bson::Node());
+        }
+        return js::Jesuit<js::Bson>::wrap(this);
+    }
+
+    v8::Handle<v8::Value> Bson::setArray(const v8::Arguments& args)
+    {
+        v8::String::Utf8Value str(args[0]);
+        std::string path(*str, str.length());
+        if (args.Length() == 2)
+        {
+            // This copies the value into the current document.
+            // It feels like a link would work better, but I would
+            // need to do some serious playing with the shared_ptr
+            // to prevent accidental GC
+            // by definition, this would work identically to the set
+            // document above, which is accidental and should be fixed.
+            // TODO this should do something nice with js array objects.
+            v8::Handle<v8::Object> tmp = v8::Handle<v8::Object>::Cast(args[1]);
+            js::Bson* obj = js::Jesuit<js::Bson>::unwrap(tmp);
+            node().set_child(path, new lj::bson::Node(obj->node()));
+        }
+        else
+        {
+            node().set_child(path, lj::bson::new_array());
+        }
+        return js::Jesuit<js::Bson>::wrap(this);
+    }
+
+    v8::Handle<v8::Value> Bson::setBoolean(const v8::Arguments& args)
+    {
+        v8::String::Utf8Value str(args[0]);
+        std::string path(*str, str.length());
+        node().set_child(path, lj::bson::new_boolean(args[1]->IsTrue()));
+        return js::Jesuit<js::Bson>::wrap(this);
+    }
+
+    v8::Handle<v8::Value> Bson::setString(const v8::Arguments& args)
+    {
+        v8::String::Utf8Value str(args[0]);
+        std::string path(*str, str.length());
+        v8::String::Utf8Value val(args[1]);
+        std::string value(*str, str.length());
+        node().set_child(path, lj::bson::new_string(value));
+        return js::Jesuit<js::Bson>::wrap(this);
+    }
+
+    v8::Handle<v8::Value> Bson::setInt32(const v8::Arguments& args)
+    {
+        v8::String::Utf8Value str(args[0]);
+        std::string path(*str, str.length());
+        v8::Handle<v8::Integer> val = v8::Handle<v8::Integer>::Cast(args[1]);
+        node().set_child(path, lj::bson::new_int32(val->Value()));
+        return js::Jesuit<js::Bson>::wrap(this);
+    }
+
+    v8::Handle<v8::Value> Bson::setInt64(const v8::Arguments& args)
+    {
+        v8::String::Utf8Value str(args[0]);
+        std::string path(*str, str.length());
+        v8::Handle<v8::Integer> val = v8::Handle<v8::Integer>::Cast(args[1]);
+        node().set_child(path, lj::bson::new_int64(val->Value()));
+        return js::Jesuit<js::Bson>::wrap(this);
+    }
+
+    v8::Handle<v8::Value> Bson::setUuid(const v8::Arguments& args)
+    {
+        return v8::Undefined();
+    }
+
+    v8::Handle<v8::Value> Bson::toString(const v8::Arguments& args)
+    {
+        v8::Handle<v8::String> result;
+        std::string value = lj::bson::as_string(node());
+        result = v8::String::New(value.data(), value.size());
         return result;
     }
 }; // namespace js
