@@ -88,27 +88,6 @@ namespace
         return v8::Undefined();
     }
 
-    v8::Persistent<v8::Context> allocate_context(lj::bson::Node& response)
-    {
-        v8::Handle<v8::ObjectTemplate> global = v8::ObjectTemplate::New();
-
-        v8::Handle<v8::FunctionTemplate> print = v8::FunctionTemplate::New(
-                print_to_response,
-                v8::External::New(&response));
-        global->Set(v8::String::New("print"), print);
-
-        v8::Handle<v8::FunctionTemplate> chlang = v8::FunctionTemplate::New(
-                change_adapt_language,
-                v8::External::New(&response));
-        global->Set(v8::String::New("change_language"), chlang);
-
-        v8::Handle<v8::FunctionTemplate> closeconn = v8::FunctionTemplate::New(
-                close_connection,
-                v8::External::New(&response));
-        global->Set(v8::String::New("exit"), closeconn);
-
-        return v8::Context::New(NULL, global);
-    }
 }; // namespace (anonymous)
 
 namespace js
@@ -129,8 +108,10 @@ namespace js
         // XXX Mostly copy and paste from the V8 website.
         // Needs to be cleaned up.
         v8::HandleScope handle_scope;
-        v8::Persistent<v8::Context> context(allocate_context(response));
+        v8::Handle<v8::ObjectTemplate> global = v8::ObjectTemplate::New();
+        v8::Persistent<v8::Context> context = v8::Context::New(NULL, global);
         v8::Context::Scope context_scope(context);
+        configure_context(response);
 
         js::Bson* foo = new js::Bson();
         context->Global()->Set(v8::String::NewSymbol("foo"),
@@ -160,5 +141,29 @@ namespace js
     std::string Command_language_js::name()
     {
         return "JavaScript";
+    }
+
+    void Command_language_js::configure_context(lj::bson::Node& response)
+    {
+        v8::Handle<v8::FunctionTemplate> print = v8::FunctionTemplate::New(
+                print_to_response,
+                v8::External::New(&response));
+        v8::Context::GetCurrent()->Global()->Set(
+                v8::String::New("print"),
+                print->GetFunction());
+
+        v8::Handle<v8::FunctionTemplate> chlang = v8::FunctionTemplate::New(
+                change_adapt_language,
+                v8::External::New(&response));
+        v8::Context::GetCurrent()->Global()->Set(
+                v8::String::New("change_language"),
+                chlang->GetFunction());
+
+        v8::Handle<v8::FunctionTemplate> closeconn = v8::FunctionTemplate::New(
+                close_connection,
+                v8::External::New(&response));
+        v8::Context::GetCurrent()->Global()->Set(
+                v8::String::New("exit"),
+                closeconn->GetFunction());
     }
 };

@@ -47,11 +47,10 @@ namespace js
 
         //! Default destructor.
         virtual ~Command_language_js();
-
         virtual bool perform(lj::bson::Node& response);
-
         virtual std::string name();
     private:
+        void configure_context(lj::bson::Node& response);
         logjamd::Connection* connection_;
         lj::bson::Node* request_;
     };
