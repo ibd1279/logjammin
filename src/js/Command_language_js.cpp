@@ -88,6 +88,38 @@ namespace
         return v8::Undefined();
     }
 
+    v8::Handle<v8::Value> get_crypto_key(const v8::Arguments& args)
+    {
+        v8::Handle<v8::External> external = v8::Handle<v8::External>::Cast(
+                args.Data());
+        logjamd::Connection* connection = static_cast<logjamd::Connection*>(
+                external->Value());
+
+        v8::HandleScope handle_scope;
+        v8::String::Utf8Value id_wrapped(args[0]);
+        std::string identifier(*id_wrapped, id_wrapped.length());
+        
+        int sz;
+        const void* data = connection->get_crypto_key(identifier, &sz);
+
+        v8::Handle<v8::Value> result;
+        if (data)
+        {
+            std::unique_ptr<lj::bson::Node> ptr(lj::bson::new_binary(
+                    static_cast<const uint8_t*>(data),
+                    sz,
+                    lj::bson::Binary_type::k_bin_user_defined));
+            // TODO This should be an RO version of the Bson object.
+            js::Bson* key_data = new js::Bson(*ptr);
+            result = js::Jesuit<js::Bson>::wrap(key_data);
+        }
+        else
+        {
+            result = v8::Undefined();
+        }
+        return handle_scope.Close(result);
+    }
+
 }; // namespace (anonymous)
 
 namespace js
@@ -145,6 +177,7 @@ namespace js
 
     void Command_language_js::configure_context(lj::bson::Node& response)
     {
+        // print
         v8::Handle<v8::FunctionTemplate> print = v8::FunctionTemplate::New(
                 print_to_response,
                 v8::External::New(&response));
@@ -152,6 +185,7 @@ namespace js
                 v8::String::New("print"),
                 print->GetFunction());
 
+        // change the command language.
         v8::Handle<v8::FunctionTemplate> chlang = v8::FunctionTemplate::New(
                 change_adapt_language,
                 v8::External::New(&response));
@@ -159,11 +193,20 @@ namespace js
                 v8::String::New("change_language"),
                 chlang->GetFunction());
 
+        // Exit the connection.
         v8::Handle<v8::FunctionTemplate> closeconn = v8::FunctionTemplate::New(
                 close_connection,
                 v8::External::New(&response));
         v8::Context::GetCurrent()->Global()->Set(
                 v8::String::New("exit"),
                 closeconn->GetFunction());
+
+        // Get a crypto key.
+        v8::Handle<v8::FunctionTemplate> getcrypto = v8::FunctionTemplate::New(
+                get_crypto_key,
+                v8::External::New(connection_));
+        v8::Context::GetCurrent()->Global()->Set(
+                v8::String::New("get_crypto_key"),
+                getcrypto->GetFunction());
     }
 };

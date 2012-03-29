@@ -121,6 +121,9 @@ public:
     virtual void shutdown()
     {
     }
+    virtual void detach(logjamd::Connection*)
+    {
+    }
 };
 
 class Connection_mock : public logjamd::Connection

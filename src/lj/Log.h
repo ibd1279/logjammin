@@ -521,10 +521,15 @@ namespace lj
                 delete ex;
                 return false;
             }
+            catch (const std::string& ex)
+            {
+                logger.end("Unhandled Exception", ex);
+                return false;
+            }
             catch (...)
             {
                 logger.end("Unhandled Exception", "non-exception type");
-                return false;
+                throw;
             }
             return true;
         }

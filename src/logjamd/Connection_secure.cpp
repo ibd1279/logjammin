@@ -1,7 +1,8 @@
 /*!
- \file logjamd/Connection_connection.cpp
+ \file logjamd/Connection_secure.cpp
  \brief Logjam server connection to a client implementation.
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  
@@ -72,7 +73,7 @@ namespace logjamd
     {
         thread_ = new lj::Thread();
         thread_->run([this] { this->execute(); },
-                [this] { lj::log::out<lj::Debug>("Connection Thread Exited."); });
+                [this] { this->cleanup(); });
     }
 
     void Connection_secure::execute()
@@ -97,8 +98,15 @@ namespace logjamd
                 stage = nullptr;
             }
         }
+        lj::log::out<lj::Debug>("Connection Thread Exited.");
+    }
 
-        // Close the connection.
+    void Connection_secure::cleanup()
+    {
+        lj::log::out<lj::Debug>("Detaching connection from the server.");
+        server().detach(this);
+        //delete this;
+        // perform any clean up work here.
     }
 
     void Connection_secure::set_crypto_key(const std::string& identifier,

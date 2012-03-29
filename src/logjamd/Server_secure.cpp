@@ -2,6 +2,7 @@
  \file logjamd/Server_secure.cpp
  \brief Logjam server networking implementation.
  \author Jason Watson
+
  Copyright (c) 2011, Jason Watson
  All rights reserved.
 
@@ -56,6 +57,7 @@ namespace logjamd
             connections_()
     {
     }
+
     Server_secure::~Server_secure()
     {
         if (io_)
@@ -73,6 +75,7 @@ namespace logjamd
             delete (*iter);
         }
     }
+
     void Server_secure::startup()
     {
         std::string listen(lj::bson::as_string(cfg()["server/listen"]));
@@ -96,6 +99,7 @@ namespace logjamd
             throw LJ__Exception(msg + lj::openssl_get_error_string());
         }
     }
+
     void Server_secure::listen()
     {
         running_ = true;
@@ -127,8 +131,16 @@ namespace logjamd
             connections_.push_back(connection);
         }
     }
+
     void Server_secure::shutdown()
     {
         running_ = false;
+    }
+
+    void Server_secure::detach(Connection* conn)
+    {
+        Connection_secure* ptr = dynamic_cast<logjamd::Connection_secure*>(
+                conn);
+        connections_.remove(ptr);
     }
 };

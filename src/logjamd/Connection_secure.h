@@ -51,7 +51,6 @@ namespace logjamd
                 std::iostream* stream);
         virtual ~Connection_secure();
         virtual void start();
-        virtual void execute();
         virtual bool secure()
         {
             return secure_;
@@ -66,6 +65,8 @@ namespace logjamd
         {
             return *thread_;
         }
+        virtual void execute();
+        virtual void cleanup();
     private:
         lj::Thread* thread_;
         bool secure_;

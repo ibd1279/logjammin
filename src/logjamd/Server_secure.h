@@ -51,6 +51,7 @@ namespace logjamd
         virtual void startup();
         virtual void listen();
         virtual void shutdown();
+        virtual void detach(Connection* conn);
     private:
         ::BIO* io_;
         bool running_;

@@ -46,7 +46,7 @@ namespace lj
     {
         if (running())
         {
-            log::format<Notice>("Aborting thread from destructor").end();
+            log::format<Notice>("Aborting thread from thread destructor.").end();
             abort();
         }
     }

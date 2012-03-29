@@ -3,6 +3,7 @@
  \file logjamd/Server.h
  \brief Logjam server networking header.
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  
@@ -43,9 +44,17 @@ namespace logjamd
     //! Abstract base class for accepting connections.
     class Server {
     public:
+        //! Construct a new Server.
+        /*!
+         \par
+         All servers are required to have some form of configuration
+         \param config The configuration for the server.
+         */
         Server(lj::bson::Node* config) : config_(config)
         {
         }
+
+        //! Destructor
         virtual ~Server()
         {
             if (config_)
@@ -53,13 +62,33 @@ namespace logjamd
                 delete config_;
             }
         }
+
+        //! Perform any initialization necessary for the server.
         virtual void startup() = 0;
+
+        //! Start listening for connections.
         virtual void listen() = 0;
+
+        //! Attempt a graceful shutdown.
         virtual void shutdown() = 0;
+
+        //! Detach a connection from the server.
+        /*!
+         \par
+         This allows the server to stop managing the connection.
+         including not shutting down the connection when the server is
+         shutdown.
+         \param conn The connection to detach.
+         */
+        virtual void detach(Connection* conn) = 0;
+
+        //! Read only configuration.
         virtual const lj::bson::Node& cfg() const
         {
             return *config_;
         }
+
+        //! Read/write configuration.
         virtual lj::bson::Node& config()
         {
             return *config_;
