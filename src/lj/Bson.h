@@ -3,6 +3,7 @@
  \file lj/Bson.h
  \brief LJ Bson header.
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  

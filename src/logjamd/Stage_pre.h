@@ -3,6 +3,7 @@
  \file Stage_pre.h
  \brief Logjam server stage pre connection header.
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  

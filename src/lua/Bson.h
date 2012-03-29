@@ -3,6 +3,7 @@
  \file lua/Bson.h
  \brief lua bson header.
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  

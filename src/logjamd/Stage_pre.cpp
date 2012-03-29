@@ -2,6 +2,7 @@
  \file Stage_pre.cpp
  \brief Logjam server stage pre connection implementation.
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  

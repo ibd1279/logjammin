@@ -3,6 +3,7 @@
  \file logjamd/Connection_connection.h
  \brief Logjam server connection to a client definition.
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  

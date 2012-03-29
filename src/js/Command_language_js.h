@@ -3,6 +3,7 @@
  \file js/Command_language_js.h
  \brief Logjam server Javascript command language wrapper.
  \author Jason Watson
+
  Copyright (c) 2011, Jason Watson
  All rights reserved.
 

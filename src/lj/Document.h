@@ -3,6 +3,7 @@
  \file lj/Document.h
  \brief LJ Bson Document header.
  \author Jason Watson
+
  Copyright (c) 2011, Jason Watson
  All rights reserved.
  

@@ -2,6 +2,7 @@
  \file lj/Uuid.cpp
  \brief LJ Uuid implementation.
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  

@@ -1,4 +1,3 @@
-
 /*-
  * Copyright 2009 Colin Percival
  * All rights reserved.
@@ -27,7 +26,6 @@
  * This file was originally written by Colin Percival as part of the Tarsnap
  * online backup system.
  */
-//#include "scrypt_platform.h"
 
 #include <sys/types.h>
 #include <sys/mman.h>

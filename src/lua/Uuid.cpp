@@ -2,6 +2,7 @@
  \file lua/Uuid.cpp
  \brief lua uuid implementation.
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  

@@ -3,6 +3,7 @@
  \file js/jesuit.h
  \brief Integration helper file for v8 and logjam
  \author Jason Watson
+
  Copyright (c) 2011, Jason Watson
  All rights reserved.
 

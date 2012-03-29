@@ -3,6 +3,7 @@
  \file logjamd/User.h
  \brief Logjam server User header.
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  

@@ -3,6 +3,7 @@
  \file lj/Log.h
  \brief LJ Log header.
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  

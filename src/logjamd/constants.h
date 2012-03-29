@@ -3,6 +3,7 @@
  \file logjamd/constants.h
  \brief Logjam server constants definition.
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  

@@ -3,6 +3,7 @@
  \file logjamd/Stage_auth.h
  \brief Logjam server stage authentication header.
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  

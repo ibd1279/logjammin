@@ -3,6 +3,7 @@
  \file lua/Uuid.h
  \brief lua uuid header.
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  

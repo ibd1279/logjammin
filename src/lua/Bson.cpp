@@ -2,6 +2,7 @@
  \file lua/Bson.cpp
  \brief lua bson integration.
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  

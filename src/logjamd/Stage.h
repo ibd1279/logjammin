@@ -3,6 +3,7 @@
  \file Stage.h
  \brief Logjam server stage abstract base definition.
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  

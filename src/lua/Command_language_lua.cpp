@@ -2,6 +2,7 @@
  \file lua/Command_language_lua.cpp
  \brief Logjam server networking header.
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  

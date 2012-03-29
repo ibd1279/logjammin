@@ -2,6 +2,7 @@
  \file logjamd.cpp
  \brief Logjam Server Executable
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  

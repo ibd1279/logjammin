@@ -3,6 +3,7 @@
  \file lj/Uuid.h
  \brief LJ Uuid header.
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson       
  All rights reserved.
  

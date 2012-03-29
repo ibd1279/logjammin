@@ -3,6 +3,7 @@
  \file Tokyo.h
  \brief Tokyo Cabinet / Tokyo Dystopia C++ wrapper
  \author Jason Watson
+
  Copyright (c) 2009, Jason Watson
  All rights reserved.
  

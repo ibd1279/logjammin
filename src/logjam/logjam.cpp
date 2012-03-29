@@ -1,6 +1,7 @@
 /*
  \file logjam.cpp
  \author Jason Watson
+
  Copyright (c) 2009, Jason Watson
  All rights reserved.
  

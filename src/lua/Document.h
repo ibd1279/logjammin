@@ -3,6 +3,7 @@
  \file lua/Document.h
  \brief lua document header.
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  

@@ -2,6 +2,7 @@
  \file lj/Log.cpp
  \brief LJ Logger implementation.
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  

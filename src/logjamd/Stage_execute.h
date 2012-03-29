@@ -3,6 +3,7 @@
  \file Stage_execute.h
  \brief Logjam server client command execution stage definition.
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  

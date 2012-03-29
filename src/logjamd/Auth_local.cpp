@@ -2,6 +2,7 @@
  \file logjamd/Auth_local.cpp
  \brief Logjam server authentication implementation.
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  

@@ -3,6 +3,7 @@
  \file logjamd/Auth_local.h
  \brief Logjam server authentication header.
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  

@@ -2,6 +2,7 @@
  \file Stage_json_adapt.cpp
  \brief Logjam server stage for converting telnet json input into bson input.
  \author Jason Watson
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
  
