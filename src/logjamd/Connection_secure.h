@@ -48,13 +48,14 @@ namespace logjamd
     public:
         Connection_secure(logjamd::Server* server,
                 lj::bson::Node* state,
-                std::iostream* stream);
+                std::streambuf* buffer);
         virtual ~Connection_secure();
         virtual void start();
         virtual bool secure()
         {
             return secure_;
         }
+        virtual void close();
         virtual void set_crypto_key(const std::string& identifier,
                 const void* key,
                 int sz);
@@ -68,6 +69,7 @@ namespace logjamd
         virtual void execute();
         virtual void cleanup();
     private:
+        std::streambuf* buffer_;
         lj::Thread* thread_;
         bool secure_;
         std::map<std::string, CryptoPP::SecBlock<uint8_t>* > keys_;

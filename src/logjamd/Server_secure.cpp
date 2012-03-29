@@ -114,14 +114,14 @@ namespace logjamd
 
             // Collect all the things we need for this connection.
             lj::bson::Node* connection_state = new lj::bson::Node();
-            std::iostream* connection_stream = new std::iostream(
-                    new lj::Streambuf_bio<char>(BIO_pop(io_), 4096, 4096));
+            lj::Streambuf_bio<char>* connection_buffer = 
+                    new lj::Streambuf_bio<char>(BIO_pop(io_), 4096, 4096);
 
             // Create the new connection
             Connection_secure* connection = new Connection_secure(
                     this,
                     connection_state,
-                    connection_stream);
+                    connection_buffer);
 
             // Kick off the thread for that connection.
             connection->start();
@@ -139,6 +139,7 @@ namespace logjamd
 
     void Server_secure::detach(Connection* conn)
     {
+        // remove this pointer from the collection of managed connections.
         Connection_secure* ptr = dynamic_cast<logjamd::Connection_secure*>(
                 conn);
         connections_.remove(ptr);

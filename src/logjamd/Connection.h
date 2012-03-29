@@ -79,16 +79,12 @@ namespace logjamd
                 delete state_;
             }
 
-            if (stream_)
-            {
-                stream_->flush();
-                delete stream_;
-            }
-
             if (user_)
             {
                 delete user_;
             }
+
+            close();
         }
 
         //! Perform the connection logic.
@@ -123,7 +119,32 @@ namespace logjamd
          */
         virtual std::iostream& io()
         {
+            if (!stream_)
+            {
+                throw LJ__Exception(
+                        "Stream for the connection already closed.");
+            }
             return *stream_;
+        }
+
+        //! Close the stream object associated with this connection.
+        /*!
+         \par
+         This deletes the stream object associated with this connection.
+         \c logjamd::Connection::io() will throw an exception after this is
+         called.
+         \note
+         This method does not delete the std::streambuf associated with the
+         std::iostream.
+         */
+        virtual void close()
+        {
+            if (stream_)
+            {
+                stream_->flush();
+                delete stream_;
+                stream_ = NULL;
+            }
         }
 
         //! Get the user associated with this connection.

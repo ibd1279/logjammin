@@ -44,8 +44,9 @@ namespace logjamd
     Connection_secure::Connection_secure(
             logjamd::Server* server,
             lj::bson::Node* state,
-            std::iostream* stream) :
-            logjamd::Connection(server, state, stream),
+            std::streambuf* buffer) :
+            logjamd::Connection(server, state, new std::iostream(buffer)),
+            buffer_(buffer),
             thread_(nullptr),
             secure_(false),
             keys_()
@@ -67,13 +68,26 @@ namespace logjamd
         {
             delete (*iter).second;
         }
+
+        close();
     }
 
     void Connection_secure::start()
     {
         thread_ = new lj::Thread();
+        // XXX This is leaking memory right now, and needs to be cleaned up.
         thread_->run([this] { this->execute(); },
-                [this] { this->cleanup(); });
+                [this] { this->cleanup(); delete this; });
+    }
+
+    void Connection_secure::close()
+    {
+        this->logjamd::Connection::close();
+        if (buffer_)
+        {
+            delete buffer_;
+            buffer_ = NULL;
+        }
     }
 
     void Connection_secure::execute()

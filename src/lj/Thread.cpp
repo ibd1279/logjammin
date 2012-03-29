@@ -90,9 +90,11 @@ namespace lj
 
     void Thread::pthread_cleanup(void* obj)
     {
+        // XXX I feel like this might be dangerous if a thread is reused
         lj::Thread* ptr = static_cast<lj::Thread*>(obj);
-        log::attempt<Critical>([ptr] { ptr->work_->cleanup(); });
+        Work* work = ptr->work_;
         ptr->work_ = nullptr;
+        log::attempt<Critical>([work] { work->cleanup(); });
     }
 };
 
