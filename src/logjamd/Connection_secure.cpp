@@ -75,9 +75,7 @@ namespace logjamd
     void Connection_secure::start()
     {
         thread_ = new lj::Thread();
-        // XXX This is leaking memory right now, and needs to be cleaned up.
-        thread_->run([this] { this->execute(); },
-                [this] { this->cleanup(); delete this; });
+        thread_->run(this);
     }
 
     void Connection_secure::close()
@@ -90,7 +88,7 @@ namespace logjamd
         }
     }
 
-    void Connection_secure::execute()
+    void Connection_secure::run()
     {
         Stage* stage = new Stage_pre(this);
 
@@ -119,8 +117,8 @@ namespace logjamd
     {
         lj::log::out<lj::Debug>("Detaching connection from the server.");
         server().detach(this);
-        //delete this;
         // perform any clean up work here.
+        delete this;
     }
 
     void Connection_secure::set_crypto_key(const std::string& identifier,

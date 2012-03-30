@@ -44,7 +44,8 @@
 typedef struct bio_st BIO;
 namespace logjamd
 {
-    class Connection_secure : public logjamd::Connection
+    class Connection_secure :
+            public logjamd::Connection, lj::Work
     {
     public:
         Connection_secure(logjamd::Server* server,
@@ -62,13 +63,13 @@ namespace logjamd
                 int sz);
         virtual const void* get_crypto_key(const std::string& identifier,
                 int* sz);
+        virtual void run();
+        virtual void cleanup();
     protected:
         inline lj::Thread& thread()
         {
             return *thread_;
         }
-        virtual void execute();
-        virtual void cleanup();
     private:
         std::streambuf* buffer_;
         lj::Thread* thread_;
