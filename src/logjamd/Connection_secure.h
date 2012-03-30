@@ -44,13 +44,39 @@
 typedef struct bio_st BIO;
 namespace logjamd
 {
+    //! A Connection implementation that supports security.
+    /*!
+     \par
+     This connection implementation is for the Server_secure implementation.
+     It depends on OpenSSL for TLS support. The secure method will only
+     return true if the connection has established TLS.
+     \par
+     This connection type depends on lj::Thread. As such it also implements
+     the \c lj::Work interface. 
+     \sa logjamd::Server_secure
+     \sa lj::Thread
+     \sa lj::Work
+     */
     class Connection_secure :
             public logjamd::Connection, lj::Work
     {
     public:
+        //! Create a secure connection object.
+        /*!
+         \par Memory
+         This object is responsible for releasing the memory associated with
+         \c state and \c buffer. Server is not released by this class.
+         \c buffer memory are managed by this class. 
+         \param server The server associated with this connection.
+         \param state The state associated with this server.
+         \param buffer The stream buffer for io with this server.
+         \sa logjamd::Connection::Connection
+         */
         Connection_secure(logjamd::Server* server,
                 lj::bson::Node* state,
                 std::streambuf* buffer);
+
+        //! Destructor
         virtual ~Connection_secure();
         virtual void start();
         virtual bool secure()
@@ -66,15 +92,19 @@ namespace logjamd
         virtual void run();
         virtual void cleanup();
     protected:
+        //! Get the thread associated with this connection.
+        /*!
+         \return A reference to the Thread.
+         */
         inline lj::Thread& thread()
         {
             return *thread_;
         }
     private:
-        std::streambuf* buffer_;
-        lj::Thread* thread_;
-        bool secure_;
-        std::map<std::string, CryptoPP::SecBlock<uint8_t>* > keys_;
+        std::streambuf* buffer_; //!< Streambuffer for IO.
+        lj::Thread* thread_; //!< Thread to process requests.
+        bool secure_; //!< Flag indicating the security of the link.
+        std::map<std::string, CryptoPP::SecBlock<uint8_t>* > keys_; //!< Crypto key management.
     };
 };
 

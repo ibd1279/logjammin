@@ -47,16 +47,33 @@ namespace logjamd
     class Stage_auth;
 
     //! Connection Base Class
+    /*!
+     \par
+     The connection provides a connection to a specific client. Once a client
+     has connected to the server, a connection object is created and the
+     responsbility for the client interaction is given to the new connection
+     object.
+     \sa logjamd::Connection_secure
+     \sa logjamd::Connection_xlator
+     */
     class Connection {
     public:
+        //! Allow the authentication stage to modify the user information.
+        /*!
+         \par
+         Only the authentication stage may modify the user associated with
+         a connection. This is for security reasons.
+         */
         friend class Stage_auth;
-        friend class Stage_pre;
 
         //! Constructor
         /*!
          \par
          The user is initially NULL and can only be modified by
          the connection object and the authorization stage.
+         \par Memory
+         The connection object is responsible for releasing the state and
+         stream objects.
          \param server The server associated with this connection.
          \param state Bson node for tracking the connection state.
          \param stream The stream used for communication.
@@ -72,6 +89,11 @@ namespace logjamd
         }
 
         //! Destructor.
+        /*!
+         \par Memory
+         The memory for state, user, and stream objects will be released
+         when the connection is destroyed.
+         */
         virtual ~Connection()
         {
             if (state_)
@@ -91,13 +113,13 @@ namespace logjamd
         /*!
          \par
          The logic for the connection object is unique to each connection
-         type. When start exits, the connection object will be deleted.
+         type. Start is called by the server and is expected to return quickly.
          */
         virtual void start() = 0;
 
         //! Get the server object.
         /*!
-         \return The server object.
+         \return A reference to the server object.
          */
         virtual logjamd::Server& server()
         {
@@ -106,7 +128,7 @@ namespace logjamd
 
         //! Get the connection state.
         /*!
-         \return The connection state.
+         \return A reference to the state object.
          */
         virtual lj::bson::Node& state()
         {
@@ -115,7 +137,8 @@ namespace logjamd
 
         //! Get the io stream associated with this connection.
         /*!
-         \return The connection stream.
+         \return A reference to the io stream.
+         \throws lj::Exception If the connection has already been closed.
          */
         virtual std::iostream& io()
         {
@@ -136,6 +159,7 @@ namespace logjamd
          \note
          This method does not delete the std::streambuf associated with the
          std::iostream.
+         \sa logjamd::Connection::io()
          */
         virtual void close()
         {
@@ -149,7 +173,7 @@ namespace logjamd
 
         //! Get the user associated with this connection.
         /*!
-         \todo This should handle the un-authenticated case better. By
+         \TODO This should handle the un-authenticated case better. By
          possibly returning null, most methods will need to test the result
          before they can perform any logic. If a reference was returned and
          the un-authenticated case had an "unauth user object" that returned
@@ -163,6 +187,8 @@ namespace logjamd
 
         //! Test if this is considered a secure connection.
         /*!
+         \par
+         All connections are considered insecure by default.
          \return True if the connection is secure, false otherwise.
          */
         virtual bool secure()
@@ -280,12 +306,17 @@ namespace logjamd
             return real_connection_->get_crypto_key(identifier, sz);
         }
 
+        //! Get the real connection being translated for.
+        /*!
+         \par
+         This method provides access to the real connection object.
+         */
         virtual Connection& real_connection()
         {
             return *real_connection_;
         }
     private:
-        Connection* real_connection_;
+        Connection* real_connection_; //!< The real client connection object.
     };
 };
 

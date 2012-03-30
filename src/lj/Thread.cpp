@@ -82,19 +82,36 @@ namespace lj
 
     void* Thread::pthread_run(void* obj)
     {
+        // convert the passed object back into a thread instance.
         lj::Thread* ptr = static_cast<lj::Thread*>(obj);
+
+        // Ensure cleanup gets called.
         pthread_cleanup_push(lj::Thread::pthread_cleanup, obj);
+
+        // Attempt to perform some work.
         log::attempt<Critical>([ptr] { ptr->work_->run(); });
+
+        // Force cleanup to get called.
         pthread_cleanup_pop(1);
+
+        // pthread return value.
+        // TODO this should probably do something more useful and store the
+        // TODO result on the work object.
         return nullptr;
     }
 
     void Thread::pthread_cleanup(void* obj)
     {
-        // XXX I feel like this might be dangerous if a thread is reused
+        // XXX I feel like this might be dangerous if a thread is reused.
+
+        // convert the passed object back into a thread instance.
         lj::Thread* ptr = static_cast<lj::Thread*>(obj);
+
+        // mark the thread as no longer running.
         Work* work = ptr->work_;
         ptr->work_ = nullptr;
+
+        // attempt to perform the cleanup code.
         log::attempt<Critical>([work] { work->cleanup(); });
     }
 };

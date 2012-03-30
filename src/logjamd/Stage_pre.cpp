@@ -90,12 +90,11 @@ namespace logjamd
             log("Using json mode.").end();
             Stage* next_stage = new Stage_json_adapt(conn());
             return next_stage->logic();
-            // return the json stage.
         }
         else if (k_http_mode.compare(buffer) == 0)
         {
             log("Using HTTP mode.").end();
-            conn()->user(new User(k_user_id_http, k_user_login_http));
+            return nullptr;
             // return the http stage.
         }
         else

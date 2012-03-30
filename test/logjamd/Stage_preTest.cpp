@@ -70,9 +70,6 @@ void testHTTP()
     stage.logic();
 
     // Test the result
-    TEST_ASSERT(env.connection()->user() != NULL);
-    TEST_ASSERT(env.connection()->user()->id() == logjamd::k_user_id_http);
-    TEST_ASSERT(env.connection()->user()->login() == logjamd::k_user_login_http);
 }
 
 void testUnknown()
