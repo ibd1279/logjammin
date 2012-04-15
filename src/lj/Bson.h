@@ -547,15 +547,25 @@ namespace lj
             //! get the value of the document node as a bson string.
             /*!
              \par
-             Pointer is allocated with "new[]" and must be released with "delete[]".
+             Pointer is allocated with "new[]" and must be released with
+             "delete[]".
              \par
-             The array length can be obtained by calling \c size() .
+             The array length can be obtained by calling \c size(), but it is
+             recommended that you use the size pointer to get the size.
+             \param sz_ptr [out] Location to store the size of the data.
              \return A byte array contain the bson document.
              */
-            inline uint8_t* to_binary() const
+            inline uint8_t* to_binary(size_t* sz_ptr) const
             {
-                uint8_t *ptr = new uint8_t[size()];
+                size_t sz = size();
+                uint8_t *ptr = new uint8_t[sz];
                 copy_to_bson(ptr);
+
+                // if sz_ptr is not null, store the data size.
+                if (sz_ptr)
+                {
+                    *sz_ptr = sz;
+                }
                 return ptr;
             }
 
@@ -823,6 +833,17 @@ namespace lj
          \param amount The amount to increment a value. May be negative.
          */
         void increment(Node& b, int amount);
+
+        //! Combine data in changes to the target node.
+        /*!
+         \par
+         Adds all of the paths that exist in \c changes to \c target. Arrays
+         and other values in the document are added. If a value already exists
+         at a path, it is replaced by the changes value.
+         \param target [in,out] The target \c Node to modify.
+         \param changes [in] The paths and data to add to \c target.
+         */
+        void combine(Node& target, const Node& changes);
     }; // namespace lj::bson
 }; // namespace lj
 

@@ -37,12 +37,6 @@
 #include "lj/Bson.h"
 #include "lj/Uuid.h"
 
-#include "cryptopp/aes.h"
-#include "cryptopp/eax.h"
-#include "cryptopp/filters.h"
-#include "cryptopp/osrng.h"
-#include "cryptopp/secblock.h"
-
 #include <cstdint>
 #include <string>
 
@@ -67,87 +61,127 @@ namespace lj
      object to maintain state, version history, etc.
      \par The "version" element.
      The version element is a fixed attribute for all lj::Documents. Only one
-     version exists at this time, so this value should always be 1.
+     version exists at this time, so this value should always be 100.
      \par The "." element.
      The dot element is the data for this document. This is the user generated
      component of the document.
-     
+     \par Encryption
+     Encryption and decryption of specific fields is done through the
+     \c lj::Document::encrypt() and \c lj::Document::decrypt() methods.
+     \note
+     The document object provides a thin utility wrapper around
+     a lj::bson::Node. In reality it tracks the root node and the path
+     to the current node. Dereferencing a Document object will return the
+     current node as read-only, allowing it to be easily used with the
+     existing lj::bson methods. A document also keeps track of its
+     modified state. 
      \author Jason Watson
      \version 1.0
-     \date June 11, 2011
      */
     class Document
     {
     public:
-        Document() : doc_(NULL), dirty_(true)
-        {
-            seed();
-        }
+        static const size_t k_key_size;
+
+        //! Default constructor.
+        Document();
+
+        //! Wrap a lj::bson::Node pointer.
+        /*!
+         \param doc The pointer for the document.
+         \param is_document True if the pointer is a document object,
+            and false if the document is just data.
+         */
         Document(lj::bson::Node* doc,
-                bool is_document) :
-                doc_(NULL),
-                dirty_(true)
-        {
-            if (is_document)
-            {
-                doc_ = doc;
-                dirty_ = false;
-            }
-            else
-            {
-                seed();
-                doc_->set_child(".", doc);
-            }
-        }
-        ~Document()
-        {
-            if (doc_)
-            {
-                delete doc_;
-            }
-        }
+                bool is_document);
+
+        //! Destructor.
+        ~Document();
+
+        //! Removed.
+        /*!
+         Copying documents is not allowed.
+         \param origin The original.
+         */
         Document(const lj::Document& orig) = delete;
+
+        //! Removed.
+        /*!
+         Copying documents is not allowed.
+         \param origin The original.
+         */
         lj::Document& operator=(const lj::Document& orig) = delete;
         
+        //! Get the parent document identifier.
+        /*!
+         \return The parent identifier.
+         */
         inline lj::Uuid parent() const
         {
             return lj::bson::as_uuid(doc_->nav("_/parent"));
         }
+
+        //! Get the document vector clock.
+        /*!
+         \return The document vector clock.
+         */
         inline const lj::bson::Node& vclock() const
         {
             return doc_->nav("_/vclock");
         }
+
+        //! Get the document version.
+        /*!
+         \return The document version.
+         */
         inline int32_t version() const
         {
             return lj::bson::as_int32(doc_->nav("version"));
         }
+
+        //! Get the document key.
+        /*!
+         \return The document key.
+         */
         inline uint64_t key() const
         {
             return lj::bson::as_uint64(doc_->nav("_/key"));
         }
+
+        //! Get the document identifier.
+        /*!
+         \return The document identifier.
+         */
         inline lj::Uuid id() const
         {
             return lj::bson::as_uuid(doc_->nav("_/id"));
         }
+
+        //! Get the suppressed flag.
+        /*!
+         \return True if the document is suppressed, false otherwise.
+         */
         inline bool suppress() const
         {
             return lj::bson::as_boolean(doc_->nav("_/flag/suppressed"));
         }
+
+        //! Get the dirty flag.
+        /*!
+         \return True if the document is dirty, false otherwise.
+         */
         inline bool dirty() const
         {
             return dirty_;
         }
-        inline bool encrypted() const
-        {
-            bool flag = lj::bson::as_boolean(doc_->nav("_/flag/encrypted"));
-            return flag || !doc_->exists(".") || doc_->exists("#");
-        }
+
+        //! Get the data document.
+        /*!
+         \param path The path in the document to get.
+         \return The data node.
+         */
         inline const lj::bson::Node& get(const std::string& path) const
         {
-            if (encrypted())
-            {
-                throw LJ__Exception("not allowed on encrypted doc.");
-            }
             return doc_->nav(".").nav(path);
         }
 
@@ -157,10 +191,7 @@ namespace lj
          This method is used to clear the dirty flag and treat the object
          as if it has not been modified.
          */
-        void wash()
-        {
-            dirty_ = false;
-        }
+        void wash();
 
         //! Update the keys for this document.
         /*!
@@ -172,227 +203,72 @@ namespace lj
          \param server The server for the vclock changes.
          \param k The new key to use for rekeying the IDs of the document.
          */
-        void rekey(const lj::Uuid& server, const uint64_t k)
-        {
-            // Get the old key value before we modify anything.
-            const uint64_t old_key = key();
-
-            // parent relationships are updated in the taint method.
-            taint(server);
-            doc_->set_child("_/key", lj::bson::new_uint64(k));
-            doc_->set_child("_/id", lj::bson::new_uuid(lj::Uuid(k)));
-
-            // We only reset the vclock if key has actually changed.
-            if (k != old_key)
-            {
-                doc_->set_child("_/vclock", new lj::bson::Node());
-            }
-        }
+        void rekey(const lj::Uuid& server,
+                const uint64_t k);
 
         //! Create a new branched child of this document.
         /*!
          This is primarily useful for duplicating data. This maintains
-         the parent relationships.
+         the parent relationships. This is the closest thing to copying
+         allowed on a document.
          \param server The server for the vclock changes.
          \param k The new key for the branched object.
          \return The new child.
          \sa rekey
          */
-        lj::Document* branch(const lj::Uuid& server, const uint64_t k)
-        {
-            // duplicate the document.
-            lj::bson::Node* data = new lj::bson::Node(*doc_);
-            lj::Document* child = new lj::Document(data, true);
+        lj::Document* branch(const lj::Uuid& server,
+                const uint64_t k);
 
-            // rekey the new document. sets the parent. 
-            child->wash();
-            child->rekey(server, k);
-            return child;
-        }
+        //! Encrypt a document.
+        /*!
+         \par
+         Encrypted fields are removed from the general document and stored in
+         hidden fields.
+         \param server The id of the server modifying the document.
+         \param key The key to use when encrypting.
+         \param key_size The size of the key data.
+         \param key_name Name to associate with the encrypted data.
+         \param paths The paths to encrypt.
+         */
+        void encrypt(const lj::Uuid& server,
+                uint8_t* key,
+                int key_size,
+                const std::string& key_name,
+                const std::vector<std::string>& paths = std::vector<std::string>());
 
-        void encrypt(const lj::Uuid& server, uint8_t* key, int key_size)
-        {
-            // Only accept 256bit keys.
-            if (key_size != CryptoPP::AES::MAX_KEYLENGTH)
-            {
-                throw LJ__Exception("encrypt key must 256bits");
-            }
-            if (encrypted())
-            {
-                throw LJ__Exception("double encryption requested.");
-            }
-
-            // Create the IV.
-            CryptoPP::AutoSeededRandomPool rng;
-            byte iv[CryptoPP::AES::BLOCKSIZE * 16];
-            rng.GenerateBlock(iv, sizeof(iv));
-
-            // Setup the encrypter.
-            CryptoPP::EAX<CryptoPP::AES>::Encryption enc;
-            enc.SetKeyWithIV(key, key_size, iv, sizeof(iv));
-
-            // Encrypt the document.
-            uint8_t* data = doc_->to_binary();
-            try
-            {
-                std::string ct;
-                CryptoPP::ArraySource(data, doc_->size(), true,
-                        new CryptoPP::AuthenticatedEncryptionFilter(enc,
-                                new CryptoPP::StringSink(ct)));
-
-                // Rebuild the document.
-                taint(server);
-                doc_->set_child("_/flag/encrypted",
-                        lj::bson::new_boolean(true));
-                doc_->set_child(".", NULL);
-                doc_->set_child("#", lj::bson::new_binary(
-                        (const uint8_t*)ct.data(), ct.size(),
-                        lj::bson::Binary_type::k_bin_user_defined));
-                doc_->set_child("_/vector", lj::bson::new_binary(
-                        (const uint8_t*)iv, sizeof(iv),
-                        lj::bson::Binary_type::k_bin_user_defined));
-            }
-            catch (CryptoPP::Exception& ex)
-            {
-                throw LJ__Exception(ex.what());
-            }
-
-            // clean up.
-            delete[] data;
-        }
-
-        void decrypt(uint8_t* key, int key_size)
-        {
-            // Only accept 256bit keys.
-            if (key_size != CryptoPP::AES::MAX_KEYLENGTH)
-            {
-                throw LJ__Exception("decrypt key must 256bits");
-            }
-            if (!encrypted())
-            {
-                throw LJ__Exception("double decryption requested.");
-            }
-
-            // Get the IV.
-            lj::bson::Binary_type bt;
-            uint32_t iv_size;
-            const uint8_t* iv = lj::bson::as_binary(doc_->nav("_/vector"),
-                    &bt,
-                    &iv_size);
-
-            // Setup the decrypter.
-            CryptoPP::EAX<CryptoPP::AES>::Decryption dec;
-            dec.SetKeyWithIV(key, key_size, iv, iv_size);
-
-            // decrypt the document.
-            uint32_t data_size;
-            const uint8_t* data = lj::bson::as_binary(doc_->nav("#"),
-                    &bt,
-                    &data_size);
-            try
-            {
-                std::string value;
-                CryptoPP::ArraySource(data,
-                        data_size,
-                        true,
-                        new CryptoPP::AuthenticatedDecryptionFilter(dec,
-                                new CryptoPP::StringSink(value)));
-
-                // Rebuilding the document is going to invalidate these
-                // pointers.
-                data = NULL;
-                iv = NULL;
-
-                // Rebuild the document.
-                lj::bson::Node* underscore = new lj::bson::Node(doc_->nav("_"));
-                doc_->set_value(lj::bson::Type::k_document,
-                        (const uint8_t*)value.data());
-                doc_->set_child("_", underscore);
-                doc_->set_child("_/flag/encrypted",
-                        lj::bson::new_boolean(false));
-            }
-            catch (CryptoPP::Exception& ex)
-            {
-                throw LJ__Exception(ex.what());
-            }
-        }
+        //! decrypt a document.
+        void decrypt(uint8_t* key,
+                int key_size,
+                const std::string& key_name);
         
-        void suppress(const lj::Uuid& server, const bool s)
-        {
-            if (encrypted())
-            {
-                throw LJ__Exception("not allowed on encrypted doc.");
-            }
-            taint(server);
-            doc_->set_child("_/flag/suppressed", lj::bson::new_boolean(s));
-        }
-        void set(const lj::Uuid& server, const std::string& path, lj::bson::Node* value)
-        {
-            if (encrypted())
-            {
-                throw LJ__Exception("not allowed on encrypted doc.");
-            }
-            taint(server);
-            doc_->nav(".").set_child(path, value);
-        }
-        void push(const lj::Uuid& server, const std::string& path, lj::bson::Node* value)
-        {
-            if (encrypted())
-            {
-                throw LJ__Exception("not allowed on encrypted doc.");
-            }
-            taint(server);
-            doc_->nav(".").nav(path) << value;
-        }
-        void increment(const lj::Uuid& server, const std::string path, int amount)
-        {
-            if (encrypted())
-            {
-                throw LJ__Exception("not allowed on encrypted doc.");
-            }
-            taint(server);
-            lj::bson::increment(doc_->nav(".").nav(path), amount);
-        }
-        operator std::string() const
+        //! Suppress a document.
+        void suppress(const lj::Uuid& server,
+                const bool s);
+
+        //! Change a value in the document.
+        void set(const lj::Uuid& server,
+                const std::string& path,
+                lj::bson::Node* value);
+
+        //! Change a value in the document.
+        void push(const lj::Uuid& server,
+                const std::string& path,
+                lj::bson::Node* value);
+
+        //! Increment a integer value in the document.
+        void increment(const lj::Uuid& server,
+                const std::string path,
+                int amount);
+
+        //! Convert the document to a string.
+        inline operator std::string() const
         {
             return lj::bson::as_pretty_json(*doc_);
         }
 
     private:
-        void seed()
-        {
-            if (doc_)
-            {
-                delete doc_;
-            }
-            doc_ = new lj::bson::Node();
-            dirty_ = true;
-            
-            doc_->set_child("_/parent", lj::bson::new_null());
-            doc_->set_child("_/vclock", new lj::bson::Node());
-            doc_->set_child("_/flag/suppressed", lj::bson::new_boolean(false));
-            doc_->set_child("_/flag/encrypted", lj::bson::new_boolean(false));
-            doc_->set_child("_/key", lj::bson::new_null());
-            doc_->set_child("_/id", lj::bson::new_null());
-            doc_->set_child("version", lj::bson::new_int32(100));
-            doc_->set_child(".", new lj::bson::Node());
-        }
-        
-        void taint(const lj::Uuid& server)
-        {
-            if (!dirty_)
-            {
-                // Update flags.
-                dirty_ = true;
-                
-                // Create new revision ID.
-                doc_->set_child("_/parent", new lj::bson::Node(doc_->nav("_/id")));
-                doc_->set_child("_/id", lj::bson::new_uuid(lj::Uuid(key())));
-                
-                // Update the vclock
-                lj::bson::increment(doc_->nav("_/vclock").nav(server), 1);
-            }
-        }
+        void seed();
+        void taint(const lj::Uuid& server);
         lj::bson::Node* doc_;
         bool dirty_;
     };

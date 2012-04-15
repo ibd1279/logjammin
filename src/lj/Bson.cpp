@@ -1364,6 +1364,23 @@ namespace lj
             b.set_value(Type::k_int64,
                         reinterpret_cast<const uint8_t*> (&v));
         }
+
+        void combine(Node& target, const Node& changes)
+        {
+            if (Type::k_document == changes.type())
+            {
+                for (auto iter = changes.to_map().begin();
+                        changes.to_map().end() != iter;
+                        ++iter)
+                {
+                    combine(target.nav(iter->first), *(iter->second));
+                }
+            }
+            else
+            {
+                target = changes;
+            }
+        }
     }; // namespace lj::bson
 }; // namespace lj
 
@@ -1406,8 +1423,8 @@ std::istream& operator>>(std::istream& is, lj::bson::Node& val)
 
 std::ostream& operator<<(std::ostream& os, lj::bson::Node& val)
 {
-    char* data = reinterpret_cast<char*>(val.to_binary());
-    size_t sz = val.size();
+    size_t sz;
+    char* data = reinterpret_cast<char*>(val.to_binary(&sz));
 
     os.write(data, sz);
 

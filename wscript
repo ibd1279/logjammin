@@ -104,6 +104,7 @@ def build(bld):
             'src/lj/Base64.cpp'
             ,'src/lj/Bson.cpp'
             ,'src/lj/Bson_parser.cpp'
+            ,'src/lj/Document.cpp'
             ,'src/lj/Log.cpp'
             ,'src/lj/Stopclock.cpp'
             ,'src/lj/Streambuf_pipe.cpp'

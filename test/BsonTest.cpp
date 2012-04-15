@@ -89,8 +89,9 @@ void testIstreamExtraction()
     lj::bson::Node o;
     std::stringstream ss(std::stringstream::in | std::stringstream::out
             | std::stringstream::binary);
-    char* bytes = reinterpret_cast<char*>(doc.root.to_binary());
-    ss.write(bytes, doc.root.size());
+    size_t sz;
+    char* bytes = reinterpret_cast<char*>(doc.root.to_binary(&sz));
+    ss.write(bytes, sz);
     delete[] bytes;
 
     ss >> o;
@@ -214,7 +215,7 @@ void testTo_binary()
 {
     sample_doc doc;
     
-    uint8_t* bytes = doc.root.to_binary();
+    uint8_t* bytes = doc.root.to_binary(nullptr);
     lj::bson::Node n(lj::bson::Type::k_document, bytes);
     
     TEST_ASSERT(lj::bson::as_string(doc.root).compare(lj::bson::as_string(n)) == 0);

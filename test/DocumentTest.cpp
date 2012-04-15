@@ -8,7 +8,9 @@
 #include "testhelper.h"
 #include "lj/Document.h"
 #include "scrypt/scrypt.h"
+#include "cryptopp/osrng.h"
 #include "test/DocumentTest_driver.h"
+
 
 struct sample_data
 {
@@ -129,15 +131,17 @@ void testWash()
 
 void testEncrypt()
 {
+    // Take the sample data and create a document.
     sample_data data;
     lj::Document doc(new lj::bson::Node(data.doc), false);
 
-    uint8_t dk[CryptoPP::AES::MAX_KEYLENGTH];
+    // Create the derived key for encryption and decryption.
+    uint8_t dk[lj::Document::k_key_size];
     try
     {
         CryptoPP::AutoSeededRandomPool rng;
 
-        uint8_t salt[CryptoPP::AES::MAX_KEYLENGTH];
+        uint8_t salt[lj::Document::k_key_size];
         rng.GenerateBlock(salt, sizeof(salt));
 
         std::string password = "some random string the user must provide.";
@@ -149,16 +153,17 @@ void testEncrypt()
         throw LJ__Exception(ex.what());
     }
 
+    // Perform some tests.
     doc.wash();
-    TEST_ASSERT(doc.encrypted() == false);
     TEST_ASSERT(doc.dirty() == false);
-    doc.encrypt(data.server, dk, sizeof(dk));
-    TEST_ASSERT(doc.encrypted() == true);
+    TEST_ASSERT(doc.get("bool").exists("false"));
+    doc.encrypt(data.server, dk, sizeof(dk), "foo");
     TEST_ASSERT(doc.dirty() == true);
+    TEST_ASSERT(doc.get("bool").exists("false") == false);
     doc.wash();
-    doc.decrypt(dk, sizeof(dk));
-    TEST_ASSERT(doc.encrypted() == false);
+    doc.decrypt(dk, sizeof(dk), "foo");
     TEST_ASSERT(doc.dirty() == false);
+    TEST_ASSERT(doc.get("bool").exists("false"));
 }
 
 int main(int argc, char** argv)

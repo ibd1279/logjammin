@@ -37,6 +37,8 @@
 #include "lua/Document.h"
 #include "lua/Uuid.h"
 
+#include "cryptopp/secblock.h"
+
 namespace lua
 {
     const char Document::LUNAR_CLASS_NAME[] = "Document";
@@ -55,7 +57,6 @@ namespace lua
         ,LUNAR_METHOD(Document, set)
         ,LUNAR_METHOD(Document, push)
         ,LUNAR_METHOD(Document, increment)
-        ,LUNAR_METHOD(Document, encrypted)
         ,LUNAR_METHOD(Document, encrypt)
         ,LUNAR_METHOD(Document, decrypt)
         ,LUNAR_METHOD(Document, __tostring)
@@ -246,30 +247,16 @@ namespace lua
         return 0;
     }
 
-    int Document::encrypted(lua_State* L)
-    {
-        int top = lua_gettop(L);
-        if (0 == top)
-        {
-            lua_pushboolean(L, doc_->encrypted());
-        }
-        else
-        {
-            lua_pushstring(L, "Expected 0 arguments.");
-            lua_error(L);
-        }
-        return 1;
-    }
-
     int Document::encrypt(lua_State* L)
     {
         // use the provided arg to look up the crypto keys.
         lua_getglobal(L, "get_crypto_key");
-        lua_insert(L, -2);
+        lua_pushvalue(L, -2);
         lua_call(L, 1, 1);
 
         // Get the returned value. nil will cause an error bumping us out.
         Bson_ro* val = Lunar<Bson_ro>::check(L, -1);
+        std::string key_name(as_string(L, -2));
 
         // Create a copy of the data. It is possible that the pop below
         // will cause the returned value to GC.
@@ -277,12 +264,15 @@ namespace lua
         uint32_t sz;
         const uint8_t* key_data = lj::bson::as_binary(val->node(), &bt, &sz);
         CryptoPP::SecByteBlock key(key_data, sz);
-        lua_pop(L, 1);
+        lua_pop(L, 2);
 
         try
         {
             // XXX Change this to get the server from somewhere.
-            doc_->encrypt(lj::Uuid::k_nil, key.data(), key.size());
+            doc_->encrypt(lj::Uuid::k_nil,
+                    key.data(),
+                    key.size(),
+                    key_name);
         }
         catch (lj::Exception& ex)
         {
@@ -296,11 +286,12 @@ namespace lua
     {
         // use the provided arg to look up the crypto keys.
         lua_getglobal(L, "get_crypto_key");
-        lua_insert(L, -2);
+        lua_pushvalue(L, -2);
         lua_call(L, 1, 1);
 
         // Get the returned value. nil will cause an error bumping us out.
         Bson_ro* val = Lunar<Bson_ro>::check(L, -1);
+        std::string key_name(as_string(L, -2));
 
         // Create a copy of the data. It is possible that the pop below
         // will cause the returned value to GC.
@@ -308,11 +299,13 @@ namespace lua
         uint32_t sz;
         const uint8_t* key_data = lj::bson::as_binary(val->node(), &bt, &sz);
         CryptoPP::SecByteBlock key(key_data, sz);
-        lua_pop(L, 1);
+        lua_pop(L, 2);
 
         try
         {
-            doc_->decrypt(key.data(), key.size());
+            doc_->decrypt(key.data(),
+                    key.size(),
+                    key_name);
         }
         catch (lj::Exception& ex)
         {

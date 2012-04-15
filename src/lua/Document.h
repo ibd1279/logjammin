@@ -64,7 +64,6 @@ namespace lua
         int set(lua_State* L);
         int push(lua_State* L);
         int increment(lua_State* L);
-        int encrypted(lua_State* L);
         int encrypt(lua_State* L);
         int decrypt(lua_State* L);
         int __tostring(lua_State* L);
