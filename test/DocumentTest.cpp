@@ -163,7 +163,7 @@ void testEncrypt()
     doc.wash();
     doc.decrypt(dk, sizeof(dk), "foo");
     TEST_ASSERT(doc.dirty() == false);
-    TEST_ASSERT(doc.get("bool").exists("false"));
+    TEST_ASSERT(doc.get("bool").exists("false") == true);
 }
 
 int main(int argc, char** argv)
