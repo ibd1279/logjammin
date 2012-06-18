@@ -144,26 +144,49 @@ void testEncrypt()
         uint8_t salt[lj::Document::k_key_size];
         rng.GenerateBlock(salt, sizeof(salt));
 
+        // fill dk with the digested password.
         std::string password = "some random string the user must provide.";
         crypto_scrypt((uint8_t*)password.data(), password.size(),
                 salt, sizeof(salt), 1 << 10, 8, 2, dk, sizeof(dk));
+
+        // What fields are we going to encrypt?
+        std::vector<std::string> paths;
+        paths.push_back(std::string("str"));
+        paths.push_back(std::string("bool/false"));
+
+        // Test to make sure those fields exist before we encrypt
+        TEST_ASSERT(doc.get("bool").exists("false") == true);
+        TEST_ASSERT(doc.get().exists("str") == true);
+        TEST_ASSERT(lj::bson::as_string(doc.get("str")).compare(
+                "original foo") == 0);
+
+        // Encrypt the paths.
+        doc.encrypt(data.server,
+                dk,
+                lj::Document::k_key_size,
+                std::string("test"),
+                paths);
+
+        // Test that they are gone.
+        TEST_ASSERT(doc.get("bool").exists("false") == false);
+        TEST_ASSERT(doc.get().exists("str") == false);
+
+        doc.decrypt(dk,
+                lj::Document::k_key_size,
+                std::string("test"));
+
+        std::cout << (std::string) doc << std::endl;
+
+        // Test to make sure those returned.
+        TEST_ASSERT(doc.get("bool").exists("false") == true);
+        TEST_ASSERT(doc.get().exists("str") == true);
+        TEST_ASSERT(lj::bson::as_string(doc.get("str")).compare(
+                "original foo") == 0);
     }
     catch (CryptoPP::Exception& ex)
     {
         throw LJ__Exception(ex.what());
     }
-
-    // Perform some tests.
-    doc.wash();
-    TEST_ASSERT(doc.dirty() == false);
-    TEST_ASSERT(doc.get("bool").exists("false"));
-    doc.encrypt(data.server, dk, sizeof(dk), "foo");
-    TEST_ASSERT(doc.dirty() == true);
-    TEST_ASSERT(doc.get("bool").exists("false") == false);
-    doc.wash();
-    doc.decrypt(dk, sizeof(dk), "foo");
-    TEST_ASSERT(doc.dirty() == false);
-    TEST_ASSERT(doc.get("bool").exists("false") == true);
 }
 
 int main(int argc, char** argv)

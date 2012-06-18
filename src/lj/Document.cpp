@@ -173,8 +173,9 @@ namespace lj
                     paths.end() != iter;
                     ++iter)
             {
-                tmp.nav(".").set_child(*iter,
-                        new lj::bson::Node(doc_->nav(".").nav(*iter)));
+                lj::bson::Node* ptr = 
+                        new lj::bson::Node(doc_->nav(".").nav(*iter));
+                tmp.nav(".").set_child(*iter, ptr);
             }
             data.ptr = tmp.to_binary(&data_sz);
         }
@@ -269,7 +270,7 @@ namespace lj
             // Rebuild the document.
             lj::bson::Node changes(lj::bson::Type::k_document,
                     (const uint8_t*)value.data());
-            lj::bson::combine(doc_->nav("."), changes);
+            lj::bson::combine(doc_->nav("."), changes.nav("."));
         }
         catch (CryptoPP::Exception& ex)
         {

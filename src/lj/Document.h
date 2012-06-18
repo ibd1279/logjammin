@@ -177,6 +177,15 @@ namespace lj
 
         //! Get the data document.
         /*!
+         \return The data node.
+         */
+        inline const lj::bson::Node& get() const
+        {
+            return doc_->nav(".");
+        }
+
+        //! Get the data document.
+        /*!
          \param path The path in the document to get.
          \return The data node.
          */
