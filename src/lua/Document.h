@@ -58,6 +58,7 @@ namespace lua
         int suppress(lua_State* L);
         int dirty(lua_State* L);
         int get(lua_State* L);
+        int exists(lua_State* L);
         int wash(lua_State* L);
         int rekey(lua_State* L);
         int branch(lua_State* L);

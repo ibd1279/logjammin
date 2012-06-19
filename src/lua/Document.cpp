@@ -39,6 +39,8 @@
 
 #include "cryptopp/secblock.h"
 
+#include <iostream>
+
 namespace lua
 {
     const char Document::LUNAR_CLASS_NAME[] = "Document";
@@ -51,6 +53,7 @@ namespace lua
         ,LUNAR_METHOD(Document, suppress)
         ,LUNAR_METHOD(Document, dirty)
         ,LUNAR_METHOD(Document, get)
+        ,LUNAR_METHOD(Document, exists)
         ,LUNAR_METHOD(Document, wash)
         ,LUNAR_METHOD(Document, rekey)
         ,LUNAR_METHOD(Document, branch)
@@ -146,11 +149,37 @@ namespace lua
 
     int Document::get(lua_State* L)
     {
+        int top = lua_gettop(L);
+
         std::string tmp(as_string(L, -1));
         try
         {
-            const lj::bson::Node& n(doc_->get(tmp));
-            Lunar<Bson_ro>::push(L, new Bson_ro(n), true);
+            if (top == 1)
+            {
+                const lj::bson::Node& n(doc_->get(tmp));
+                Lunar<Bson_ro>::push(L, new Bson_ro(n), true);
+            }
+            else
+            {
+                const lj::bson::Node& n(doc_->get());
+                Lunar<Bson_ro>::push(L, new Bson_ro(n), true);
+            }
+        }
+        catch (lj::Exception& ex)
+        {
+            lua_pushstring(L, ex.str().c_str());
+            lua_error(L);
+        }
+        return 1;
+    }
+
+    int Document::exists(lua_State* L)
+    {
+        std::string tmp(as_string(L, -1));
+        try
+        {
+            const lj::bson::Node& n(doc_->get());
+            lua_pushboolean(L, n.exists(tmp));
         }
         catch (lj::Exception& ex)
         {
@@ -249,6 +278,23 @@ namespace lua
 
     int Document::encrypt(lua_State* L)
     {
+        int top = lua_gettop(L);
+        
+        // Every arg except the first is a path to encrypt
+        std::vector<std::string> paths;
+        if (top > 1)
+        {
+            paths.resize(top - 1);
+            while (top > 1)
+            {
+                // This code moves the item at lua index 2 and puts it
+                // in C index 0.
+                paths[top - 2] = as_string(L, -1);
+                lua_pop(L, 1);
+                top = lua_gettop(L);
+            }
+        }
+
         // use the provided arg to look up the crypto keys.
         lua_getglobal(L, "get_crypto_key");
         lua_pushvalue(L, -2);
@@ -272,7 +318,8 @@ namespace lua
             doc_->encrypt(lj::Uuid::k_nil,
                     key.data(),
                     key.size(),
-                    key_name);
+                    key_name,
+                    paths);
         }
         catch (lj::Exception& ex)
         {

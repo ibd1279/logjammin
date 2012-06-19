@@ -3,6 +3,10 @@
 -- construct
 doc = Document:new()
 doc:set("test", Bson:new('"foobar"'))
+doc:set("str", Bson:new('"Original foo"'))
+doc:set("bool/true", Bson:new('true'))
+doc:set("bool/false", Bson:new('false'))
+
 ASSERT(doc:dirty() == true)
 ASSERT(doc:id() == Uuid:new(nil))
 ASSERT(doc:key() == 0)
@@ -48,5 +52,11 @@ ASSERT(doc2:vclock():as_string() == '{}')
 ASSERT(doc2:suppress() == false)
 
 -- encrypt the document
-doc2:encrypt('test')
+ASSERT(doc2:exists('str') == true)
+ASSERT(doc2:exists('bool/false') == true)
+doc2:encrypt('test', 'str', 'bool/false')
+ASSERT(doc2:exists('str') == false)
+ASSERT(doc2:exists('bool/false') == false)
 doc2:decrypt('test')
+ASSERT(doc2:exists('str') == true)
+ASSERT(doc2:exists('bool/false') == true)
