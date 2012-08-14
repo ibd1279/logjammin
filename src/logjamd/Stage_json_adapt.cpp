@@ -49,7 +49,7 @@ namespace logjamd
             pipe_(),
             faux_connection_(connection, new std::iostream(&pipe_)),
             real_stage_(new Stage_auth(&faux_connection_)),
-            language_("js")
+            language_("lua")
     {
     }
 
