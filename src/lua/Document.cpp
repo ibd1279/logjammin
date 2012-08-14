@@ -39,8 +39,6 @@
 
 #include "cryptopp/secblock.h"
 
-#include <iostream>
-
 namespace lua
 {
     const char Document::LUNAR_CLASS_NAME[] = "Document";
