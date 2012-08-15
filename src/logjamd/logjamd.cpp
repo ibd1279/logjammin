@@ -49,7 +49,7 @@
 int main(int argc, char* const argv[]) {
     lj::bson::Node* config = new lj::bson::Node();
     lj::Uuid sid;
-    config->set_child("server/listen", lj::bson::new_string("localhost:12345"));
+    config->set_child("server/listen", lj::bson::new_string("*:12345"));
     config->set_child("server/cluster", lj::bson::new_array());
     config->push_child("server/cluster", lj::bson::new_string("localhost:12345"));
     config->push_child("server/cluster", lj::bson::new_string("localhost:12346"));
