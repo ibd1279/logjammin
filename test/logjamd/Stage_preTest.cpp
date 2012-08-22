@@ -50,7 +50,7 @@ void testJSON()
     // Test the next stage.
     TEST_ASSERT(next_stage != NULL);
     TEST_ASSERT(next_stage != &stage);
-    TEST_ASSERT(next_stage->name().compare("Execution") == 0);
+    TEST_ASSERT(next_stage->name().compare("JSON-Adapter-Execution") == 0);
     logjamd::Stage_json_adapt* adapter =
             dynamic_cast<logjamd::Stage_json_adapt*>(next_stage);
     TEST_ASSERT(adapter != NULL);
@@ -63,13 +63,15 @@ void testHTTP()
 {
     // Create the mock request.
     Mock_environment env;
-    env.request() << "http ";
+    env.request() << "GET /print('Hello') HTTP/1.0";
 
     // perform the stage.
     logjamd::Stage_pre stage(env.connection());
     stage.logic();
 
     // Test the result
+    // XXX HTTP has a "single-request-per-connection" life cycle,
+    // XXX The tests will need to take that into account.
 }
 
 void testUnknown()

@@ -1,7 +1,6 @@
-#pragma once
 /*!
- \file Stage_http_adapt.h
- \brief Logjam server stage for converting http json input into bson input.
+ \file Stage_adapt.cpp
+ \brief Logjam server abstract class for adapter stages.
  \author Jason Watson
 
  Copyright (c) 2010, Jason Watson
@@ -34,20 +33,35 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjamd/Connection.h"
 #include "logjamd/Stage_adapt.h"
+#include "logjamd/Stage_auth.h"
+#include "lj/Exception.h"
+
+#include <map>
+#include <iostream>
 
 namespace logjamd
 {
-    class Stage_http_adapt : public Stage_adapt
+    Stage_adapt::Stage_adapt(Connection* connection) :
+            Stage(connection),
+            pipe_(),
+            faux_connection_(connection, new std::iostream(&pipe_)),
+            language_("lua")
     {
-    public:
-        Stage_http_adapt(logjamd::Connection* connection);
-        virtual ~Stage_http_adapt();
-        virtual Stage* logic();
-        virtual std::string name();
-    private:
-        std::unique_ptr<Stage> real_stage_;
-    };
+    }
+
+    Stage_adapt::~Stage_adapt()
+    {
+    }
+
+    std::unique_ptr<Stage> Stage_adapt::new_auth_stage()
+    {
+        return std::unique_ptr<Stage>(new Stage_auth(&faux_connection_));
+    }
+
+    void Stage_adapt::set_language(const std::string& language)
+    {
+        language_ = language;
+    }
 };
 

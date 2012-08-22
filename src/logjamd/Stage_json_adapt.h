@@ -34,32 +34,20 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "lj/Streambuf_pipe.h"
 #include "logjamd/Connection.h"
-#include "logjamd/Stage.h"
+#include "logjamd/Stage_adapt.h"
 
 namespace logjamd
 {
-    class Stage_json_adapt : public Stage 
+    class Stage_json_adapt : public Stage_adapt
     {
     public:
         Stage_json_adapt(logjamd::Connection* connection);
         virtual ~Stage_json_adapt();
         virtual Stage* logic();
         virtual std::string name();
-        virtual Connection& faux_connection()
-        {
-            return faux_connection_;
-        }
-        virtual Stage* real_stage()
-        {
-            return real_stage_;
-        }
     private:
-        lj::Streambuf_pipe pipe_;
-        Connection_xlator faux_connection_;
-        Stage* real_stage_;
-        std::string language_;
+        std::unique_ptr<Stage> real_stage_;
     };
 };
 

@@ -81,12 +81,12 @@ namespace
         return 0;
     }
 
-    int close_connection(lua_State* L)
+    int disconnect(lua_State* L)
     {
         lua::Bson* response = lua::Lunar<lua::Bson>::check(L,
                 lua_upvalueindex(1));
 
-        response->node().set_child("shutdown", lj::bson::new_boolean(true));
+        response->node().set_child("disconnect", lj::bson::new_boolean(true));
 
         return 0;
     }
@@ -211,7 +211,7 @@ namespace lua
         lua_setglobal(L, "print");
         lua_pushcclosure(L, &change_adapt_language, 1);
         lua_setglobal(L, "change_language");
-        lua_pushcclosure(L, &close_connection, 1);
+        lua_pushcclosure(L, &disconnect, 1);
         lua_setglobal(L, "exit");
 
         // Put the response into the scope.

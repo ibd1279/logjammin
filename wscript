@@ -128,6 +128,7 @@ def build(bld):
             ,'src/logjamd/Auth_local.cpp'
             ,'src/logjamd/Connection_secure.cpp'
             ,'src/logjamd/Server_secure.cpp'
+            ,'src/logjamd/Stage_adapt.cpp'
             ,'src/logjamd/Stage_auth.cpp'
             ,'src/logjamd/Stage_execute.cpp'
             ,'src/logjamd/Stage_http_adapt.cpp'

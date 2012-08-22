@@ -51,6 +51,7 @@ namespace
     const std::string HEADER_CONTENT_LENGTH("Content-Length: ");
     const std::string HEADERS_AUTH_REQUIRED("HTTP/1.1 401 Unauthorized\r\nServer: Logjamd\r\nContent-Type: application/json; charset=\"UTF-8\"\r\nWWW-Authenticate: Basic realm=\"Secure Command Execution\"\r\n");
     const std::string HEADERS_FORBIDDEN("HTTP/1.0 403 Forbidden\r\nServer: Logjamd\r\nContent-Type: application/json; charset=\"UTF-8\"\r\n");
+    const std::string HEADERS_SERVER_ERROR("HTTP/1.0 500 Internal Server Error\r\nServer: Logjamd\r\nContent-Type: application/json; charset=\"UTF-8\"\r\n");
     const std::string HEADERS_SUCCESS("HTTP/1.0 200 OK\r\nContent-Type: application/json; charset=\"UTF-8\"\r\n");
 
     //! Simplified method for getting lines from the http connection.
@@ -149,28 +150,17 @@ namespace
 namespace logjamd
 {
     Stage_http_adapt::Stage_http_adapt(Connection* connection) :
-            Stage(connection),
-            pipe_(),
-            faux_connection_(connection, new std::iostream(&pipe_)),
-            real_stage_(new Stage_auth(&faux_connection_)),
-            language_("lua")
+            Stage_adapt(connection),
+            real_stage_(new_auth_stage())
     {
     }
 
     Stage_http_adapt::~Stage_http_adapt()
     {
-        if (real_stage_)
-        {
-            delete real_stage_;
-            real_stage_ = nullptr;
-        }
     }
 
     Stage* Stage_http_adapt::logic()
     {
-        // default next-stage is to disconnect.
-        Stage* next_stage = nullptr;
-
         // Read the requested path.
         try
         {
@@ -261,34 +251,42 @@ namespace logjamd
                         lj::bson::new_string(k_user_password_json));
             }
 
-            // Login as the fake, limited user.
+            // Log into the system.
             log("Authenticating user [%s].").end(
                     lj::bson::as_string(auth_request["data/login"]));
-            pipe_.sink() << auth_request;
-            next_stage = real_stage_->logic();
-            lj::bson::Node auth_response;
-            pipe_.source() >> auth_response;
+            pipe().sink() << auth_request;
+            std::unique_ptr<Stage> next_stage(real_stage_->logic());
 
-            // Immediately goto the next stage to clean up memory.
-            if (real_stage_ != next_stage)
+            // Deal with any stages that return themselves. unique_ptr does
+            // not guard against self resets.
+            if (real_stage_ == next_stage)
             {
-                delete real_stage_;
-                real_stage_ = next_stage;
+                next_stage.release();
             }
-            next_stage = nullptr;
+            else
+            {
+                real_stage_.reset(next_stage.release());
+            }
+
+            // extract the system response.
+            lj::bson::Node auth_response;
+            pipe().source() >> auth_response;
 
             // Handle login failures.
             if (lj::bson::as_boolean(auth_response["success"]) == false
+                    || faux_connection().user() == nullptr
                     || real_stage_ == nullptr)
             {
                 log("Login unsuccessful.").end();
                 std::string body(lj::bson::as_pretty_json(auth_response));
                 if (can_retry)
                 {
+                    // If they provided credentials, they can try again.
                     conn()->io() << HEADERS_AUTH_REQUIRED;
                 }
                 else
                 {
+                    // don't bother retrying, no credentials will get you in.
                     conn()->io() << HEADERS_FORBIDDEN;
                 }
                 conn()->io() << HEADER_CONTENT_LENGTH << body.size();
@@ -307,22 +305,26 @@ namespace logjamd
             request.set_child("command",
                     lj::bson::new_string(cmd));
             request.set_child("language",
-                    lj::bson::new_string(language_));
-            pipe_.sink() << request;
+                    lj::bson::new_string(language()));
 
-            // process the bson request.
-            next_stage = real_stage_->logic();
+            // Process the bson command.
+            pipe().sink() << request;
+            next_stage.reset(real_stage_->logic());
 
-            // http is only allowed to do one request per connection.
-            if (next_stage != nullptr && next_stage != real_stage_)
+            // Deal with any stages that return themselves. unique_ptr does
+            // not guard against self resets.
+            if (real_stage_ == next_stage)
             {
-                delete next_stage;
+                next_stage.release();
             }
-            next_stage = nullptr;
+            else
+            {
+                real_stage_.reset(next_stage.release());
+            }
 
-            // convert the response into json.
+            // Extract the response from the faux connection.
             lj::bson::Node response;
-            pipe_.source() >> response;
+            pipe().source() >> response;
 
             // This should be updated to deal with exceptions, etc.
             std::string body(lj::bson::as_pretty_json(response));
@@ -335,25 +337,23 @@ namespace logjamd
         catch (lj::Exception& ex)
         {
             log("unexpected case: [%s]").end(ex);
-            if (next_stage != nullptr)
-            {
-                delete next_stage;
-            }
-            return nullptr;
+            std::string body(ex.str());
+            conn()->io() << HEADERS_SERVER_ERROR;
+            conn()->io() << HEADER_CONTENT_LENGTH << body.size();
+            conn()->io() << HEADER_LINE_ENDING << HEADER_LINE_ENDING;
+            conn()->io() << body << std::endl;
+            conn()->io().flush();
         }
 
-        // All http disconnections immediately disconnect.
+        // All http connections immediately disconnect.
         log("Disconnecting.").end();
         return nullptr;
     }
 
     std::string Stage_http_adapt::name()
     {
-        if (real_stage_)
-        {
-            return real_stage_->name();
-        }
-        return std::string("JSON-Adapter");
+        std::string my_name("HTTP-Adapter-");
+        return my_name + real_stage_->name();
     }
 };
 

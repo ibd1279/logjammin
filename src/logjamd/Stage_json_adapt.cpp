@@ -45,28 +45,17 @@ namespace
 namespace logjamd
 {
     Stage_json_adapt::Stage_json_adapt(Connection* connection) :
-            Stage(connection),
-            pipe_(),
-            faux_connection_(connection, new std::iostream(&pipe_)),
-            real_stage_(new Stage_auth(&faux_connection_)),
-            language_("lua")
+            Stage_adapt(connection),
+            real_stage_(new_auth_stage())
     {
     }
 
     Stage_json_adapt::~Stage_json_adapt()
     {
-        if (real_stage_)
-        {
-            delete real_stage_;
-            real_stage_ = nullptr;
-        }
     }
 
     Stage* Stage_json_adapt::logic()
     {
-        // default next-stage is to disconnect.
-        Stage* next_stage = nullptr;
-
         if (conn()->secure() || faux_connection().user() != nullptr)
         {
             // If we already have a user, or the connection is secure.
@@ -77,8 +66,8 @@ namespace logjamd
             if (!conn()->io().good())
             {
                 // Handle a read error.
-                lj::log::out<lj::Warning>("Some kind of read error.");
-                next_stage = nullptr;
+                log("Some kind of read error.").end();
+                return nullptr;
             }
             else
             {
@@ -87,21 +76,45 @@ namespace logjamd
                 request.set_child("command",
                         lj::bson::new_string(cmd));
                 request.set_child("language",
-                        lj::bson::new_string(language_));
-                pipe_.sink() << request;
+                        lj::bson::new_string(language()));
 
                 // process the request.
-                next_stage = real_stage_->logic();
+                pipe().sink() << request;
+                std::unique_ptr<Stage> next_stage(real_stage_->logic());
+
+                // Deal with any stages that return themselves. unique_ptr does
+                // not guard against self resets.
+                if (real_stage_ == next_stage)
+                {  
+                    next_stage.release();
+                }
+                else
+                {  
+                    real_stage_.reset(next_stage.release());
+                }
 
                 // convert the response into json.
                 lj::bson::Node response;
-                pipe_.source() >> response;
+                pipe().source() >> response;
+
+                // Switch the command languages if necessary.
                 if (response.exists("next_language"))
                 {
-                    language_ =
+                    std::string lang =
                             lj::bson::as_string(response["next_language"]);
+                    set_language(lang);
                     response.set_child("next_language", NULL);
                 }
+
+                // Prepare to disconnect.
+                if (response.exists("disconnect") &&
+                        lj::bson::as_boolean(response["disconnect"]))
+                {
+                    response.set_child("disconnect", NULL);
+                    real_stage_.reset(nullptr);
+                }
+
+                // Communicate the response.
                 conn()->io() << lj::bson::as_pretty_json(response)
                         << std::endl;;
                 conn()->io().flush();
@@ -109,11 +122,11 @@ namespace logjamd
         }
         else
         {
-            // If the conection is insecure, use default login.
+            // If the conection is insecure and there is no user,
+            // use the default login.
             log("Using insecure adapter authentication.").end();
 
             lj::bson::Node auth_request;
-            lj::bson::Node auth_response;
             auth_request.set_child("method",
                     lj::bson::new_uuid(lj::Uuid(k_auth_method,
                             "password_hash",
@@ -127,39 +140,44 @@ namespace logjamd
             auth_request.set_child("data/password",
                     lj::bson::new_string(k_user_password_json));
 
-            pipe_.sink() << auth_request;
+            // Execute the authentication.
+            pipe().sink() << auth_request;
+            std::unique_ptr<Stage> next_stage(real_stage_->logic());
+            
+            // Deal with any stages that return themselves. unique_ptr does
+            // not guard against self resets.
+            if (real_stage_ == next_stage)
+            {  
+                next_stage.release();
+            }
+            else
+            {  
+                real_stage_.reset(next_stage.release());
+            }
 
-            next_stage = real_stage_->logic();
+            // convert the response into json.
+            lj::bson::Node auth_response;
+            pipe().source() >> auth_response;
 
-            pipe_.source() >> auth_response;
+            // communicate the response.
             conn()->io() << lj::bson::as_pretty_json(auth_response) << std::endl;
             conn()->io().flush();
         }
 
-        if (next_stage)
+        if (real_stage_)
         {
-            if (next_stage != real_stage_)
-            {
-                delete real_stage_;
-                real_stage_ = next_stage;
-            }
             return this;
         }
         else
         {
             log("Disconnecting.").end();
-            real_stage_ = nullptr;
             return nullptr;
         }
     }
 
     std::string Stage_json_adapt::name()
     {
-        if (real_stage_)
-        {
-            return real_stage_->name();
-        }
-        return std::string("JSON-Adapter");
+        std::string my_name("JSON-Adapter-");
+        return my_name + real_stage_->name();
     }
 };
-
