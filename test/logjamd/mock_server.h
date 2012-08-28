@@ -100,10 +100,18 @@ struct Admin_auth
 
 struct Mock_server_init
 {
-    logjamd::Auth_provider_local provider_local;
-    Json_auth json;
-    Http_auth http;
-    Admin_auth admin;
+    Mock_server_init()
+    {
+        logjamd::Auth_provider_local* provider_local = 
+                new logjamd::Auth_provider_local();
+        logjamd::Auth_registry::enable(provider_local);
+        json = new Json_auth();
+        http = new Http_auth();
+        admin = new Admin_auth();
+    }
+    Json_auth* json;
+    Http_auth* http;
+    Admin_auth* admin;
 };
 
 class Server_mock : public logjamd::Server

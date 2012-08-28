@@ -44,6 +44,23 @@
 #include <cstring>
 #include <memory>
 
+void setup_credentials(
+        logjamd::Auth_provider* auth,
+        const lj::Uuid& id,
+        const std::string& login,
+        const std::string& pword)
+{
+    logjamd::User u(id, login);
+    lj::bson::Node n;
+    n.set_child("login",
+            lj::bson::new_string(login));
+    n.set_child("password",
+            lj::bson::new_string(pword));
+    const lj::Uuid k_auth_method_password_hash(logjamd::k_auth_method,
+            "password_hash",
+            13);
+    auth->method(k_auth_method_password_hash)->change_credentials(&u, &u, n);
+}
 
 //! Server main entry point.
 int main(int argc, char* const argv[]) {
@@ -56,19 +73,20 @@ int main(int argc, char* const argv[]) {
 
     // TODO This is completely in the wrong place, but it has to be here
     // to make the telnet stuff work during development right now.
-    logjamd::Auth_provider_local local_auth;
-    logjamd::User u(logjamd::k_user_id_json, logjamd::k_user_login_json);
-    lj::bson::Node n;
-    n.set_child("login",
-            lj::bson::new_string(logjamd::k_user_login_json));
-    n.set_child("password",
-            lj::bson::new_string(logjamd::k_user_password_json));
-    const lj::Uuid k_auth_method_password_hash(logjamd::k_auth_method,
-            "password_hash",
-            13);
-    logjamd::Auth_registry::provider(local_auth.provider_id())->
-            method(k_auth_method_password_hash)->
-            change_credentials(&u, &u, n);
+    lj::log::out<lj::Info>("Adding the Local auth provider.");
+    logjamd::Auth_provider_local* local_auth =
+            new logjamd::Auth_provider_local();
+    logjamd::Auth_registry::enable(local_auth);
+
+    lj::log::out<lj::Info>("Creating read-only accounts.");
+    setup_credentials(local_auth,
+            logjamd::k_user_id_json,
+            logjamd::k_user_login_json,
+            logjamd::k_user_password_json);
+    setup_credentials(local_auth,
+            logjamd::k_user_id_http,
+            logjamd::k_user_login_http,
+            logjamd::k_user_password_http);
 
     // Run the server.
     logjamd::Server* server = new logjamd::Server_secure(config);

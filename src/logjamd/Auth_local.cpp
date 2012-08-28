@@ -235,8 +235,6 @@ namespace logjamd
 {
     Auth_provider_local::Auth_provider_local()
     {
-        lj::log::out<lj::Info>("Adding the Local auth provider.");
-        Auth_registry::enable(this);
     }
 
     Auth_provider_local::~Auth_provider_local()

@@ -144,6 +144,16 @@ namespace logjamd
          */
         static Auth_provider* const provider(const lj::Uuid& id)
         {
+            lj::log::Logger& logger =
+                    lj::log::format<lj::Debug>("Looking up provider [%s] in set: ");
+            logger << static_cast<std::string>(id);
+            for (auto iter = mapping_.begin();
+                    mapping_.end() != iter;
+                    ++iter)
+            {
+                logger << "<" << iter->first << "> ";
+            }
+            logger.end();
             auto iter = mapping_.find(id);
             if (mapping_.end() == iter)
             {
