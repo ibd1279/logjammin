@@ -129,12 +129,20 @@ namespace logjamd
          This method can only add authentication providers to the registry
          while the registry is not locked.
          \param p The provider to add to the registry.
-         \return true on success, false on failure.
          */
-        static bool enable(Auth_provider* p)
+        static void enable(Auth_provider* p)
         {
+            // Check to see if this provider already exists.
+            Auth_provider* existing = provider(p->provider_id());
+
+            // replace the existing value.
             mapping_[p->provider_id()] = p;
-            return true;
+
+            // clean up the old pointer if it existed.
+            if (existing != nullptr && existing != p)
+            {
+                delete existing;
+            }
         }
 
         //! Look up an authentication provider.
