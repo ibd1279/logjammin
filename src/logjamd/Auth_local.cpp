@@ -56,6 +56,7 @@ namespace
     const int k_r = 8;
     const int k_p = 1;
 };
+
 namespace logjamd
 {
     Auth_method_password_hash::Auth_method_password_hash()
@@ -156,7 +157,7 @@ namespace logjamd
                     lj::bson::new_binary(temp_dk, 1, lj::bson::Binary_type::k_bin_generic));
             ptr->set_child(k_salt_field,
                     lj::bson::new_binary(temp_dk, 1, lj::bson::Binary_type::k_bin_generic));
-            users_by_id_[target->login()] = ptr;
+            users_by_id_[target->id()] = ptr;
         }
         else
         {
@@ -201,24 +202,22 @@ namespace logjamd
         {
             const std::string old_login(
                     lj::bson::as_string(ptr->nav(k_login_field)));
-            lj::log::format<lj::Debug>(
-                    "auth_local: Removing old record for %s / %llu")
-                    << old_login
-                    << static_cast<uint64_t>(target->id())
-                    << lj::log::end;
+            lj::log::format<lj::Debug>("auth_local: Removing old record for %s / %llu").end(
+                    old_login,
+                    static_cast<uint64_t>(target->id()));
             users_by_credential_.erase(old_login);
         }
 
-        // In theory, the user cannot log in during this point.
+        // In theory, the user cannot log in during this point. There is no entry in the
+        // users_by_credential_ to look up this user.
+
         // TODO Existing sessions should probably be disconnected here.
 
         // Record the new credential and mapping.
         const std::string new_login(lj::bson::as_string(data[k_login_field]));
-        lj::log::format<lj::Debug>(
-                "auth_local: Creating new record for %s / %llu")
-                << new_login
-                << static_cast<uint64_t>(target->id())
-                << lj::log::end;
+        lj::log::format<lj::Debug>("auth_local: Creating new record for %s / %llu").end(
+                new_login,
+                static_cast<uint64_t>(target->id()));
 
         ptr->set_child(k_login_field,
                 lj::bson::new_string(new_login));

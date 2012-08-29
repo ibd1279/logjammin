@@ -169,7 +169,7 @@ namespace logjamd
             size_t cmd_length = get_http_line(conn()->io(), cmd);
 
             // trim off the http version
-            log("Starting with [%s] as the command. %d as the length").end(cmd, cmd_length);
+            log("Starting with [%s] as the command. %d as the length").end(cmd, (uint64_t)cmd_length);
             cmd_length = cmd_length > 9 ? cmd_length - 9 : 0;
             cmd.erase(cmd_length);
 

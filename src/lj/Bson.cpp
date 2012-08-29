@@ -1352,7 +1352,7 @@ namespace lj
                 const uint8_t* ptr = reinterpret_cast<const uint8_t*>(as_binary(b, &t, &sz));
                 if (Binary_type::k_bin_uuid == t && 16 == sz)
                 {
-                    return ptr;
+                    return Uuid(ptr);
                 }
             }
             return Uuid::k_nil;

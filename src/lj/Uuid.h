@@ -78,7 +78,7 @@ namespace lj
          Construct a Uuid from a 16 byte array.
          \param d 16 bytes.
          */
-        Uuid(const uint8_t d[16]);
+        explicit Uuid(const uint8_t d[16]);
 
         //! Copy constructor.
         /*!
@@ -93,7 +93,7 @@ namespace lj
          {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}
          \param o The string.
          */
-        Uuid(const std::string& o);
+        explicit Uuid(const std::string& o);
         
         //! Version 5 constructor.
         /*!
@@ -125,7 +125,7 @@ namespace lj
          being not equal.
          \param o The id.
          */
-        Uuid(const uint64_t o);
+        explicit Uuid(const uint64_t o);
 
         //! Destructor.
         ~Uuid();
