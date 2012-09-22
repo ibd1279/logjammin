@@ -47,7 +47,7 @@ namespace lj
      \param size Location to store the resulting string size.
      \return 0 if the decode fails.  Pointer to the decoded data otherwise.
      \throws lj::Exception If the string is not a valid base 64 string.
-     \note This uses the crypto++ library version of base64 decode.
+     \note This uses the nettle library version of base64 decode.
      */
     uint8_t *base64_decode(const std::string &input, size_t *size);
 
@@ -56,7 +56,7 @@ namespace lj
      \param input Byte array to encode.
      \param size Length of the byte array.
      \return the encoded string.
-     \note This uses the crypto++ library version of base64 encode.
+     \note This uses the nettle library version of base64 encode.
      */
     std::string base64_encode(const uint8_t *input, size_t size);
 }; // namespace lj

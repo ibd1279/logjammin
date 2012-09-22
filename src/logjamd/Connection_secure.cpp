@@ -5,21 +5,21 @@
 
  Copyright (c) 2010, Jason Watson
  All rights reserved.
- 
+
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
- 
+
  * Redistributions of source code must retain the above copyright notice,
  this list of conditions and the following disclaimer.
- 
+
  * Redistributions in binary form must reproduce the above copyright notice,
  this list of conditions and the following disclaimer in the documentation
  and/or other materials provided with the distribution.
- 
+
  * Neither the name of the LogJammin nor the names of its contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
+
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -59,14 +59,6 @@ namespace logjamd
         {
             thread_->join();
             delete thread_;
-        }
-
-        // Delete all the crypto keys.
-        for (auto iter = keys_.begin();
-                keys_.end() != iter;
-                ++iter)
-        {
-            delete (*iter).second;
         }
 
         close();
@@ -125,9 +117,10 @@ namespace logjamd
             const void* key,
             int sz)
     {
-        keys_[identifier] = new CryptoPP::SecBlock<uint8_t>(
-                static_cast<const uint8_t*>(key),
-                sz);
+        std::unique_ptr<uint8_t[], lj::Wiper<uint8_t[]> > key_ptr(new uint8_t[sz]);
+        key_ptr.get_deleter().set_count(sz);
+        memcpy(key_ptr.get(), key, sz);
+        keys_[identifier] = std::move(key_ptr);
     }
 
     const void* Connection_secure::get_crypto_key(
@@ -137,8 +130,8 @@ namespace logjamd
         auto iter = keys_.find(identifier);
         if(keys_.end() != iter)
         {
-            *sz = (*iter).second->size();
-            return (*iter).second->data();
+            *sz = (*iter).second.get_deleter().count();
+            return (*iter).second.get();
         }
         else
         {

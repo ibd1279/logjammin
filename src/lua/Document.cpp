@@ -5,21 +5,21 @@
 
  Copyright (c) 2010, Jason Watson
  All rights reserved.
- 
+
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
- 
+
  * Redistributions of source code must retain the above copyright notice,
  this list of conditions and the following disclaimer.
- 
+
  * Redistributions in binary form must reproduce the above copyright notice,
  this list of conditions and the following disclaimer in the documentation
  and/or other materials provided with the distribution.
- 
+
  * Neither the name of the LogJammin nor the names of its contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
+
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -36,8 +36,7 @@
 #include "lua/Bson.h"
 #include "lua/Document.h"
 #include "lua/Uuid.h"
-
-#include "cryptopp/secblock.h"
+#include "lj/Wiper.h"
 
 namespace lua
 {
@@ -277,7 +276,7 @@ namespace lua
     int Document::encrypt(lua_State* L)
     {
         int top = lua_gettop(L);
-        
+
         // Every arg except the first is a path to encrypt
         std::vector<std::string> paths;
         if (top > 1)
@@ -305,17 +304,19 @@ namespace lua
         // Create a copy of the data. It is possible that the pop below
         // will cause the returned value to GC.
         lj::bson::Binary_type bt;
-        uint32_t sz;
-        const uint8_t* key_data = lj::bson::as_binary(val->node(), &bt, &sz);
-        CryptoPP::SecByteBlock key(key_data, sz);
+        uint32_t key_sz;
+        const uint8_t* key_data = lj::bson::as_binary(val->node(), &bt, &key_sz);
+        std::unique_ptr<uint8_t[], lj::Wiper<uint8_t[]> > key_ptr(new uint8_t[key_sz]);
+        key_ptr.get_deleter().set_count(key_sz);
+        memcpy(key_ptr.get(), key_data, key_sz);
         lua_pop(L, 2);
 
         try
         {
             // XXX Change this to get the server from somewhere.
             doc_->encrypt(lj::Uuid::k_nil,
-                    key.data(),
-                    key.size(),
+                    key_ptr.get(),
+                    key_sz,
                     key_name,
                     paths);
         }
@@ -341,15 +342,17 @@ namespace lua
         // Create a copy of the data. It is possible that the pop below
         // will cause the returned value to GC.
         lj::bson::Binary_type bt;
-        uint32_t sz;
-        const uint8_t* key_data = lj::bson::as_binary(val->node(), &bt, &sz);
-        CryptoPP::SecByteBlock key(key_data, sz);
+        uint32_t key_sz;
+        const uint8_t* key_data = lj::bson::as_binary(val->node(), &bt, &key_sz);
+        std::unique_ptr<uint8_t[], lj::Wiper<uint8_t[]> > key_ptr(new uint8_t[key_sz]);
+        key_ptr.get_deleter().set_count(key_sz);
+        memcpy(key_ptr.get(), key_data, key_sz);
         lua_pop(L, 2);
 
         try
         {
-            doc_->decrypt(key.data(),
-                    key.size(),
+            doc_->decrypt(key_ptr.get(),
+                    key_sz,
                     key_name);
         }
         catch (lj::Exception& ex)

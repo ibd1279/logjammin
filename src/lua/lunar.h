@@ -41,8 +41,10 @@ namespace lua
             
             // store method table in globals so that
             // scripts can add functions written in Lua.
+            lua_pushglobaltable(L); // replacement for deprecated LUA_GLOBALSINDEX
             lua_pushvalue(L, methods);
-            set(L, LUA_GLOBALSINDEX, T::LUNAR_CLASS_NAME);
+            set(L, -2, T::LUNAR_CLASS_NAME);
+            lua_pop(L, 1); // Remove the globals table from the stack.
             
             // hide metatable from Lua getmetatable()
             lua_pushvalue(L, methods);
@@ -216,7 +218,21 @@ namespace lua
         {
             void* ptr = luaL_checkudata(L, narg, T::LUNAR_CLASS_NAME);
             userdataType *ud = static_cast<userdataType*>(ptr);
-            if(!ud) luaL_typerror(L, narg, T::LUNAR_CLASS_NAME);
+            if(!ud) {
+                // Where did we break.
+                luaL_where(L, 0);
+                std::string where(lua_tostring(L, -1));
+                lua_pop(L, 1);
+                
+                // Get the provided type info.
+                int received_type = lua_type(L, narg);
+                const char* received_type_name = lua_typename(L, received_type);
+                
+                lua_pushfstring(L, "%s: Expected type %s, but got type %s.",
+                        where.c_str(),
+                        T::LUNAR_CLASS_NAME,
+                        received_type_name);
+            }
             return ud->pT;  // pointer to T object
         }
         
@@ -355,7 +371,7 @@ namespace lua
         {
             return std::string();
         }
-        size_t l = lua_strlen(L, offset);
+        size_t l = lua_rawlen(L, offset);
         return std::string(ptr, l);
     }
 }; // namespace lua

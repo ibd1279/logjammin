@@ -6,21 +6,21 @@
 
  Copyright (c) 2010, Jason Watson
  All rights reserved.
- 
+
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
- 
+
  * Redistributions of source code must retain the above copyright notice,
  this list of conditions and the following disclaimer.
- 
+
  * Redistributions in binary form must reproduce the above copyright notice,
  this list of conditions and the following disclaimer in the documentation
  and/or other materials provided with the distribution.
- 
+
  * Neither the name of the LogJammin nor the names of its contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
+
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -34,10 +34,11 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "lj/Thread.h"
 #include "logjamd/Connection.h"
-#include "cryptopp/secblock.h"
+#include "lj/Thread.h"
+#include "lj/Wiper.h"
 #include <map>
+#include <memory>
 #include <string>
 #include <thread>
 
@@ -52,7 +53,7 @@ namespace logjamd
      return true if the connection has established TLS.
      \par
      This connection type depends on lj::Thread. As such it also implements
-     the \c lj::Work interface. 
+     the \c lj::Work interface.
      \sa logjamd::Server_secure
      \sa lj::Thread
      \sa lj::Work
@@ -66,7 +67,7 @@ namespace logjamd
          \par Memory
          This object is responsible for releasing the memory associated with
          \c state and \c buffer. Server is not released by this class.
-         \c buffer memory are managed by this class. 
+         \c buffer memory are managed by this class.
          \param server The server associated with this connection.
          \param state The state associated with this server.
          \param buffer The stream buffer for io with this server.
@@ -78,19 +79,19 @@ namespace logjamd
 
         //! Destructor
         virtual ~Connection_secure();
-        virtual void start();
-        virtual bool secure()
+        virtual void start() override;
+        virtual bool secure() override
         {
             return secure_;
         }
-        virtual void close();
+        virtual void close() override;
         virtual void set_crypto_key(const std::string& identifier,
                 const void* key,
-                int sz);
+                int sz) override;
         virtual const void* get_crypto_key(const std::string& identifier,
-                int* sz);
-        virtual void run();
-        virtual void cleanup();
+                int* sz) override;
+        virtual void run() override;
+        virtual void cleanup() override;
     protected:
         //! Get the thread associated with this connection.
         /*!
@@ -104,7 +105,7 @@ namespace logjamd
         std::streambuf* buffer_; //!< Streambuffer for IO.
         lj::Thread* thread_; //!< Thread to process requests.
         bool secure_; //!< Flag indicating the security of the link.
-        std::map<std::string, CryptoPP::SecBlock<uint8_t>* > keys_; //!< Crypto key management.
+        std::map<std::string, std::unique_ptr<uint8_t[], lj::Wiper<uint8_t[]> > > keys_; //!< Crypto key management.
     };
 };
 

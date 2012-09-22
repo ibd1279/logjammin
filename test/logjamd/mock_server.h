@@ -4,12 +4,12 @@
  */
 #include "lj/Log.h"
 #include "lj/Streambuf_pipe.h"
+#include "lj/Wiper.h"
 #include "logjamd/Auth.h"
 #include "logjamd/Auth_local.h"
 #include "logjamd/Server.h"
 #include "logjamd/Connection.h"
 #include "logjamd/constants.h"
-#include "cryptopp/secblock.h"
 
 #include <cassert>
 #include <cstdio>
@@ -102,7 +102,7 @@ struct Mock_server_init
 {
     Mock_server_init()
     {
-        logjamd::Auth_provider_local* provider_local = 
+        logjamd::Auth_provider_local* provider_local =
                 new logjamd::Auth_provider_local();
         logjamd::Auth_registry::enable(provider_local);
         json = new Json_auth();
@@ -138,7 +138,7 @@ class Connection_mock : public logjamd::Connection
 {
 private:
     logjamd::Server* server_;
-    std::map<std::string, CryptoPP::SecBlock<uint8_t>*> keys_;
+    std::map<std::string, std::unique_ptr<uint8_t[], lj::Wiper<uint8_t[]>>> keys_;
 public:
     Connection_mock(std::iostream* stream) :
             logjamd::Connection(new Server_mock(), new lj::bson::Node(), stream),
@@ -148,12 +148,6 @@ public:
     }
     ~Connection_mock()
     {
-        for (auto iter = keys_.begin();
-                keys_.end() != iter;
-                ++iter)
-        {
-            delete (*iter).second;
-        }
         delete server_;
     }
     virtual void start()
@@ -163,9 +157,10 @@ public:
             const void* key,
             int sz)
     {
-        keys_[identifier] = new CryptoPP::SecBlock<uint8_t>(
-                static_cast<const uint8_t*>(key),
-                sz);
+        std::unique_ptr<uint8_t[], lj::Wiper<uint8_t[]> > key_ptr(new uint8_t[sz]);
+        key_ptr.get_deleter().set_count(sz);
+        memcpy(key_ptr.get(), key, sz);
+        keys_[identifier] = std::move(key_ptr);
     }
     const void* get_crypto_key(
             const std::string& identifier,
@@ -174,8 +169,8 @@ public:
         auto iter = keys_.find(identifier);
         if(keys_.end() != iter)
         {
-            *sz = (*iter).second->size();
-            return (*iter).second->data();
+            *sz = (*iter).second.get_deleter().count();
+            return (*iter).second.get();
         }
         else
         {

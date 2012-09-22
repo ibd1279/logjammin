@@ -6,21 +6,21 @@
 
  Copyright (c) 2011, Jason Watson
  All rights reserved.
- 
+
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
- 
+
  * Redistributions of source code must retain the above copyright notice,
  this list of conditions and the following disclaimer.
- 
+
  * Redistributions in binary form must reproduce the above copyright notice,
  this list of conditions and the following disclaimer in the documentation
  and/or other materials provided with the distribution.
- 
+
  * Neither the name of the LogJammin nor the names of its contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
+
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -74,7 +74,7 @@ namespace lj
      to the current node. Dereferencing a Document object will return the
      current node as read-only, allowing it to be easily used with the
      existing lj::bson methods. A document also keeps track of its
-     modified state. 
+     modified state.
      \author Jason Watson
      \version 1.0
      */
@@ -111,7 +111,7 @@ namespace lj
          \param origin The original.
          */
         lj::Document& operator=(const lj::Document& orig) = delete;
-        
+
         //! Get the parent document identifier.
         /*!
          \return The parent identifier.
@@ -240,16 +240,16 @@ namespace lj
          \param paths The paths to encrypt.
          */
         void encrypt(const lj::Uuid& server,
-                uint8_t* key,
+                const uint8_t* key,
                 int key_size,
                 const std::string& key_name,
                 const std::vector<std::string>& paths = std::vector<std::string>());
 
         //! decrypt a document.
-        void decrypt(uint8_t* key,
+        void decrypt(const uint8_t* key,
                 int key_size,
                 const std::string& key_name);
-        
+
         //! Suppress a document.
         void suppress(const lj::Uuid& server,
                 const bool s);

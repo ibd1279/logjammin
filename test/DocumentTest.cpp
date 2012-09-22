@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   DocumentTest.cpp
  * Author: jwatson
  *
@@ -7,16 +7,17 @@
 
 #include "testhelper.h"
 #include "lj/Document.h"
+#include "lj/Exception.h"
+#include "lj/Wiper.h"
 #include "scrypt/scrypt.h"
-#include "cryptopp/osrng.h"
 #include "test/DocumentTest_driver.h"
-
+#include <fstream>
+#include <unistd.h>
 
 struct sample_data
 {
     lj::bson::Node doc;
     lj::Uuid server;
-    
     sample_data() : doc(), server(lj::Uuid::k_ns_dns, "example.com", 11)
     {
         uint8_t data[8] = {10, 10, 10, 10, 10, 10, 10, 10};
@@ -37,7 +38,6 @@ struct sample_data
         doc.push_child("array", lj::bson::new_int32(500));
     }
 };
-
 void testIncrement()
 {
     sample_data data;
@@ -110,7 +110,7 @@ void testWash()
     sample_data data;
     lj::Document doc(new lj::bson::Node(data.doc), false);
     const std::string path("bool/maybe");
-    
+
     TEST_ASSERT(doc.dirty() == true);
     doc.wash();
     TEST_ASSERT(doc.dirty() == false);
@@ -128,7 +128,6 @@ void testWash()
     TEST_ASSERT(doc.vclock().exists((std::string)data.server));
     TEST_ASSERT(lj::bson::as_uint64(doc.vclock().nav((std::string)data.server)) == 2);
 }
-
 void testEncrypt()
 {
     // Take the sample data and create a document.
@@ -136,59 +135,59 @@ void testEncrypt()
     lj::Document doc(new lj::bson::Node(data.doc), false);
 
     // Create the derived key for encryption and decryption.
-    uint8_t dk[lj::Document::k_key_size];
+    std::unique_ptr < uint8_t[], lj::Wiper < uint8_t[] >> dk(new uint8_t[lj::Document::k_key_size]);
+    dk.get_deleter().set_count(lj::Document::k_key_size);
+
+    std::unique_ptr < uint8_t[], lj::Wiper < uint8_t[]> > salt(new uint8_t[lj::Document::k_key_size]);
+    salt.get_deleter().set_count(lj::Document::k_key_size);
+    std::fstream rnd("/dev/urandom", std::ios_base::in);
+    rnd.read((char*)salt.get(), lj::Document::k_key_size);
+
+    // fill dk with the digested password.
+    std::string password = "some random string the user must provide.";
+    crypto_scrypt((uint8_t*)password.data(), password.size(),
+            salt.get(), lj::Document::k_key_size, 1 << 10, 8, 2, dk.get(), lj::Document::k_key_size);
+
+    // What fields are we going to encrypt?
+    std::vector<std::string> paths;
+    paths.push_back(std::string("str"));
+    paths.push_back(std::string("bool/false"));
+
+    // Test to make sure those fields exist before we encrypt
+    TEST_ASSERT(doc.get("bool").exists("false") == true);
+    TEST_ASSERT(doc.get().exists("str") == true);
+    TEST_ASSERT(lj::bson::as_string(doc.get("str")).compare(
+            "original foo") == 0);
+
+    // Encrypt the paths.
+    doc.encrypt(data.server,
+            dk.get(),
+            lj::Document::k_key_size,
+            std::string("test"),
+            paths);
+
+    // Test that they are gone.
+    TEST_ASSERT(doc.get("bool").exists("false") == false);
+    TEST_ASSERT(doc.get().exists("str") == false);
+
     try
     {
-        CryptoPP::AutoSeededRandomPool rng;
-
-        uint8_t salt[lj::Document::k_key_size];
-        rng.GenerateBlock(salt, sizeof(salt));
-
-        // fill dk with the digested password.
-        std::string password = "some random string the user must provide.";
-        crypto_scrypt((uint8_t*)password.data(), password.size(),
-                salt, sizeof(salt), 1 << 10, 8, 2, dk, sizeof(dk));
-
-        // What fields are we going to encrypt?
-        std::vector<std::string> paths;
-        paths.push_back(std::string("str"));
-        paths.push_back(std::string("bool/false"));
-
-        // Test to make sure those fields exist before we encrypt
-        TEST_ASSERT(doc.get("bool").exists("false") == true);
-        TEST_ASSERT(doc.get().exists("str") == true);
-        TEST_ASSERT(lj::bson::as_string(doc.get("str")).compare(
-                "original foo") == 0);
-
-        // Encrypt the paths.
-        doc.encrypt(data.server,
-                dk,
-                lj::Document::k_key_size,
-                std::string("test"),
-                paths);
-
-        // Test that they are gone.
-        TEST_ASSERT(doc.get("bool").exists("false") == false);
-        TEST_ASSERT(doc.get().exists("str") == false);
-
-        doc.decrypt(dk,
+        doc.decrypt(dk.get(),
                 lj::Document::k_key_size,
                 std::string("test"));
-
         std::cout << (std::string) doc << std::endl;
-
-        // Test to make sure those returned.
-        TEST_ASSERT(doc.get("bool").exists("false") == true);
-        TEST_ASSERT(doc.get().exists("str") == true);
-        TEST_ASSERT(lj::bson::as_string(doc.get("str")).compare(
-                "original foo") == 0);
     }
-    catch (CryptoPP::Exception& ex)
+    catch (lj::Exception& ex)
     {
-        throw LJ__Exception(ex.what());
+        TEST_FAILED(ex.str());
     }
-}
 
+    // Test to make sure those returned.
+    TEST_ASSERT(doc.get("bool").exists("false") == true);
+    TEST_ASSERT(doc.get().exists("str") == true);
+    TEST_ASSERT(lj::bson::as_string(doc.get("str")).compare(
+            "original foo") == 0);
+}
 int main(int argc, char** argv)
 {
     return Test_util::runner("lj::Document", tests);

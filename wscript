@@ -15,36 +15,45 @@ def configure(conf):
     conf.load('waf_unit_test')
 
     conf.check(
-        header_name='openssl/ssl.h',
-        lib=['ssl', 'crypto'],
-        libpath=['/usr/local/lib', '/opt/local/lib', '/usr/lib'],
-        includes=[
-            '/usr/local/include',
-            '/opt/local/include',
-            '/usr/include'
-            ],
-        mandatory=True
-    )
-
-    conf.check(
-        header_name='pthread.h',
-        lib=['pthread'],
-        libpath=['/usr/local/lib', '/opt/local/lib', '/usr/lib'],
-        includes=[
-            '/usr/local/include',
-            '/opt/local/include',
-            '/usr/include'
-            ],
-        mandatory=True
-    )
-
-    conf.check(
-        header_name='cryptopp/cryptlib.h'
-        ,lib=['cryptopp']
-        ,libpath=['/usr/local/lib', '/opt/local/lib', '/usr/lib']
+        header_name='openssl/ssl.h'
+        ,lib=[
+            'ssl'
+            ,'crypto'
+        ]
+        ,libpath=[
+            '/usr/local/lib'
+            ,'/usr/lib'
+        ]
         ,includes=[
             '/usr/local/include'
-            ,'/opt/local/include'
+            ,'/usr/include'
+        ]
+        ,mandatory=True
+    )
+
+    conf.check(
+        header_name='pthread.h'
+        ,lib=['pthread']
+        ,libpath=[
+            '/usr/local/lib'
+            ,'/usr/lib'
+        ]
+        ,includes=[
+            '/usr/local/include'
+            ,'/usr/include'
+        ]
+        ,mandatory=True
+    )
+
+    conf.check(
+        header_name='nettle/base64.h'
+        ,lib=['nettle', 'gmp']
+        ,libpath=[
+            '/usr/local/lib'
+            ,'/usr/lib'
+        ]
+        ,includes=[
+            '/usr/local/include'
             ,'/usr/include'
         ]
         ,mandatory=True
@@ -52,13 +61,14 @@ def configure(conf):
 
     conf.check(
         header_name='lua.hpp'
-        ,lib=['lua5.1']
-        ,libpath=['/usr/local/lib', '/opt/local/lib', '/usr/lib']
+        ,lib=['lua.5.2']
+        ,libpath=[
+            '/usr/local/lib'
+            ,'/usr/lib'
+        ]
         ,includes=[
             '/usr/local/include'
-            ,'/opt/local/include'
             ,'/usr/include'
-            ,'/usr/include/lua5.1'
         ]
         ,mandatory=True
     )
@@ -66,15 +76,17 @@ def configure(conf):
     conf.check(
         header_name='v8.h'
         ,lib=['v8']
-        ,libpath=['/usr/local/lib', '/opt/local/lib', '/usr/lib']
+        ,libpath=[
+            '/usr/local/lib'
+            ,'/usr/lib'
+        ]
         ,includes=[
             '/usr/local/include'
-            ,'/opt/local/include'
             ,'/usr/include'
         ]
         ,mandatory=True
     )
-    
+
     conf.write_config_header('config.h')
 
 def make_test_driver(node, test_pattern):
@@ -113,13 +125,26 @@ def build(bld):
             ,'src/scrypt/scrypt.cpp'
         ]
         ,target='lj'
-        ,cxxflags = ['-O0', '-Wall', '-g', '-std=c++0x']
+        ,cxxflags = [
+            '-O0'
+            ,'-Wall'
+            ,'-g'
+            ,'-std=c++11'
+            ,'-stdlib=libc++'
+        ]
         ,includes = [
             './src'
         ]
-        ,linkflags = ['-g']
-        ,uselib = ['OPENSSL/SSL.H'
-            ,'CRYPTOPP/CRYPTLIB.H']
+        ,linkflags = [
+            '-g'
+            ,'-v'
+            ,'-std=c++11'
+            ,'-stdlib=libc++'
+        ]
+        ,uselib = [
+            'OPENSSL/SSL.H'
+            ,'NETTLE/BASE64.H'
+        ]
     )
 
     bld.stlib(
@@ -142,13 +167,30 @@ def build(bld):
             ,'src/lua/Uuid.cpp'
         ]
         ,target='logjamserver'
-        ,cxxflags = ['-O0', '-Wall', '-g', '-std=c++0x']
+        ,cxxflags = [
+            '-O0'
+            ,'-Wall'
+            ,'-g'
+            ,'-std=c++11'
+            ,'-stdlib=libc++'
+        ]
         ,includes = [
             './src'
         ]
-        ,linkflags = ['-g']
-        ,use = ['lj']
-        ,uselib = ['OPENSSL/SSL.H', 'PTHREAD.H', 'LUA.HPP', 'V8.H']
+        ,linkflags = [
+            '-g'
+            ,'-std=c++11'
+            ,'-stdlib=libc++'
+        ]
+        ,use = [
+            'lj'
+        ]
+        ,uselib = [
+            'OPENSSL/SSL.H'
+            ,'PTHREAD.H'
+            ,'LUA.HPP'
+            ,'V8.H'
+        ]
     )
 
     bld.program(
@@ -156,12 +198,26 @@ def build(bld):
             'src/logjamd/logjamd.cpp'
         ]
         ,target='logjamd'
-        ,cxxflags = ['-O0', '-Wall', '-g', '-std=c++0x']
+        ,cxxflags = [
+            '-O0'
+            ,'-Wall'
+            ,'-g'
+            ,'-std=c++11'
+            ,'-stdlib=libc++'
+        ]
         ,includes = [
             './src'
         ]
-        ,linkflags = ['-g']
-        ,use = ['lj', 'logjamserver']
+        ,linkflags = [
+            '-g'
+            ,'-v'
+            ,'-std=c++11'
+            ,'-stdlib=libc++'
+        ]
+        ,use = [
+            'lj'
+            ,'logjamserver'
+        ]
     )
 
     # prepare the lua testing headers:
@@ -186,7 +242,11 @@ def build(bld):
     for node in test_nodes:
         make_test_driver(node, test_pattern)
         bld(
-            features = ['cxx', 'cxxprogram', 'test']
+            features = [
+                'cxx'
+                ,'cxxprogram'
+                ,'test'
+            ]
             ,includes = [
                 './test'
                 ,'./src'
@@ -194,16 +254,27 @@ def build(bld):
             ]
             ,source = [node]
             ,target = node.change_ext('')
-            ,args = ['foo']
-            ,use = ['lj', 'logjamserver']
+            ,args = [
+                'foo'
+            ]
+            ,use = [
+                'lj'
+                ,'logjamserver'
+            ]
             ,cxxflags = [
                 '-O0'
                 ,'-Wall'
                 ,'-g'
-                ,'-std=c++0x'
+                ,'-std=c++11'
                 ,'-fno-eliminate-unused-debug-types'
                 ,'-fno-inline'
+                ,'-stdlib=libc++'
             ]
-            ,linkflags = ['-g', '-pthread']
+            ,linkflags = [
+                '-g'
+                ,'-pthread'
+                ,'-std=c++11'
+                ,'-stdlib=libc++'
+            ]
         )
 

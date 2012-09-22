@@ -164,7 +164,7 @@ namespace lua
             lj::bson::Node* req) :
             connection_(conn),
             request_(req),
-            L(lua_open()),
+            L(luaL_newstate()),
             state_(new Bson(connection_->state()))
     {
         // Standard libraries.

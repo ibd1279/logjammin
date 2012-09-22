@@ -35,7 +35,11 @@
 
 #include "lj/Base64.h"
 #include "lj/Exception.h"
-#include "cryptopp/base64.h"
+
+extern "C" {
+#include "nettle/base64.h"
+}
+
 #include <list>
 #include <sstream>
 
@@ -43,23 +47,49 @@ namespace lj
 {
     uint8_t* base64_decode(const std::string& input, size_t* size)
     {
-        std::string buffer;
-        CryptoPP::StringSource(reinterpret_cast<const uint8_t*>(input.data()), input.size(), true,
-                new CryptoPP::Base64Decoder(
-                        new CryptoPP::StringSink(buffer)));
-        *size = buffer.size();
-        uint8_t* data = new uint8_t[*size];
-        memcpy(data, buffer.data(), *size);
-        return data;
+        // Allocate the necessary memory.
+        unsigned max_size = BASE64_DECODE_LENGTH(input.size());
+        uint8_t* output = new uint8_t[max_size];
+        
+        // Base64 decode the data.
+        struct base64_decode_ctx ctx;
+        base64_decode_init(&ctx);
+        
+        // base64_decode_update requires that the dst_size value be initialized
+        // to the size of output.
+        int success = base64_decode_update(&ctx,
+                &max_size,
+                output,
+                input.size(),
+                reinterpret_cast<const uint8_t*>(input.c_str()));
+        if (!success && !base64_decode_final(&ctx)) {
+            throw LJ__Exception("Unable to decode input string.");
+        }
+        
+        // return the result.
+        *size = max_size;
+        return output;
     }
 
     std::string base64_encode(const uint8_t* input, size_t size)
     {
-        std::string buffer;
-        CryptoPP::StringSource(input, size, true,
-                new CryptoPP::Base64Encoder(
-                        new CryptoPP::StringSink(buffer),
-                        false));
-        return buffer;
+        // Allocate the necessary memory.
+        unsigned max_size = BASE64_ENCODE_LENGTH(size) + BASE64_ENCODE_FINAL_LENGTH;
+        uint8_t* output = new uint8_t[max_size];
+       
+        // Base64 encode the data.
+        struct base64_encode_ctx ctx;
+        base64_encode_init(&ctx);
+        unsigned update_size = base64_encode_update(&ctx,
+                output,
+                size,
+                input);
+        unsigned final_size = base64_encode_final(&ctx,
+                output + update_size);
+        
+        // clean up the memory and return the result.
+        std::string tmp(reinterpret_cast<char*>(output), update_size + final_size);
+        delete[] output;
+        return tmp;
     }
 }; // namespace lj

@@ -5,21 +5,21 @@
 
  Copyright (c) 2011, Jason Watson
  All rights reserved.
- 
+
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
- 
+
  * Redistributions of source code must retain the above copyright notice,
  this list of conditions and the following disclaimer.
- 
+
  * Redistributions in binary form must reproduce the above copyright notice,
  this list of conditions and the following disclaimer in the documentation
  and/or other materials provided with the distribution.
- 
+
  * Neither the name of the LogJammin nor the names of its contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
+
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -33,17 +33,26 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "lj/Base64.h"
 #include "lj/Document.h"
+#include "lj/Wiper.h"
 
-#include "cryptopp/aes.h"
-#include "cryptopp/eax.h"
-#include "cryptopp/filters.h"
-#include "cryptopp/osrng.h"
-#include "cryptopp/secblock.h"
+extern "C"
+{
+#include "nettle/aes.h"
+#include "nettle/gcm.h"
+#include "nettle/yarrow.h"
+#include "nettle/memxor.h"
+#include "Base64.h"
+}
+
+#include <fstream>
+#include <iostream>
 
 namespace lj
 {
-    const size_t Document::k_key_size = CryptoPP::AES::MAX_KEYLENGTH;
+    const size_t Document::k_key_size = AES_MAX_KEY_SIZE;
+
     Document::Document() : doc_(NULL), dirty_(true)
     {
         seed();
@@ -51,8 +60,8 @@ namespace lj
 
     Document::Document(lj::bson::Node* doc,
             bool is_document) :
-            doc_(NULL),
-            dirty_(true)
+    doc_(NULL),
+    dirty_(true)
     {
         if (is_document)
         {
@@ -104,183 +113,222 @@ namespace lj
         lj::bson::Node* data = new lj::bson::Node(*doc_);
         lj::Document* child = new lj::Document(data, true);
 
-        // rekey the new document. sets the parent. 
+        // rekey the new document. sets the parent.
         child->wash();
         child->rekey(server, k);
         return child;
     }
-    
+
     namespace
     {
-        template <typename T>
-        struct Auto_free_array
-        {
-            Auto_free_array()
-            {
-                ptr = nullptr;
-            }
-            ~Auto_free_array()
-            {
-                if (ptr)
-                {
-                    delete[] ptr;
-                }
-            }
-            T* ptr;
-        };
-
         const std::string k_crypt_vector("_/encrypted/vector");
+        const std::string k_crypt_auth("_/encrypted/auth");
         const std::string k_crypt_data("#");
     }; // namespace (anonymous)
 
     void Document::encrypt(const lj::Uuid& server,
-            uint8_t* key,
+            const uint8_t* key,
             int key_size,
             const std::string& key_name,
             const std::vector<std::string>& paths)
     {
         // Only accept 256bit keys.
-        if (CryptoPP::AES::MAX_KEYLENGTH != key_size)
+        if (k_key_size != key_size)
         {
-            throw LJ__Exception("encrypt key must 256bits");
+            throw LJ__Exception("Encrypt key must be 256bits.");
         }
 
-        // Create the IV.
-        CryptoPP::AutoSeededRandomPool rng;
-        byte iv[CryptoPP::AES::BLOCKSIZE * 16];
-        rng.GenerateBlock(iv, sizeof(iv));
-
-        // Setup the encrypter.
-        CryptoPP::EAX<CryptoPP::AES>::Encryption enc;
-        enc.SetKeyWithIV(key, key_size, iv, sizeof(iv));
-
-        // Using something to ensure that the data pointer is freed.
-        Auto_free_array<uint8_t> data;
-        size_t data_sz = 0;
-
-        // Extract the requested fields to encrypt.
+        // Create the source data for the application.
+        size_t source_size;
+        std::unique_ptr < uint8_t[] > source;
         if (paths.empty())
         {
-            // Empty paths, so encrypt everything.
-            data.ptr = doc_->nav(".").to_binary(&data_sz);
+            // An empty paths list means we should encrypt everything.
+            source.reset(doc_->nav(".").to_binary(&source_size));
         }
         else
         {
             // In order to encrypt specific paths, we have to
             // copy the paths out of the current document.
+            // The paths will be removed from the document after we successfully
+            // encrypt them.
             lj::bson::Node tmp;
             for (auto iter = paths.begin();
                     paths.end() != iter;
                     ++iter)
             {
-                lj::bson::Node* ptr = 
+                lj::bson::Node* ptr =
                         new lj::bson::Node(doc_->nav(".").nav(*iter));
                 tmp.nav(".").set_child(*iter, ptr);
             }
-            data.ptr = tmp.to_binary(&data_sz);
+            source.reset(tmp.to_binary(&source_size));
         }
 
-        try
-        {
-            // Encrypt the data.
-            std::string ct;
-            CryptoPP::ArraySource(data.ptr, data_sz, true,
-                    new CryptoPP::AuthenticatedEncryptionFilter(enc,
-                            new CryptoPP::StringSink(ct)));
+        // Generate an initialization vector for the crypto.
+        uint8_t iv[GCM_IV_SIZE];
+        std::fstream rnd("/dev/random", std::ios_base::in);
+        rnd.read(reinterpret_cast<char*>(iv), GCM_IV_SIZE);
 
-            // Store the encrypted document.
-            lj::bson::Node* encrypted_data = lj::bson::new_binary(
-                    (const uint8_t*)ct.data(), ct.size(),
-                    lj::bson::Binary_type::k_bin_user_defined);
-            lj::bson::Node* ivector = lj::bson::new_binary(
-                    (const uint8_t*)iv, sizeof(iv),
-                    lj::bson::Binary_type::k_bin_user_defined);
+        // Prepare all the data structures for the AES crypto in GCM mode.
+        struct aes_ctx cipher_ctx;
+        aes_set_encrypt_key(&cipher_ctx, key_size, key);
+        struct gcm_key auth_key;
+        gcm_set_key(&auth_key, &cipher_ctx, (nettle_crypt_func*) & aes_encrypt);
+        struct gcm_ctx auth_ctx;
+        gcm_set_iv(&auth_ctx, &auth_key, GCM_IV_SIZE, iv);
 
-            // Document is unmodified up to this point. Now we add the
-            // encrypted data. This is added before removing any data
-            // incase an exception is thrown.
-            taint(server);
-            doc_->nav(k_crypt_vector).set_child(key_name, ivector);
-            doc_->nav(k_crypt_data).set_child(key_name, encrypted_data);
-        }
-        catch (CryptoPP::Exception& ex)
-        {
-            throw LJ__Exception(ex.what());
-        }
+        // Perform the actual encryption.
+        std::unique_ptr < uint8_t[] > destination(new uint8_t[source_size]);
+        gcm_encrypt(&auth_ctx,
+                &auth_key,
+                &cipher_ctx,
+                (nettle_crypt_func*) & aes_encrypt,
+                source_size,
+                destination.get(),
+                source.get());
+        lj::Wiper < uint8_t[]>::wipe(source, source_size);
 
-        // Remove the encrypted fields and update tracking.
+        // Extract the authentication information.
+        uint8_t auth_tag[GCM_BLOCK_SIZE];
+        gcm_digest(&auth_ctx, &auth_key, &cipher_ctx, (nettle_crypt_func*) & aes_encrypt, GCM_BLOCK_SIZE, auth_tag);
+
+        // Create bson Nodes for data necessary for decryption.
+        lj::bson::Node* encrypted_node = lj::bson::new_binary(
+                destination.get(),
+                source_size,
+                lj::bson::Binary_type::k_bin_user_defined);
+        lj::bson::Node* authentication_node = lj::bson::new_binary(
+                auth_tag,
+                GCM_BLOCK_SIZE,
+                lj::bson::Binary_type::k_bin_user_defined);
+        lj::bson::Node* ivector_node = lj::bson::new_binary(
+                iv,
+                GCM_IV_SIZE,
+                lj::bson::Binary_type::k_bin_user_defined);
+
+        // Wipe the temporary memory areas clean
+        lj::Wiper<uint8_t[]>::wipe(destination, source_size);
+        lj::Wiper<uint8_t[]>::wipe(auth_tag, GCM_BLOCK_SIZE);
+        lj::Wiper<uint8_t[]>::wipe(iv, GCM_IV_SIZE);
+
+        // Document is unmodified up to this point. Now we add the
+        // encrypted data. This is added before removing any data
+        // incase an exception is thrown.
+        taint(server);
+        doc_->nav(k_crypt_data).set_child(key_name, encrypted_node);
+        doc_->nav(k_crypt_auth).set_child(key_name, authentication_node);
+        doc_->nav(k_crypt_vector).set_child(key_name, ivector_node);
+
+        // Remove the paths that were just encrypted.
         if (paths.empty())
         {
-            // encrypted the whole document, so nothing to track.
-            doc_->set_child(".", NULL);
+            doc_->set_child(".", nullptr);
         }
         else
         {
-            // track the specific fields that have been encrypted.
             for (auto iter = paths.begin();
                     paths.end() != iter;
                     ++iter)
             {
-                doc_->nav(".").set_child(*iter, NULL);
+                doc_->nav(".").set_child(*iter, nullptr);
             }
         }
     }
 
-    void Document::decrypt(uint8_t* key,
+    void Document::decrypt(const uint8_t* key,
             int key_size,
             const std::string& key_name)
     {
         // Only accept 256bit keys.
-        if (key_size != CryptoPP::AES::MAX_KEYLENGTH)
+        if (k_key_size != key_size)
         {
-            throw LJ__Exception("decrypt key must 256bits");
+            throw LJ__Exception("Decrypt key must be 256bits.");
         }
 
-        // Get the IV.
-        const lj::bson::Node& ivector =
-                doc_->nav(k_crypt_vector).nav(key_name);
+        // Get the document to decrypt.
+        const lj::bson::Node& source_node =
+                doc_->nav(k_crypt_data).nav(key_name);
         lj::bson::Binary_type bt;
+        uint32_t source_size;
+        const uint8_t* source = lj::bson::as_binary(source_node,
+                &bt,
+                &source_size);
+
+        // Get the initialization vector for the encrypted data.
+        const lj::bson::Node& ivector_node =
+                doc_->nav(k_crypt_vector).nav(key_name);
         uint32_t iv_size;
-        const uint8_t* iv = lj::bson::as_binary(ivector,
+        const uint8_t* iv = lj::bson::as_binary(ivector_node,
                 &bt,
                 &iv_size);
 
-        // Setup the decrypter.
-        CryptoPP::EAX<CryptoPP::AES>::Decryption dec;
-        dec.SetKeyWithIV(key, key_size, iv, iv_size);
+        // Check to make sure the initialization vector is the correct length.
+        if (GCM_IV_SIZE != iv_size)
+        {
+            throw LJ__Exception("Initialization vector for this encrypted data is incorrect.");
+        }
 
-        // Get the document to decrypt.
-        const lj::bson::Node& data_node =
-                doc_->nav(k_crypt_data).nav(key_name);
-        uint32_t data_size;
-        const uint8_t* data = lj::bson::as_binary(data_node,
+        // Prepare all the data structures for the AES crypto in GCM mode.
+        struct aes_ctx cipher_ctx;
+        aes_set_encrypt_key(&cipher_ctx, key_size, key);
+        struct gcm_key auth_key;
+        gcm_set_key(&auth_key, &cipher_ctx, (nettle_crypt_func*) & aes_encrypt);
+        struct gcm_ctx auth_ctx;
+        gcm_set_iv(&auth_ctx, &auth_key, GCM_IV_SIZE, iv);
+
+        // Perform the actual encryption.
+        std::unique_ptr < uint8_t[] > destination(new uint8_t[source_size]);
+        gcm_decrypt(&auth_ctx,
+                &auth_key,
+                &cipher_ctx,
+                (nettle_crypt_func*) & aes_encrypt,
+                source_size,
+                destination.get(),
+                source);
+
+        // Extract the authentication information.
+        uint8_t auth_tag[GCM_BLOCK_SIZE];
+        gcm_digest(&auth_ctx, &auth_key, &cipher_ctx, (nettle_crypt_func*) & aes_encrypt, GCM_BLOCK_SIZE, auth_tag);
+
+        // Get the  authentication vector from the encryption.
+        const lj::bson::Node& authentication_node =
+                doc_->nav(k_crypt_auth).nav(key_name);
+        uint32_t authentication_size;
+        const uint8_t* original_auth_tag = lj::bson::as_binary(authentication_node,
                 &bt,
-                &data_size);
+                &authentication_size);
 
-        try
+        // Check to make sure the authentication tag is the correct size.
+        if (GCM_BLOCK_SIZE != authentication_size)
         {
-            // Decrypt the document.
-            std::string value;
-            CryptoPP::ArraySource(data,
-                    data_size,
-                    true,
-                    new CryptoPP::AuthenticatedDecryptionFilter(dec,
-                            new CryptoPP::StringSink(value)));
-
-            // Rebuild the document.
-            lj::bson::Node changes(lj::bson::Type::k_document,
-                    (const uint8_t*)value.data());
-            lj::bson::combine(doc_->nav("."), changes.nav("."));
-        }
-        catch (CryptoPP::Exception& ex)
-        {
-            throw LJ__Exception(ex.what());
+            throw LJ__Exception("Authentication tag for this encrypted data is incorrect.");
         }
 
-        doc_->nav(k_crypt_data).set_child(key_name, NULL);
-        doc_->nav(k_crypt_vector).set_child(key_name, NULL);
+        // Compare the authentication tag from decryption to the authentication tag from encryption.
+        if (memcmp(auth_tag, original_auth_tag, GCM_BLOCK_SIZE) != 0)
+        {
+            throw LJ__Exception("Authentication tags did not match. Data may be corrupted.");
+        }
+
+        // The destination should now contain whatever was originally encrypted.
+        // Turn the data back into a bson document
+        lj::bson::Node changes(lj::bson::Type::k_document,
+                destination.get());
+
+        // Clean up anything sensitive from memory.
+        lj::Wiper < uint8_t[]>::wipe(destination, source_size);
+        lj::Wiper < uint8_t[]>::wipe(auth_tag, GCM_BLOCK_SIZE);
+
+        // try to combine the documents.  This may throw an exception if things are
+        // messed up.
+        lj::bson::combine(doc_->nav("."), changes.nav("."));
+
+        // Remove the encrypted data from the document.
+        doc_->nav(k_crypt_vector).set_child(key_name, nullptr);
+        doc_->nav(k_crypt_auth).set_child(key_name, nullptr);
+        doc_->nav(k_crypt_data).set_child(key_name, nullptr);
     }
-        
+
     void Document::suppress(const lj::Uuid& server,
             const bool s)
     {
@@ -320,7 +368,7 @@ namespace lj
         }
         doc_ = new lj::bson::Node();
         dirty_ = true;
-        
+
         doc_->set_child("_/parent", lj::bson::new_null());
         doc_->set_child("_/vclock", new lj::bson::Node());
         doc_->set_child("_/flag/suppressed", lj::bson::new_boolean(false));
@@ -329,18 +377,18 @@ namespace lj
         doc_->set_child("version", lj::bson::new_int32(100));
         doc_->set_child(".", new lj::bson::Node());
     }
-        
+
     void Document::taint(const lj::Uuid& server)
     {
         if (!dirty_)
         {
             // Update flags.
             dirty_ = true;
-            
+
             // Create new revision ID.
             doc_->set_child("_/parent", new lj::bson::Node(doc_->nav("_/id")));
             doc_->set_child("_/id", lj::bson::new_uuid(lj::Uuid(key())));
-            
+
             // Update the vclock
             lj::bson::increment(doc_->nav("_/vclock").nav(server), 1);
         }

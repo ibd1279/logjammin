@@ -5,21 +5,21 @@
 
  Copyright (c) 2010, Jason Watson
  All rights reserved.
- 
+
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
- 
+
  * Redistributions of source code must retain the above copyright notice,
  this list of conditions and the following disclaimer.
- 
+
  * Redistributions in binary form must reproduce the above copyright notice,
  this list of conditions and the following disclaimer in the documentation
  and/or other materials provided with the distribution.
- 
+
  * Neither the name of the LogJammin nor the names of its contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
+
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -35,8 +35,9 @@
 
 #include "Uuid.h"
 
-#include "cryptopp/sha.h"
-#include "cryptopp/osrng.h"
+extern "C" {
+#include "nettle/sha.h"
+}
 
 #include <cstdlib>
 #include <ios>
@@ -52,11 +53,11 @@ namespace lj
     const Uuid Uuid::k_ns_url{0x6B,0xA7,0xB8,0x11, 0x9D,0xAD,0x11,0xD1, 0x80,0xB4,0x00,0xC0, 0x4F,0xD4,0x30,0xC8};
     const Uuid Uuid::k_ns_oid{0x6B,0xA7,0xB8,0x12, 0x9D,0xAD,0x11,0xD1, 0x80,0xB4,0x00,0xC0, 0x4F,0xD4,0x30,0xC8};
     const Uuid Uuid::k_ns_x500{0x6B,0xA7,0xB8,0x14, 0x9D,0xAD,0x11,0xD1, 0x80,0xB4,0x00,0xC0, 0x4F,0xD4,0x30,0xC8};
-    
+
     Uuid::Uuid()
     {
-        CryptoPP::AutoSeededRandomPool rng;
-        rng.GenerateBlock(data_, 16);
+        std::fstream rnd("/dev/urandom", std::ios_base::in);
+        rnd.read(reinterpret_cast<char*>(data_), 16);
 
         // setting the version.
         data_[6] &= 0x0f;
@@ -144,20 +145,21 @@ namespace lj
             data_[i] = 0;
         }
     }
-    
+
     Uuid::Uuid(const Uuid& ns, const void* name, const size_t name_sz)
     {
         size_t ns_sz;
         const uint8_t* ns_ptr = ns.data(&ns_sz);
-        
-        CryptoPP::SHA hash;
-        hash.Update(ns_ptr, ns_sz);
-        hash.Update(static_cast<const uint8_t*>(name), name_sz);
 
-        uint8_t tmp[CryptoPP::SHA::DIGESTSIZE];
-        hash.Final(tmp);
+        struct sha1_ctx ctx;
+        sha1_init(&ctx);
+        sha1_update(&ctx, ns_sz, ns_ptr);
+        sha1_update(&ctx, name_sz, static_cast<const uint8_t*>(name));
+
+        uint8_t tmp[SHA1_DIGEST_SIZE];
+        sha1_digest(&ctx, SHA1_DIGEST_SIZE, tmp);
         memcpy(data_, tmp, 16);
-        
+
         data_[6] &= 0x0f; // time high/ver.
         data_[6] |= 0x50;
         data_[8] &= 0x3f; //clock seq high/reserved
@@ -168,15 +170,16 @@ namespace lj
     {
         size_t ns_sz;
         const uint8_t* ns_ptr = ns.data(&ns_sz);
-        
-        CryptoPP::SHA hash;
-        hash.Update(ns_ptr, ns_sz);
-        hash.Update(reinterpret_cast<const uint8_t*>(name.data()), name.size());
 
-        uint8_t tmp[CryptoPP::SHA::DIGESTSIZE];
-        hash.Final(tmp);
+        struct sha1_ctx ctx;
+        sha1_init(&ctx);
+        sha1_update(&ctx, ns_sz, ns_ptr);
+        sha1_update(&ctx, name.size(), (const uint8_t*)name.data());
+
+        uint8_t tmp[SHA1_DIGEST_SIZE];
+        sha1_digest(&ctx, SHA1_DIGEST_SIZE, tmp);
         memcpy(data_, tmp, 16);
-        
+
         data_[6] &= 0x0f; // time high/ver.
         data_[6] |= 0x50;
         data_[8] &= 0x3f; //clock seq high/reserved
@@ -198,8 +201,8 @@ namespace lj
         data_[8] = static_cast<uint8_t>((o & 0x000000000000000fULL) << 2ULL);
 
         // Populate everything else with random values.
-        CryptoPP::AutoSeededRandomPool rng;
-        rng.GenerateBlock(data_ + 8, 8);
+        std::fstream rnd("/dev/urandom", std::ios_base::in);
+        rnd.read(reinterpret_cast<char*>(data_) + 8, 8);
 
         // Store some data in byte 9.
         data_[8] &= 0x03;

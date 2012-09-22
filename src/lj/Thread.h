@@ -155,6 +155,8 @@ namespace lj
                     cleanup_(c)
             {
             }
+            virtual ~Lambda_work() {
+            }
             virtual void run()
             {
                 return run_();
