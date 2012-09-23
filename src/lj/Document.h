@@ -40,6 +40,8 @@
 #include <cstdint>
 #include <string>
 
+void testEncrypt_friendly();
+
 namespace lj
 {
     //! Bson Document
@@ -68,20 +70,29 @@ namespace lj
      \par Encryption
      Encryption and decryption of specific fields is done through the
      \c lj::Document::encrypt() and \c lj::Document::decrypt() methods.
+     Encrypted fields are removed from the document, and stored under a "#"
+     element. Additional information necessary to decrypt the fields is stored
+     under the "_" element.
      \note
      The document object provides a thin utility wrapper around
      a lj::bson::Node. In reality it tracks the root node and the path
      to the current node. Dereferencing a Document object will return the
      current node as read-only, allowing it to be easily used with the
      existing lj::bson methods. A document also keeps track of its
-     modified state.
+     modified state. Modifications to a document must be done through the
+     document interface.
      \author Jason Watson
      \version 1.0
+     \sa lj::bson::Node
      */
+
     class Document
     {
     public:
         static const size_t k_key_size;
+
+        // grant the unit test function access.
+        friend void ::testEncrypt_friendly();
 
         //! Default constructor.
         Document();

@@ -18,6 +18,7 @@ struct sample_data
 {
     lj::bson::Node doc;
     lj::Uuid server;
+
     sample_data() : doc(), server(lj::Uuid::k_ns_dns, "example.com", 11)
     {
         uint8_t data[8] = {10, 10, 10, 10, 10, 10, 10, 10};
@@ -38,6 +39,7 @@ struct sample_data
         doc.push_child("array", lj::bson::new_int32(500));
     }
 };
+
 void testIncrement()
 {
     sample_data data;
@@ -47,6 +49,7 @@ void testIncrement()
     TEST_ASSERT(lj::bson::as_int64(doc.get("int")) == 0x7777777778LL);
     TEST_ASSERT(doc.dirty());
 }
+
 void testRekey()
 {
     sample_data data;
@@ -71,6 +74,7 @@ void testRekey()
     TEST_ASSERT((uint64_t)doc.id() == 200);
     TEST_ASSERT(!doc.vclock().exists((std::string)data.server));
 }
+
 void testBranch()
 {
     sample_data data;
@@ -85,6 +89,7 @@ void testBranch()
     TEST_ASSERT(static_cast<uint64_t>(doc2->id()) == 200);
     delete doc2;
 }
+
 void testSuppress()
 {
     sample_data data;
@@ -97,6 +102,7 @@ void testSuppress()
     doc.suppress(data.server, false);
     TEST_ASSERT(doc.suppress() == false);
 }
+
 void testVersion()
 {
     sample_data data;
@@ -105,6 +111,7 @@ void testVersion()
     lj::Document doc2;
     TEST_ASSERT(doc.version() == 100);
 }
+
 void testWash()
 {
     sample_data data;
@@ -128,18 +135,16 @@ void testWash()
     TEST_ASSERT(doc.vclock().exists((std::string)data.server));
     TEST_ASSERT(lj::bson::as_uint64(doc.vclock().nav((std::string)data.server)) == 2);
 }
-void testEncrypt()
+
+void testEncrypt_friendly()
 {
     // Take the sample data and create a document.
     sample_data data;
     lj::Document doc(new lj::bson::Node(data.doc), false);
 
     // Create the derived key for encryption and decryption.
-    std::unique_ptr < uint8_t[], lj::Wiper < uint8_t[] >> dk(new uint8_t[lj::Document::k_key_size]);
-    dk.get_deleter().set_count(lj::Document::k_key_size);
-
-    std::unique_ptr < uint8_t[], lj::Wiper < uint8_t[]> > salt(new uint8_t[lj::Document::k_key_size]);
-    salt.get_deleter().set_count(lj::Document::k_key_size);
+    std::unique_ptr < uint8_t[] > dk(new uint8_t[lj::Document::k_key_size]);
+    std::unique_ptr < uint8_t[] > salt(new uint8_t[lj::Document::k_key_size]);
     std::fstream rnd("/dev/urandom", std::ios_base::in);
     rnd.read((char*)salt.get(), lj::Document::k_key_size);
 
@@ -170,12 +175,36 @@ void testEncrypt()
     TEST_ASSERT(doc.get("bool").exists("false") == false);
     TEST_ASSERT(doc.get().exists("str") == false);
 
+    // this is a complicated series of steps to circumvent the invariant
+    // aspects of the document class in order to test a failure condition.
+    lj::bson::Node& encrypted_node = doc.doc_->nav("#/test");
+    lj::bson::Binary_type bt;
+    uint32_t source_size;
+    const uint8_t* source = lj::bson::as_binary(encrypted_node,
+            &bt,
+            &source_size);
+    uint8_t* illegal_source = const_cast<uint8_t*>(source);
+    illegal_source[9] = illegal_source[9] - 1;
+
+    // Try to unsuccessfully decrypt the document.
     try
     {
         doc.decrypt(dk.get(),
                 lj::Document::k_key_size,
                 std::string("test"));
-        std::cout << (std::string) doc << std::endl;
+        TEST_FAILED("decryption should have failed because of the corrupted data.");
+    }
+    catch (lj::Exception& ex)
+    {
+    }
+
+    // Try to decrypt the document.
+    illegal_source[9] = illegal_source[9] + 1;
+    try
+    {
+        doc.decrypt(dk.get(),
+                lj::Document::k_key_size,
+                std::string("test"));
     }
     catch (lj::Exception& ex)
     {
@@ -188,6 +217,7 @@ void testEncrypt()
     TEST_ASSERT(lj::bson::as_string(doc.get("str")).compare(
             "original foo") == 0);
 }
+
 int main(int argc, char** argv)
 {
     return Test_util::runner("lj::Document", tests);
