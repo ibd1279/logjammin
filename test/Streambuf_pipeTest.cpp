@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   Streambuf_pipeTest.cpp
  * Author: jwatson
  *
@@ -95,10 +95,12 @@ void testMixed()
 
 int main(int argc, char** argv)
 {
+
     const Test_entry tests[] = {
         PREPARE_TEST(testSerial),
         PREPARE_TEST(testMixed),
-        {0, ""}
+        {
+            0, ""}
     };
     return Test_util::runner("lj::Streambuf_pipe", tests);
 }

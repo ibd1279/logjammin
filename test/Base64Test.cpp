@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   Base64Test.cpp
  *
  * Created on May 11, 2011, 12:17:37 AM
@@ -16,7 +16,7 @@ void testBase64()
     uint8_t* decoded = lj::base64_decode(encoded, &sz);
     TEST_ASSERT(sz == 31);
     TEST_ASSERT(data != decoded);
-    for(int h = 0; h < 31; ++h)
+    for (int h = 0; h < 31; ++h)
     {
         TEST_ASSERT(data[h] == decoded[h]);
     }

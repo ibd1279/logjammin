@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   BsonTest.cpp
  * Author: jwatson
  *
@@ -14,7 +14,7 @@
 struct sample_doc
 {
     lj::bson::Node root;
-    
+
     sample_doc()
     {
         uint8_t data[8] = {10, 10, 10, 10, 10, 10, 10, 10};
@@ -47,11 +47,28 @@ void testCopy_from()
 void testAssignment()
 {
     sample_doc doc;
-    lj::bson::Node o;
+    lj::bson::Node o, p;
 
-    o = doc.root;
+    // copy operations
+    p = doc.root;
+    TEST_ASSERT(&p != &(doc.root));
+    TEST_ASSERT(lj::bson::as_string(doc.root).compare(lj::bson::as_string(p)) == 0);
+
+    // Move operations
+    uint32_t sz;
+    lj::bson::Binary_type bt;
+    const uint8_t* bin_p = lj::bson::as_binary(p.nav("bin"), &bt, &sz);
+    TEST_ASSERT(lj::bson::Type::k_document == p.type());
+    o = std::move(p);
+    TEST_ASSERT(&o != &(doc.root));
     TEST_ASSERT(lj::bson::as_string(doc.root).compare(lj::bson::as_string(o)) == 0);
-    
+    TEST_ASSERT(lj::bson::Type::k_null == p.type());
+    TEST_ASSERT(lj::bson::as_string(doc.root).compare(lj::bson::as_string(p)) != 0);
+
+    const uint8_t* bin_o = lj::bson::as_binary(o.nav("bin"), &bt, &sz);
+    TEST_ASSERT_MSG("a move operation should return the same binary pointers",
+            bin_p == bin_o);
+
     try
     {
         o.set_value(lj::bson::Type::k_null, NULL);
@@ -98,51 +115,55 @@ void testIstreamExtraction()
 
     TEST_ASSERT(lj::bson::as_string(doc.root).compare(lj::bson::as_string(o)) == 0);
 }
+
 void testNullify()
 {
     sample_doc doc;
     doc.root["array"].nullify();
     TEST_ASSERT(lj::bson::as_string(doc.root["array"]).compare("null") == 0);
 }
+
 void testPath()
 {
     sample_doc doc;
     const sample_doc* cdoc = &doc;
-    
+
     // Const test case.
     const lj::bson::Node* ptr = cdoc->root.path("some/unknown/path");
     TEST_ASSERT(NULL == ptr);
-    
+
     // mutable test case.
     doc.root.path("some/unknown/path");
     ptr = cdoc->root.path("some/unknown/path");
     TEST_ASSERT(NULL != ptr);
     TEST_ASSERT(lj::bson::Type::k_document == ptr->type());
     TEST_ASSERT(lj::bson::as_string(*ptr).compare("{}") == 0);
-    
+
 }
+
 void testPath2()
 {
     // testing path support for navigating array indices.
     sample_doc doc;
     sample_doc doc2;
-    
+
     doc.root.set_child("array", new lj::bson::Node(lj::bson::Type::k_array, NULL));
-    
+
     doc.root["array"] << lj::bson::Node();
     doc.root["array"] << lj::bson::Node();
     doc.root["array"] << lj::bson::Node();
     doc.root["array"] << lj::bson::Node();
-    
+
     doc.root.set_child("array/2/data", new lj::bson::Node(doc2.root));
-    
+
     TEST_ASSERT(lj::bson::as_string(*(doc.root.path("array/2/data/bool"))).compare(lj::bson::as_string(*(doc.root.path("bool")))) == 0);
     TEST_ASSERT(lj::bson::as_string(*(doc.root.path("array/3"))).compare(lj::bson::as_string(*(doc.root.path("array/0")))) == 0);
 }
+
 void testSize()
 {
     sample_doc doc;
-    
+
     TEST_ASSERT(1 == doc.root["bool/true"].size());
     TEST_ASSERT(17 == doc.root["str"].size());
     TEST_ASSERT(8 == doc.root["int"].size());
@@ -152,21 +173,23 @@ void testSize()
     TEST_ASSERT(40 == doc.root["array"].size());
     TEST_ASSERT(20 == doc.root["bool"].size());
 }
+
 void testExists()
 {
     sample_doc doc;
-    
+
     TEST_ASSERT(!doc.root.exists("some/unknown/path"));
     doc.root.path("some/unknown/path");
     TEST_ASSERT(doc.root.exists("some/unknown/path"));
     doc.root.set_child("some/unknown/path", NULL);
     TEST_ASSERT(!doc.root.exists("some/unknown/path"));
 }
+
 void testNav()
 {
     sample_doc doc;
     const sample_doc* cdoc = &doc;
-    
+
     // Const test case.
     try
     {
@@ -177,13 +200,13 @@ void testNav()
     {
         std::cout << ex.str() << std::endl;
     }
-    
+
     // mutable test case.
     try
     {
         doc.root.nav("some/unknown/path");
         const lj::bson::Node& cn = cdoc->root.nav("some/unknown/path");
-        
+
         TEST_ASSERT(lj::bson::Type::k_document == cn.type());
         TEST_ASSERT(lj::bson::as_string(cn).compare("{}") == 0);
     }
@@ -191,41 +214,44 @@ void testNav()
     {
         TEST_FAILED("Const nav should not throw an exception for a node that exists.");
     }
-    
+
 }
+
 void testNav2()
 {
     // testing path support for navigating array indices.
     sample_doc doc;
     sample_doc doc2;
-    
+
     doc.root.set_child("array", new lj::bson::Node(lj::bson::Type::k_array, NULL));
-    
+
     doc.root["array"] << lj::bson::Node();
     doc.root["array"] << lj::bson::Node();
     doc.root["array"] << lj::bson::Node();
     doc.root["array"] << lj::bson::Node();
-    
+
     doc.root.set_child("array/2/data", new lj::bson::Node(doc2.root));
-    
+
     TEST_ASSERT(lj::bson::as_string(doc.root.nav("array/2/data/bool")).compare(lj::bson::as_string(doc.root.nav("bool"))) == 0);
     TEST_ASSERT(lj::bson::as_string(doc.root.nav("array/3")).compare(lj::bson::as_string(doc.root.nav("array/0"))) == 0);
 }
+
 void testTo_binary()
 {
     sample_doc doc;
-    
+
     uint8_t* bytes = doc.root.to_binary(nullptr);
     lj::bson::Node n(lj::bson::Type::k_document, bytes);
-    
+
     TEST_ASSERT(lj::bson::as_string(doc.root).compare(lj::bson::as_string(n)) == 0);
 }
+
 void testTo_map()
 {
     sample_doc doc;
     lj::bson::Node& n = doc.root["bool"];
     bool t = false, f = false, o = false;
-    
+
     for (auto iter = n.to_map().begin(); n.to_map().end() != iter; ++iter)
     {
         if (iter->first.compare("true") == 0 && lj::bson::as_boolean(*(iter->second)) == true)
@@ -241,9 +267,9 @@ void testTo_map()
             o = true;
         }
     }
-    
+
     TEST_ASSERT(t && f && !o);
-    
+
     try
     {
         doc.root["int"].to_map();
@@ -254,6 +280,7 @@ void testTo_map()
         std::cout << ex.str() << std::endl;
     }
 }
+
 void testTo_value()
 {
     sample_doc doc;
@@ -262,7 +289,7 @@ void testTo_value()
     TEST_ASSERT(doc.root["uuid"].to_value());
     TEST_ASSERT(doc.root["null"].to_value() == NULL);
     TEST_ASSERT(doc.root["bin"].to_value());
-    
+
     try
     {
         doc.root["array"].to_value();
@@ -272,7 +299,7 @@ void testTo_value()
     {
         std::cout << ex.str() << std::endl;
     }
-    
+
     try
     {
         doc.root["bool"].to_value();
@@ -283,19 +310,20 @@ void testTo_value()
         std::cout << ex.str() << std::endl;
     }
 }
+
 void testTo_vector()
 {
     sample_doc doc;
     lj::bson::Node& n = doc.root["array"];
-    
+
     TEST_ASSERT(5 == n.to_vector().size());
-    
+
     int h = 1;
     for (auto iter = n.to_vector().begin(); n.to_vector().end() != iter; ++iter, ++h)
     {
         TEST_ASSERT(lj::bson::as_int64(*(*iter)) == h * 100);
     }
-    
+
     try
     {
         doc.root["int"].to_vector();
@@ -306,10 +334,11 @@ void testTo_vector()
         std::cout << ex.str() << std::endl;
     }
 }
+
 void testType()
 {
     sample_doc doc;
-    
+
     TEST_ASSERT(lj::bson::Type::k_boolean == doc.root["bool/true"].type());
     TEST_ASSERT(lj::bson::Type::k_string == doc.root["str"].type());
     TEST_ASSERT(lj::bson::Type::k_int64 == doc.root["int"].type());
@@ -322,7 +351,7 @@ void testType()
 
 void testParse()
 {
-    lj::log::enable<lj::Debug>();
+    lj::log::enable<lj::Debug > ();
     const std::string simple_array("[\n  \"1\",\n  \"hello\",\n  \"3\"\n]");
     lj::bson::Node* result = lj::bson::parse_string(simple_array);
     TEST_ASSERT(simple_array.compare(lj::bson::as_pretty_json(*result)) == 0);
@@ -403,12 +432,13 @@ stinking escapes.\",\n\
     result = lj::bson::parse_string(complex_document);
     TEST_ASSERT(doc2_expected.compare(lj::bson::as_pretty_json(*result)) == 0);
 }
+
 void testAs_binary()
 {
     sample_doc doc;
     lj::bson::Binary_type t;
     uint32_t sz;
-    
+
     try
     {
         lj::bson::as_binary(doc.root["int"], &t, &sz);
@@ -418,22 +448,23 @@ void testAs_binary()
     {
         std::cout << ex.str() << std::endl;
     }
-    
+
     const uint8_t* ptr = lj::bson::as_binary(doc.root["uuid"], &t, &sz);
     TEST_ASSERT(ptr == doc.root["uuid"].to_value() + 5);
     std::cout << (int)t << std::endl;
     TEST_ASSERT(t == lj::bson::Binary_type::k_bin_uuid);
     TEST_ASSERT(sz == 16);
-    
+
     ptr = lj::bson::as_binary(doc.root["bin"], &t, &sz);
     TEST_ASSERT(ptr == doc.root["bin"].to_value() + 5);
     TEST_ASSERT(t == lj::bson::Binary_type::k_bin_user_defined);
     TEST_ASSERT(sz == 8);
 }
+
 void testAs_boolean()
 {
     sample_doc doc;
-    
+
     doc.root.set_child("array", new lj::bson::Node(lj::bson::Type::k_array, NULL));
     doc.root["array"] << lj::bson::new_boolean(true) << lj::bson::new_int64(1) << lj::bson::new_int64(1024);
     doc.root["array"] << lj::bson::new_string("1") << lj::bson::new_string("true") << lj::bson::new_string("TRUE");
@@ -441,7 +472,7 @@ void testAs_boolean()
     {
         TEST_ASSERT(lj::bson::as_boolean(*(*iter)));
     }
-    
+
     doc.root.set_child("array", new lj::bson::Node(lj::bson::Type::k_array, NULL));
     doc.root["array"] << lj::bson::new_boolean(false) << lj::bson::new_int64(0) << lj::bson::new_string("random true string that isn't the word true");
     doc.root["array"] << lj::bson::new_string("0") << lj::bson::new_string("") << lj::bson::new_string("true ");
@@ -450,11 +481,12 @@ void testAs_boolean()
         TEST_ASSERT(!lj::bson::as_boolean(*(*iter)));
     }
 }
+
 void testAs_debug_string()
 {
     sample_doc doc;
     doc.root.set_child("uuid", lj::bson::new_uuid(lj::Uuid("{2ae24c43-8cf9-4590-9d1a-fc5e8583a4bd}")));
-    
+
     const std::string expected = "{(size-4)215\n\
   (type-1)string\"(key-14)annoying/path\":\"(size-4)18(value-18)Not a nested node\",\n\
   (type-1)array\"(key-6)array\":{(size-4)40\n\
@@ -475,22 +507,24 @@ void testAs_debug_string()
   (type-1)int64\"(key-5)uint\":(value-8)1097220978551,\n\
   (type-1)binary\"(key-5)uuid\":(size-4)16(bin-type-1)uuid(value-16){2ae24c43-8cf9-4590-9d1a-fc5e8583a4bd}/3090116147341252871\n\
 (null-1)0}";
-    
+
     TEST_ASSERT(expected.compare(lj::bson::as_debug_string(doc.root)) == 0);
 }
+
 void testAs_string()
 {
     sample_doc doc;
     doc.root.set_child("uuid", lj::bson::new_uuid(lj::Uuid("{2ae24c43-8cf9-4590-9d1a-fc5e8583a4bd}")));
-    
+
     const std::string expected = "{\"annoying/path\":\"Not a nested node\", \"array\":[\"0\":100, \"1\":200, \"2\":300, \"3\":400, \"4\":500], \"bin\":CgoKCgoKCgo=, \"bool\":{\"false\":0, \"true\":1}, \"int\":513105426295, \"null\":null, \"str\":\"original foo\", \"uint\":1097220978551, \"uuid\":{2ae24c43-8cf9-4590-9d1a-fc5e8583a4bd}/3090116147341252871}";
     TEST_ASSERT(expected.compare(lj::bson::as_string(doc.root)) == 0);
 }
+
 void testAs_pretty_json()
 {
     sample_doc doc;
     doc.root.set_child("uuid", lj::bson::new_uuid(lj::Uuid("{2ae24c43-8cf9-4590-9d1a-fc5e8583a4bd}")));
-    
+
     const std::string expected = "{\n\
   \"annoying/path\":\"Not a nested node\",\n\
   \"array\":[\n\
@@ -511,58 +545,65 @@ void testAs_pretty_json()
   \"uint\":1097220978551,\n\
   \"uuid\":\"{2ae24c43-8cf9-4590-9d1a-fc5e8583a4bd}/3090116147341252871\"\n\
 }";
-    
+
     TEST_ASSERT(expected.compare(lj::bson::as_pretty_json(doc.root)) == 0);
 }
+
 void testAs_int32()
 {
     sample_doc doc;
-    
+
     TEST_ASSERT(lj::bson::as_int32(doc.root["array/0"]) == 100);
 }
+
 void testAs_int64()
 {
     sample_doc doc;
-    
+
     TEST_ASSERT(lj::bson::as_int64(doc.root["int"]) == 0x7777777777LL);
 }
+
 void testAs_uint64()
 {
     sample_doc doc;
-    
+
     TEST_ASSERT(lj::bson::as_uint64(doc.root["uint"]) == 0xFF77777777ULL);
 }
+
 void testAs_uuid()
 {
     sample_doc doc;
-    
+
     lj::Uuid uuid(lj::bson::as_uuid(doc.root["uuid"]));
-    
+
     lj::bson::Binary_type bt;
     uint32_t sz;
     const uint8_t* ptr = lj::bson::as_binary(doc.root["uuid"], &bt, &sz);
-    
+
     lj::Uuid uuid2(ptr);
-    
+
     TEST_ASSERT(uuid == uuid2);
 }
+
 void testEscape_path()
 {
     const std::string input("annoying/path");
     const std::string expected("annoying\\/path");
     std::string output(lj::bson::escape_path(input));
-    
+
     TEST_ASSERT(expected.compare(output) == 0);
 }
+
 void testIncrement()
 {
     sample_doc doc;
-    
+
     TEST_ASSERT(lj::bson::as_uint64(doc.root["uint"]) == 0xFF77777777ULL);
     lj::bson::increment(doc.root["uint"], 8);
     TEST_ASSERT(lj::bson::as_uint64(doc.root["uint"]) == 0xFF7777777FULL);
-    
+
 }
+
 void testBinary_type_string()
 {
     TEST_ASSERT(lj::bson::binary_type_string(lj::bson::Binary_type::k_bin_generic).compare("generic") == 0);
@@ -572,6 +613,7 @@ void testBinary_type_string()
     TEST_ASSERT(lj::bson::binary_type_string(lj::bson::Binary_type::k_bin_md5).compare("md5") == 0);
     TEST_ASSERT(lj::bson::binary_type_string(lj::bson::Binary_type::k_bin_user_defined).compare("user-defined") == 0);
 }
+
 void testType_string()
 {
     TEST_ASSERT(lj::bson::type_string(lj::bson::Type::k_document).compare("document") == 0);
@@ -590,6 +632,7 @@ void testType_string()
     TEST_ASSERT(lj::bson::type_string(lj::bson::Type::k_minkey).compare("unknown") == 0);
     TEST_ASSERT(lj::bson::type_string(lj::bson::Type::k_maxkey).compare("unknown") == 0);
 }
+
 void testType_is_native()
 {
     // native types.
@@ -599,7 +642,7 @@ void testType_is_native()
     TEST_ASSERT(lj::bson::type_is_native(lj::bson::Type::k_double));
     TEST_ASSERT(lj::bson::type_is_native(lj::bson::Type::k_boolean));
     TEST_ASSERT(lj::bson::type_is_native(lj::bson::Type::k_null));
-    
+
     // Non-native types.
     TEST_ASSERT(!lj::bson::type_is_native(lj::bson::Type::k_string));
     TEST_ASSERT(!lj::bson::type_is_native(lj::bson::Type::k_document));
@@ -611,12 +654,13 @@ void testType_is_native()
     TEST_ASSERT(!lj::bson::type_is_native(lj::bson::Type::k_minkey));
     TEST_ASSERT(!lj::bson::type_is_native(lj::bson::Type::k_maxkey));
 }
+
 void testType_is_nested()
 {
     // nested types.
     TEST_ASSERT(lj::bson::type_is_nested(lj::bson::Type::k_document));
     TEST_ASSERT(lj::bson::type_is_nested(lj::bson::Type::k_array));
-    
+
     // Non-nested types.
     TEST_ASSERT(!lj::bson::type_is_nested(lj::bson::Type::k_int32));
     TEST_ASSERT(!lj::bson::type_is_nested(lj::bson::Type::k_int64));
@@ -632,6 +676,7 @@ void testType_is_nested()
     TEST_ASSERT(!lj::bson::type_is_nested(lj::bson::Type::k_minkey));
     TEST_ASSERT(!lj::bson::type_is_nested(lj::bson::Type::k_maxkey));
 }
+
 void testType_is_number()
 {
     // number types.
@@ -639,7 +684,7 @@ void testType_is_number()
     TEST_ASSERT(lj::bson::type_is_number(lj::bson::Type::k_int64));
     TEST_ASSERT(lj::bson::type_is_number(lj::bson::Type::k_timestamp));
     TEST_ASSERT(lj::bson::type_is_number(lj::bson::Type::k_double));
-    
+
     // Non-number types.
     TEST_ASSERT(!lj::bson::type_is_number(lj::bson::Type::k_document));
     TEST_ASSERT(!lj::bson::type_is_number(lj::bson::Type::k_array));
@@ -653,11 +698,12 @@ void testType_is_number()
     TEST_ASSERT(!lj::bson::type_is_number(lj::bson::Type::k_minkey));
     TEST_ASSERT(!lj::bson::type_is_number(lj::bson::Type::k_maxkey));
 }
+
 void testType_is_quotable()
 {
     // nested types.
     TEST_ASSERT(lj::bson::type_is_quotable(lj::bson::Type::k_string));
-    
+
     // Non-nested types.
     TEST_ASSERT(!lj::bson::type_is_quotable(lj::bson::Type::k_document));
     TEST_ASSERT(!lj::bson::type_is_quotable(lj::bson::Type::k_array));
@@ -674,6 +720,7 @@ void testType_is_quotable()
     TEST_ASSERT(!lj::bson::type_is_quotable(lj::bson::Type::k_minkey));
     TEST_ASSERT(!lj::bson::type_is_quotable(lj::bson::Type::k_maxkey));
 }
+
 void testType_is_value()
 {
     // value types.
@@ -690,11 +737,12 @@ void testType_is_value()
     TEST_ASSERT(lj::bson::type_is_value(lj::bson::Type::k_javascript));
     TEST_ASSERT(lj::bson::type_is_value(lj::bson::Type::k_minkey));
     TEST_ASSERT(lj::bson::type_is_value(lj::bson::Type::k_maxkey));
-    
+
     // non-value types.
     TEST_ASSERT(!lj::bson::type_is_value(lj::bson::Type::k_document));
     TEST_ASSERT(!lj::bson::type_is_value(lj::bson::Type::k_array));
 }
+
 void testType_min_size()
 {
     TEST_ASSERT(lj::bson::type_min_size(lj::bson::Type::k_document) == 5);
@@ -713,6 +761,7 @@ void testType_min_size()
     TEST_ASSERT(lj::bson::type_min_size(lj::bson::Type::k_minkey) == 5);
     TEST_ASSERT(lj::bson::type_min_size(lj::bson::Type::k_maxkey) == 5);
 }
+
 int main(int argc, char** argv)
 {
     return Test_util::runner("lj::bson", tests);

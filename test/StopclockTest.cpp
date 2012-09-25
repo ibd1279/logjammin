@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   StopclockTest.cpp
  * Author: jwatson
  *
@@ -53,7 +53,7 @@ void testStop()
     uint64_t lap2 = stopclock.elapsed();
     TEST_ASSERT(lap2 == lap1);
 }
-    
+
 void testRestart()
 {
     uint64_t h = 0;

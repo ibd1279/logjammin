@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   ExceptionTest.cpp
  * Author: jwatson
  *
@@ -9,14 +9,16 @@
 #include "lj/Exception.h"
 #include "test/ExceptionTest_driver.h"
 
-void testException() {
+void testException()
+{
     lj::Exception exception("Test System", "Sample Message");
-    
+
     TEST_ASSERT(exception.str().compare("Test System Exception: Sample Message") == 0);
     TEST_ASSERT(((std::string)exception).compare("Test System Exception: Sample Message") == 0);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
     return Test_util::runner("lj::ExceptionTest", tests);
 }
 

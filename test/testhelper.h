@@ -1,10 +1,4 @@
 #pragma once
-/* 
- * File:   testhelper.h
- * Author: jwatson
- *
- * Created on May 7, 2011, 11:44 PM
- */
 
 #include <cstdlib>
 #include <exception>
@@ -16,11 +10,13 @@
 
 struct Test_failure
 {
+
     Test_failure(const std::string& msg, const std::string& expr,
             const std::string& file, const std::string& func, int line) :
             _msg(msg), _expr(expr), _file(file), _func(func), _line(line)
     {
     }
+
     std::string details(const std::string& suite_name, const std::string& test_name, float elapsed) const
     {
         std::ostringstream oss;
@@ -45,27 +41,28 @@ struct Test_entry
 
 struct Test_util
 {
+
     static void fail_if(bool expr, const Test_failure& fail_msg)
     {
-        if(expr)
+        if (expr)
         {
             throw fail_msg;
         }
     }
-    
+
     static unsigned long long elapsed(const struct timeval& start)
     {
         struct timeval now;
         gettimeofday(&now, NULL);
         return (((now.tv_sec - start.tv_sec) * 1000000ULL) +
-                (now.tv_usec - start.tv_usec));        
+                (now.tv_usec - start.tv_usec));
     }
 
     static int runner(const std::string& suite_name, const Test_entry* tests)
     {
         int failures = EXIT_SUCCESS;
         std::cout << "%SUITE_STARTING% " << suite_name << std::endl;
-        
+
         struct timeval start;
         gettimeofday(&start, NULL);
         std::cout << "%SUITE_STARTED%" << std::endl;
@@ -73,7 +70,7 @@ struct Test_util
         while (tests->f != NULL)
         {
             struct timeval test_start;
-            gettimeofday(&test_start, NULL);            
+            gettimeofday(&test_start, NULL);
             std::cout << "%TEST_STARTED% " << tests->n << " (" << suite_name << ")" << std::endl;
             try
             {
@@ -84,7 +81,6 @@ struct Test_util
                 std::cout << failure.details(suite_name, tests->n, (elapsed(test_start) / 1000000.0f)) << std::endl;
                 failures++;
             }
-            /*
             catch (const std::exception& ex)
             {
                 std::cout << Test_failure(std::string(ex.what()), "unknown", "unknown", "unknown", -1).details(suite_name, tests->n, (elapsed(test_start) / 1000000.0f)) << std::endl;
@@ -95,7 +91,6 @@ struct Test_util
                 std::cout << Test_failure(std::string(ex->what()), "unknown", "unknown", "unknown", -1).details(suite_name, tests->n, (elapsed(test_start) / 1000000.0f)) << std::endl;
                 failures++;
             }
-            */
             std::cout << "%TEST_FINISHED% time=";
             std::cout << std::setiosflags(std::ios::fixed) << std::setprecision(4);
             std::cout << (elapsed(test_start) / 1000000.0f);

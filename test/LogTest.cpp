@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   LogTest.cpp
  *
  * Created on May 13, 2011, 7:48:07 PM
@@ -16,14 +16,14 @@
 
 void testWrite_disable()
 {
-    lj::log::enable<lj::Debug>();
-    lj::log::Logger& logger2 = lj::log::format<lj::Debug>("foo");
+    lj::log::enable<lj::Debug > ();
+    lj::log::Logger& logger2 = lj::log::format<lj::Debug > ("foo");
     lj::log::Logger_cout* ptr2 = dynamic_cast<lj::log::Logger_cout*>(&logger2);
     TEST_ASSERT(ptr2 != NULL);
     logger2.end();
 
-    lj::log::disable<lj::Debug>();
-    lj::log::Logger& logger1 = lj::log::format<lj::Debug>("foo");
+    lj::log::disable<lj::Debug > ();
+    lj::log::Logger& logger1 = lj::log::format<lj::Debug > ("foo");
     lj::log::Logger_cout* ptr1 = dynamic_cast<lj::log::Logger_cout*>(&logger1);
     TEST_ASSERT(ptr1 == NULL);
     logger1.end();
@@ -102,6 +102,7 @@ void testCatch_and_log()
     std::ostringstream buffer;
     lj::log::Logger& logger1 =
             *(new lj::log::Logger_stream("ERROR", "%s: %s", &buffer));
+
     lj::log::attempt(logger1, [] ()
     {
         throw LJ__Exception("random fail");
