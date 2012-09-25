@@ -18,49 +18,49 @@ namespace lua
     public:
         //! Member function pointer definition.
         typedef int (T::*mfp)(lua_State *L);
-        
+
         //! Method registration type.
         struct RegType
         {
             const char *name; //!< The method name in lua.
             mfp mfunc; //!< The member function pointer.
         };
-        
+
         //! Register this class in the Lua state.
         /*!
          \param L The lua state.
          */
         static void Register(lua_State *L)
         {
+            lua_pushglobaltable(L); // replacement for deprecated LUA_GLOBALSINDEX
+            int globaltable = lua_gettop(L);
             lua_newtable(L);
             int mt = lua_gettop(L);
             lua_newtable(L);
             int methods = lua_gettop(L);
             luaL_newmetatable(L, T::LUNAR_CLASS_NAME);
             int metatable = lua_gettop(L);
-            
+
             // store method table in globals so that
             // scripts can add functions written in Lua.
-            lua_pushglobaltable(L); // replacement for deprecated LUA_GLOBALSINDEX
             lua_pushvalue(L, methods);
-            set(L, -2, T::LUNAR_CLASS_NAME);
-            lua_pop(L, 1); // Remove the globals table from the stack.
-            
+            set(L, globaltable, T::LUNAR_CLASS_NAME);
+
             // hide metatable from Lua getmetatable()
             lua_pushvalue(L, methods);
             set(L, metatable, "__metatable");
-            
+
             lua_pushvalue(L, methods);
             set(L, metatable, "__index");
-            
+
             lua_pushcfunction(L, tostring_T);
             set(L, metatable, "__tostring");
-            
+
             lua_pushcfunction(L, gc_T);
             set(L, metatable, "__gc");
 
             // stack: {mM, m, M}
-            
+
             lua_pushvalue(L, mt);           // mt for method table
             lua_pushcfunction(L, new_T);
             lua_pushvalue(L, -1);           // dup new_T function
@@ -69,7 +69,7 @@ namespace lua
             lua_setmetatable(L, methods);
 
             // stack: {mM, m, M}
-            
+
             // fill method table with methods from class T
             for (RegType *l = T::LUNAR_METHODS; l->name; l++) {
                 std::string tmp(l->name);
@@ -93,10 +93,10 @@ namespace lua
                     lua_settable(L, methods);
                 }
             }
-            
-            lua_pop(L, 3);  // drop metatable and method table
+
+            lua_pop(L, 4);  // pop global table, metatable and method table
         }
-        
+
         //! Call named lua method from userdata method table
         /*!
          \param L The lua state.
@@ -121,7 +121,7 @@ namespace lua
                         T::LUNAR_CLASS_NAME);
                 return -1;
             }
-            
+
             lua_pushstring(L, method);         // method name
             lua_gettable(L, base);             // get method from userdata
             if (lua_isnil(L, -1))              // no method?
@@ -133,7 +133,7 @@ namespace lua
                 return -1;
             }
             lua_insert(L, base);               // put method under userdata
-            
+
             int status = lua_pcall(L,          // call method
                     1 + nargs,
                     nresults,
@@ -156,7 +156,7 @@ namespace lua
             }
             return lua_gettop(L) - base + 1;     // number of results
         }
-        
+
         //! push onto the Lua stack a userdata containing a pointer to T object
         /*!
          \param L The lua state.
@@ -176,7 +176,7 @@ namespace lua
             }
 
             // lookup metatable in the Lua registry
-            luaL_getmetatable(L, T::LUNAR_CLASS_NAME);  
+            luaL_getmetatable(L, T::LUNAR_CLASS_NAME);
             if (lua_isnil(L, -1))
             {
                 luaL_error(L,
@@ -207,7 +207,7 @@ namespace lua
             lua_settop(L, mt);
             return mt;  // index of userdata containing pointer to T object
         }
-            
+
         //! get userdata from Lua stack and return pointer to T object
         /*!
          \param L The lua state.
@@ -223,11 +223,11 @@ namespace lua
                 luaL_where(L, 0);
                 std::string where(lua_tostring(L, -1));
                 lua_pop(L, 1);
-                
+
                 // Get the provided type info.
                 int received_type = lua_type(L, narg);
                 const char* received_type_name = lua_typename(L, received_type);
-                
+
                 lua_pushfstring(L, "%s: Expected type %s, but got type %s.",
                         where.c_str(),
                         T::LUNAR_CLASS_NAME,
@@ -235,7 +235,7 @@ namespace lua
             }
             return ud->pT;  // pointer to T object
         }
-        
+
     private:
         static int index_T(lua_State *L)
         {
@@ -251,9 +251,9 @@ namespace lua
             lua_pop(L, 2); // [method]
             return 1;
         }
-        
+
         Lunar() = delete;  // hide default constructor
-        
+
         // member function dispatcher
         static int thunk(lua_State *L)
         {
@@ -264,7 +264,7 @@ namespace lua
             RegType *l = static_cast<RegType*>(lua_touserdata(L, lua_upvalueindex(1)));
             return (obj->*(l->mfunc))(L);
         }
-        
+
         // create a new T object and
         // push onto the Lua stack a userdata containing a pointer to T object
         static int new_T(lua_State *L)
@@ -274,7 +274,7 @@ namespace lua
             push(L, obj, true); // gc_T will delete this object
             return 1;           // userdata containing pointer to T object
         }
-        
+
         // garbage collection metamethod
         static int gc_T(lua_State *L)
         {
@@ -294,7 +294,7 @@ namespace lua
             }
             return 0;
         }
-        
+
         static int tostring_T (lua_State *L)
         {
             char buff[32];
@@ -304,14 +304,14 @@ namespace lua
             lua_pushfstring(L, "%s (%s)", T::LUNAR_CLASS_NAME, buff);
             return 1;
         }
-        
+
         static void set(lua_State *L, int table_index, const char *key)
         {
             lua_pushstring(L, key);
             lua_insert(L, -2);  // swap value and key
             lua_settable(L, table_index);
         }
-        
+
         static void weaktable(lua_State *L, const char *mode)
         {
             lua_newtable(L);
@@ -321,7 +321,7 @@ namespace lua
             lua_pushstring(L, mode);
             lua_settable(L, -3);   // metatable.__mode = mode
         }
-        
+
         static void subtable(lua_State *L,
                 int tindex,
                 const char *name,
@@ -339,7 +339,7 @@ namespace lua
                 lua_settable(L, tindex);
             }
         }
-        
+
         static void *pushuserdata(lua_State *L, void *key, size_t sz)
         {
             void *ud = 0;
