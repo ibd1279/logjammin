@@ -6,21 +6,21 @@
 
  Copyright (c) 2010, Jason Watson
  All rights reserved.
- 
+
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
- 
+
  * Redistributions of source code must retain the above copyright notice,
  this list of conditions and the following disclaimer.
- 
+
  * Redistributions in binary form must reproduce the above copyright notice,
  this list of conditions and the following disclaimer in the documentation
  and/or other materials provided with the distribution.
- 
+
  * Neither the name of the LogJammin nor the names of its contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
+
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -48,36 +48,38 @@ namespace lj
     namespace bson
     {
         //! Enumeration of Bson Types.
+
         enum class Type : uint8_t
         {
-            k_double = 0x01,    //!< Node contains a double value.
-            k_string = 0x02,    //!< Node contains a string value.
-            k_document = 0x03,  //!< Node contains a nested document value.
-            k_array = 0x04,     //!< Node contains a nested array value.
-            k_binary = 0x05,    //!< Node contains a binary value.
-            k_binary_document = 0x06, //!< Node contains a document that has not been parsed (Raw bytes).
-            k_boolean = 0x08,   //!< Node contains a boolean value.
-            k_datetime = 0x09,  //!< Node contains a date/time value.
-            k_null = 0x0A,      //!< Node contains a null value.
-            k_javascript = 0x0D, //!< Node contains a javascript value.
-            k_int32 = 0x10,     //!< Node contains a int32 number value.
-            k_timestamp = 0x11, //!< Node contains a timestamp value.
-            k_int64 = 0x12,     //!< Node contains a int64 number value.
-            k_minkey = 0xFF,    //!< Node contains a reserved BSON spec value.
-            k_maxkey = 0x7F     //!< Node contains a reserved BSON spec value.
+            k_double = 0x01, //!< Node contains a double value.
+                    k_string = 0x02, //!< Node contains a string value.
+                    k_document = 0x03, //!< Node contains a nested document value.
+                    k_array = 0x04, //!< Node contains a nested array value.
+                    k_binary = 0x05, //!< Node contains a binary value.
+                    k_binary_document = 0x06, //!< Node contains a document that has not been parsed (Raw bytes).
+                    k_boolean = 0x08, //!< Node contains a boolean value.
+                    k_datetime = 0x09, //!< Node contains a date/time value.
+                    k_null = 0x0A, //!< Node contains a null value.
+                    k_javascript = 0x0D, //!< Node contains a javascript value.
+                    k_int32 = 0x10, //!< Node contains a int32 number value.
+                    k_timestamp = 0x11, //!< Node contains a timestamp value.
+                    k_int64 = 0x12, //!< Node contains a int64 number value.
+                    k_minkey = 0xFF, //!< Node contains a reserved BSON spec value.
+                    k_maxkey = 0x7F //!< Node contains a reserved BSON spec value.
         };
 
         //! Enumeration of Bson binary subtypes.
+
         enum class Binary_type : uint8_t
         {
-            k_bin_generic = 0x00,      //!< Generic Binary
-            k_bin_function = 0x01,     //!< Function.
-            k_bin_binary = 0x02,       //!< Binary String.
-            k_bin_uuid = 0x03,         //!< UUID.
-            k_bin_md5 = 0x05,          //!< MD5.
-            k_bin_user_defined = 0x80  //!< User defined binary string.
+            k_bin_generic = 0x00, //!< Generic Binary
+                    k_bin_function = 0x01, //!< Function.
+                    k_bin_binary = 0x02, //!< Binary String.
+                    k_bin_uuid = 0x03, //!< UUID.
+                    k_bin_md5 = 0x05, //!< MD5.
+                    k_bin_user_defined = 0x80 //!< User defined binary string.
         };
-    
+
         //! Get a string version of the type.
         /*!
          \param t The type to convert into a string.
@@ -93,6 +95,7 @@ namespace lj
         const std::string& binary_type_string(const Binary_type subtype);
 
         //! Get the minimum number of bytes required for a type.
+
         /*!
          \param t The type to get the required bytes for.
          \return The minimum size of the type.
@@ -122,8 +125,9 @@ namespace lj
             }
             return 5;
         }
-        
+
         //! Test if a type is a nested type (Array, or document).
+
         /*!
          \param t The type to test.
          \return True if the type is a nested object, false otherwise.
@@ -133,8 +137,9 @@ namespace lj
             return (t == Type::k_document ||
                     t == Type::k_array);
         }
-        
+
         //! Test if a type is a value type (to_value() will succeed).
+
         /*!
          \param t the type to test.
          \return True if the type supports to_valeu(), false otherwise.
@@ -145,6 +150,7 @@ namespace lj
         }
 
         //! Test if a type is quotablable (string types).
+
         /*!
          \param t The type to test.
          \return True if the type is a quotable object, false otherwise.
@@ -155,6 +161,7 @@ namespace lj
         }
 
         //! Test if a type is a numerical type (integers and floats).
+
         /*!
          \param t The type to test.
          \return True if the type is a number type, false otherwise.
@@ -168,6 +175,7 @@ namespace lj
         }
 
         //! Test if a type is a native c++ type (integers, floats, booleans, null).
+
         /*!
          \param t The type to test.
          \return True if the type is a native type, false otherwise.
@@ -181,8 +189,9 @@ namespace lj
                     t == Type::k_boolean ||
                     t == Type::k_null);
         }
-        
+
         //! Bson path exception
+
         /*!
          \par
          Represents an invalid path in a bson document.
@@ -194,6 +203,7 @@ namespace lj
         {
         public:
             //! Constructor.
+
             /*!
              \param msg The exception message.
              \param path The path that caused the exception.
@@ -203,19 +213,22 @@ namespace lj
             }
 
             //! Copy constructor.
+
             /*!
              \param o The other object.
              */
             Bson_path_exception(const Bson_path_exception& o) : lj::Exception(o.label_, o.msg_)
             {
             }
-            
+
             //! Destructor.
-            virtual ~Bson_path_exception() throw()
+
+            virtual ~Bson_path_exception() throw ()
             {
             }
 
             //! Get the path that caused this exception.
+
             /*!
              \return The path.
              */
@@ -223,13 +236,14 @@ namespace lj
             {
                 return path_;
             }
-            
+
             virtual std::string str() const;
         private:
             std::string path_;
         };
-        
+
         //! Bson type exception.
+
         /*!
          \par
          Represents an invalid type operation in a bson document.
@@ -241,6 +255,7 @@ namespace lj
         {
         public:
             //! Constructor.
+
             /*!
              \param msg The exception msg.
              \param type The bson type of the object.
@@ -249,21 +264,24 @@ namespace lj
             Bson_type_exception(const std::string& msg, Type type, Binary_type binary_type = Binary_type::k_bin_generic) : lj::Exception("Bson", msg), type_(type), binary_type_(binary_type)
             {
             }
-            
+
             //! Copy constructor.
+
             /*!
              \param o The other object.
              */
             Bson_type_exception(const Bson_type_exception& o) : lj::Exception(o.label_, o.msg_)
             {
             }
-            
+
             //! Destructor
-            virtual ~Bson_type_exception() throw()
+
+            virtual ~Bson_type_exception() throw ()
             {
             }
 
             //! The type of the object.
+
             /*!
              \return The type.
              */
@@ -271,8 +289,9 @@ namespace lj
             {
                 return type_;
             }
-            
+
             //! The binary type of the binary object.
+
             /*!
              \par
              Only useful when the type is "binary".
@@ -282,7 +301,7 @@ namespace lj
             {
                 return binary_type_;
             }
-            
+
             virtual std::string str() const;
         private:
             Type type_;
@@ -290,6 +309,7 @@ namespace lj
         };
 
         //! Bson value.
+
         /*!
          \par
          Represets a Bson value, including documents and arrays. The following
@@ -329,7 +349,13 @@ namespace lj
              \param o The original Node object.
              \sa Node::copy_from()
              */
-            Node(const Node &o);
+            Node(const Node& o);
+
+            //! Create a new document node as a move of an existing Node.
+            /*!
+             \param o The original rvalue reference \c Node object.
+             */
+            Node(Node&& o);
 
             //! Destructor.
             ~Node();
@@ -368,13 +394,27 @@ namespace lj
              */
             inline Node& operator=(const Node& o)
             {
-                copy_from(o);
+                if (&o != this)
+                {
+                    copy_from(o);
+                }
                 return *this;
             }
 
+            //! Destroy the current value and move values from another node.
+            /*!
+             \par
+             As part of the move semantics, the other value is left containing
+             the value of a null bson::Node.
+             \param o rvalue reference to the other Node object.
+             \return lvalue reference to this object.
+             \sa Node::move_from()
+             */
+            Node& operator=(Node&& o);
+
             //! Takes a list of strings, and creates child documents when they do not exist.
             Node* find_or_create_child_documents(const std::list<std::string>&);
-            
+
             //! Get a pointer to a specific Node object in the document.
             /*!
              \par
@@ -395,8 +435,9 @@ namespace lj
             const Node* path(const std::string& p) const;
 
             //! Get a specific Node object at a path.
+
             /*!
-             \par 
+             \par
              Reference version of \c path(p).
              \sa path(const std::string)
              \param p The path to follow.
@@ -409,8 +450,9 @@ namespace lj
             }
 
             //! Get a specific Node object at a path.
+
             /*!
-             \par 
+             \par
              Reference version of \c path(p).
              \sa path(const std::string)const
              \param p The path to follow.
@@ -428,8 +470,9 @@ namespace lj
             }
 
             //! Get a specific Node object at a path.
+
             /*!
-             \par 
+             \par
              Syntatical sugar for \c nav(p).
              \sa nav(const std::string)
              \param p The path to follow.
@@ -442,8 +485,9 @@ namespace lj
             }
 
             //! Get a specific Node object at a path.
+
             /*!
-             \par 
+             \par
              Syntatical sugar for \c nav(p).
              \sa nav(const std::string)const
              \param p The path to follow.
@@ -471,7 +515,7 @@ namespace lj
 
             //! Push a child at a specific path.
             /*!
-             \par 
+             \par
              The parent Node becomes responsible for the destruction of the pointer \c child.
              \par
              If \c path is an empty string, the child is pushed onto the
@@ -485,6 +529,7 @@ namespace lj
             void push_child(const std::string& path, Node* child);
 
             //! Push a child onto this Node object.
+
             /*!
              \param o other object to copy from.
              \return reference to this.
@@ -496,6 +541,7 @@ namespace lj
             }
 
             //! Push a child onto this Node object.
+
             /*!
              \note Memory
              This object becomes responsible for the memory.
@@ -509,6 +555,7 @@ namespace lj
             }
 
             //! Get the map backing document type.
+
             /*!
              \return A map of children. An empty map for non-document types.
              */
@@ -522,6 +569,7 @@ namespace lj
             }
 
             //! Get the vector backing array type.
+
             inline const std::vector<Node*>& to_vector() const
             {
                 if (Type::k_array != type())
@@ -532,6 +580,7 @@ namespace lj
             }
 
             //! Get the value of this object.
+
             /*!
              \return The value of this node. NULL for document and array types.
              */
@@ -545,6 +594,7 @@ namespace lj
             }
 
             //! get the value of the document node as a bson string.
+
             /*!
              \par
              Pointer is allocated with "new[]" and must be released with
@@ -570,12 +620,14 @@ namespace lj
             }
 
             //! Get the type of the document node.
+
             inline Type type() const
             {
                 return type_;
             }
 
             //! Get if the Node object contains anything.
+
             bool exists(const std::string& path) const
             {
                 return (this->path(path) != NULL);
@@ -586,12 +638,14 @@ namespace lj
 
         private:
             Type type_;
-            union {
+
+            union
+            {
                 uint8_t* data_;
                 std::vector<Node*>* vector_;
                 std::map<std::string, Node*>* map_;
             } value_;
-            
+
             //! copy the value of this object into a bson byte array.
             size_t copy_to_bson(uint8_t *) const;
 
@@ -623,7 +677,7 @@ namespace lj
          \return a new Node object.
          */
         Node* new_boolean(const bool val);
-        
+
         //! Create a new int32 object.
         /*!
          \par

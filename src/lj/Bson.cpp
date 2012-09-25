@@ -5,21 +5,21 @@
 
  Copyright (c) 2010, Jason Watson
  All rights reserved.
- 
+
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
- 
+
  * Redistributions of source code must retain the above copyright notice,
  this list of conditions and the following disclaimer.
- 
+
  * Redistributions in binary form must reproduce the above copyright notice,
  this list of conditions and the following disclaimer in the documentation
  and/or other materials provided with the distribution.
- 
+
  * Neither the name of the LogJammin nor the names of its contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
+
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -36,6 +36,7 @@
 #include "lj/Bson.h"
 #include "lj/Base64.h"
 #include "lj/Log.h"
+#include "Wiper.h"
 
 #include <cstdio>
 #include <cstring>
@@ -54,7 +55,7 @@ namespace lj
         namespace
         {
             //! escape a string.
-            std::string escape(const std::string &val)
+            std::string escape(const std::string& val)
             {
                 std::string r;
                 for (auto iter = val.begin(); iter != val.end(); ++iter)
@@ -103,7 +104,7 @@ namespace lj
                     // The node constructor does all the byte parsing based on
                     // the provided type.
                     Node* new_child = new Node(static_cast<Type>(t), ptr);
-                    
+
                     // Attaching the child node to the parent Node is different
                     // depending on the type of the parent node.
                     if (Type::k_document == parent_t)
@@ -145,7 +146,7 @@ namespace lj
 
         const std::string& type_string(const Type t)
         {
-            
+
             // All of these strings are declared and defined in the anonymous
             // namespace above.
             switch (t)
@@ -201,11 +202,11 @@ namespace lj
             }
             return k_bson_type_string_unknown;
         }
-        
+
         //=====================================================================
         // Bson path exception.
         //=====================================================================
-        
+
         std::string Bson_path_exception::str() const
         {
             std::ostringstream oss;
@@ -213,11 +214,11 @@ namespace lj
             oss << " [for path \"" << path() << "\"]";
             return oss.str();
         }
-        
+
         //=====================================================================
         // Bson type exception.
         //=====================================================================
-        
+
         std::string Bson_type_exception::str() const
         {
             std::ostringstream oss;
@@ -243,14 +244,21 @@ namespace lj
 
         Node::Node(const Type t, const uint8_t* v) : type_(Type::k_null)
         {
-            value_.data_ = NULL;
+            value_.data_ = nullptr;
             set_value(t, v);
         }
 
         Node::Node(const Node &o) : type_(Type::k_null)
         {
-            value_.data_ = NULL;
+            value_.data_ = nullptr;
             copy_from(o);
+        }
+
+        Node::Node(Node&& o) : type_(o.type_),
+                value_(o.value_)
+        {
+            o.value_.data_ = nullptr;
+            o.type_ = Type::k_null;
         }
 
         Node::~Node()
@@ -264,7 +272,7 @@ namespace lj
             // new values.  we take extra caution to avoid
             // issues with passing values into the same object:
             // e.g. a.set_value(a.type(), a.to_value()).
-            uint8_t* old_data = NULL;
+            uint8_t* old_data = nullptr;
             size_t old_size = 0;
             if (!type_is_nested(type()))
             {
@@ -392,11 +400,24 @@ namespace lj
             }
             return *this;
         }
-        
+
+        Node& Node::operator=(Node&& o)
+        {
+            if (&o != this)
+            {
+                destroy(true);
+                type_ = o.type_;
+                value_ = o.value_;
+                o.type_ = Type::k_null;
+                o.value_.data_ = nullptr;
+            }
+            return *this;
+        }
+
         Node* Node::find_or_create_child_documents(const std::list<std::string>& input_list)
         {
             std::list<std::string> parts(input_list);
-            
+
             // set the root, and loop until all path parts are complete.
             // verifying that each node is a document is handled by the
             // to_map() method.
@@ -482,7 +503,7 @@ namespace lj
             // split path up for looping.
             std::list<std::string> parts;
             split_path(p, parts);
-            
+
             // set the root, and loop until all path parts are complete.
             // verifying that each node is a document is handled by the
             // to_map() method.
@@ -495,7 +516,7 @@ namespace lj
                     int pos = atoi(parts.front().c_str());
                     if (pos < 0 || static_cast<size_t>(pos) >= n->to_vector().size())
                     {
-                        return NULL;
+                        return nullptr;
                     }
 
                     // one level deeper.
@@ -508,7 +529,7 @@ namespace lj
                     if (n->to_map().end() == iter)
                     {
                         // Child not found, and everything is const, so return null.
-                        return NULL;
+                        return nullptr;
                     }
 
                     // One level deeper.
@@ -530,21 +551,21 @@ namespace lj
             {
                 throw Bson_path_exception("Cannot set a child without a child name.", p);
             }
-            
+
             // This gets the new child's name from the parts.s
             std::string child_name = parts.back();
             parts.pop_back();
 
             // navigate the structure.
             Node *n = find_or_create_child_documents(parts);
-            
+
             // Cannot use to_map below because I need a non-const iterator.
             // checking that the found node is a document.
             if (Type::k_document != n->type())
             {
                 throw Bson_type_exception("Cannot add a child to a non-document type.", n->type());
             }
-            
+
             // remove any existing value to keep memory sane.
             auto iter = n->value_.map_->find(child_name);
             if (n->value_.map_->end() != iter)
@@ -581,7 +602,7 @@ namespace lj
 
             // Navigate to the target node.
             Node* n = find_or_create_child_documents(parts);
-            
+
             // Make sure the target node is the correct type.
             if (Type::k_array != n->type())
             {
@@ -662,7 +683,7 @@ namespace lj
                     break;
             }
             return sz;
-        }    
+        }
 
         // private, used by to_binary() to copy bytes into a preallocated
         // array.
@@ -700,7 +721,7 @@ namespace lj
                         t = Type::k_document;
                     }
                     memcpy(ptr++, &t, 1);
-                    
+
                     std::ostringstream oss;
                     oss << indx++;
                     std::string key_name = oss.str();
@@ -716,7 +737,7 @@ namespace lj
             }
             return sz;
         }
-        
+
         // private, used to free the current resources in a standard way.
         void Node::destroy(bool should_delete_value)
         {
@@ -725,11 +746,8 @@ namespace lj
                 if (value_.data_)
                 {
                     // The data section is overwritten for security reasons.
-                    // There isn't really a reason for this to be 0x55. I
-                    // just used that to check that the memory was getting
-                    // overwritten.
                     size_t sz = size();
-                    memset(value_.data_, 0x55, sz);
+                    lj::Wiper<uint8_t[]>::wipe(value_.data_, sz);
                     delete[] value_.data_;
                 }
             }
@@ -787,7 +805,7 @@ namespace lj
         {
             return new Node(Type::k_boolean, reinterpret_cast<const uint8_t*> (&val));
         }
-        
+
         Node* new_int32(const int32_t val)
         {
             return new Node(Type::k_int32, reinterpret_cast<const uint8_t*> (&val));
@@ -837,7 +855,7 @@ namespace lj
             long long l = 0;
             double d = 0.0;
             std::ostringstream buf;
-            
+
             if (type_is_nested(b.type()))
             {
                 // This node can have children, indentation level matters.
@@ -845,7 +863,7 @@ namespace lj
                 for (int h = 0; h < lvl; ++h)
                 {
                     indent.append("  ");
-                }   
+                }
 
                 // Caching node size because it can be complicated to compute.
                 size_t node_size = b.size();
@@ -854,7 +872,7 @@ namespace lj
                     return "{(size-4)0(null-1)0}";
                 }
                 buf << "{(size-4)" << node_size << "\n";
-                
+
                 // The output function is essentially the same for documents
                 // and arrays. We create a nested anonymous function for use
                 // in the loops below. Except for the capture of the
@@ -875,7 +893,7 @@ namespace lj
                     }
                     buf << ",\n";
                 };
-                
+
                 // Handle Documents and Arrays differently.
                 if (Type::k_document == b.type())
                 {
@@ -894,7 +912,7 @@ namespace lj
                         output_function(oss.str(), *iter);
                     }
                 }
-                
+
                 //Close the document properly.
                 std::string ret_val = buf.str().erase(buf.str().size() - 2).append("\n");
                 if (indent.size() >= 2)
@@ -966,15 +984,15 @@ namespace lj
             {
                 // Caching node size because it can be complicated to compute.
                 size_t node_size = b.size();
-                
+
                 // Quickly abort for empty documents and arrays.
                 if (node_size == 5)
                 {
                     return (Type::k_array == b.type() ? "[]" : "{}");
                 }
-                
+
                 buf << (Type::k_array == b.type() ? "[" : "{");
-                
+
                 // The output function is essentially the same for documents
                 // and arrays. We create a nested anonymous function for use
                 // in the loops below. Except for the capture of the
@@ -993,7 +1011,7 @@ namespace lj
                     }
                     buf << ", ";
                 };
-                
+
                 // Handle Documents and Arrays differently.
                 if (Type::k_document == b.type())
                 {
@@ -1012,7 +1030,7 @@ namespace lj
                         output_function(oss.str(), *iter);
                     }
                 }
-                
+
                 //Close the document properly.
                 return buf.str().erase(buf.str().size() - 2).append((Type::k_array == b.type() ? "]" : "}"));
             }
@@ -1066,7 +1084,7 @@ namespace lj
         std::string as_pretty_json(const Node& b, int lvl)
         {
             std::ostringstream buf;
-            
+
             if (type_is_nested(b.type()))
             {
                 // This node can have children, indentation level matters.
@@ -1074,7 +1092,7 @@ namespace lj
                 for (int h = 0; h < lvl; ++h)
                 {
                     indent.append("  ");
-                }   
+                }
 
                 // Caching node size because it can be complicated to compute.
                 size_t node_size = b.size();
@@ -1082,9 +1100,9 @@ namespace lj
                 {
                     return (Type::k_array == b.type() ? "[]" : "{}");;
                 }
-                
+
                 buf << (Type::k_array == b.type() ? "[" : "{") << "\n";
-                
+
                 // The output function is essentially the same for documents
                 // and arrays. We create a nested anonymous function for use
                 // in the loops below. Except for the capture of the
@@ -1102,13 +1120,13 @@ namespace lj
                         buf << escape(as_pretty_json(*n, lvl + 1));
                         buf << "\"";
                     }
-                    else 
+                    else
                     {
                         buf << as_pretty_json(*n, lvl + 1);
                     }
                     buf << ",\n";
                 };
-                
+
                 // Handle Documents and Arrays differently.
                 if (Type::k_document == b.type())
                 {
@@ -1127,7 +1145,7 @@ namespace lj
                         output_function(oss.str(), *iter);
                     }
                 }
-                
+
                 //Close the document properly.
                 std::string ret_val = buf.str().erase(buf.str().size() - 2).append("\n");
                 if (indent.size() >= 2)
