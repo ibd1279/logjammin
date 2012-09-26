@@ -89,7 +89,7 @@ namespace lj
         /*!
          \param o Other.
          */
-        virtual Exception& operator=(const Exception& o)
+        Exception& operator=(const Exception& o)
         {
             if (&o != this)
             {
@@ -104,7 +104,7 @@ namespace lj
         /*!
          \param o The other object.
          */
-        virtual Exception& operator=(Exception&& o)
+        Exception& operator=(Exception&& o)
         {
             if (&o != this)
             {
