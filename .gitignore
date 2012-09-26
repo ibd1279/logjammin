@@ -10,3 +10,11 @@
 *.lai
 *.la
 *.a
+
+# build directory
+build/
+
+# Ignore OS files
+*.DS_Store
+.lock-waf*
+.waf-*
