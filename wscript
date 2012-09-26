@@ -59,6 +59,16 @@ def configure(conf):
         ,mandatory=True
     )
 
+    conf.check_cfg(
+        package='gnutls'
+        ,args=[
+            '--cflags'
+            ,'--libs'
+        ]
+        ,uselib_store='GNUTLS'
+        ,mandatory=True
+    )
+
     conf.check(
         header_name='lua.hpp'
         ,lib=['lua.5.2']
@@ -147,6 +157,35 @@ def build(bld):
         ]
     )
 
+    bld.program(
+        source = [
+            'src/logjam/logjam.cpp'
+            ,'src/logjam/Tls_globals.cpp'
+        ]
+        ,target='logjam'
+        ,cxxflags = [
+            '-O0'
+            ,'-Wall'
+            ,'-g'
+            ,'-std=c++11'
+            ,'-stdlib=libc++'
+        ]
+        ,includes = [
+            './src'
+        ]
+        ,linkflags = [
+            '-g'
+            ,'-std=c++11'
+            ,'-stdlib=libc++'
+        ]
+        ,use = [
+            'lj'
+        ]
+        ,uselib = [
+            'GNUTLS'
+        ]
+    )
+
     bld.stlib(
         source = [
             'src/logjamd/Auth.cpp'
@@ -210,7 +249,6 @@ def build(bld):
         ]
         ,linkflags = [
             '-g'
-            ,'-v'
             ,'-std=c++11'
             ,'-stdlib=libc++'
         ]
