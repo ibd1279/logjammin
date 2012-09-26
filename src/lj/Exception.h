@@ -3,24 +3,24 @@
  \file lj/Exception.h
  \brief LJ Exception header and implementation.
  \author Jason Watson
- 
+
  Copyright (c) 2010, Jason Watson
  All rights reserved.
- 
+
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
- 
+
  * Redistributions of source code must retain the above copyright notice,
  this list of conditions and the following disclaimer.
- 
+
  * Redistributions in binary form must reproduce the above copyright notice,
  this list of conditions and the following disclaimer in the documentation
  and/or other materials provided with the distribution.
- 
+
  * Neither the name of the LogJammin nor the names of its contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
+
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -37,6 +37,7 @@
 #include <exception>
 #include <memory>
 #include <string>
+#include <utility>
 
 namespace lj
 {
@@ -57,31 +58,60 @@ namespace lj
          \param msg Exception message.
          */
         Exception(const std::string& lbl,
-                const std::string& msg) : msg_(msg), label_(lbl)
+                const std::string& msg) : what_cache_(), msg_(msg), label_(lbl)
         {
         }
-        
+
         //! Destructor
         virtual ~Exception() throw()
         {
         }
-        
+
         //! Copy constructor.
         /*!
          \param o Other.
          */
-        Exception(const Exception& o) : msg_(o.msg_), label_(o.label_)
+        Exception(const Exception& o) : what_cache_(), msg_(o.msg_), label_(o.label_)
         {
         }
-        
-        //! Assignment Operator
+
+        //! Move constructor
+        /*!
+         \param o Other object.
+         */
+        Exception(Exception&& o) : what_cache_(std::move(o.what_cache_)),
+                msg_(std::move(o.msg_)),
+                label_(std::move(o.label_))
+        {
+        }
+
+        //! Copy Assignment Operator
         /*!
          \param o Other.
          */
         virtual Exception& operator=(const Exception& o)
         {
-            msg_ = o.msg_;
-            label_ = o.label_;
+            if (&o != this)
+            {
+                msg_ = o.msg_;
+                label_ = o.label_;
+                what_cache_.reset(nullptr);
+            }
+            return *this;
+        }
+
+        //! Move Assignment Operator
+        /*!
+         \param o The other object.
+         */
+        virtual Exception& operator=(Exception&& o)
+        {
+            if (&o != this)
+            {
+                msg_ = std::move(o.msg_);
+                label_ = std::move(o.label_);
+                what_cache_ = std::move(o.what_cache_);
+            }
             return *this;
         }
 
@@ -89,14 +119,14 @@ namespace lj
         /*!
          \par
          This method should be overridden to provide a more detailed error
-         message. 
+         message.
          \return String for the exception.
          */
         virtual std::string str() const
         {
             return std::string(label_).append(" Exception: ").append(msg_);
         }
-        
+
         //! Convert the exception to a string.
         /*!
          \return String for the exception.
@@ -106,9 +136,12 @@ namespace lj
         {
             return str();
         }
-        
+
         //! replace the default "what" method to call str()
         /*!
+         \par Memory
+         The pointer obtained from \c what() is only valid until the next call
+         to \c what(), and while the \c Exception object is still valid.
          \return String for the exception.
          */
         virtual const char* what() const throw()
@@ -118,7 +151,7 @@ namespace lj
             return what_cache_->c_str();
         }
     protected:
-        
+
         //! What result cache.
         /*!
          This field is to support the \c what() method. It is used to hang onto
@@ -126,10 +159,10 @@ namespace lj
          immediately.
          */
         mutable std::unique_ptr<std::string> what_cache_;
-        
+
         //! Exception message.
         std::string msg_;
-        
+
         //! Exception label.
         std::string label_;
     };
