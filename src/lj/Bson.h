@@ -191,7 +191,6 @@ namespace lj
         }
 
         //! Bson path exception
-
         /*!
          \par
          Represents an invalid path in a bson document.
@@ -203,32 +202,72 @@ namespace lj
         {
         public:
             //! Constructor.
-
             /*!
              \param msg The exception message.
              \param path The path that caused the exception.
              */
-            Bson_path_exception(const std::string& msg, const std::string path) : lj::Exception("Bson", msg), path_(path)
+            Bson_path_exception(const std::string& msg, const std::string path) :
+                    lj::Exception("Bson", msg),
+                    path_(path)
             {
             }
 
             //! Copy constructor.
-
             /*!
              \param o The other object.
              */
-            Bson_path_exception(const Bson_path_exception& o) : lj::Exception(o.label_, o.msg_)
+            Bson_path_exception(const Bson_path_exception& o) :
+                    lj::Exception(o),
+                    path_(o.path_)
+            {
+            }
+
+            //! Move constructor.
+            /*!
+             \param o The other object.
+             */
+            Bson_path_exception(Bson_path_exception&& o) :
+                    lj::Exception(o),
+                    path_(std::move(o.path_))
             {
             }
 
             //! Destructor.
-
             virtual ~Bson_path_exception() throw ()
             {
             }
 
-            //! Get the path that caused this exception.
+            //! Copy assignment operator
+            /*!
+             \param o The other object.
+             \return This object.
+             */
+            Bson_path_exception& operator=(const Bson_path_exception& o)
+            {
+                if (&o != this)
+                {
+                    lj::Exception::operator=(o);
+                    path_ = o.path_;
+                }
+                return *this;
+            }
 
+            //! Move assignment operator
+            /*!
+             \param o The other object.
+             \return This object.
+             */
+            Bson_path_exception& operator=(Bson_path_exception&& o)
+            {
+                if (&o != this)
+                {
+                    lj::Exception::operator=(o);
+                    path_ = std::move(o.path_);
+                }
+                return *this;
+            }
+
+            //! Get the path that caused this exception.
             /*!
              \return The path.
              */
@@ -237,7 +276,7 @@ namespace lj
                 return path_;
             }
 
-            virtual std::string str() const;
+            virtual std::string str() const override;
         private:
             std::string path_;
         };
@@ -255,33 +294,80 @@ namespace lj
         {
         public:
             //! Constructor.
-
             /*!
              \param msg The exception msg.
              \param type The bson type of the object.
              \param binary_type The binary sub-type for binary objects.
              */
-            Bson_type_exception(const std::string& msg, Type type, Binary_type binary_type = Binary_type::k_bin_generic) : lj::Exception("Bson", msg), type_(type), binary_type_(binary_type)
+            Bson_type_exception(const std::string& msg,
+                    Type type,
+                    Binary_type binary_type = Binary_type::k_bin_generic) :
+                    lj::Exception("Bson", msg),
+                    type_(type),
+                    binary_type_(binary_type)
             {
             }
 
             //! Copy constructor.
-
             /*!
              \param o The other object.
              */
-            Bson_type_exception(const Bson_type_exception& o) : lj::Exception(o.label_, o.msg_)
+            Bson_type_exception(const Bson_type_exception& o) :
+                    lj::Exception(o),
+                    type_(o.type_),
+                    binary_type_(o.binary_type_)
+            {
+            }
+
+            //! Move constructor
+            /*!
+             \param o The other object.
+             */
+            Bson_type_exception(Bson_type_exception&& o) :
+                    lj::Exception(o),
+                    type_(std::move(o.type_)),
+                    binary_type_(std::move(o.binary_type_))
             {
             }
 
             //! Destructor
-
             virtual ~Bson_type_exception() throw ()
             {
             }
 
-            //! The type of the object.
+            //! Copy assignment operator
+            /*!
+             \param o The other object.
+             \return This object.
+             */
+            Bson_type_exception& operator=(const Bson_type_exception& o)
+            {
+                if (&o != this)
+                {
+                    lj::Exception::operator=(o);
+                    type_ = o.type_;
+                    binary_type_ = o.binary_type_;
+                }
+                return *this;
+            }
 
+            //! Move assignment operator
+            /*!
+             \param o The other object.
+             \return This object.
+             */
+            Bson_type_exception& operator=(Bson_type_exception&& o)
+            {
+                if (&o != this)
+                {
+                    lj::Exception::operator=(o);
+                    type_ = std::move(o.type_);
+                    binary_type_ = std::move(o.binary_type_);
+                }
+                return *this;
+            }
+
+            //! The type of the object.
             /*!
              \return The type.
              */
@@ -291,7 +377,6 @@ namespace lj
             }
 
             //! The binary type of the binary object.
-
             /*!
              \par
              Only useful when the type is "binary".
@@ -302,14 +387,13 @@ namespace lj
                 return binary_type_;
             }
 
-            virtual std::string str() const;
+            virtual std::string str() const override;
         private:
             Type type_;
             Binary_type binary_type_;
         };
 
         //! Bson value.
-
         /*!
          \par
          Represets a Bson value, including documents and arrays. The following
