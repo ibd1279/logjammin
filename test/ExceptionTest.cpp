@@ -40,6 +40,13 @@ void testException()
 
     TEST_ASSERT(exception.str().compare("Test System Exception: Sample Message") == 0);
     TEST_ASSERT(((std::string)exception).compare("Test System Exception: Sample Message") == 0);
+
+    const char* first_what = exception.what();
+    TEST_ASSERT(strcmp(first_what, "Test System Exception: Sample Message") == 0);
+    const char* second_what = exception.what();
+    TEST_ASSERT(first_what != second_what);
+    first_what = nullptr;
+    TEST_ASSERT(strcmp(second_what, "Test System Exception: Sample Message") == 0);
 }
 
 int main(int argc, char** argv)
