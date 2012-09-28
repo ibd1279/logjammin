@@ -15,23 +15,6 @@ def configure(conf):
     conf.load('waf_unit_test')
 
     conf.check(
-        header_name='openssl/ssl.h'
-        ,lib=[
-            'ssl'
-            ,'crypto'
-        ]
-        ,libpath=[
-            '/usr/local/lib'
-            ,'/usr/lib'
-        ]
-        ,includes=[
-            '/usr/local/include'
-            ,'/usr/include'
-        ]
-        ,mandatory=True
-    )
-
-    conf.check(
         header_name='pthread.h'
         ,lib=['pthread']
         ,libpath=[
@@ -152,8 +135,7 @@ def build(bld):
             ,'-stdlib=libc++'
         ]
         ,uselib = [
-            'OPENSSL/SSL.H'
-            ,'NETTLE/BASE64.H'
+            'NETTLE/BASE64.H'
         ]
     )
 
@@ -225,8 +207,7 @@ def build(bld):
             'lj'
         ]
         ,uselib = [
-            'OPENSSL/SSL.H'
-            ,'PTHREAD.H'
+            'PTHREAD.H'
             ,'LUA.HPP'
             ,'V8.H'
         ]
@@ -304,13 +285,11 @@ def build(bld):
                 ,'-Wall'
                 ,'-g'
                 ,'-std=c++11'
-                ,'-fno-eliminate-unused-debug-types'
                 ,'-fno-inline'
                 ,'-stdlib=libc++'
             ]
             ,linkflags = [
                 '-g'
-                ,'-pthread'
                 ,'-std=c++11'
                 ,'-stdlib=libc++'
             ]

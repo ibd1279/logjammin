@@ -10,3 +10,12 @@
 *.lai
 *.la
 *.a
+
+#waf stuff
+.waf-1.7*
+.lock-waf*
+
+#OS specific
+*.DS_Store
+build/
+nbproject/
