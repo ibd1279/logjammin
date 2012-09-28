@@ -67,7 +67,7 @@ namespace logjamd
          \par Memory
          This object is responsible for releasing the memory associated with
          \c state and \c buffer. Server is not released by this class.
-         \c buffer memory are managed by this class.
+         \c buffer memory is managed by this class.
          \param server The server associated with this connection.
          \param state The state associated with this server.
          \param buffer The stream buffer for io with this server.

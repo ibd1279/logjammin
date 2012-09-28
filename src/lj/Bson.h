@@ -448,7 +448,7 @@ namespace lj
             /*!
              \par
              The value of v is copied out of the pointer \c v. For document
-             and array types, \v may be NULL. For value types, \c v must be
+             and array types, \c v may be NULL. For value types, \c v must be
              a valid pointer.
              \param t The new type of the document.
              \param v Array of data to read the new value from.

@@ -38,8 +38,6 @@
 
 #include <list>
 
-typedef struct bio_st BIO;
-
 namespace logjamd
 {
     class Connection_secure;
@@ -48,13 +46,15 @@ namespace logjamd
     {
     public:
         Server_secure(lj::bson::Node* config);
+        Server_secure(const Server_secure& o) = delete;
+        Server_secure& operator=(const Server_secure& o) = delete;
         virtual ~Server_secure();
-        virtual void startup();
-        virtual void listen();
-        virtual void shutdown();
-        virtual void detach(Connection* conn);
+        virtual void startup() override;
+        virtual void listen() override;
+        virtual void shutdown() override;
+        virtual void detach(Connection* conn) override;
     private:
-        ::BIO* io_;
+        int io_;
         bool running_;
         std::list<logjamd::Connection_secure*> connections_;
     };

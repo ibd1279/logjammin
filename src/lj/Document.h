@@ -56,7 +56,7 @@ namespace lj
        "version" : 100,
        "." : {}
      }
-     \encode
+     \endcode
      \par The "_" element.
      The underscore element is a collection of metadata associated with
      this document. Information stored in this element is used by the document
