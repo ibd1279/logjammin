@@ -427,7 +427,7 @@ namespace lj
         const size_t out_size_;
         charT* in_;
         charT* out_;
-        uint8_t in_buffer_[sizeof(charT)]; // buffer for any left over bytes. first byte is the number of bytes buffered.
-        uint8_t out_buffer_[sizeof(charT)]; // buffer for any left over bytes. first byte is the number of bytes buffered.
+        uint8_t in_buffer_[sizeof(charT)]; //!< buffer for any left over bytes. first byte is the number of bytes buffered.
+        uint8_t out_buffer_[sizeof(charT)]; //!< buffer for any left over bytes. first byte is the number of bytes buffered.
     }; // class lj::Streambuf_bsd
 }; // namespace lj
