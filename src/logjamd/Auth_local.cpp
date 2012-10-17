@@ -5,21 +5,21 @@
 
  Copyright (c) 2010, Jason Watson
  All rights reserved.
- 
+
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
- 
+
  * Redistributions of source code must retain the above copyright notice,
  this list of conditions and the following disclaimer.
- 
+
  * Redistributions in binary form must reproduce the above copyright notice,
  this list of conditions and the following disclaimer in the documentation
  and/or other materials provided with the distribution.
- 
+
  * Neither the name of the LogJammin nor the names of its contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
+
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -42,9 +42,8 @@
 #include <cstdlib>
 #include <cstring>
 
-namespace 
+namespace
 {
-    const lj::Uuid k_password_hash_method(logjamd::k_auth_method, "password_hash", 13);
     const std::string k_login_field("login");
     const std::string k_password_field("password");
     const std::string k_id_field("id");
@@ -163,7 +162,7 @@ namespace logjamd
         {
             ptr = (*iter).second;
         }
-        
+
         lj::log::out<lj::Debug>("auth_local: calculating new derived key.");
         // read a new random salt.
         // TODO this is insecure. should use crypto++ rand
@@ -242,14 +241,13 @@ namespace logjamd
 
     const lj::Uuid& Auth_provider_local::provider_id() const
     {
-        static const lj::Uuid id(k_auth_provider, "local");
-        return id;
+        return logjamd::k_auth_provider_local;
     }
 
     Auth_method* Auth_provider_local::method(const lj::Uuid& method_id)
     {
         static Auth_method_password_hash method;
-        if (k_password_hash_method == method_id)
+        if (logjamd::k_auth_method_password == method_id)
         {
             return &method;
         }

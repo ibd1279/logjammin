@@ -36,17 +36,23 @@
 #include "logjamd/Connection_secure.h"
 #include "logjamd/Stage.h"
 #include "logjamd/Stage_pre.h"
+#include "logjam/Tls_credentials.h"
+#include "logjam/Tls_session.h"
+#include "lj/Streambuf_bsd.h"
+#include "Server_secure.h"
 
 #include <algorithm>
+#include <assert.h>
 
 namespace logjamd
 {
     Connection_secure::Connection_secure(
-            logjamd::Server* server,
+            logjamd::Server_secure* server,
             lj::bson::Node* state,
-            std::streambuf* buffer) :
-            logjamd::Connection(server, state, new std::iostream(buffer)),
-            buffer_(buffer),
+            int socket_desc) :
+            logjamd::Connection(server, state, new std::iostream(new lj::Streambuf_bsd<lj::medium::Socket>(new lj::medium::Socket(socket_desc), 8192, 8192))),
+            server_(server),
+            socket_descriptor_(socket_desc),
             thread_(nullptr),
             secure_(false),
             keys_()
@@ -70,14 +76,38 @@ namespace logjamd
         thread_->run(this);
     }
 
+    void Connection_secure::make_secure()
+    {
+        lj::log::out<lj::Debug>("Attempting to make the connection secure.");
+        assert(!secure_);
+
+        // Get the session for communication.
+        std::unique_ptr<Server_secure::Session> session(
+                server_->new_session(socket_descriptor_));
+
+        // Make sure we have sent all the unencrypted data.
+        io().flush();
+
+        // Perform the SSL handshake.
+        session->handshake();
+
+        // Create the new buffer to replace the old buffer.
+        std::streambuf* old_buffer = io().rdbuf();
+        io().rdbuf(new lj::Streambuf_bsd<Server_secure::Session>(
+                session.release(), 8192, 8192));
+        delete old_buffer;
+
+        // At this point, things should be secure.
+        secure_ = true;
+    }
+
     void Connection_secure::close()
     {
+        lj::log::out<lj::Debug>("Closing the connection.");
+        std::streambuf* buffer = io().rdbuf();
         this->logjamd::Connection::close();
-        if (buffer_)
-        {
-            delete buffer_;
-            buffer_ = NULL;
-        }
+        delete buffer;
+        ::close(socket_descriptor_);
     }
 
     void Connection_secure::run()
@@ -89,6 +119,7 @@ namespace logjamd
             try
             {
                 Stage* new_stage = stage->logic();
+                io().flush();
 
                 if (new_stage != stage)
                 {

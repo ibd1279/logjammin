@@ -6,21 +6,21 @@
 
  Copyright (c) 2010, Jason Watson
  All rights reserved.
- 
+
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
- 
+
  * Redistributions of source code must retain the above copyright notice,
  this list of conditions and the following disclaimer.
- 
+
  * Redistributions in binary form must reproduce the above copyright notice,
  this list of conditions and the following disclaimer in the documentation
  and/or other materials provided with the distribution.
- 
+
  * Neither the name of the LogJammin nor the names of its contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
+
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -35,6 +35,7 @@
  */
 
 #include "lj/Bson.h"
+#include "lj/Exception.h"
 #include "lj/Log.h"
 #include "logjamd/Server.h"
 #include "logjamd/User.h"
@@ -191,9 +192,34 @@ namespace logjamd
          All connections are considered insecure by default.
          \return True if the connection is secure, false otherwise.
          */
-        virtual bool secure()
+        virtual bool secure() const
         {
             return false;
+        }
+
+        //! Test if this connection can be made secure.
+        /*!
+         \par
+         All connections are considered insecure by default. The stage_pre
+         specifically uses this functionality to decide if it should
+         allow the client to ugprade to a secure connection.
+         \return True if the connection allows a more secure upgrade. False
+         otherwise.
+         */
+        virtual bool securable() const
+        {
+            return false;
+        }
+
+        //! Make the connection more secure.
+        /*!
+         \par
+         If the connection supports a more secure mode, this method is how you
+         upgrade to the secure connection.
+         */
+        virtual void make_secure()
+        {
+            throw LJ__Exception("Connection does not support security.");
         }
 
         //! Store an encryption key with the connection.
@@ -273,35 +299,35 @@ namespace logjamd
         }
 
         //! Call start on the real connection.
-        virtual void start()
+        virtual void start() override
         {
             real_connection_->start();
         }
 
-        virtual logjamd::Server& server()
+        virtual logjamd::Server& server() override
         {
             return real_connection_->server();
         }
 
-        virtual lj::bson::Node& state()
+        virtual lj::bson::Node& state() override
         {
             return real_connection_->state();
         }
 
-        virtual bool secure()
+        virtual bool secure() const override
         {
             return real_connection_->secure();
         }
 
         virtual void set_crypto_key(const std::string& identifier,
                 const void* key,
-                int sz)
+                int sz) override
         {
             real_connection_->set_crypto_key(identifier, key, sz);
         }
 
         virtual const void* get_crypto_key(const std::string& identifier,
-                int* sz)
+                int* sz) override
         {
             return real_connection_->get_crypto_key(identifier, sz);
         }

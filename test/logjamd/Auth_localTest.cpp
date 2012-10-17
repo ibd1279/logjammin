@@ -1,4 +1,4 @@
-/* 
+/*
  * File:   Auth_localTest.cpp
  * Author: jwatson
  *
@@ -16,9 +16,6 @@ using namespace logjamd;
 
 namespace
 {
-    const lj::Uuid k_auth_method_password_hash(k_auth_method, "password_hash", 13);
-    const lj::Uuid k_auth_provider_local(k_auth_provider, "local", 5);
-
     struct creds
     {
         creds(bool alt_password)
@@ -45,20 +42,20 @@ void testAuth_registry_enable()
 {
     Auth_registry::enable(new Auth_provider_local());
 
-    Auth_provider* provider = 
-            Auth_registry::provider(k_auth_provider_local);
+    Auth_provider* provider =
+            Auth_registry::provider(logjamd::k_auth_provider_local);
     TEST_ASSERT(provider != NULL);
 
-    provider = Auth_registry::provider(k_auth_method_password_hash);
+    provider = Auth_registry::provider(logjamd::k_auth_method_password);
     TEST_ASSERT(provider == NULL);
 }
 void testAuth_provider_method()
 {
     Auth_provider_local local;
-    Auth_method* method = local.method(k_auth_method_password_hash);
+    Auth_method* method = local.method(logjamd::k_auth_method_password);
     TEST_ASSERT(method != NULL);
 
-    method = local.method(k_auth_provider_local);
+    method = local.method(logjamd::k_auth_provider_local);
     TEST_ASSERT(method == NULL);
 }
 void testAuth_method_authenticate()

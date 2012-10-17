@@ -35,8 +35,10 @@
  */
 
 #include "logjamd/Server.h"
-
+#include "logjam/Tls_credentials.h"
+#include "logjam/Tls_session.h"
 #include <list>
+#include <memory>
 
 namespace logjamd
 {
@@ -45,6 +47,7 @@ namespace logjamd
     class Server_secure : public logjamd::Server
     {
     public:
+        typedef logjam::Tls_session<logjam::Tls_credentials_reuse_adapter<logjam::Tls_credentials_anonymous_server>> Session;
         Server_secure(lj::bson::Node* config);
         Server_secure(const Server_secure& o) = delete;
         Server_secure& operator=(const Server_secure& o) = delete;
@@ -53,9 +56,19 @@ namespace logjamd
         virtual void listen() override;
         virtual void shutdown() override;
         virtual void detach(Connection* conn) override;
+
+        //! Get a session associated with this server.
+        /*!
+         The returned session object is fully setup and ready for communication.
+         \param socket_descriptor The socket associated with the session communication.
+         \return A new session.
+         */
+        virtual std::unique_ptr<Session> new_session(int socket_descriptor);
     private:
         int io_;
         bool running_;
         std::list<logjamd::Connection_secure*> connections_;
+        logjam::Tls_credentials_anonymous_server credentials_;
+        logjam::Tls_key_exchange_diffie_hellman key_exchange_;
     };
 };

@@ -1,10 +1,10 @@
 #pragma once
-/*!
- \file logjamd/constants.h
- \brief Logjam server constants definition.
+/*
+ \file logjam/Network_address_info.h
+ \brief Logjam Network Address Info header.
  \author Jason Watson
 
- Copyright (c) 2010, Jason Watson
+ Copyright (c) 2012, Jason Watson
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -34,30 +34,46 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "lj/Uuid.h"
-
-namespace logjamd
+extern "C"
 {
-    //! Root Uuid for calculating other Uuids.
-    const lj::Uuid k_logjamd_root(lj::Uuid::k_nil, "logjamd", 7);
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+}
 
-    //! Root Uuid for calculating the Uuids for authentication methods.
-    const lj::Uuid k_auth_method(k_logjamd_root, "auth_method", 11);
+#include <string>
 
-    //! Password Hash authentication method Uuid.
-    const lj::Uuid k_auth_method_password(logjamd::k_auth_method, "password_hash", 13);
-
-    //! Root Uuid for calculating the Uuids for authentication providers.
-    const lj::Uuid k_auth_provider(k_logjamd_root, "auth_provider", 13);
-
-    //! Local authentication provider Uuid.
-    const lj::Uuid k_auth_provider_local(k_auth_provider, "local", 5);
-
-    // System level users.
-    const lj::Uuid k_user_id_json("00000000-0000-4006-8fbc-ee299933509f");
-    const std::string k_user_login_json("99_json_limited");
-    const std::string k_user_password_json("99_lame_insecure_account");
-    const lj::Uuid k_user_id_http("00000000-0000-4006-8952-d05d3161ec80");
-    const std::string k_user_login_http("98_http_limited");
-    const std::string k_user_password_http("98_lame_insecure_account");
-};
+namespace logjam
+{
+    //! Network address information.
+    class Network_address_info
+    {
+    public:
+        Network_address_info(const std::string& host,
+                const std::string& port,
+                int flags,
+                int family,
+                int type,
+                int protocol);
+        Network_address_info(const std::string& port,
+                int flags,
+                int family,
+                int type,
+                int protocol);
+        Network_address_info(const Network_address_info& o) = delete;
+        Network_address_info(Network_address_info&& o);
+        ~Network_address_info();
+        Network_address_info& operator=(const Network_address_info& o) = delete;
+        Network_address_info& operator=(Network_address_info&& o);
+        bool next();
+        struct addrinfo& current();
+        std::string error();
+        static std::string as_string(struct sockaddr* sa);
+    private:
+        struct addrinfo* info_;
+        struct addrinfo* current_;
+        int status_;
+    }; // class logjam::Network_address_info
+}; // namespace logjam

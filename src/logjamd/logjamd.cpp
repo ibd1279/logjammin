@@ -38,6 +38,7 @@
 #include "logjamd/Server.h"
 #include "logjamd/Server_secure.h"
 #include "logjamd/constants.h"
+#include "logjam/Tls_globals.h"
 
 #include <cstdlib>
 #include <cstring>
@@ -89,10 +90,19 @@ int main(int argc, char* const argv[]) {
             logjamd::k_user_password_http);
 
     // Run the server.
+    logjam::Tls_globals tls_globals;
     logjamd::Server* server = new logjamd::Server_secure(config);
-    server->startup();
-    server->listen();
-    server->shutdown();
+
+    try
+    {
+        server->startup();
+        server->listen();
+        server->shutdown();
+    }
+    catch (lj::Exception& ex)
+    {
+        lj::log::format<lj::Critical>("Exiting: %s").end(ex);
+    }
 
     return 0;
 }

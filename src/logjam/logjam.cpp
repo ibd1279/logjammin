@@ -33,39 +33,127 @@
  */
 
 
+#include "logjam/Network_address_info.h"
+#include "logjam/Tls_credentials.h"
 #include "logjam/Tls_globals.h"
+#include "logjam/Tls_session.h"
 #include "lj/Bson.h"
 #include "lj/Log.h"
+#include "lj/Streambuf_bsd.h"
+#include "logjamd/constants.h"
 
-#include "gnutls/gnutlsxx.h"
+#include <iostream>
+#include <unistd.h>
+
 
 int main(int argc, char * const argv[])
 {
     try
     {
         logjam::Tls_globals globals; // this ensures that the deinit is called when the stack unwinds.
-    /*
-        // http://www.gnu.org/software/gnutls/manual/gnutls.html#Simple-client-example-with-X_002e509-certificate-support
-        gnutls::certificate_client_credentials client_cert_creds;
-        client_cert_creds.set_x509_trust_file("/tmp/foo.crt", GNUTLS_X509_FMT_PEM);
-        // no c++ way to set the verify function like the example.
-        client_cert_creds.set_x509_key_file("/tmp/cert.pem", "/tmp/key.pem", GNUTLS_X509_FMT_PEM);
-        gnutls::session client_session(GNUTLS_CLIENT);
-        client_session.set_user_ptr("my_host_name");
-        // no c++ way to set the server name.
-        const char* err;
-        client_session.set_priority("NORMAL", &err);
-        client_session.set_credentials(client_cert_creds);
 
-        // create the socket descriptor.
-        //client_session.set_transport_ptr(socket);
+        logjam::Tls_session<logjam::Tls_credentials_anonymous_client>* session =
+                new logjam::Tls_session<logjam::Tls_credentials_anonymous_client>(GNUTLS_CLIENT);
 
-        do
+        std::string target_hostname("localhost");
+        session->set_user_data(&target_hostname);
+        session->set_hostname(target_hostname);
+        session->set_cipher_priority("NORMAL:+ANON-ECDH:+ANON-DH");
+
+        logjam::Network_address_info info(target_hostname,
+                "12345",
+                0,
+                AF_UNSPEC,
+                SOCK_STREAM,
+                0);
+
+        int sockfd = -1;
+        while (info.next() && 0 > sockfd)
         {
-            int ret = client_session.handshake();
+            sockfd = socket(info.current().ai_family,
+                    info.current().ai_socktype,
+                    info.current().ai_protocol);
+            if (0 > sockfd)
+            {
+                lj::log::format<lj::Warning>("Unable to create the socket. [%s]")
+                        << strerror(errno)
+                        << lj::log::end;
+                continue;
+            }
+
+            int result = connect(sockfd,
+                    info.current().ai_addr,
+                    info.current().ai_addrlen);
+            if (0 > result)
+            {
+                ::close(sockfd);
+                sockfd = -1;
+                lj::log::format<lj::Warning>("Unable to connect. [%s]")
+                        << strerror(errno)
+                        << lj::log::end;
+                continue;
+            }
         }
-        while (false); // not sure this translates into what the C++ wrapper does.. :(
-    */
+
+        if (0 > sockfd)
+        {
+            lj::log::out<lj::Critical>("Unable to connect to host.");
+            return 1;
+        }
+
+        lj::Streambuf_bsd<lj::medium::Socket>* plain_buffer =
+                new lj::Streambuf_bsd<lj::medium::Socket>(new lj::medium::Socket(sockfd), 8192, 8192);
+        std::iostream io(plain_buffer);
+
+        lj::log::out<lj::Info>("requesting TLS.");
+
+        lj::bson::Node n;
+        io << "+tls\n";
+        io.flush();
+        io >> n;
+        if (lj::bson::as_boolean(n.nav("/success")))
+        {
+            session->set_socket(sockfd);
+            lj::Streambuf_bsd<logjam::Tls_session<logjam::Tls_credentials_anonymous_client> >* crypt_buffer =
+                    new lj::Streambuf_bsd<logjam::Tls_session<logjam::Tls_credentials_anonymous_client> >(session, 8192, 8192);
+            lj::log::out<lj::Info>("Starting handshake");
+            session->handshake();
+            lj::log::out<lj::Info>("Completed handshake");
+            io.rdbuf(crypt_buffer);
+        }
+        else
+        {
+            lj::log::out<lj::Info>("Server doesn't support TLS.");
+            return 1;
+        }
+
+        io >> n;
+        if (lj::bson::as_boolean(n.nav("/success")))
+        {
+            lj::log::out<lj::Info>("We are now secure.");
+        }
+        io << "bson\n";
+        lj::log::out<lj::Info>("sent bson hello.");
+        io.flush();
+
+        io >> n;
+        if (lj::bson::as_boolean(n.nav("/success")))
+        {
+            lj::log::out<lj::Info>("Now in authentication.");
+        }
+
+        lj::bson::Node auth;
+        auth.set_child("/method", lj::bson::new_uuid(logjamd::k_auth_method_password));
+        auth.set_child("/provider", lj::bson::new_uuid(logjamd::k_auth_provider_local));
+        auth.set_child("/data/login", lj::bson::new_string(logjamd::k_user_login_json));
+        auth.set_child("/data/password", lj::bson::new_string(logjamd::k_user_password_json));
+        io << auth;
+        io.flush();
+        io >> n;
+        if (lj::bson::as_boolean(n.nav("/success")))
+        {
+            lj::log::out<lj::Info>("Authenticated.");
+        }
     }
     catch (const lj::Exception& ex)
     {

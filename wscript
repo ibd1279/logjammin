@@ -130,7 +130,6 @@ def build(bld):
         ]
         ,linkflags = [
             '-g'
-            ,'-v'
             ,'-std=c++11'
             ,'-stdlib=libc++'
         ]
@@ -139,10 +138,39 @@ def build(bld):
         ]
     )
 
+    bld.stlib(
+        source = [
+            'src/logjam/Network_address_info.cpp'
+            ,'src/logjam/Tls_credentials.cpp'
+            ,'src/logjam/Tls_globals.cpp'
+        ]
+        ,target='logjamclient'
+        ,cxxflags = [
+            '-O0'
+            ,'-Wall'
+            ,'-g'
+            ,'-std=c++11'
+            ,'-stdlib=libc++'
+        ]
+        ,includes = [
+            './src'
+        ]
+        ,linkflags = [
+            '-g'
+            ,'-std=c++11'
+            ,'-stdlib=libc++'
+        ]
+        ,use = [
+            'lj'
+        ]
+        ,uselib = [
+            'GNUTLS'
+        ]
+    )
+
     bld.program(
         source = [
             'src/logjam/logjam.cpp'
-            ,'src/logjam/Tls_globals.cpp'
         ]
         ,target='logjam'
         ,cxxflags = [
@@ -162,6 +190,7 @@ def build(bld):
         ]
         ,use = [
             'lj'
+            ,'logjamclient'
         ]
         ,uselib = [
             'GNUTLS'
@@ -205,6 +234,7 @@ def build(bld):
         ]
         ,use = [
             'lj'
+            ,'logjamclient'
         ]
         ,uselib = [
             'PTHREAD.H'

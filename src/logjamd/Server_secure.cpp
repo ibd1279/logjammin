@@ -35,6 +35,7 @@
 
 #include "logjamd/Connection_secure.h"
 #include "logjamd/Server_secure.h"
+#include "logjam/Network_address_info.h"
 #include "lj/Exception.h"
 #include "lj/Streambuf_bsd.h"
 #include <algorithm>
@@ -52,87 +53,7 @@ extern "C"
 
 namespace
 {
-    class Address_info
-    {
-    public:
-        Address_info(const char* host,
-                const char* port,
-                int flags,
-                int family,
-                int type,
-                int protocol) :
-                info_(nullptr),
-                current_(nullptr)
-        {
-            struct addrinfo hints;
-            std::memset(&hints, 0, sizeof(struct addrinfo));
-            hints.ai_flags = flags;
-            hints.ai_family = family;
-            hints.ai_socktype = type;
-            hints.ai_protocol = protocol;
-            status_ = getaddrinfo(host, port, &hints, &info_);
-        }
-        Address_info(const Address_info& o) = delete;
-        Address_info(Address_info&& o) :
-                status_(o.status_),
-                info_(o.info_),
-                current_(o.current_)
-        {
-            o.info_ = nullptr;
-            o.current_ = nullptr;
-        }
-        ~Address_info()
-        {
-            if (info_)
-            {
-                freeaddrinfo(info_);
-            }
-        }
-        Address_info& operator=(const Address_info& o) = delete;
-        Address_info& operator=(Address_info&& o)
-        {
-            std::swap(info_, o.info_);
-            std::swap(current_, o.current_);
-            std::swap(status_, o.status_);
-            return *this;
-        }
-        bool next()
-        {
-            if (current_ == nullptr)
-            {
-                current_ = info_;
-                return true;
-            }
-            else if (current_->ai_next)
-            {
-                current_ = current_->ai_next;
-                return true;
-            }
-            return false;
-        }
-        struct addrinfo& current()
-        {
-            return *current_;
-        }
-        std::string error()
-        {
-            return std::string(gai_strerror(status_));
-        }
-    private:
-        int status_;
-        struct addrinfo* info_;
-        struct addrinfo* current_;
-    };
-
-    // get sockaddr, IPv4 or IPv6:
-    void* get_in_addr(struct sockaddr* sa)
-    {
-        if (sa->sa_family == AF_INET) {
-            return &(((struct sockaddr_in*)sa)->sin_addr);
-        }
-
-        return &(((struct sockaddr_in6*)sa)->sin6_addr);
-    }
+    unsigned int k_dh_bits = 2048;
 }
 
 namespace logjamd
@@ -141,7 +62,9 @@ namespace logjamd
             logjamd::Server(config),
             io_(-1),
             running_(false),
-            connections_()
+            connections_(),
+            credentials_(),
+            key_exchange_(k_dh_bits)
     {
     }
 
@@ -165,12 +88,14 @@ namespace logjamd
 
     void Server_secure::startup()
     {
+        // Link the key exchange and the credentials.
+        credentials_.configure_key_exchange(key_exchange_);
+
         //std::string listen(lj::bson::as_string(cfg()["server/listen"]));
 
         // TODO this needs to translate from the config string above to the
         // parameters needed below.
-        Address_info info(nullptr,
-                "12345",
+        logjam::Network_address_info info("12345",
                 AI_PASSIVE,
                 AF_UNSPEC,
                 SOCK_STREAM,
@@ -227,11 +152,8 @@ namespace logjamd
 
             // Collect all the things we need for this connection.
             lj::bson::Node* connection_state = new lj::bson::Node();
-            char remote_ip[INET6_ADDRSTRLEN];
-            inet_ntop(remote_addr.ss_family,
-                    get_in_addr((struct sockaddr*)&remote_addr),
-                    remote_ip,
-                    INET6_ADDRSTRLEN);
+            std::string remote_ip = logjam::Network_address_info::as_string(
+                    (struct sockaddr*)&remote_addr);
             connection_state->set_child("client/address",
                     lj::bson::new_string(remote_ip));
 
@@ -239,16 +161,11 @@ namespace logjamd
                     << remote_ip
                     << lj::log::end;
 
-            // Build the objects used for communication abstraction.
-            lj::medium::Socket* medium = new lj::medium::Socket(client_socket);
-            lj::Streambuf_bsd<lj::medium::Socket>* connection_buffer =
-                    new lj::Streambuf_bsd<lj::medium::Socket>(medium, 8192, 8192);
-
             // Create the new connection
             Connection_secure* connection = new Connection_secure(
                     this,
                     connection_state,
-                    connection_buffer);
+                    client_socket);
 
             // Kick off the thread for that connection.
             connection->start();
@@ -270,5 +187,17 @@ namespace logjamd
         Connection_secure* ptr = dynamic_cast<logjamd::Connection_secure*>(
                 conn);
         connections_.remove(ptr);
+    }
+
+    std::unique_ptr<Server_secure::Session> Server_secure::new_session(int socket_descriptor)
+    {
+        // see http://www.gnu.org/software/gnutls/manual/gnutls.html#Echo-server-with-anonymous-authentication
+        std::unique_ptr<Server_secure::Session> session(
+                new Server_secure::Session(Server_secure::Session::k_server));
+        session->credentials().set(&credentials_);
+        session->set_cipher_priority("NORMAL:+ANON-ECDH:+ANON-DH");
+        session->set_dh_prime_bits(key_exchange_.bits());
+        session->set_socket(socket_descriptor);
+        return session;
     }
 };

@@ -42,9 +42,10 @@
 #include <string>
 #include <thread>
 
-typedef struct bio_st BIO;
 namespace logjamd
 {
+    class Server_secure;
+
     //! A Connection implementation that supports security.
     /*!
      \par
@@ -64,26 +65,31 @@ namespace logjamd
     public:
         //! Create a secure connection object.
         /*!
-         \par Memory
+         \par Resource Management
          This object is responsible for releasing the memory associated with
-         \c state and \c buffer. Server is not released by this class.
-         \c buffer memory is managed by this class.
+         \c state Server is not released by this class. \c socket_desc is
+         released by this class.
          \param server The server associated with this connection.
          \param state The state associated with this server.
-         \param buffer The stream buffer for io with this server.
+         \param socket_desc The socket descriptor.
          \sa logjamd::Connection::Connection
          */
-        Connection_secure(logjamd::Server* server,
+        Connection_secure(logjamd::Server_secure* server,
                 lj::bson::Node* state,
-                std::streambuf* buffer);
+                int socket_desc);
 
         //! Destructor
         virtual ~Connection_secure();
         virtual void start() override;
-        virtual bool secure() override
+        virtual bool secure() const override
         {
             return secure_;
         }
+        virtual bool securable() const override
+        {
+            return !secure_;
+        }
+        virtual void make_secure() override;
         virtual void close() override;
         virtual void set_crypto_key(const std::string& identifier,
                 const void* key,
@@ -102,7 +108,13 @@ namespace logjamd
             return *thread_;
         }
     private:
-        std::streambuf* buffer_; //!< Streambuffer for IO.
+        //! Secure Server for getting crypto sessions.
+        /*!
+         \par Resource Management
+         This object does not own this memory.
+         */
+        logjamd::Server_secure* server_; //!< Secure Server for getting crypto session.
+        const int socket_descriptor_; //!< Socket descriptor.
         lj::Thread* thread_; //!< Thread to process requests.
         bool secure_; //!< Flag indicating the security of the link.
         std::map<std::string, std::unique_ptr<uint8_t[], lj::Wiper<uint8_t[]> > > keys_; //!< Crypto key management.

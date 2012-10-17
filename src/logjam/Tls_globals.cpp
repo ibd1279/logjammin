@@ -47,33 +47,46 @@ namespace // anonymous
 
     void tls_audit_logger(gnutls_session_t session, const char* msg)
     {
-        lj::log::format<lj::Critical>("TLS AUDIT: %s [%s]").end(msg, session);
+        size_t len = strlen(msg);
+        while (msg[len] == '\r' || msg[len] == '\n')
+        {
+            len--;
+        }
+        std::string trimmed_msg(msg, len);
+        lj::log::format<lj::Critical>("TLS AUDIT: %s [%s]").end(trimmed_msg, session);
     }
 
     void tls_debug_logger(int level, const char* msg)
     {
+        size_t len = strlen(msg);
+        while (msg[len] == '\r' || msg[len] == '\n' || msg[len] == 0)
+        {
+            len--;
+        }
+        std::string trimmed_msg(msg, len + 1);
+
         switch (level)
         {
             case 0:
             case 1:
-                lj::log::out<lj::Error>(msg);
+                lj::log::out<lj::Error>(trimmed_msg);
                 break;
             case 2:
             case 3:
-                lj::log::out<lj::Warning>(msg);
+                lj::log::out<lj::Warning>(trimmed_msg);
                 break;
             case 4:
             case 5:
-                lj::log::out<lj::Notice>(msg);
+                lj::log::out<lj::Notice>(trimmed_msg);
                 break;
             case 6:
             case 7:
-                lj::log::out<lj::Info>(msg);
+                lj::log::out<lj::Info>(trimmed_msg);
                 break;
             case 8:
             case 9:
             default:
-                lj::log::out<lj::Debug>(msg);
+                lj::log::out<lj::Debug>(trimmed_msg);
                 break;
         }
     }
@@ -88,7 +101,7 @@ namespace logjam
         oss << lj::Exception::str();
         if (code() < 0)
         {
-            oss << "[" << gnutls_strerror(code()) << "].";
+            oss << " [" << gnutls_strerror(code()) << "].";
         }
         return oss.str();
     }

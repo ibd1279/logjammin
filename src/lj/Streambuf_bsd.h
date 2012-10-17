@@ -60,7 +60,6 @@ namespace lj
             }
             ~Socket()
             {
-                ::close(fd);
             }
             int write(const uint8_t* ptr, size_t len)
             {
