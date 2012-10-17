@@ -1439,7 +1439,7 @@ std::istream& operator>>(std::istream& is, lj::bson::Node& val)
     return is;
 }
 
-std::ostream& operator<<(std::ostream& os, lj::bson::Node& val)
+std::ostream& operator<<(std::ostream& os, const lj::bson::Node& val)
 {
     size_t sz;
     char* data = reinterpret_cast<char*>(val.to_binary(&sz));

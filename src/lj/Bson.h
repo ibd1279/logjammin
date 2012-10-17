@@ -986,4 +986,4 @@ namespace lj
 }; // namespace lj
 
 std::istream& operator>>(std::istream& is, lj::bson::Node& val);
-std::ostream& operator<<(std::ostream& os, lj::bson::Node& val);
+std::ostream& operator<<(std::ostream& os, const lj::bson::Node& val);
