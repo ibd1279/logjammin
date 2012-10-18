@@ -4,23 +4,23 @@
  \brief LJ Thread header.
  \author Jason Watson
 
- Copyright (c) 2010, Jason Watson       
+ Copyright (c) 2010, Jason Watson
  All rights reserved.
- 
+
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
- 
+
  * Redistributions of source code must retain the above copyright notice,
  this list of conditions and the following disclaimer.
- 
+
  * Redistributions in binary form must reproduce the above copyright notice,
  this list of conditions and the following disclaimer in the documentation
  and/or other materials provided with the distribution.
- 
+
  * Neither the name of the LogJammin nor the names of its contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
+
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -62,7 +62,7 @@ namespace lj
          The actual logic to be performed by a thread.
          */
         virtual void run() = 0;
-        
+
         //! Thread clean up logic.
         /*!
          \par
@@ -76,10 +76,12 @@ namespace lj
     //! Thin wrapper for pthread.
     /*!
      \par
-     Apparently std::thread is not support on the Mac yet. This is a place
+     Apparently std::thread is not supported on the Mac yet. This is a place
      holder until pthread/stdc++ adds the necessary components to make
      std::thread work there. atleast until it organically grows to the point
      where std::thread is not an option.
+     \todo This should be re-evaulated now that the code base has been switched
+     over to use clang libc++ instead of the gnu libraries.
      \author Jason Watson <jwatson@slashopt.net>
      \date September 12, 2011
      \sa lj::Work
@@ -90,8 +92,17 @@ namespace lj
         //! Construct a new thread.
         Thread();
 
-        //! Deleted constructor
+        //! Deleted copy constructor
+        /*!
+         \param orig The original Object.
+         */
         Thread(const Thread& orig) = delete;
+
+        //! Deleted move constructor
+        /*!
+         \param orig The original object.
+         */
+        Thread(Thread&& orig) = delete;
 
         //! Destructor.
         /*!
@@ -99,6 +110,20 @@ namespace lj
          abort() is called on the thread if it is still running.
          */
         ~Thread();
+
+        //! Deleted copy assignment operator.
+        /*!
+         \param orig The original object.
+         \return A reference to this.
+         */
+        Thread& operator=(const Thread& orig) = delete;
+
+        //! Deleted move assignment operator.
+        /*!
+         \param orig The original object.
+         \return A reference to this.
+         */
+        Thread& operator=(Thread&& orig) = delete;
 
         //! Test if the thread is still running.
         /*!
@@ -144,10 +169,27 @@ namespace lj
         //! Join the calling thread with the target thread.
         void join();
 
+        //! Wraps two functions in an object for usage with a thread.
+        /*!
+         \par
+         In some cases, you may wish to provide two functions for executing a
+         thread instead of a specific class. \c Lambda_work is specifically
+         designed to wrap two no-argument functions into a lj::Work object.
+         \author Jason Watson <jwatson@slashopt.net>
+         \date September 12, 2011
+         \sa lj::Work
+         \tparam R The run function pointer type. Must not require any arguments.
+         \tparam C The cleanup function pointer type. Must not require any arguments.
+         */
         template<class R, class C>
         class Lambda_work : public lj::Work
         {
         public:
+            //! Constructor
+            /*!
+             \param r The run function pointer.
+             \param c The cleanup function pointer.
+             */
             Lambda_work(R r,
                     C c) :
                     lj::Work(),
@@ -155,13 +197,77 @@ namespace lj
                     cleanup_(c)
             {
             }
+
+            //! Deleted copy constructor.
+            /*!
+             \param orig The original object.
+             */
+            Lambda_work(const Lambda_work<R, C>& orig) :
+                    lj::Work(),
+                    run_(orig.run_),
+                    cleanup_(orig.cleanup_)
+            {
+            }
+
+            //! Deleted move constructor.
+            /*!
+             \param o The original object.
+             */
+            Lambda_work(Lambda_work<R, C>&& orig) :
+                    lj::Work(),
+                    run_(orig.run_),
+                    cleanup_(orig.cleanup_)
+            {
+            }
+
+            //! Destructor.
+            /*!
+             \par
+             Params are expected to be pointers to functions. Nothing to delete.
+             When an object based usecase is created, it can be spun off as a
+             specialized template
+             */
             virtual ~Lambda_work() {
             }
-            virtual void run()
+
+            //! Copy assignment operator.
+            /*!
+             \param orig The original object.
+             \return A reference to this.
+             */
+            Lambda_work<R, C>& operator=(const Lambda_work<R, C>& orig)
             {
-                return run_();
+                run_ = orig.run_;
+                cleanup_ = orig.cleanup_;
+                return *this;
             }
-            virtual void cleanup()
+
+            //! Move assignment operator.
+            /*!
+             \param orig The original object.
+             \return A reference to this.
+             */
+            Lambda_work<R, C>& operator=(Lambda_work<R, C>&& orig)
+            {
+                run_ = orig.run_;
+                cleanup_ = orig.cleanup_;
+                return *this;
+            }
+
+            //! Invoke the run function pointer.
+            /*!
+             \sa lj::Work::run()
+             */
+            virtual void run() override
+            {
+                run_();
+            }
+
+            //! Invoke the cleanup function pointer.
+            /*!
+             \sa lj::Work::cleanup()
+             */
+            virtual void cleanup() override
             {
                 cleanup_();
                 delete this;
@@ -172,9 +278,8 @@ namespace lj
         };
 
     private:
-        static void* pthread_run(void* obj);
-
-        static void pthread_cleanup(void* obj);
+        static void* pthread_run(void* obj); //!< bridge function between pthread and work.
+        static void pthread_cleanup(void* obj); //!< bridge function between pthread and work.
 
         pthread_t thread_;
         Work* volatile work_;

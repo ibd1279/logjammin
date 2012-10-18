@@ -1,7 +1,7 @@
 #pragma once
 /*!
- \file logjamd/Connection_connection.h
- \brief Logjam server connection to a client definition.
+ \file logjamd/Connection_secure.h
+ \brief Logjam server connection to a client with support for secure communications.
  \author Jason Watson
 
  Copyright (c) 2010, Jason Watson

@@ -39,19 +39,39 @@
 namespace lj
 {
 
+    //! Memory wiping implementation.
+    /*!
+     writes zeros to the provided memory area before releasing the memory.
+     \tparam T the type to be wiped.
+     \tparam D the "delete" provider type.
+     */
     template<typename T, typename D = std::default_delete<T> >
-            class Wiper
+    class Wiper
     {
     public:
+        //! Default constructor.
         Wiper() = default;
 
-        void operator()(T* t) const
+        //! Functor operator.
+        /*!
+         \par
+         This primarily allows this class to act as a replacement for the default
+         deleter on std::unique_ptr objects.
+         This invokes the wipe and the delete.
+         \param t The object to wipe and delete.
+         */
+        inline void operator()(T* t) const
         {
             wipe(t);
             D deleter;
             deleter(t);
         }
 
+        //! wipe method.
+        /*!
+         write zeros to a range of memory.
+         \param t Typed pointer to the memory to wipe.
+         \*/
         static void wipe(T* t)
         {
             size_t sz = sizeof (T);
@@ -62,17 +82,34 @@ namespace lj
             }
         }
 
+        //! wipe method.
+        /*!
+         write zeros to a range of memory.
+         \param t The std::unique_ptr to an object to wipe.
+         \*/
         static inline void wipe(std::unique_ptr<T>& t)
         {
             wipe(t.get());
         }
     };
 
+    //! Memory wiping implementation specialized for array objects.
+    /*!
+     writes zeros to the provided memory area before releasing the memory. This
+     implementation still needs some help as it doesn't understand how long the
+     array is without being explicitly told. which requires some ugly code like
+     \code
+     std::unique_ptr<MyType[], Wiper<MyType[]>> array(new MyType[10]);
+     array.get_deleter().set_count(10);
+     \endcode
+     \tparam T the type to be wiped.
+     \tparam D the "delete" provider type.
+     */
     template<typename T, typename D>
     class Wiper<T[], D>
     {
     public:
-
+        //! Default constructor.
         Wiper() : count_(1)
         {
         }

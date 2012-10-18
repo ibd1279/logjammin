@@ -52,6 +52,12 @@ namespace lj
 {
     namespace medium
     {
+        //! Example medium for socket communication.
+        /*!
+         \par
+         Does not delete the socket because the TLS server in logjamd needs the
+         socket open to upgrade.
+         */
         class Socket
         {
         public:

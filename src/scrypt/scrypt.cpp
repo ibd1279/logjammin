@@ -107,12 +107,14 @@ namespace
     }
 };
 
+//! Scrypt stuff.
 typedef struct SHA256Context {
         uint32_t state[8];
         uint32_t count[2];
         unsigned char buf[64];
 } SHA256_CTX;
 
+//! Scrypt stuff.
 typedef struct HMAC_SHA256Context {
         SHA256_CTX ictx;
         SHA256_CTX octx;
