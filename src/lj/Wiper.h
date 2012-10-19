@@ -114,6 +114,17 @@ namespace lj
         {
         }
 
+        //! Functor operator.
+        /*!
+         \par
+         This primarily allows this class to act as a replacement for the default
+         deleter on std::unique_ptr objects. This invokes the wipe and the
+         delete.
+         \par
+         This will wipe \c count number of \c T objects.
+         \c set_count() must be called first.
+         \param t The pointer to wipe and delete.
+         */
         void operator()(T* t) const
         {
             wipe(t, count_);
@@ -121,6 +132,12 @@ namespace lj
             deleter(t);
         }
 
+        //! wipe method.
+        /*!
+         write zeros to a range of memory.
+         \param t The std::unique_ptr to an object to wipe.
+         \param count The number of T objects to wipe.
+         \*/
         static void wipe(T* t, const size_t count)
         {
             size_t sz = sizeof (T) * count;
@@ -131,16 +148,29 @@ namespace lj
             }
         }
 
+        //! Helper method for dealing with std::unique_ptr objects.
+        /*!
+         \param t A unique_ptr to an new[] array.
+         \param count The number of T objects to wipe.
+         */
         static inline void wipe(std::unique_ptr<T[]>& t, const size_t count)
         {
             wipe(t.get(), count);
         }
 
+        //! Set the number of T objects to be wiped when the deleter is invoked.
+        /*!
+         \param count The number of T objects to wipe.
+         */
         void set_count(const size_t count)
         {
             count_ = count;
         }
 
+        //! Get the number of T objects set to be wiped.
+        /*!
+         \return The number of T objects to wipe.
+         */
         inline size_t count() const
         {
             return count_;

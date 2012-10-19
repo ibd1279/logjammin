@@ -138,6 +138,12 @@ namespace logjam
         int code_;
     };
 
+    //! TLS global initialization structure.
+    /*!
+     Every application using TLS needs to create one of these objects. The
+     object is not used by the rest of the TLS api, but it does setup some
+     datastructures necessary for the rest of library.
+     */
     class Tls_globals
     {
     public:

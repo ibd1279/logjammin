@@ -37,6 +37,7 @@
 /*!
  \namespace lj
  \brief The lj library
+ 
  C++ library for core lj functionality. Includes basic structures like Logging,
  Uuids, Exceptions, and Bson.
  */
@@ -44,19 +45,22 @@
 /*!
  \namespace lj::bson
  \brief The bson namespace.
+
  Functions and classes for manipulating BSON Node objects.
  */
 
 /*!
  \namespace lj::log
  \brief The logging namespace.
+
  Functions and classes for logging functionality. Must code should be interacting
  via the lj::log::format() and lj::log::out() methods.
  */
 
 /*!
  \namespace lj::medium
- \breif The medium namespace.
+ \brief The medium namespace.
+
  This may be replaced in the near future. It was created as a test sample for
  the lj::Streambuf_bsd class, but I don't think the default provided medium is
  necessary.

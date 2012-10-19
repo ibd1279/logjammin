@@ -393,6 +393,4 @@ namespace lj
             lj::bson::increment(doc_->nav("_/vclock").nav(server), 1);
         }
     }
-    lj::bson::Node* doc_;
-    bool dirty_;
 }

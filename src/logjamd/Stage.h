@@ -44,6 +44,20 @@ namespace logjamd
     class Connection;
 
     //! A stage is a specific server execution unit.
+    /*!
+     \par
+     When establishing and executing different connections, the client and the
+     server go through different stages. The first stage is the pre-stage. It
+     involves things like the TLS handshake, selecting the communication method,
+     etc. After that comes authentication, and then things start to diverge
+     based on the handshake result.
+     \par
+     This class is the abstract base class for all of the stage objects. It
+     provides the interface and some helper methods to simplify the specific
+     stage implementations.
+     \sa logjamd::Stage_pre
+     \sa logjamd::Stage_auth
+     */
     class Stage
     {
     public:

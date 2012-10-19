@@ -53,11 +53,13 @@ namespace logjamd
     //! Local authentication provider Uuid.
     const lj::Uuid k_auth_provider_local(k_auth_provider, "local", 5);
 
-    // System level users.
-    const lj::Uuid k_user_id_json("00000000-0000-4006-8fbc-ee299933509f");
-    const std::string k_user_login_json("99_json_limited");
-    const std::string k_user_password_json("99_lame_insecure_account");
-    const lj::Uuid k_user_id_http("00000000-0000-4006-8952-d05d3161ec80");
-    const std::string k_user_login_http("98_http_limited");
-    const std::string k_user_password_http("98_lame_insecure_account");
+    // JSON insecure account.
+    const lj::Uuid k_user_id_json("00000000-0000-4006-8fbc-ee299933509f"); //!< built-in json user id.
+    const std::string k_user_login_json("99_json_limited"); //!< built-in json user login.
+    const std::string k_user_password_json("99_lame_insecure_account"); //!< built-in json user password.
+
+    // HTTP insecure account.
+    const lj::Uuid k_user_id_http("00000000-0000-4006-8952-d05d3161ec80"); //!< built-in http user id.
+    const std::string k_user_login_http("98_http_limited"); //!< built-in http user login.
+    const std::string k_user_password_http("98_lame_insecure_account"); //!< built-in http user password.
 };

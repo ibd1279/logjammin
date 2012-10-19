@@ -47,7 +47,12 @@ extern "C"
 
 namespace logjam
 {
-    //! Network address information.
+    //! Network address information
+    /*!
+     Provides a simple wrapper around the addrinfo stuff. Implements an
+     enumerable style interface to allow iterating over multiple results.
+     \since 0.2
+     */
     class Network_address_info
     {
     public:

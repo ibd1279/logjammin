@@ -109,15 +109,15 @@ namespace
 
 //! Scrypt stuff.
 typedef struct SHA256Context {
-        uint32_t state[8];
-        uint32_t count[2];
-        unsigned char buf[64];
+        uint32_t state[8]; //!< Scrypt stuff.
+        uint32_t count[2]; //!< Scrypt stuff.
+        unsigned char buf[64]; //!< Scrypt stuff.
 } SHA256_CTX;
 
 //! Scrypt stuff.
 typedef struct HMAC_SHA256Context {
-        SHA256_CTX ictx;
-        SHA256_CTX octx;
+        SHA256_CTX ictx; //!< Scrypt stuff.
+        SHA256_CTX octx; //!< Scrypt stuff.
 } HMAC_SHA256_CTX;
 
 /* Elementary functions used by SHA256 */

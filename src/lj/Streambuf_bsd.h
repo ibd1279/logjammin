@@ -61,20 +61,45 @@ namespace lj
         class Socket
         {
         public:
+            //! Create a medium Socket around a unix socket.
+            /*!
+             \param data The socket descriptor.
+             */
             Socket(int data) : fd(data)
             {
             }
+
+            //! Destructor.
             ~Socket()
             {
             }
+
+            //! Write data to the socket.
+            /*!
+             \param ptr Pointer to the data to write.
+             \param len Maximum number of bytes to write.
+             \return The number of bytes actually written.
+             */
             int write(const uint8_t* ptr, size_t len)
             {
                 return ::send(fd, ptr, len, 0);
             }
+
+            //! Read data from the socket.
+            /*!
+             \param ptr Where to store the data.
+             \param len Maximum number of bytes to read.
+             \return The number of bytes actually read.
+             */
             int read(uint8_t* ptr, size_t len)
             {
                 return ::recv(fd, ptr, len, 0);
             }
+
+            //! Convert the last error into a string and return.
+            /*!
+             \return String representation of the error.
+             */
             std::string error()
             {
                 return ::strerror(errno);
@@ -104,10 +129,10 @@ namespace lj
     class Streambuf_bsd : public std::basic_streambuf<charT, traits>
     {
     public:
-        typedef traits traits_type;
-        typedef typename traits_type::int_type int_type;
-        typedef typename traits_type::pos_type pos_type;
-        typedef typename traits_type::off_type off_type;
+        typedef traits traits_type; //!< helper typedef for iostream compatibility.
+        typedef typename traits_type::int_type int_type; //!< helper typedef for iostream compatibility.
+        typedef typename traits_type::pos_type pos_type; //!< helper typedef for iostream compatibility.
+        typedef typename traits_type::off_type off_type; //!< helper typedef for iostream compatibility.
 
         //! Create a new streambuf object around a BSD socket.
         /*!
@@ -234,6 +259,7 @@ namespace lj
             }
         }
     protected:
+        //! required std::streambuf implementation.
         virtual int_type overflow(int_type c = traits::eof()) override
         {
             // if there are any buffered bytes, send those first.
@@ -318,6 +344,8 @@ namespace lj
 
             return traits_type::not_eof(c);
         }
+
+        //! required std::streambuf implementation.
         virtual int_type sync() override
         {
             // if there are any buffered bytes, send those first.
@@ -360,6 +388,8 @@ namespace lj
             this->setp(out_, out_ + out_size_);
             return 0;
         }
+
+        //! required std::streambuf implementation.
         virtual int_type underflow() override
         {
             // how many bytes are currently unread in the buffer.

@@ -54,7 +54,7 @@ namespace lua
 
         //! Create a new lua Bson object.
         /*!
-         A new, empty document is created for this object.
+         A new, empty Node is created for this object.
          \param L The lua state.
          */
         Bson(lua_State* L);

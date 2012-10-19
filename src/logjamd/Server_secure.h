@@ -44,6 +44,7 @@ namespace logjamd
 {
     class Connection_secure;
 
+    //! An implementation of the logjamd::Server that supports TLS.
     class Server_secure : public logjamd::Server
     {
     public:

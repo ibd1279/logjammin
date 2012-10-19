@@ -89,7 +89,7 @@ namespace lj
     class Document
     {
     public:
-        static const size_t k_key_size;
+        static const size_t k_key_size; //!< Number of bytes required for the encryption key.
 
         // grant the unit test function access.
         friend void ::testEncrypt_friendly();
@@ -112,14 +112,14 @@ namespace lj
         //! Removed.
         /*!
          Copying documents is not allowed.
-         \param origin The original.
+         \param orig The original.
          */
         Document(const lj::Document& orig) = delete;
 
         //! Removed.
         /*!
          Copying documents is not allowed.
-         \param origin The original.
+         \param orig The original.
          */
         lj::Document& operator=(const lj::Document& orig) = delete;
 

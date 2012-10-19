@@ -423,6 +423,7 @@ namespace lj
             /*!
              \param lvl The logging level string.
              \param fmt The logging format string.
+             \param stream The output stream to use.
              */
             Logger_stream(const std::string lvl,
                     const std::string& fmt,
@@ -536,7 +537,7 @@ namespace lj
         /*!
          \par
          Creates, outputs, and automatically destroys a logger object.
-         \param msg The log message.
+         \param fmt The log message.
          \tparam Level The logging level of the message.
          */
         template <class Level>

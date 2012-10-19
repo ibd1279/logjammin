@@ -45,7 +45,7 @@
 #include <memory>
 #include <string>
 
-void setup_credentials(
+static void setup_credentials(
         logjamd::Auth_provider* auth,
         const lj::Uuid& id,
         const std::string& login,

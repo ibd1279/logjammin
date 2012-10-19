@@ -420,7 +420,7 @@ namespace lj
              value nodes.
              \par
              The value of v is copied out of the pointer \c v. For document
-             and array types, \v may be NULL. For value types, \c v must be
+             and array types, \c v may be NULL. For value types, \c v must be
              a valid pointer.
              \param t The type of node being created.
              \param v The value to associate with this node.
@@ -985,5 +985,22 @@ namespace lj
     }; // namespace lj::bson
 }; // namespace lj
 
+//! Extract data with format.
+/*!
+ Extract an lj::bson::Node object from the datastream. The object will be
+ marshaled from the binary representation.
+ \param is The input stream to read from.
+ \param val The Node to store the data in.
+ \return The input stream passed as \c is.
+ */
 std::istream& operator>>(std::istream& is, lj::bson::Node& val);
+
+//! Insert data with format.
+/*!
+ Insert an lj::bson::Node object to the datastream. The node will be converted
+ to binary form and written out.
+ \param os The output stream to write to.
+ \param val The Node to copy to binary.
+ \return The output stream passed as \c os.
+ */
 std::ostream& operator<<(std::ostream& os, const lj::bson::Node& val);

@@ -174,7 +174,7 @@ namespace logjamd
 
         //! Get the user associated with this connection.
         /*!
-         \TODO This should handle the un-authenticated case better. By
+         \todo This should handle the un-authenticated case better. By
          possibly returning null, most methods will need to test the result
          before they can perform any logic. If a reference was returned and
          the un-authenticated case had an "unauth user object" that returned

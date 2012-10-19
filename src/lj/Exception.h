@@ -167,4 +167,9 @@ namespace lj
         std::string label_;
     };
 }; // namespace lj
+
+//! Create an Exception based on the current function in the current file.
+/*!
+ \param msg The message of the exception.
+ */
 #define LJ__Exception(msg) lj::Exception(__FILE__, std::string(__FUNCTION__).append(" - ").append(msg))

@@ -211,7 +211,7 @@ namespace lj
 
             //! Deleted move constructor.
             /*!
-             \param o The original object.
+             \param orig The original object.
              */
             Lambda_work(Lambda_work<R, C>&& orig) :
                     lj::Work(),

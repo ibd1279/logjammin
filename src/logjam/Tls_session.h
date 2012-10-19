@@ -58,8 +58,8 @@ namespace logjam
     class Tls_session
     {
     public:
-        constexpr static unsigned int k_server = GNUTLS_SERVER;
-        constexpr static unsigned int k_client = GNUTLS_CLIENT;
+        constexpr static unsigned int k_server = GNUTLS_SERVER; //!< Server session flag.
+        constexpr static unsigned int k_client = GNUTLS_CLIENT; //!< Client session flag.
         //! Create a new TLS Session object.
         /*!
          \par
@@ -150,6 +150,7 @@ namespace logjam
             gnutls_session_set_ptr(session_, data);
         }
 
+        //! Get the user data associated with this object.
         template<typename UserDataT>
         UserDataT* user_data()
         {
