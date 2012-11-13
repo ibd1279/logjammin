@@ -112,12 +112,21 @@ namespace lj
     //! streambuf implementation for BSD sockets.
     /*!
      \par
-     Allows for stl stream manipulation of BSD sockets.
+     Allows for stl stream manipulation of BSD sockets. Converts characters to
+     bytes.
+     \note Endian-ness
+     This stream buff does not do any manipulation or communication of big or
+     little endian.
      \par
      This can technically be used for buffering any type of input or output.
      The provided \c mediumT class is used to perform the actual read and write
      operations. \c lj::medium::socket provides an example medium type for use
      with this streambuf.
+     \note Wide Characters.
+     This streambuf implementation makes an attempt to understand and track wide
+     characters. If a wide character is sliced by byte communication on the
+     medium, it is buffered for sending on the next call to flush or overflow.
+     \todo Refactor this classname to be something more generic.
      \tparam charT The type of character to use, wide or narrow
      \tparam traits The namespace used for referencing the traits of the stream.
      \tparam mediumT The medium to use for reading and writing.

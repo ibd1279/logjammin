@@ -75,6 +75,8 @@ namespace logjam
         bool next();
         struct addrinfo& current();
         std::string error();
+        
+        //! Helper method for converting a sockaddr into a string.
         static std::string as_string(struct sockaddr* sa);
     private:
         struct addrinfo* info_;

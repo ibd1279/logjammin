@@ -91,11 +91,13 @@ namespace logjamd
         // Link the key exchange and the credentials.
         credentials_.configure_key_exchange(key_exchange_);
 
-        //std::string listen(lj::bson::as_string(cfg()["server/listen"]));
+        // Figure out where we should be listening.
+        std::string listen_on(lj::bson::as_string(cfg()["server/listen"]));
+        lj::log::format<lj::Info>("Attempting to listen on \"%s\".")
+                << listen_on
+                << lj::log::end;
 
-        // TODO this needs to translate from the config string above to the
-        // parameters needed below.
-        logjam::Network_address_info info("12345",
+        logjam::Network_address_info info(listen_on,
                 AI_PASSIVE,
                 AF_UNSPEC,
                 SOCK_STREAM,

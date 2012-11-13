@@ -53,7 +53,16 @@ namespace logjam
         hints.ai_family = family;
         hints.ai_socktype = type;
         hints.ai_protocol = protocol;
-        status_ = getaddrinfo(host.c_str(), port.c_str(), &hints, &info_);
+        
+        // If the host is "*", then we aren't going to be picky.
+        if (host.compare("*") == 0)
+        {
+            status_ = getaddrinfo(nullptr, port.c_str(), &hints, &info_);
+        }
+        else
+        {
+            status_ = getaddrinfo(host.c_str(), port.c_str(), &hints, &info_);
+        }
     }
     Network_address_info::Network_address_info(const std::string& port,
             int flags,
@@ -70,7 +79,20 @@ namespace logjam
         hints.ai_family = family;
         hints.ai_socktype = type;
         hints.ai_protocol = protocol;
-        status_ = getaddrinfo(nullptr, port.c_str(), &hints, &info_);
+        
+        // If the port contains a colon, assume it is a host + port value.
+        int col_pos = port.find_first_of(':');
+        if (col_pos == std::string::npos)
+        {
+            status_ = getaddrinfo(nullptr, port.c_str(), &hints, &info_);
+        }
+        else
+        {
+            status_ = getaddrinfo(port.substr(0, col_pos).c_str(),
+                    port.substr(col_pos + 1).c_str(),
+                    &hints,
+                    &info_);
+        }
     }
 
 
@@ -151,5 +173,4 @@ namespace logjam
 
         return std::string(ip);
     }
-
 }; // namespace logjam
