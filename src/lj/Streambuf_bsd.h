@@ -151,7 +151,7 @@ namespace lj
          bytes associated with the buffer.
          \par
          The \c Streambuf_bsd object assumes responsibility for releasing the
-         \c medium object.
+         \c medium object. It is stored in a std::unique_ptr.
          \param medium Pointer to the underlying medium.
          \param in_sz The size of the read buffer.
          \param out_sz The size of the writer buffer.

@@ -41,6 +41,7 @@
 #include "lj/Log.h"
 #include "lj/Streambuf_bsd.h"
 #include "logjamd/constants.h"
+#include "Network_connection.h"
 
 #include <iostream>
 #include <unistd.h>
@@ -67,45 +68,30 @@ int main(int argc, char * const argv[])
                 SOCK_STREAM,
                 0);
 
-        int sockfd = -1;
-        while (info.next() && 0 > sockfd)
+        logjam::Network_connection connection;
+        while (info.next() && !connection.is_open())
         {
-            sockfd = socket(info.current().ai_family,
-                    info.current().ai_socktype,
-                    info.current().ai_protocol);
-            if (0 > sockfd)
+            try
             {
-                lj::log::format<lj::Warning>("Unable to create the socket. [%s]")
-                        << strerror(errno)
-                        << lj::log::end;
-                continue;
+                connection.connect(info.current());
             }
-
-            int result = connect(sockfd,
-                    info.current().ai_addr,
-                    info.current().ai_addrlen);
-            if (0 > result)
+            catch (lj::Exception ex)
             {
-                ::close(sockfd);
-                sockfd = -1;
-                lj::log::format<lj::Warning>("Unable to connect. [%s]")
-                        << strerror(errno)
-                        << lj::log::end;
-                continue;
+                lj::log::format<lj::Critical>("%s").end(ex);
             }
         }
 
-        if (0 > sockfd)
+        if (!connection.is_open())
         {
             lj::log::out<lj::Critical>("Unable to connect to host.");
             return 1;
         }
 
         lj::Streambuf_bsd<lj::medium::Socket>* plain_buffer =
-                new lj::Streambuf_bsd<lj::medium::Socket>(new lj::medium::Socket(sockfd), 8192, 8192);
+                new lj::Streambuf_bsd<lj::medium::Socket>(new lj::medium::Socket(connection.socket()), 8192, 8192);
         std::iostream io(plain_buffer);
 
-        lj::log::out<lj::Info>("requesting TLS.");
+        lj::log::out<lj::Info>("Connection established. Requesting TLS.");
 
         lj::bson::Node n;
         io << "+tls\n";
@@ -113,7 +99,7 @@ int main(int argc, char * const argv[])
         io >> n;
         if (lj::bson::as_boolean(n.nav("/success")))
         {
-            session->set_socket(sockfd);
+            session->set_socket(connection.socket());
             lj::Streambuf_bsd<logjam::Tls_session<logjam::Tls_credentials_anonymous_client> >* crypt_buffer =
                     new lj::Streambuf_bsd<logjam::Tls_session<logjam::Tls_credentials_anonymous_client> >(session, 8192, 8192);
             lj::log::out<lj::Info>("Starting handshake");
