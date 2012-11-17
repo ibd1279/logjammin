@@ -69,7 +69,7 @@ namespace logjam
         close();
     }
     
-    Network_connection& Network_connection::operator =(Network_connection&& orig)
+    Network_connection& Network_connection::operator=(Network_connection&& orig)
     {
         // backup current values.
         bool tmp_is_open = is_open_;

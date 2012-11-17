@@ -35,6 +35,7 @@
  */
 
 #include "logjamd/Connection.h"
+#include "logjam/Network_connection.h"
 #include "lj/Thread.h"
 #include "lj/Wiper.h"
 #include <map>
@@ -71,12 +72,14 @@ namespace logjamd
          released by this class.
          \param server The server associated with this connection.
          \param state The state associated with this server.
-         \param socket_desc The socket descriptor.
+         \param connection The network connection.
+         \param insecure_stream The iostream for initial communication.
          \sa logjamd::Connection::Connection
          */
         Connection_secure(logjamd::Server_secure* server,
                 lj::bson::Node* state,
-                int socket_desc);
+                logjam::Network_connection&& connection,
+                std::iostream* insecure_stream);
 
         //! Destructor
         virtual ~Connection_secure();
@@ -114,7 +117,7 @@ namespace logjamd
          This object does not own this memory.
          */
         logjamd::Server_secure* server_; //!< Secure Server for getting crypto session.
-        const int socket_descriptor_; //!< Socket descriptor.
+        logjam::Network_connection connection_; //!< Wrapper for the socket.
         lj::Thread* thread_; //!< Thread to process requests.
         bool secure_; //!< Flag indicating the security of the link.
         std::map<std::string, std::unique_ptr<uint8_t[], lj::Wiper<uint8_t[]> > > keys_; //!< Crypto key management.

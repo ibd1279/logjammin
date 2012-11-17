@@ -53,7 +53,9 @@ extern "C"
 
 namespace
 {
-    unsigned int k_dh_bits = 2048;
+    const unsigned int k_dh_bits = 2048;
+    const size_t k_buffer_in_size = 8196;
+    const size_t k_buffer_out_size = 8196;
 }
 
 namespace logjamd
@@ -151,8 +153,16 @@ namespace logjamd
                 // I had problems accepting that client.
                 throw LJ__Exception(strerror(errno));
             }
+            logjam::Network_connection client_connection(client_socket);
 
-            // Collect all the things we need for this connection.
+            // Create a buffer and a stream object.
+            lj::medium::Socket* insecure_medium =
+                    new lj::medium::Socket(client_connection.socket());
+            lj::Streambuf_bsd<lj::medium::Socket>* insecure_buffer =
+                    new lj::Streambuf_bsd<lj::medium::Socket>(insecure_medium, k_buffer_in_size, k_buffer_out_size);
+            std::iostream* insecure_stream = new std::iostream(insecure_buffer);
+
+            // Collect all the admin stuff we need for this connection.
             lj::bson::Node* connection_state = new lj::bson::Node();
             std::string remote_ip = logjam::Network_address_info::as_string(
                     (struct sockaddr*)&remote_addr);
@@ -163,17 +173,17 @@ namespace logjamd
                     << remote_ip
                     << lj::log::end;
 
-            // Create the new connection
+            // Create the new server logjamd concept of a connection
             Connection_secure* connection = new Connection_secure(
                     this,
                     connection_state,
-                    client_socket);
+                    std::move(client_connection),
+                    insecure_stream);
 
             // Kick off the thread for that connection.
             connection->start();
 
             // store a copy locally for management.
-            // TODO this needs to be flushed out
             connections_.push_back(connection);
         }
     }
@@ -193,6 +203,7 @@ namespace logjamd
 
     std::unique_ptr<Server_secure::Session> Server_secure::new_session(int socket_descriptor)
     {
+        // TODO convert this to use some form of authentication.
         // see http://www.gnu.org/software/gnutls/manual/gnutls.html#Echo-server-with-anonymous-authentication
         std::unique_ptr<Server_secure::Session> session(
                 new Server_secure::Session(Server_secure::Session::k_server));

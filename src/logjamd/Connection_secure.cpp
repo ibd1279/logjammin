@@ -40,6 +40,7 @@
 #include "logjam/Tls_session.h"
 #include "lj/Streambuf_bsd.h"
 #include "Server_secure.h"
+#include "logjam/Network_connection.h"
 
 #include <algorithm>
 #include <assert.h>
@@ -49,10 +50,11 @@ namespace logjamd
     Connection_secure::Connection_secure(
             logjamd::Server_secure* server,
             lj::bson::Node* state,
-            int socket_desc) :
-            logjamd::Connection(server, state, new std::iostream(new lj::Streambuf_bsd<lj::medium::Socket>(new lj::medium::Socket(socket_desc), 8192, 8192))),
+            logjam::Network_connection&& connection,
+            std::iostream* insecure_stream) :
+            logjamd::Connection(server, state, insecure_stream),
             server_(server),
-            socket_descriptor_(socket_desc),
+            connection_(std::move(connection)),
             thread_(nullptr),
             secure_(false),
             keys_()
@@ -83,7 +85,7 @@ namespace logjamd
 
         // Get the session for communication.
         std::unique_ptr<Server_secure::Session> session(
-                server_->new_session(socket_descriptor_));
+                server_->new_session(connection_.socket()));
 
         // Make sure we have sent all the unencrypted data.
         io().flush();
@@ -104,10 +106,28 @@ namespace logjamd
     void Connection_secure::close()
     {
         lj::log::out<lj::Debug>("Closing the connection.");
+                
+        // Connection::close() calls flush, so we clean up the rdbuf AFTER
+        // it has been called. We also have to close up the TLS session properly
+        // if the connection is secure.
         std::streambuf* buffer = io().rdbuf();
         this->logjamd::Connection::close();
+        if (secure())
+        {
+            lj::Streambuf_bsd<Server_secure::Session>* secure_buffer =
+                    dynamic_cast<lj::Streambuf_bsd<Server_secure::Session>*>(buffer);
+            assert(nullptr != secure_buffer);
+            Server_secure::Session& session = secure_buffer->medium();
+            
+            // TODO shutdown the TLS connection.
+            lj::log::out<lj::Critical>("TODO TLS shutdown code is not yet implemented.");
+        }
         delete buffer;
-        ::close(socket_descriptor_);
+        
+        // Now we close up the actual network connection. This is not handled
+        // by the buffers because we use different buffers on the same socket
+        // at different points in the connection.
+        connection_.close();
     }
 
     void Connection_secure::run()
@@ -121,6 +141,7 @@ namespace logjamd
                 Stage* new_stage = stage->logic();
                 io().flush();
 
+                // protect against any stages that return themselves.
                 if (new_stage != stage)
                 {
                     delete stage;

@@ -235,6 +235,15 @@ namespace lj
             o.in_ = nullptr;
             o.out_ = nullptr;
         }
+        
+        //! Get the underlying medium object.
+        /*!
+         \return The medium used for communication.
+         */
+        inline mediumT& medium()
+        {
+            return *medium_;
+        }
     private:
         void send_buffer(bool retry)
         {
