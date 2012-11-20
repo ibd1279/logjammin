@@ -33,7 +33,7 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "Network_address_info.h"
+#include "logjam/Network_address_info.h"
 
 namespace logjam
 {

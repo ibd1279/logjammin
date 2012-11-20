@@ -51,6 +51,7 @@ namespace
     const std::string k_json_mode("json\n");
     const std::string k_http_mode("get /");
     const std::string k_tls_mode("+tls\n");
+    const std::string k_peer_mode("peer\n");
     const std::string k_error_unknown_mode("Unknown mode: ");
 };
 
@@ -121,6 +122,12 @@ namespace logjamd
                 log("Failed to secure connection.").end();
                 return nullptr;
             }
+        }
+        else if (k_peer_mode.compare(buffer) == 0 &&
+                conn()->secure())
+        {
+            log("Converting connection to a peer connection.");
+            // TODO Convert the connection to a peer.
         }
         else
         {

@@ -140,7 +140,8 @@ def build(bld):
 
     bld.stlib(
         source = [
-            'src/logjam/Network_address_info.cpp'
+            'src/logjam/Client_socket.cpp'
+            ,'src/logjam/Network_address_info.cpp'
             ,'src/logjam/Network_connection.cpp'
             ,'src/logjam/Tls_credentials.cpp'
             ,'src/logjam/Tls_globals.cpp'

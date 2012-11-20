@@ -33,6 +33,7 @@
  */
 
 
+#include "logjam/Client_socket.h"
 #include "logjam/Network_address_info.h"
 #include "logjam/Tls_credentials.h"
 #include "logjam/Tls_globals.h"
@@ -52,91 +53,25 @@ int main(int argc, char * const argv[])
     try
     {
         logjam::Tls_globals globals; // this ensures that the deinit is called when the stack unwinds.
+        
+        // This should take care of all the connection steps.
+        std::iostream* io = logjam::client::create_connection("12345", "vson");
 
-        logjam::Tls_session<logjam::Tls_credentials_anonymous_client>* session =
-                new logjam::Tls_session<logjam::Tls_credentials_anonymous_client>(GNUTLS_CLIENT);
-
-        std::string target_hostname("localhost");
-        session->set_user_data(&target_hostname);
-        session->set_hostname(target_hostname);
-        session->set_cipher_priority("NORMAL:+ANON-ECDH:+ANON-DH");
-
-        logjam::Network_address_info info(target_hostname,
-                "12345",
-                0,
-                AF_UNSPEC,
-                SOCK_STREAM,
-                0);
-
-        logjam::Network_connection connection;
-        while (info.next() && !connection.is_open())
-        {
-            try
-            {
-                connection.connect(info.current());
-            }
-            catch (lj::Exception ex)
-            {
-                lj::log::format<lj::Critical>("%s").end(ex);
-            }
-        }
-
-        if (!connection.is_open())
-        {
-            lj::log::out<lj::Critical>("Unable to connect to host.");
-            return 1;
-        }
-
-        lj::Streambuf_bsd<lj::medium::Socket>* plain_buffer =
-                new lj::Streambuf_bsd<lj::medium::Socket>(new lj::medium::Socket(connection.socket()), 8192, 8192);
-        std::iostream io(plain_buffer);
-
-        lj::log::out<lj::Info>("Connection established. Requesting TLS.");
-
-        lj::bson::Node n;
-        io << "+tls\n";
-        io.flush();
-        io >> n;
-        if (lj::bson::as_boolean(n.nav("/success")))
-        {
-            session->set_socket(connection.socket());
-            lj::Streambuf_bsd<logjam::Tls_session<logjam::Tls_credentials_anonymous_client> >* crypt_buffer =
-                    new lj::Streambuf_bsd<logjam::Tls_session<logjam::Tls_credentials_anonymous_client> >(session, 8192, 8192);
-            lj::log::out<lj::Info>("Starting handshake");
-            session->handshake();
-            lj::log::out<lj::Info>("Completed handshake");
-            io.rdbuf(crypt_buffer);
-        }
-        else
-        {
-            lj::log::out<lj::Info>("Server doesn't support TLS.");
-            return 1;
-        }
-
-        io >> n;
-        if (lj::bson::as_boolean(n.nav("/success")))
-        {
-            lj::log::out<lj::Info>("We are now secure.");
-        }
-        io << "bson\n";
-        lj::log::out<lj::Info>("sent bson hello.");
-        io.flush();
-
-        io >> n;
-        if (lj::bson::as_boolean(n.nav("/success")))
-        {
-            lj::log::out<lj::Info>("Now in authentication.");
-        }
-
+        // Perform the authentication.
         lj::bson::Node auth;
         auth.set_child("/method", lj::bson::new_uuid(logjamd::k_auth_method_password));
         auth.set_child("/provider", lj::bson::new_uuid(logjamd::k_auth_provider_local));
         auth.set_child("/data/login", lj::bson::new_string(logjamd::k_user_login_json));
         auth.set_child("/data/password", lj::bson::new_string(logjamd::k_user_password_json));
-        io << auth;
-        io.flush();
-        io >> n;
-        if (lj::bson::as_boolean(n.nav("/success")))
+        
+        // Communicate across the secure pipe.
+        lj::bson::Node response;
+        (*io) << auth;
+        (*io).flush();
+        (*io) >> response;
+        
+        // Look to make sure the response was successful.
+        if (logjam::client::is_success(response))
         {
             lj::log::out<lj::Info>("Authenticated.");
         }
