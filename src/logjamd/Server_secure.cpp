@@ -38,6 +38,7 @@
 #include "logjam/Network_address_info.h"
 #include "lj/Exception.h"
 #include "lj/Streambuf_bsd.h"
+#include "logjam/Client_socket.h"
 #include <algorithm>
 #include <mutex>
 #include <thread>
@@ -65,6 +66,7 @@ namespace logjamd
             io_(-1),
             running_(false),
             connections_(),
+            peers_(),
             credentials_(),
             key_exchange_(k_dh_bits)
     {
@@ -82,6 +84,16 @@ namespace logjamd
                 << lj::log::end;
         for (auto iter = connections_.begin();
                 connections_.end() != iter;
+                ++iter)
+        {
+            delete (*iter);
+        }
+        
+        lj::log::format<lj::Debug>("Deleting all peers for server %p.")
+                << (const void*)this
+                << lj::log::end;
+        for (auto iter = peers_.begin();
+                peers_.end() != iter;
                 ++iter)
         {
             delete (*iter);
@@ -134,6 +146,31 @@ namespace logjamd
         {
             // did not bind the listener to a port.
             throw LJ__Exception(strerror(errno));
+        }
+        
+        // Connect to the peers.
+        const lj::bson::Node& cluster = cfg()["server/cluster"];
+        for (auto iter = cluster.to_vector().begin();
+                cluster.to_vector().end() != iter;
+                ++iter)
+        {
+            lj::bson::Node auth(cfg()["server/identity"]);
+            lj::log::format<lj::Debug>("Attempting to connect to peer %s.")
+                    << lj::bson::as_string(*(*iter))
+                    << lj::log::end;
+            try
+            {
+                std::iostream* peer = logjam::client::create_connection(
+                        lj::bson::as_string(*(*iter)),
+                        "peer");
+                peers_.push_back(peer);
+            }
+            catch (lj::Exception ex)
+            {
+                lj::log::format<lj::Critical>("Unable to connect to %s. Not added as a peer.")
+                        << lj::bson::as_string(*(*iter))
+                        << lj::log::end;
+            }
         }
     }
 

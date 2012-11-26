@@ -35,6 +35,8 @@
 
 #include "logjam/Network_address_info.h"
 
+#include <sstream>
+
 namespace logjam
 {
     Network_address_info::Network_address_info(const std::string& host,
@@ -80,8 +82,9 @@ namespace logjam
         hints.ai_socktype = type;
         hints.ai_protocol = protocol;
         
-        // If the port contains a colon, assume it is a host + port value.
-        int col_pos = port.find_first_of(':');
+        // If the port contains an at, assume it is a host + port value.
+        // This was a colon, but then I realized ipv6 would be troublesome.
+        int col_pos = port.find_first_of('@');
         if (col_pos == std::string::npos)
         {
             status_ = getaddrinfo(nullptr, port.c_str(), &hints, &info_);
@@ -150,11 +153,12 @@ namespace logjam
         return std::string(gai_strerror(status_));
     }
 
-    std::string Network_address_info::as_string(struct sockaddr* sa)
+    std::string Network_address_info::as_string(const struct sockaddr* sa)
     {
         // Beej gets credit for this function:
         // http://beej.us/guide/bgnet/output/html/singlepage/bgnet.html#simpleserver
         char ip[INET6_ADDRSTRLEN];
+        int port = 0;
 
         if (sa->sa_family == AF_INET)
         {
@@ -162,6 +166,7 @@ namespace logjam
                     &(((struct sockaddr_in*)sa)->sin_addr),
                     ip,
                     INET6_ADDRSTRLEN);
+            port = ntohs(((struct sockaddr_in*)sa)->sin_port);
         }
         else
         {
@@ -169,8 +174,11 @@ namespace logjam
                     &(((struct sockaddr_in6*)sa)->sin6_addr),
                     ip,
                     INET6_ADDRSTRLEN);
+            port = ntohs(((struct sockaddr_in6*)sa)->sin6_port);
         }
 
-        return std::string(ip);
+        std::ostringstream oss;
+        oss << ip << "@" << port;
+        return oss.str();
     }
 }; // namespace logjam

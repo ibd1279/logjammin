@@ -68,9 +68,12 @@ int main(int argc, char* const argv[]) {
     lj::bson::Node* config = new lj::bson::Node();
     lj::Uuid sid;
     config->set_child("server/listen", lj::bson::new_string("12345"));
+    config->set_child("server/identity/method", lj::bson::new_uuid(logjamd::k_auth_method_password));
+    config->set_child("server/identity/provider", lj::bson::new_uuid(logjamd::k_auth_provider_local));
+    config->set_child("server/identity/data/login", lj::bson::new_string(logjamd::k_user_login_json));
+    config->set_child("server/identity/data/password", lj::bson::new_string(logjamd::k_user_password_json));
     config->set_child("server/cluster", lj::bson::new_array());
-    config->push_child("server/cluster", lj::bson::new_string("localhost:12345"));
-    config->push_child("server/cluster", lj::bson::new_string("localhost:12346"));
+    config->push_child("server/cluster", lj::bson::new_string("localhost@12346"));
 
     // TODO This is completely in the wrong place, but it has to be here
     // to make the telnet stuff work during development right now.

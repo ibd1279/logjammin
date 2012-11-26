@@ -36,6 +36,7 @@
 
 #include "logjam/Network_connection.h"
 #include "lj/Bson.h"
+#include <iostream>
 
 namespace logjam
 {

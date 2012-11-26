@@ -55,7 +55,7 @@ int main(int argc, char * const argv[])
         logjam::Tls_globals globals; // this ensures that the deinit is called when the stack unwinds.
         
         // This should take care of all the connection steps.
-        std::iostream* io = logjam::client::create_connection("12345", "vson");
+        std::iostream* io = logjam::client::create_connection("12345", "bson");
 
         // Perform the authentication.
         lj::bson::Node auth;

@@ -69,6 +69,7 @@ namespace logjamd
         int io_;
         bool running_;
         std::list<logjamd::Connection_secure*> connections_;
+        std::list<std::iostream*> peers_;
         logjam::Tls_credentials_anonymous_server credentials_;
         logjam::Tls_key_exchange_diffie_hellman key_exchange_;
     };

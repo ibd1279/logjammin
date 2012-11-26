@@ -35,6 +35,7 @@
 
 #include "logjam/Network_connection.h"
 #include "lj/Exception.h"
+#include "Network_address_info.h"
 #include <sstream>
 extern "C" {
 #include <stdio.h>
@@ -101,7 +102,9 @@ namespace logjam
         if (0 > sockfd)
         {
             std::ostringstream oss;
-            oss << "Unable to create the socket. ["
+            oss << "Unable to create the socket to ["
+                    << logjam::Network_address_info::as_string(target.ai_addr)
+                    << "]. ["
                     << ::strerror(errno)
                     << "]";
             throw LJ__Exception(oss.str());
@@ -113,7 +116,9 @@ namespace logjam
         if (0 > result)
         {
             std::ostringstream oss;
-            oss << "Unable to connect. ["
+            oss << "Unable to connect to ["
+                    << logjam::Network_address_info::as_string(target.ai_addr)
+                    << "]. ["
                     << ::strerror(errno)
                     << "]";
             ::close(sockfd);
