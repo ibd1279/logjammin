@@ -78,6 +78,7 @@ namespace logjam
                 session_(nullptr),
                 credentials_(),
                 is_setup_(false),
+                is_greeted_(false),
                 medium_ret_(0)
         {
             gnutls_init(&session_, flags);
@@ -97,6 +98,7 @@ namespace logjam
                 session_(o.session_),
                 credentials_(std::move(o.credentials_)),
                 is_setup_(o.is_setup_),
+                is_greeted_(o.is_greeted_),
                 medium_ret_(o.medium_ret_)
         {
             o.session_ = nullptr;
@@ -232,7 +234,7 @@ namespace logjam
             int ret;
             do
             {
-                ret = gnutls_handshake (session_);
+                ret = gnutls_handshake(session_);
             }
             while (0 > ret && 0 == gnutls_error_is_fatal(ret));
 
@@ -249,6 +251,40 @@ namespace logjam
                 }
                 oss << ".";
                 throw logjam::Tls_exception(oss.str(), ret);
+            }
+            
+            is_greeted_ = true;
+        }
+        
+        void goodbye(gnutls_close_request_t how)
+        {
+            // We can only say goodbye if we completed the handshake and greeting.
+            if (is_greeted_)
+            {
+                // Say goodbye until we are successful or chew our arm off.
+                int ret;
+                do
+                {
+                    ret = gnutls_bye(session_, how);
+                }
+                while (0 > ret && 0 == gnutls_error_is_fatal(ret));
+
+                // Deal with the error cases.
+                if (0 > ret)
+                {
+                    std::ostringstream oss;
+                    oss << "Goodbye failed";
+                    if (GNUTLS_E_FATAL_ALERT_RECEIVED == ret)
+                    {
+                        gnutls_alert_description_t alert_desc =
+                                gnutls_alert_get(session_);
+                        oss << ": " << gnutls_alert_get_name(alert_desc);
+                    }
+                    oss << ".";
+                    throw logjam::Tls_exception(oss.str(), ret);
+                }
+                
+                is_greeted_ = false;
             }
         }
 
@@ -306,6 +342,7 @@ namespace logjam
         gnutls_session_t session_;
         TCred credentials_;
         bool is_setup_;
+        bool is_greeted_;
         int medium_ret_;
     }; // class logjam::Tls_session
 }; // namespace logjam

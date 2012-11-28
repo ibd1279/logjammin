@@ -71,10 +71,21 @@ int main(int argc, char * const argv[])
         (*io) >> response;
         
         // Look to make sure the response was successful.
-        if (logjam::client::is_success(response))
+        if (!logjam::client::is_success(response))
         {
-            lj::log::out<lj::Info>("Authenticated.");
+            lj::log::out<lj::Error>("Failed to Authenticate.");
         }
+        
+        lj::bson::Node quit;
+        quit.set_child("/language", lj::bson::new_string("lua"));
+        quit.set_child("/command", lj::bson::new_string("exit()"));
+        
+        // Send the quit message across the pipe.
+        (*io) << quit;
+        (*io).flush();
+        (*io) >> response;
+        
+        lj::log::out<lj::Info>(lj::bson::as_pretty_json(response));
     }
     catch (const lj::Exception& ex)
     {

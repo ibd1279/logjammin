@@ -236,9 +236,9 @@ namespace lua
         response.copy_from(response_wrapper->node());
 
         bool keep_alive = true;
-        if (response.exists("shutdown"))
+        if (response.exists("disconnect"))
         {
-            response.set_child("shutdown", NULL);
+            response.set_child("disconnect", NULL);
             keep_alive = false;
         }
         return keep_alive;

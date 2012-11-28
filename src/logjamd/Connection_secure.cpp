@@ -119,8 +119,8 @@ namespace logjamd
             assert(nullptr != secure_buffer);
             Server_secure::Session& session = secure_buffer->medium();
             
-            // TODO shutdown the TLS connection.
-            lj::log::out<lj::Critical>("TODO TLS shutdown code is not yet implemented.");
+            // Shutdown the TLS connection.
+            session.goodbye(GNUTLS_SHUT_WR);
         }
         delete buffer;
         
