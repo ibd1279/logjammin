@@ -109,6 +109,7 @@ namespace logjam
         {
             if (session_)
             {
+                goodbye(GNUTLS_SHUT_WR);
                 gnutls_deinit(session_);
             }
         }
