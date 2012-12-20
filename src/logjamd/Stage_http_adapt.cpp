@@ -96,15 +96,99 @@ namespace
     class Http_request
     {
     public:
-        Http_request(const std::string& m) : method(m), header_read_ahead(), uri(), http_version_major(1), http_version_minor(0), headers()
+        enum class Method {
+            k_get,
+            k_post
+        };
+        Http_request(const std::string& m) :
+                header_read_ahead(),
+                headers(),
+                method_(Method::k_get),
+                uri_(),
+                http_version_major_(1),
+                http_version_minor_(0),
+                body_(nullptr)
         {
+            if (m.compare("post") == 0)
+            {
+                method_ = Method::k_post;
+            }
         }
-        std::string method;
+        ~Http_request()
+        {
+            if (body_)
+            {
+                delete[] body_;
+            }
+        }
+        const Method method() const
+        {
+            return method_;
+        }
+        const std::string& uri() const
+        {
+            return uri_;
+        }
+        void uri(const std::string& val)
+        {
+            uri_ = val;
+        }
+        bool compatible_version(int major, int minor)
+        {
+            // Major version basically defines the message format. Minor version
+            // is the level of extension supported.
+            // See RFC 2612, 3.1.
+            if (version_major() == major)
+            {
+                if (version_minor() < minor)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        int version_major() const
+        {
+            return http_version_major_;
+        }
+        void version_major(int major)
+        {
+            http_version_major_ = major;
+        }
+        int version_minor() const
+        {
+            return http_version_minor_;
+        }
+        void version_minor(int minor)
+        {
+            http_version_minor_ = minor;
+        }
+        const uint8_t* body() const
+        {
+            return body_;
+        }
+        void body(uint8_t* val)
+        {
+            body_ = val;
+        }
+        int64_t content_length() const
+        {
+            int64_t length = 0;
+            auto iter = headers.find("Content-Length");
+            if (headers.end() != iter)
+            {
+                length = atol(iter->second.c_str());
+            }
+            return length;
+        }
         std::string header_read_ahead;
-        std::string uri;
-        int http_version_major;
-        int http_version_minor;
         std::multimap<std::string, std::string> headers;
+    private:
+        Method method_;
+        std::string uri_;
+        int http_version_major_;
+        int http_version_minor_;
+        uint8_t* body_;
     };
     
     //! Method for getting lines from the http connection. Follows the folding and continuation rules of RFC2612.
@@ -219,18 +303,20 @@ namespace
         {
             size_t cmd_length = indx - 1;
             indx += HTTP_VERSION_PREFIX.size();
-            state.uri = cmd.substr(0, cmd_length);
             
+            state.uri(cmd.substr(0, cmd_length));
             const std::string version = cmd.substr(indx);
             indx = version.rfind('.');
             if (indx != std::string::npos)
             {
                 const std::string major = version.substr(0, indx);
                 const std::string minor = version.substr(indx + 1);
-                state.http_version_major = atoi(major.c_str());
-                state.http_version_minor = atoi(minor.c_str());
+                state.version_major(atoi(major.c_str()));
+                state.version_minor(atoi(minor.c_str()));
             }
-            lj::log::format<lj::Debug>("uri=%s version=%d.%d").end(state.uri, state.http_version_major, state.http_version_minor);
+            lj::log::format<lj::Debug>("uri=%s version=%d.%d").end(state.uri(),
+                    state.version_major(),
+                    state.version_minor());
         }
     }
     
@@ -246,6 +332,35 @@ namespace
             lj::log::format<lj::Debug>("Received Header [%s]: [%s]").end(key, value);
         }
         lj::log::out<lj::Debug>("Done processing headers");
+    }
+    
+    void process_body_lines(Http_request& state, std::iostream& input_stream)
+    {
+        int64_t content_length = state.content_length();
+        if (content_length > 0)
+        {
+            // Request says there should be some content in the body.
+            // Read that content out and store it.
+            uint8_t* buffer = new uint8_t[content_length];
+            int64_t indx = 0;
+            while (indx < content_length)
+            {
+                // Read the body bytes.
+                input_stream.read(reinterpret_cast<char*>(buffer + indx),
+                        content_length - indx);
+                
+                // Handle issues with the connection.
+                if (!input_stream.good())
+                {
+                    throw lj::Exception("Http Server",
+                            "Read error while getting body.");
+                }
+                
+                // Move the indx forward.
+                indx += input_stream.gcount();
+            }
+            state.body(buffer);
+        }
     }
 };
 
@@ -271,11 +386,12 @@ namespace logjamd
             Http_request req(method_);
             process_first_line(req, conn()->io());
             process_header_lines(req, conn()->io());
+            process_body_lines(req, conn()->io());
 
             // deal with requested authorization.
             lj::bson::Node auth_request;
             bool can_retry = false;
-            if (0 == req.uri.compare(0, REQUIRE_AUTH_PREFIX.size(),
+            if (0 == req.uri().compare(0, REQUIRE_AUTH_PREFIX.size(),
                         REQUIRE_AUTH_PREFIX))
             {
                 // Authentication is required. 
@@ -317,7 +433,7 @@ namespace logjamd
                 can_retry = true;
                 
                 // remove the auth request part of the command
-                req.uri = req.uri.substr(2);
+                req.uri(req.uri().substr(2));
             }
             else
             {
@@ -387,10 +503,21 @@ namespace logjamd
             log("Login successful.").end();
 
             // Create the bson request.
-            log("Using [%s] for the command.").end(req.uri);
             lj::bson::Node request;
-            request.set_child("command",
-                    lj::bson::new_string(req.uri));
+            if (Http_request::Method::k_get == req.method())
+            {
+                request.set_child("command",
+                        lj::bson::new_string(req.uri()));
+            }
+            else
+            {
+                std::string cmd(reinterpret_cast<const char*>(req.body()),
+                        req.content_length());
+                request.set_child("command",
+                        lj::bson::new_string(cmd));
+            }
+            log("Using [%s] for the command.").end(
+                    lj::bson::as_string(request["command"]));
             request.set_child("language",
                     lj::bson::new_string(language()));
 
