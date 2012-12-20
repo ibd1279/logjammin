@@ -44,6 +44,7 @@
 
 namespace
 {
+    const std::string HTTP_VERSION_PREFIX("HTTP/");
     const std::string HTTP_VERSION_1_0("HTTP/1.0");
     const std::string HTTP_VERSION_1_1("HTTP/1.1");
     const std::string REQUIRE_AUTH_PREFIX("~/");
@@ -53,60 +54,6 @@ namespace
     const std::string HEADERS_FORBIDDEN("HTTP/1.0 403 Forbidden\r\nServer: Logjamd\r\nContent-Type: application/json; charset=\"UTF-8\"\r\n");
     const std::string HEADERS_SERVER_ERROR("HTTP/1.0 500 Internal Server Error\r\nServer: Logjamd\r\nContent-Type: application/json; charset=\"UTF-8\"\r\n");
     const std::string HEADERS_SUCCESS("HTTP/1.0 200 OK\r\nContent-Type: application/json; charset=\"UTF-8\"\r\n");
-
-    //! Simplified method for getting lines from the http connection.
-    inline size_t get_http_line(std::iostream& input_stream,
-            std::string& line)
-    {
-        bool loop = true;
-        line.erase();
-        while (loop)
-        {
-            // Try to get the header from the stream.
-            std::string buffer;
-            std::getline(input_stream, buffer, '\n');
-
-            // Handle issues with the connection.
-            if (!input_stream.good())
-            {
-                throw lj::Exception("Http Server",
-                        "Read error while getting header.");
-            }
-
-            // getline will remove the newline byte at the end of line.
-            // this is to remove the '\r' that is left behind.
-            size_t size = buffer.size();
-            if (size > 0)
-            {
-                if (buffer[size - 1] == '\r')
-                {
-                    buffer.erase(size - 1);
-                }
-            }
-
-            // Deal with continuing lines.
-            size = buffer.size();
-            if (size > 0)
-            {
-                if (buffer[size - 1] != '\\')
-                {
-                    loop = false;
-                }
-                else
-                {
-                    buffer.erase(size - 1);
-                }
-            }
-            else
-            {
-                loop = false;
-            }
-
-            // Add the buffer to the header line.
-            line.append(buffer);
-        }
-        return line.size();
-    }
 
     inline void header_to_key_value(const std::string& header,
             std::string& key,
@@ -145,12 +92,168 @@ namespace
             value = value.substr(value_start, value_end - value_start);
         }
     }
+    
+    class Http_request
+    {
+    public:
+        Http_request(const std::string& m) : method(m), header_read_ahead(), uri(), http_version_major(1), http_version_minor(0), headers()
+        {
+        }
+        std::string method;
+        std::string header_read_ahead;
+        std::string uri;
+        int http_version_major;
+        int http_version_minor;
+        std::multimap<std::string, std::string> headers;
+    };
+    
+    //! Method for getting lines from the http connection. Follows the folding and continuation rules of RFC2612.
+    size_t get_http_line(Http_request& state, std::iostream& input_stream, std::string& line)
+    {
+        // We start with any bytes that we read on a previous call.
+        line = state.header_read_ahead;
+        state.header_read_ahead.erase();
+        
+        bool loop = true;
+        while (loop)
+        {
+            // Try to read a line from the input stream.
+            std::string buffer;
+            std::getline(input_stream, buffer, '\n');
+
+            // Handle issues with the connection.
+            if (!input_stream.good())
+            {
+                throw lj::Exception("Http Server",
+                        "Read error while getting header.");
+            }
+
+            // getline will remove the newline byte at the end of line.
+            // this is to remove the '\r' that is left behind.
+            size_t size = buffer.size();
+            if (size > 0)
+            {
+                if (buffer[size - 1] == '\r')
+                {
+                    buffer.erase(size - 1);
+                }
+            }
+
+            // If the line contained some data, it might be continued.
+            // There are several ways to mark a line continuation.
+            size = buffer.size();
+            if (size > 0)
+            {
+                // First we see if this line ended with a backslash.
+                // In reality, this should only happen if we are in quotes, but
+                // we aren't parsing the value to check for that.
+                // NOTE, RFC2612, 2.2 & 3.6 state the backslash character should
+                // only ever appear when quoted.
+                if (buffer[size - 1] == '\\')
+                {
+                    buffer.erase(size - 1);
+                }
+                else
+                {
+                    // Second, we check if the next line starts with Linear White Space (LWS).
+                    // See RFC2612, 2.2 for details about LWS and continuations, and
+                    // folding.
+                    int next_byte = input_stream.get();
+                    if (next_byte == '\t' || next_byte == ' ')
+                    {
+                        // Folding LWS can all be replaced by a single SP according
+                        // to RFC2612, 2.2.
+                        while (next_byte == '\t' || next_byte == ' ')
+                        {
+                            next_byte = input_stream.get();
+                        }
+                        
+                        if (next_byte != '\r')
+                        {
+                            // Collapse the LWS, and loop.
+                            buffer.push_back(' ');
+                            buffer.push_back(static_cast<char>(next_byte));
+                        }
+                        else
+                        {
+                            // If, for whatever reason, our first no LWS is a CR,
+                            // we ignore this line and terminate.
+                            loop = false;
+                        }
+                    }
+                    else
+                    {
+                        // This line didn't end with a backslash, and the next
+                        // doesn't start with white space.
+                        // NOTE: For performance reasons, this should actually be
+                        // the first if statement (most likely scenario). I
+                        // am trying to verify my logic right now, so it stays
+                        // where I wrote it. :)
+                        if (next_byte != '\r')
+                        {
+                            state.header_read_ahead.push_back(static_cast<char>(next_byte));
+                        }
+                        loop = false;
+                    }
+                }
+            }
+            else
+            {
+                // We didn't read any data for this line, so we don't need to read the next line.
+                loop = false;
+            }
+
+            // Add the buffer to the header line.
+            line.append(buffer);
+        }
+        return line.size();
+    }
+    
+    void process_first_line(Http_request& state, std::iostream& input_stream)
+    {
+        std::string cmd;
+        get_http_line(state, input_stream, cmd);
+        
+        size_t indx = cmd.rfind(HTTP_VERSION_PREFIX);
+        if (indx != std::string::npos)
+        {
+            size_t cmd_length = indx - 1;
+            indx += HTTP_VERSION_PREFIX.size();
+            state.uri = cmd.substr(0, cmd_length);
+            
+            const std::string version = cmd.substr(indx);
+            indx = version.rfind('.');
+            if (indx != std::string::npos)
+            {
+                const std::string major = version.substr(0, indx);
+                const std::string minor = version.substr(indx + 1);
+                state.http_version_major = atoi(major.c_str());
+                state.http_version_minor = atoi(minor.c_str());
+            }
+            lj::log::format<lj::Debug>("uri=%s version=%d.%d").end(state.uri, state.http_version_major, state.http_version_minor);
+        }
+    }
+    
+    void process_header_lines(Http_request& state, std::iostream& input_stream)
+    {
+        std::string buffer;
+        while (get_http_line(state, input_stream, buffer) > 0)
+        {
+            std::string key;
+            std::string value;
+            header_to_key_value(buffer, key, value);
+            state.headers.insert(std::pair<std::string, std::string>(key, value));
+            lj::log::format<lj::Debug>("Received Header [%s]: [%s]").end(key, value);
+        }
+        lj::log::out<lj::Debug>("Done processing headers");
+    }
 };
 
 namespace logjamd
 {
-    Stage_http_adapt::Stage_http_adapt(Connection* connection) :
+    Stage_http_adapt::Stage_http_adapt(Connection* connection, const std::string& method) :
             Stage_adapt(connection),
+            method_(method),
             real_stage_(new_auth_stage())
     {
     }
@@ -164,47 +267,31 @@ namespace logjamd
         // Read the requested path.
         try
         {
-            std::string cmd;
             std::multimap<std::string, std::string> headers;
-            size_t cmd_length = get_http_line(conn()->io(), cmd);
-
-            // trim off the http version
-            log("Starting with [%s] as the command. %d as the length").end(cmd, (uint64_t)cmd_length);
-            cmd_length = cmd_length > 9 ? cmd_length - 9 : 0;
-            cmd.erase(cmd_length);
-
-            // Read all the request headers.
-            std::string buffer;
-            while (get_http_line(conn()->io(), buffer) > 0)
-            {
-                std::string key;
-                std::string value;
-                header_to_key_value(buffer, key, value);
-                headers.insert(std::pair<std::string, std::string>(key, value));
-                log("Received [%s]: [%s]").end(key, value);
-            }
-            log("done with the headers").end();
+            Http_request req(method_);
+            process_first_line(req, conn()->io());
+            process_header_lines(req, conn()->io());
 
             // deal with requested authorization.
             lj::bson::Node auth_request;
             bool can_retry = false;
-            if (0 == cmd.compare(0, REQUIRE_AUTH_PREFIX.size(),
+            if (0 == req.uri.compare(0, REQUIRE_AUTH_PREFIX.size(),
                         REQUIRE_AUTH_PREFIX))
             {
                 // Authentication is required. 
                 log("Login required.").end();
 
                 // Look for authentication headers
-                auto auth_header = headers.find("Authorization");
+                auto auth_header = req.headers.find("Authorization");
 
                 // Deal with missing authentication information
-                if (auth_header == headers.end())
+                if (auth_header == req.headers.end())
                 {
                     std::string body("Authentication information required.");
                     conn()->io() << HEADERS_AUTH_REQUIRED;
                     conn()->io() << HEADER_CONTENT_LENGTH << body.size();
                     conn()->io() << HEADER_LINE_ENDING << HEADER_LINE_ENDING;
-                    conn()->io() << body << std::endl;
+                    conn()->io() << body;
                     conn()->io().flush();
                     return nullptr;
                 }
@@ -230,7 +317,7 @@ namespace logjamd
                 can_retry = true;
                 
                 // remove the auth request part of the command
-                cmd = cmd.substr(2);
+                req.uri = req.uri.substr(2);
             }
             else
             {
@@ -291,7 +378,7 @@ namespace logjamd
                 }
                 conn()->io() << HEADER_CONTENT_LENGTH << body.size();
                 conn()->io() << HEADER_LINE_ENDING << HEADER_LINE_ENDING;
-                conn()->io() << body << std::endl;
+                conn()->io() << body;
                 conn()->io().flush();
                 return nullptr;
             }
@@ -300,10 +387,10 @@ namespace logjamd
             log("Login successful.").end();
 
             // Create the bson request.
-            log("Using [%s] for the command.").end(cmd);
+            log("Using [%s] for the command.").end(req.uri);
             lj::bson::Node request;
             request.set_child("command",
-                    lj::bson::new_string(cmd));
+                    lj::bson::new_string(req.uri));
             request.set_child("language",
                     lj::bson::new_string(language()));
 
@@ -331,7 +418,7 @@ namespace logjamd
             conn()->io() << HEADERS_SUCCESS;
             conn()->io() << HEADER_CONTENT_LENGTH << body.size();
             conn()->io() << HEADER_LINE_ENDING << HEADER_LINE_ENDING;
-            conn()->io() << body << std::endl;
+            conn()->io() << body;
             conn()->io().flush();
         }
         catch (lj::Exception& ex)
@@ -341,7 +428,7 @@ namespace logjamd
             conn()->io() << HEADERS_SERVER_ERROR;
             conn()->io() << HEADER_CONTENT_LENGTH << body.size();
             conn()->io() << HEADER_LINE_ENDING << HEADER_LINE_ENDING;
-            conn()->io() << body << std::endl;
+            conn()->io() << body;
             conn()->io().flush();
         }
 

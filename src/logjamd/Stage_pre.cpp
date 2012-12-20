@@ -49,7 +49,8 @@ namespace
 {
     const std::string k_bson_mode("bson\n");
     const std::string k_json_mode("json\n");
-    const std::string k_http_mode("get /");
+    const std::string k_http_get_mode("get /");
+    const std::string k_http_post_mode("post ");
     const std::string k_tls_mode("+tls\n");
     const std::string k_peer_mode("peer\n");
     const std::string k_error_unknown_mode("Unknown mode: ");
@@ -97,10 +98,17 @@ namespace logjamd
             Stage* next_stage = new Stage_json_adapt(conn());
             return next_stage->logic();
         }
-        else if (k_http_mode.compare(buffer) == 0)
+        else if (k_http_get_mode.compare(buffer) == 0)
         {
-            log("Using HTTP mode.").end();
-            Stage* next_stage = new Stage_http_adapt(conn());
+            log("Using HTTP get mode.").end();
+            Stage* next_stage = new Stage_http_adapt(conn(), "get");
+            return next_stage;
+        }
+        else if (k_http_post_mode.compare(buffer) == 0)
+        {
+            log("Using HTTP post mode.").end();
+            conn()->io().get(); // Consume the prefix slash.
+            Stage* next_stage = new Stage_http_adapt(conn(), "post");
             return next_stage;
         }
         else if (k_tls_mode.compare(buffer) == 0 &&

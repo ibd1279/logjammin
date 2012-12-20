@@ -43,11 +43,12 @@ namespace logjamd
     class Stage_http_adapt : public Stage_adapt
     {
     public:
-        Stage_http_adapt(logjamd::Connection* connection);
+        Stage_http_adapt(logjamd::Connection* connection, const std::string& method);
         virtual ~Stage_http_adapt();
         virtual Stage* logic();
         virtual std::string name();
     private:
+        std::string method_;
         std::unique_ptr<Stage> real_stage_;
     };
 };
