@@ -65,6 +65,8 @@ namespace logjamd
          \return A new session.
          */
         virtual std::unique_ptr<Session> new_session(int socket_descriptor);
+        
+        virtual std::list<std::iostream*> peers();
     private:
         int io_;
         bool running_;

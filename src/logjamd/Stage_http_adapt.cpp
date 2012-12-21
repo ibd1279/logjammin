@@ -55,7 +55,39 @@ namespace
     const std::string HEADERS_SERVER_ERROR("HTTP/1.0 500 Internal Server Error\r\nServer: Logjamd\r\nContent-Type: application/json; charset=\"UTF-8\"\r\n");
     const std::string HEADERS_SUCCESS("HTTP/1.0 200 OK\r\nContent-Type: application/json; charset=\"UTF-8\"\r\n");
 
-    inline void header_to_key_value(const std::string& header,
+    
+    std::string percent_decode(const std::string& input)
+    {
+        std::string result;
+        for(auto iter = input.begin();
+                input.end() != iter;
+                ++iter)
+        {
+            char c = *iter;
+            
+            // unescape some control characters.
+            if (c == '+')
+            {
+                c = ' ';
+            }
+            else if (c == '%')
+            {
+                const char hex[3] = {*++iter, *++iter, '\0'};
+                c = (char)strtol(hex, NULL, 16);
+                if(!c) c = '?';
+            }
+            
+            // Test the unescaped character.
+            if(c == '\r')
+            {
+                continue;
+            }
+            result.push_back(c);
+        }
+        return result;
+    }
+    
+    void header_to_key_value(const std::string& header,
             std::string& key,
             std::string& value)
     {
@@ -98,6 +130,7 @@ namespace
     public:
         enum class Method {
             k_get,
+            k_put,
             k_post
         };
         Http_request(const std::string& m) :
@@ -112,6 +145,10 @@ namespace
             if (m.compare("post") == 0)
             {
                 method_ = Method::k_post;
+            }
+            else if (m.compare("put") == 0)
+            {
+                method_ = Method::k_put;
             }
         }
         ~Http_request()
@@ -163,14 +200,6 @@ namespace
         {
             http_version_minor_ = minor;
         }
-        const uint8_t* body() const
-        {
-            return body_;
-        }
-        void body(uint8_t* val)
-        {
-            body_ = val;
-        }
         int64_t content_length() const
         {
             int64_t length = 0;
@@ -180,6 +209,14 @@ namespace
                 length = atol(iter->second.c_str());
             }
             return length;
+        }
+        const uint8_t* body() const
+        {
+            return body_;
+        }
+        void body(uint8_t* val)
+        {
+            body_ = val;
         }
         std::string header_read_ahead;
         std::multimap<std::string, std::string> headers;
@@ -362,6 +399,36 @@ namespace
             state.body(buffer);
         }
     }
+    
+    void process_params(std::multimap<std::string, std::string>& params, const std::string& input)
+    {
+        std::string key, value;
+        bool both = false;
+        for(auto iter = input.begin();
+                input.end() != iter;
+                ++iter)
+        {
+            if(*iter == '&')
+            {
+                params.insert(std::multimap<std::string, std::string>::value_type(percent_decode(key), percent_decode(value)));
+                key.erase();
+                value.erase();
+                both = false;
+            }
+            else if(*iter == '=')
+            {
+                both = true;
+            }
+            else
+            {
+                if(both)
+                    value.push_back(*iter);
+                else
+                    key.push_back(*iter);
+            }
+        }
+        params.insert(std::multimap<std::string, std::string>::value_type(percent_decode(key), percent_decode(value)));
+    }
 };
 
 namespace logjamd
@@ -507,7 +574,25 @@ namespace logjamd
             if (Http_request::Method::k_get == req.method())
             {
                 request.set_child("command",
-                        lj::bson::new_string(req.uri()));
+                        lj::bson::new_string(percent_decode(req.uri())));
+            }
+            else if (Http_request::Method::k_post == req.method())
+            {
+                std::multimap<std::string, std::string> params;
+                std::string raw_params(reinterpret_cast<const char*>(req.body()),
+                        req.content_length());
+                process_params(params, raw_params);
+                auto iter = params.find("cmd");
+                if (params.end() != iter)
+                {
+                    request.set_child("command",
+                            lj::bson::new_string(iter->second));
+                }
+                else
+                {
+                    request.set_child("command",
+                            lj::bson::new_string(""));
+                }
             }
             else
             {

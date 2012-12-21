@@ -84,6 +84,17 @@ namespace logjam
             
             return lj::bson::as_boolean(*success);
         }
+        
+        std::string message(const lj::bson::Node& response)
+        {
+            const lj::bson::Node* message = response.path("/message");
+            if (message == nullptr)
+            {
+                return "";
+            }
+            
+            return std::move(lj::bson::as_string(*message));
+        }
 
         std::iostream* create_connection(const std::string& target_host,
                 const std::string& target_mode)
@@ -162,6 +173,7 @@ namespace logjam
             }
             else
             {
+                delete sec_io;
                 throw LJ__Exception("Could not establish a secure connection to the server.");
             }
             
@@ -178,6 +190,7 @@ namespace logjam
             {
                 std::ostringstream oss;
                 oss << "Could not switch to mode " << target_mode << ".";
+                delete sec_io;
                 throw LJ__Exception(oss.str());
             }
             

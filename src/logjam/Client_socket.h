@@ -45,6 +45,9 @@ namespace logjam
         //! Check to see if a response was successful.
         bool is_success(const lj::bson::Node& response);
         
+        //! Get the message field from the response object.
+        std::string message(const lj::bson::Node& response);
+        
         //! Create a connection object.
         /*!
          Creates a fully connected Network_connection (BSD socket) to the target.

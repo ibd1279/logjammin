@@ -55,9 +55,9 @@ void testHttpPostInsecure()
     env.request() << "Accept-Language: en-us\r\n";
     env.request() << "Accept-Encoding: gzip, deflate\r\n";
     env.request() << "Connection: keep-alive\r\n";
-    env.request() << "Content-Length: 21\r\n";
+    env.request() << "Content-Length: 25\r\n";
     env.request() << "\r\n";
-    env.request() << "print('Hello, world')";
+    env.request() << "cmd=print('Hello,+world')";
 
     // perform the stage.
     logjamd::Stage_pre stage(env.connection());

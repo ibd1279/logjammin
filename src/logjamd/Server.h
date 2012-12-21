@@ -65,7 +65,7 @@ namespace logjamd
 
         //! Perform any initialization necessary for the server.
         virtual void startup() = 0;
-
+        
         //! Start listening for connections.
         virtual void listen() = 0;
 

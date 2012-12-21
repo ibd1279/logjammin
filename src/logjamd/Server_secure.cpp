@@ -57,6 +57,49 @@ namespace
     const unsigned int k_dh_bits = 2048;
     const size_t k_buffer_in_size = 8196;
     const size_t k_buffer_out_size = 8196;
+    
+    std::iostream* connect_to_peer(const std::string& address, const lj::bson::Node& auth)
+    {
+        // Start by opening a connection to the peer.
+        std::iostream* peer = nullptr;
+        try
+        {
+            lj::log::format<lj::Debug>("Attempting to connect to peer %s.")
+                    << address
+                    << lj::log::end;
+            peer = logjam::client::create_connection(
+                    address,
+                    "peer");
+        }
+        catch (lj::Exception ex)
+        {
+            lj::log::format<lj::Critical>("Unable to connect to peer %s: %s")
+                    << address
+                    << ex
+                    << lj::log::end;
+        }
+        
+        // If the peer is a valid object, lets authenticate.
+        if (peer)
+        {
+            lj::bson::Node response;
+            (*peer) << auth;
+            peer->flush();
+            (*peer) >> response;
+            
+            // Look to make sure the response was successful.
+            if (!logjam::client::is_success(response))
+            {
+                lj::log::format<lj::Error>("Failed to Authenticate to peer %s: %s")
+                        << address
+                        << logjam::client::message(response)
+                        << lj::log::end;
+                delete peer;
+                peer = nullptr;
+            }
+        }
+        return peer;
+    }
 }
 
 namespace logjamd
@@ -155,21 +198,17 @@ namespace logjamd
                 ++iter)
         {
             lj::bson::Node auth(cfg()["server/identity"]);
-            lj::log::format<lj::Debug>("Attempting to connect to peer %s.")
-                    << lj::bson::as_string(*(*iter))
-                    << lj::log::end;
-            try
+            std::iostream* peer = connect_to_peer(lj::bson::as_string(*(*iter)),
+                    auth);
+            if (peer)
             {
-                std::iostream* peer = logjam::client::create_connection(
-                        lj::bson::as_string(*(*iter)),
-                        "peer");
                 peers_.push_back(peer);
             }
-            catch (lj::Exception ex)
+            else
             {
-                lj::log::format<lj::Critical>("Unable to connect to %s. Not added as a peer.")
-                        << lj::bson::as_string(*(*iter))
-                        << lj::log::end;
+                lj::log::format<lj::Info>("Not adding %s as a peer.")
+                            << lj::bson::as_string(*(*iter))
+                            << lj::log::end;
             }
         }
     }
@@ -249,5 +288,10 @@ namespace logjamd
         session->set_dh_prime_bits(key_exchange_.bits());
         session->set_socket(socket_descriptor);
         return session;
+    }
+    
+    std::list<std::iostream*> Server_secure::peers()
+    {
+        return peers_;
     }
 };

@@ -135,7 +135,7 @@ namespace logjamd
                 conn()->secure())
         {
             log("Converting connection to a peer connection.");
-            // TODO Convert the connection to a peer.
+            return nullptr;
         }
         else
         {
