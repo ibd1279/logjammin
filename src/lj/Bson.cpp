@@ -36,7 +36,8 @@
 #include "lj/Bson.h"
 #include "lj/Base64.h"
 #include "lj/Log.h"
-#include "Wiper.h"
+#include "lj/Streambuf_mutex.h"
+#include "lj/Wiper.h"
 
 #include <cstdio>
 #include <cstring>
@@ -45,6 +46,7 @@
 #include <fstream>
 #include <iostream>
 #include <list>
+#include <mutex>
 #include <sstream>
 #include <stack>
 
@@ -1404,6 +1406,27 @@ namespace lj
 
 std::istream& operator>>(std::istream& is, lj::bson::Node& val)
 {
+    // Wrap the lock in a unique_ptr to make sure it gets cleaned up in the
+    // stack unwind.
+    std::unique_ptr<std::unique_lock<std::mutex> > io_lock;
+
+    // if possible, try to lock this stream.
+    lj::Streambuf_mutex<std::remove_reference<decltype(is)>::type::char_type>* buffer =
+            dynamic_cast<lj::Streambuf_mutex<std::remove_reference<decltype(is)>::type::char_type>*>(is.rdbuf());
+    if (buffer)
+    {
+        // The streambuf is also a mutex. Allocate the lock.
+        io_lock.reset(new std::unique_lock<std::mutex>(buffer->mutex()));
+        
+        lj::log::format<lj::Debug>("Locked %p for reading BSON document.")
+                << buffer
+                << lj::log::end;
+    }
+    else
+    {
+        lj::log::out<lj::Debug>("Unable to get mutex.");
+    }
+    
     int read_bytes = 0;
     char len[4];
     while (read_bytes < 4 && is.good())
@@ -1441,12 +1464,34 @@ std::istream& operator>>(std::istream& is, lj::bson::Node& val)
 
 std::ostream& operator<<(std::ostream& os, const lj::bson::Node& val)
 {
+    // unmarshalling the object could be time consuming, so do it outside the
+    // lock.
     size_t sz;
-    char* data = reinterpret_cast<char*>(val.to_binary(&sz));
+    std::unique_ptr<char[], lj::Wiper<char[]>> data(reinterpret_cast<char*>(val.to_binary(&sz)));
+    data.get_deleter().set_count(sz);
 
-    os.write(data, sz);
-
-    delete[] data;
+    // Wrap the lock in a unique_ptr to make sure it gets cleaned up in the
+    // stack unwind.
+    std::unique_ptr<std::unique_lock<std::mutex> > io_lock;
+    
+    // Try to extract the mutex from this stream.
+    lj::Streambuf_mutex<std::remove_reference<decltype(os)>::type::char_type>* buffer =
+            dynamic_cast<lj::Streambuf_mutex<std::remove_reference<decltype(os)>::type::char_type>*>(os.rdbuf());
+    if (buffer)
+    {
+        // Create a new lock on the mutex. 
+        io_lock.reset(new std::unique_lock<std::mutex>(buffer->mutex()));
+        
+        lj::log::format<lj::Debug>("Locking %p for writing BSON document.")
+                << buffer
+                << lj::log::end;
+    }
+    else
+    {
+        lj::log::out<lj::Debug>("Unable to get mutex.");
+    }
+    
+    os.write(data.get(), sz);
 
     return os;
 }

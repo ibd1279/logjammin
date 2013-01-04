@@ -40,6 +40,12 @@
 #include <list>
 #include <memory>
 
+// Forward declarations.
+namespace lj
+{
+    class Thread;
+}
+
 namespace logjamd
 {
     class Connection_secure;
@@ -72,6 +78,7 @@ namespace logjamd
         bool running_;
         std::list<logjamd::Connection_secure*> connections_;
         std::list<std::iostream*> peers_;
+        lj::Thread* peers_thread_;
         logjam::Tls_credentials_anonymous_server credentials_;
         logjam::Tls_key_exchange_diffie_hellman key_exchange_;
     };

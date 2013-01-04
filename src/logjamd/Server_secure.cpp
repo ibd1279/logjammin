@@ -100,6 +100,39 @@ namespace
         }
         return peer;
     }
+    
+    class Connect_to_peers_work : public lj::Work
+    {
+    public:
+        Connect_to_peers_work(bool* running) : running_(running)
+        {
+        }
+        virtual void run()
+        {
+            while (*running_)
+            {
+                // sleep
+                // for (peers) {
+                // try {
+                // if (try lock) {
+                // send heartbeat.
+                // wait for OK.
+                // }
+                // } catch() {
+                // track failures.
+                // }
+                
+                // Reconnect to lost peers.
+            }
+        }
+        virtual void cleanup()
+        {
+            
+        }
+    private:
+        bool* running_;
+    };
+    
 }
 
 namespace logjamd
@@ -110,6 +143,7 @@ namespace logjamd
             running_(false),
             connections_(),
             peers_(),
+            peers_thread_(nullptr),
             credentials_(),
             key_exchange_(k_dh_bits)
     {

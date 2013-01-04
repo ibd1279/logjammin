@@ -36,10 +36,12 @@
 
 #include "lj/Exception.h"
 #include "lj/Log.h"
+#include "lj/Streambuf_mutex.h"
 
 #include <cassert>
 #include <cstring>
 #include <iostream>
+#include <memory>
 #include <streambuf>
 
 extern "C"
@@ -49,14 +51,16 @@ extern "C"
 }
 
 namespace lj
-{
+{    
     namespace medium
     {
         //! Example medium for socket communication.
         /*!
-         \par
-         Does not delete the socket because the TLS server in logjamd needs the
-         socket open to upgrade.
+         \note Socket Descriptor Ownership.
+         This object is not an invariant Socket. It is just a warpper to allow
+         the Streambuf_bsd to communicate with the socket through an abstract
+         interface. Creation, management, and destruction of the socket must
+         be handled outside of this class.
          */
         class Socket
         {
@@ -126,18 +130,27 @@ namespace lj
      This streambuf implementation makes an attempt to understand and track wide
      characters. If a wide character is sliced by byte communication on the
      medium, it is buffered for sending on the next call to flush or overflow.
+     \note Threaded Access.
+     This class does not provide any native thread safety. If you need thread
+     safety or to synchronize access to the writing medium, see the mutex facilities
+     provided by \c lj::Streambuf_mutex for locking and unlocking this streambuf.
      \todo Refactor this classname to be something more generic.
      \tparam charT The type of character to use, wide or narrow
      \tparam traits The namespace used for referencing the traits of the stream.
      \tparam mediumT The medium to use for reading and writing.
-     \author Jason Watson
+     \note Template vs. Inheritance for \c mediumT
+     I keep going back and forth on this. I am using a template to specify the
+     medium type for performance and dependency reasons, but in reality, this
+     could be done with simple inheritance as well.
+     \sa lj::Streambuf_mutex for synchronization.
      \since 0.2
      \date September 27, 2012
      */
     template <typename mediumT, typename charT=char, typename traits=std::char_traits<charT> >
-    class Streambuf_bsd : public std::basic_streambuf<charT, traits>
+    class Streambuf_bsd : public Streambuf_mutex<charT, traits>
     {
     public:
+        typedef charT char_type; //!< helper typedef for iostream compatibility.
         typedef traits traits_type; //!< helper typedef for iostream compatibility.
         typedef typename traits_type::int_type int_type; //!< helper typedef for iostream compatibility.
         typedef typename traits_type::pos_type pos_type; //!< helper typedef for iostream compatibility.
@@ -157,7 +170,10 @@ namespace lj
          \param out_sz The size of the writer buffer.
          */
         Streambuf_bsd(mediumT* medium, const size_t in_sz, const size_t out_sz) :
-                medium_(medium), in_size_(in_sz), out_size_(out_sz)
+                Streambuf_mutex<charT, traits>(),
+                medium_(medium),
+                in_size_(in_sz),
+                out_size_(out_sz)
         {
             assert(sizeof(charT) == 1);
 
@@ -173,31 +189,7 @@ namespace lj
             in_buffer_[0] = 0;
             out_buffer_[0] = 0;
         }
-
-        //! Copy constructor explicitly deleted.
-        /*!
-         \param o The other object.
-         */
-        Streambuf_bsd(const Streambuf_bsd& o) = delete;
-
-        //! Move constructor
-        /*!
-         \param o The other object.
-         */
-        Streambuf_bsd(Streambuf_bsd&& o) :
-                std::basic_streambuf<charT, traits>(o),
-                medium_(std::move(o.medium_)),
-                in_size_(o.in_size_),
-                out_size_(o.out_size_),
-                in_(o.in_),
-                out_(o.out_)
-        {
-            o.in_ = nullptr;
-            o.out_ = nullptr;
-            std::memcpy(in_buffer_, o.in_buffer_, sizeof(charT));
-            std::memcpy(out_buffer_, o.out_buffer_, sizeof(charT));
-        }
-
+        
         //! Clean up our resources.
         virtual ~Streambuf_bsd()
         {
@@ -211,31 +203,32 @@ namespace lj
             }
         }
 
+    private:
+        //! Copy constructor explicitly deleted.
+        /*!
+         \param o The other object.
+         */
+        Streambuf_bsd(const Streambuf_bsd& o) = delete;
+
+        //! Move constructor explicitly deleted.
+        /*!
+         \param o The other object.
+         */
+        Streambuf_bsd(Streambuf_bsd&& o) = delete;
+
         //! Copy assignment operator explicitly deleted.
         /*!
          \param o The other object.
          */
         Streambuf_bsd& operator=(const Streambuf_bsd& o) = delete;
 
-        //! Move assignment operator
+        //! Move assignment operator explicitly deleted.
         /*!
          \param o The other object.
          */
-        Streambuf_bsd& operator=(Streambuf_bsd&& o)
-        {
-            std::basic_streambuf<charT, traits>::operator=(o);
-            medium_ = std::move(o.medium_);
-            in_size_ = o.in_size_;
-            out_size_ = o.out_size_;
-            in_ = o.in_;
-            out_ = o.out_;
-            std::memcpy(in_buffer_, o.in_buffer_, sizeof(charT));
-            std::memcpy(out_buffer_, o.out_buffer_, sizeof(charT));
+        Streambuf_bsd& operator=(Streambuf_bsd&& o) = delete;
 
-            o.in_ = nullptr;
-            o.out_ = nullptr;
-        }
-        
+    public:        
         //! Get the underlying medium object.
         /*!
          \return The medium used for communication.
@@ -474,7 +467,6 @@ namespace lj
         }
 
     private:
-
         std::unique_ptr<mediumT> medium_;
         const size_t in_size_;
         const size_t out_size_;
