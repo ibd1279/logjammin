@@ -104,33 +104,145 @@ namespace
     class Connect_to_peers_work : public lj::Work
     {
     public:
-        Connect_to_peers_work(bool* running) : running_(running)
+        Connect_to_peers_work(bool* running, logjamd::Server_secure* server) : running_(running), server_(server)
         {
         }
-        virtual void run()
+        virtual ~Connect_to_peers_work()
+        {
+        }
+        virtual void run() override
         {
             while (*running_)
             {
-                // sleep
-                // for (peers) {
-                // try {
-                // if (try lock) {
-                // send heartbeat.
-                // wait for OK.
-                // }
-                // } catch() {
-                // track failures.
-                // }
+                log<lj::Debug>("Pausing for 1 minute.").end();
+                std::this_thread::sleep_for(std::chrono::minutes(1));
                 
-                // Reconnect to lost peers.
+                log<lj::Info>("Heartbeating %i peers.").end(server_->peers().size());
+                lj::bson::Node auth(server_->cfg()["server/identity"]);
+                for (auto iter = server_->peers().begin();
+                        server_->peers().end() != iter;
+                        ++iter)
+                {
+                    const std::string peer_name = (*iter).first;
+                    std::iostream* peer = (*iter).second;
+                    
+                    try
+                    {
+                        // Establish a connection if one is not already established.
+                        if (peer == nullptr)
+                        {
+                            log<lj::Debug>("Attempting to connect to %s peer.")
+                                    << peer_name
+                                    << lj::log::end;
+                            peer = connect_to_peer(peer_name,
+                                    auth);
+                            
+                            if (peer)
+                            {
+                                log<lj::Info>("Connected to %s peer.")
+                                        << peer_name
+                                        << lj::log::end;
+                                (*iter).second = peer;
+                            }
+                            else
+                            {
+                                log<lj::Info>("Unable to establish a connection to %s peer.")
+                                        << peer_name
+                                        << lj::log::end;
+                                (*iter).second = nullptr;
+                            }
+                        }
+                        
+                        // We have done what we can to establish a new
+                        // so now we heartbeat if we can.
+                        if (peer != nullptr) {
+                            log<lj::Debug>("Attempting to heartbeat to %s peer.")
+                                    << peer_name
+                                    << lj::log::end;
+                            
+                            lj::bson::Node request;
+                            request.set_child("command",
+                                    lj::bson::new_string("heartbeat()"));
+                            request.set_child("language",
+                                    lj::bson::new_string("lua"));
+                            
+                            (*peer) << request;
+                            
+                            lj::bson::Node response;
+                            (*peer) >> response;
+                            
+                            if (!logjam::client::is_success(response))
+                            {
+                                log<lj::Warning>("Unable to heartbeat to %s peer. Response logged at info level")
+                                        << peer_name
+                                        << lj::log::end;
+                                log<lj::Info>("Response from %s peer: %s")
+                                        << peer_name
+                                        << lj::bson::as_pretty_json(response)
+                                        << lj::log::end;
+                                
+                                (*iter).second = nullptr;
+                                delete peer->rdbuf();
+                                delete peer;
+                            }
+                        }
+                    }
+                    catch (const lj::Exception& ljex)
+                    {
+                        log<lj::Warning>("Unable to heartbeat to %s peer because of %s")
+                                << peer_name
+                                << ljex
+                                << lj::log::end;
+                        (*iter).second = nullptr;
+                        if (peer != nullptr)
+                        {
+                            delete peer->rdbuf();
+                            delete peer;
+                        }
+                    }
+                    catch (const std::exception ex)
+                    {
+                        log<lj::Warning>("Unable to heartbeat to %s peer because of %s")
+                                << peer_name
+                                << ex.what()
+                                << lj::log::end;
+                        (*iter).second = nullptr;
+                        if (peer != nullptr)
+                        {
+                            delete peer->rdbuf();
+                            delete peer;
+                        }
+                    }
+                    catch (...)
+                    {
+                        log<lj::Warning>("Unable to heartbeat to %s peer for some really weird reason that isn't a known exception type.")
+                                << peer_name
+                                << lj::log::end;
+                        (*iter).second = nullptr;
+                        if (peer != nullptr)
+                        {
+                            delete peer->rdbuf();
+                            delete peer;
+                        }
+                    }
+                }
             }
         }
-        virtual void cleanup()
+        virtual void cleanup() override
         {
-            
+            // Since this work isn't creating a usable result, we can manage our own memory.
+            delete this;
+        }
+                
+        template <typename LVL>
+        static lj::log::Logger& log(const std::string format) {
+            std::string final_format("[Connect_to_peers_work] ");
+            final_format.append(format);
+            return lj::log::format<LVL>(final_format);
         }
     private:
         bool* running_;
+        logjamd::Server_secure* server_;
     };
     
 }
@@ -151,11 +263,16 @@ namespace logjamd
 
     Server_secure::~Server_secure()
     {
+        shutdown();
         if (-1 < io_)
         {
             ::close(io_);
         }
 
+        lj::log::format<lj::Debug>("Shutting down peers thread.");
+        peers_thread_->join();
+        delete peers_thread_;
+        
         lj::log::format<lj::Debug>("Deleting all connections for server %p")
                 << (const void*)this
                 << lj::log::end;
@@ -173,7 +290,8 @@ namespace logjamd
                 peers_.end() != iter;
                 ++iter)
         {
-            delete (*iter);
+            delete (*iter).second->rdbuf();
+            delete (*iter).second;
         }
     }
 
@@ -231,20 +349,12 @@ namespace logjamd
                 cluster.to_vector().end() != iter;
                 ++iter)
         {
-            lj::bson::Node auth(cfg()["server/identity"]);
-            std::iostream* peer = connect_to_peer(lj::bson::as_string(*(*iter)),
-                    auth);
-            if (peer)
-            {
-                peers_.push_back(peer);
-            }
-            else
-            {
-                lj::log::format<lj::Info>("Not adding %s as a peer.")
-                            << lj::bson::as_string(*(*iter))
-                            << lj::log::end;
-            }
+            const std::string peer_name = lj::bson::as_string(*(*iter));
+            peers_.insert(Peer_map::value_type(peer_name, nullptr));
         }
+        
+        peers_thread_ = new lj::Thread();
+        peers_thread_->run(new Connect_to_peers_work(&running_, this));
     }
 
     void Server_secure::listen()
@@ -324,7 +434,7 @@ namespace logjamd
         return session;
     }
     
-    std::list<std::iostream*> Server_secure::peers()
+    Server_secure::Peer_map& Server_secure::peers()
     {
         return peers_;
     }

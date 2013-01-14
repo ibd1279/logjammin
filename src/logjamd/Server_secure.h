@@ -38,6 +38,7 @@
 #include "logjam/Tls_credentials.h"
 #include "logjam/Tls_session.h"
 #include <list>
+#include <map>
 #include <memory>
 
 // Forward declarations.
@@ -55,6 +56,8 @@ namespace logjamd
     {
     public:
         typedef logjam::Tls_session<logjam::Tls_credentials_reuse_adapter<logjam::Tls_credentials_anonymous_server>> Session;
+        typedef std::map<std::string, std::iostream*> Peer_map;
+
         Server_secure(lj::bson::Node* config);
         Server_secure(const Server_secure& o) = delete;
         Server_secure& operator=(const Server_secure& o) = delete;
@@ -72,12 +75,12 @@ namespace logjamd
          */
         virtual std::unique_ptr<Session> new_session(int socket_descriptor);
         
-        virtual std::list<std::iostream*> peers();
+        virtual Peer_map& peers();
     private:
         int io_;
         bool running_;
         std::list<logjamd::Connection_secure*> connections_;
-        std::list<std::iostream*> peers_;
+        Peer_map peers_;
         lj::Thread* peers_thread_;
         logjam::Tls_credentials_anonymous_server credentials_;
         logjam::Tls_key_exchange_diffie_hellman key_exchange_;

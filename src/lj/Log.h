@@ -294,6 +294,16 @@ namespace lj
              \return The current Log.
              */
             inline Logger& operator<<(const char* msg) { return write_string(msg == 0 ? std::string("NULL") : std::string(msg)); };
+            
+            //! Log a value.
+            /*!
+             For some reason, logging the size from the collection classes
+             doesn't fall under one of eight other integer writing overloads
+             below. So this one is to take care of those.
+             \param msg The message to write to the output.
+             \return The current Log.
+             */
+            inline Logger& operator<<(const size_t msg) {return write_unsigned_int(msg); };
 
             //! Log a value.
             /*!
