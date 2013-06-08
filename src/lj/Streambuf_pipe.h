@@ -84,6 +84,5 @@ namespace lj
         std::stringstream i_;
         std::stringstream o_;
         char ibuf_[1];
-        char obuf_[1];
     };
 }; // namespace lj
