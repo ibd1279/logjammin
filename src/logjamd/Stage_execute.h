@@ -54,8 +54,5 @@ namespace logjamd
         virtual ~Stage_execute();
         virtual Stage* logic();
         virtual std::string name();
-    private:
-        lua_State* L;
     };
 };
-

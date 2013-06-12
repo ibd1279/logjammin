@@ -211,7 +211,7 @@ namespace logjam
          */
         void set_socket(int sockfd)
         {
-            gnutls_transport_set_ptr(session_, (gnutls_transport_ptr_t)sockfd);
+            gnutls_transport_set_int(session_, sockfd);
         }
 
         //! Assuming this connection is setup, perform the TLS handshake.
