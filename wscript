@@ -66,20 +66,6 @@ def configure(conf):
         ,mandatory=True
     )
 
-    conf.check(
-        header_name='v8.h'
-        ,lib=['v8']
-        ,libpath=[
-            '/usr/local/lib'
-            ,'/usr/lib'
-        ]
-        ,includes=[
-            '/usr/local/include'
-            ,'/usr/include'
-        ]
-        ,mandatory=True
-    )
-
     conf.write_config_header('config.h')
 
 def make_test_driver(node, test_pattern):
@@ -213,8 +199,6 @@ def build(bld):
             ,'src/logjamd/Stage_http_adapt.cpp'
             ,'src/logjamd/Stage_json_adapt.cpp'
             ,'src/logjamd/Stage_pre.cpp'
-            ,'src/js/Command_language_js.cpp'
-            ,'src/js/Bson.cpp'
             ,'src/lua/Bson.cpp'
             ,'src/lua/Command_language_lua.cpp'
             ,'src/lua/Document.cpp'
@@ -243,7 +227,6 @@ def build(bld):
         ,uselib = [
             'PTHREAD.H'
             ,'LUA.HPP'
-            ,'V8.H'
         ]
     )
 

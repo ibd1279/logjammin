@@ -37,7 +37,6 @@
 #include "logjamd/Connection.h"
 #include "logjamd/Command_language.h"
 #include "lua/Command_language_lua.h"
-#include "js/Command_language_js.h"
 #include "lj/Bson.h"
 #include "lj/Log.h"
 #include "lj/Stopclock.h"
@@ -67,20 +66,12 @@ namespace logjamd
         lj::bson::Node request;
         conn()->io() >> request;
 
-        // TODO make this pull from a mappings table or something.
+        // The command language should be swapped out for different langauges.
+        // Lua is the only supported language right now.
         Command_language* cmd_lang = NULL;
-        if (lj::bson::as_string(request["language"]).compare(k_language_js) == 0)
-        {
-            cmd_lang = new js::Command_language_js(
-                    conn(),
-                    &request);
-        }
-        else
-        {
-            cmd_lang = new lua::Command_language_lua(
-                    conn(),
-                    &request);
-        }
+        cmd_lang = new lua::Command_language_lua(
+                conn(),
+                &request);
 
         log("Using %s for the command language.").end(cmd_lang->name());
 
