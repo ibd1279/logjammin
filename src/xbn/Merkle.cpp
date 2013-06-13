@@ -118,5 +118,54 @@ namespace xbn
                 }
             }
         }
+
+        namespace
+        {
+            int node_compare(const Node& left, const Node& right)
+            {
+                return memcmp(left.bytes, right.bytes, SHA256_DIGEST_SIZE);
+            }
+        }; // namespace xbn::merkle::{anonymous}
+
+        std::list<std::list<xbn::merkle::Node>> as_list(const xbn::merkle::Tree& tree)
+        {
+            // Note: This function builds up the list "backwards"; things
+            // get pushed to the front. This is because the tree may have
+            // be calculated from the leaves to the root, but building the
+            // levels the correct size is easier when we parse it from 
+            // the root to the leaves.
+
+            std::list<std::list<xbn::merkle::Node>> result;
+            size_t level_size = 1;
+            auto iter = tree.data()->crbegin();
+            while (tree.data()->crend() != iter)
+            {
+                // construct the level we are about to build.
+                result.emplace_front();
+
+                // push the number of elements for this level on.
+                for (int h = 0;
+                        h < level_size && tree.data()->crend() != iter;
+                        ++h, ++iter)
+                {
+                    result.front().push_front(*iter);
+                }
+
+                // If we have more than one element, see if the last two elements are equal.
+                if (result.front().size() > 1)
+                {
+                    if (node_compare(*result.front().crbegin(), *(++(result.front().crbegin()))) == 0)
+                    {
+                        // They are equal, we need to get rid of the element that isn't
+                        // actually part of the merkle tree; only part of the calculation.
+                        result.front().pop_back();
+                    }
+                }
+
+                // set the size of the next level as the size of this level times 2.
+                level_size = result.front().size() << 1;
+            }
+            return result;
+        }
     }; // namespace xbn::merkle
 }; // namespace xbn

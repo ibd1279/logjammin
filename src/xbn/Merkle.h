@@ -35,6 +35,7 @@
  */
 
 #include <cstdint>
+#include <list>
 #include <memory>
 #include <string>
 #include <vector>
@@ -131,5 +132,17 @@ namespace xbn
         private:
             std::shared_ptr<std::vector<xbn::merkle::Node>> data_;
         }; // class xbn::merkle::Tree
+
+        //! Convert a merkle tree into a list of nodes.
+        /*!
+         \par
+         This is mostly to help match the syntax and format of blocks on
+         blockexporer.  This eliminates any synthetic nodes that were
+         created for the merkle calculation, even though it doesn't
+         keep track of the node relationships in the tree.
+         \param tree The merkle tree to parse the data of.
+         \return The iterable version of the tree.
+         */
+        std::list<std::list<xbn::merkle::Node>> as_list(const xbn::merkle::Tree& tree);
     }; // namespace xbn::merkle
 }; // namespace xbn

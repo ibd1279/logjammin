@@ -6,16 +6,19 @@ is to create a database with enough security and user isolation to enable using
 it for a personal online diary, or an online password safe.  To this end,
 non-tls connections are limited in what they can do/access; user password
 authentication is done using scrypt; records are easily AES-256 encrypted using
-a key that can be different per user; etc.
+a key that can be different per user; etc. Some basic BitCoin fundimentals have
+been added as well
 
 Depends on the following libraries:
-    cryptopp
-    openssl
-    lua
-    pthreads
+    nettle 2.7+ (for the ECDSA support)
+    gnutls 3.1+
+    lua 5.2
+    pthreads 
+    a C++11 compiler
 
 Configure using:
-    ./waf configure
+    ./waf configure (linux)
+    CXX=clang++ ./waf configure (mac)
 
 Build using:
     ./waf build
