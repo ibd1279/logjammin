@@ -35,6 +35,7 @@
  */
 
 #include "lj/Exception.h"
+#include <cassert>
 #include <list>
 #include <map>
 #include <string>
@@ -43,6 +44,12 @@ namespace lj
 {
     class ArgParser;
 
+    //! Argument base class.
+    /*!
+     \author Jason Watson
+     \version 1.0
+     \date June 13, 2014
+     */
     class Arg
     {
     public:
@@ -52,11 +59,11 @@ namespace lj
             k_list
         }; // namespace lj::Arg::Type
 
-        Arg(const std::string& a_long_name,
+        Arg(ArgParser& parser,
                 const std::string& a_short_name,
+                const std::string& a_long_name,
                 const std::string& a_description,
-                const lj::Arg::Type a_type,
-                ArgParser& parser);
+                const lj::Arg::Type a_type);
         virtual ~Arg() {}
         inline const std::string& long_name() const { return long_name_; }
         inline const std::string& short_name() const { return short_name_; }
@@ -77,6 +84,12 @@ namespace lj
         bool required_;
     }; // namespace lj::Arg
 
+    //! Class for parsing arguments.
+    /*!
+     \author Jason Watson
+     \version 1.0
+     \date June 13, 2014
+     */
     class ArgParser 
     {
     public:
@@ -96,34 +109,29 @@ namespace lj
         virtual ~ArgParser() {}
         virtual void attach(Arg* arg)
         {
+            assert(arg);
+
             if (arg->short_name().empty() && arg->long_name().empty())
             {
                 // A nameless argument is useless
                 throw lj::Exception("Argument Parser", arg->description() + " does not have a name");
             }
 
+            // Check to see if the argument names are already used.
             auto map_iter = lookup_map_.find(arg->short_name());
             if (map_iter != lookup_map_.end())
             {
-                if (map_iter->second == arg)
-                {
-                    // already attached.
-                    return;
-                }
-                // two args are trying to use the same names. Not good.
                 throw lj::Exception("Argument Parser", arg->short_name() + " is already used by " + map_iter->second->long_name());
             }
-
             map_iter = lookup_map_.find(arg->long_name());
             if (map_iter != lookup_map_.end())
             {
-                // two args are trying to use the same names. Not good.
                 throw lj::Exception("Argument Parser", arg->long_name() + " is already used by " + map_iter->second->description());
             }
 
+            // Validate some other constraints.
             if (arg->short_name().compare("--") == 0 && arg->type() != lj::Arg::Type::k_list)
             {
-                // "double dash" is a special arg that collects all other args.
                 throw lj::Exception("Argument Parser", "The double dash argument must accept a list.");
             }
 
@@ -136,6 +144,8 @@ namespace lj
             {
                 lookup_map_.insert(std::pair<std::string, Arg*>(arg->long_name(), arg));
             }
+
+            // Add it to the help list.
             help_list_.push_back(arg);
         }
 
@@ -150,7 +160,7 @@ namespace lj
                     // First, split up any self assigned flags.
                     std::string lookup_arg;
                     std::string value_arg;
-                    int equal_pos = cl_arg.find('=');
+                    const int equal_pos = cl_arg.find('=');
                     if (equal_pos != std::string::npos)
                     {
                         lookup_arg = cl_arg.substr(0, equal_pos);
@@ -170,22 +180,16 @@ namespace lj
                     arg = map_iter->second;
                     arg->present(true);
 
-                    if (arg->type() == lj::Arg::Type::k_flag)
-                    {
-                        // deal with boolean flags.
-                        arg->consume(value_arg);
-                        arg = nullptr;
-                    }
-                    else if (equal_pos != std::string::npos)
-                    {
-                        // deal with self assigned arguments.
-                        arg->consume(value_arg);
-                        arg = nullptr;
-                    }
-                    else if (arg->short_name().compare("--") == 0)
+                    if (arg->short_name().compare("--") == 0)
                     {
                         // goto double dash mode. Everything is collected into the last arg.
                         double_dash = true;
+                    }
+                    else if (arg->type() == lj::Arg::Type::k_flag || equal_pos != std::string::npos)
+                    {
+                        // Only assign the value if we have a flag or a self assigned flag.
+                        arg->consume(value_arg);
+                        arg = nullptr;
                     }
                 }
                 else
@@ -216,11 +220,11 @@ namespace lj
         std::list<std::string> args_;
     }; // namespace lj::ArgParser
     
-    Arg::Arg(const std::string& a_long_name,
+    Arg::Arg(ArgParser& parser,
                 const std::string& a_short_name,
+                const std::string& a_long_name,
                 const std::string& a_description,
-                const lj::Arg::Type a_type,
-                ArgParser& parser) :
+                const lj::Arg::Type a_type) :
                 long_name_(a_long_name),
                 short_name_(a_short_name),
                 description_(a_description),
@@ -231,14 +235,20 @@ namespace lj
         parser.attach(this);
     }
 
+    //! Flag Argument Type.
+    /*!
+     \author Jason Watson
+     \version 1.0
+     \date June 13, 2014
+     */
     class FlagArg : public Arg
     {
     public:
-        FlagArg(const std::string& a_long_name,
+        FlagArg(ArgParser& parser,
                 const std::string& a_short_name,
-                const std::string& a_description,
-                ArgParser& parser) :
-                Arg(a_long_name, a_short_name, a_description, lj::Arg::Type::k_flag, parser),
+                const std::string& a_long_name,
+                const std::string& a_description) :
+                Arg(parser, a_short_name, a_long_name, a_description, lj::Arg::Type::k_flag),
                 value_(false) {}
         virtual ~FlagArg() {}
         inline void value(const bool a_value) { value_ = a_value; }
@@ -248,15 +258,21 @@ namespace lj
         bool value_;
     }; // namespace lj::FlagArg
 
+    //! Setting Argument Type.
+    /*!
+     \author Jason Watson
+     \version 1.0
+     \date June 13, 2014
+     */
     class SettingArg : public Arg
     {
     public:
-        SettingArg(const std::string& a_long_name,
+        SettingArg(ArgParser& parser, 
                 const std::string& a_short_name,
+                const std::string& a_long_name,
                 const std::string& a_description,
-                const std::string& a_default,
-                ArgParser& parser) :
-                Arg(a_long_name, a_short_name, a_description, lj::Arg::Type::k_setting, parser),
+                const std::string& a_default) :
+                Arg(parser, a_short_name, a_long_name, a_description, lj::Arg::Type::k_setting),
                 value_(a_default) {}
         virtual ~SettingArg() {}
         inline void value(const std::string& a_value) { value_ = a_value; }
@@ -266,15 +282,21 @@ namespace lj
         std::string value_;
     }; // namespace lj::SettingArg
 
+    //! List Argument Type.
+    /*!
+     \author Jason Watson
+     \version 1.0
+     \date June 13, 2014
+     */
     class ListArg : public Arg
     {
     public:
-        ListArg(const std::string& a_long_name,
+        ListArg(ArgParser& parser,
+                const std::string& a_long_name,
                 const std::string& a_short_name,
                 const std::string& a_description,
-                const std::list<std::string>& a_default,
-                ArgParser& parser) :
-                Arg(a_long_name, a_short_name, a_description, lj::Arg::Type::k_list, parser),
+                const std::list<std::string>& a_default) :
+                Arg(parser, a_short_name, a_long_name, a_description, lj::Arg::Type::k_list),
                 default_value_(a_default) {}
         virtual ~ListArg() {}
         inline void value(const std::list<std::string>& a_value) { value_ = a_value; }

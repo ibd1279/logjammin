@@ -28,17 +28,13 @@ def configure(conf):
         ,mandatory=True
     )
 
-    conf.check(
-        header_name='nettle/base64.h'
-        ,lib=['nettle', 'gmp']
-        ,libpath=[
-            '/usr/local/lib'
-            ,'/usr/lib'
+    conf.check_cfg(
+        package='nettle'
+        ,args=[
+            '--cflags'
+            ,'--libs'
         ]
-        ,includes=[
-            '/usr/local/include'
-            ,'/usr/include'
-        ]
+        ,uselib_store='NETTLE'
         ,mandatory=True
     )
 
@@ -121,8 +117,8 @@ def build(bld):
             ,'-std=c++11'
             ,'-stdlib=libc++'
         ]
-        ,uselib = [
-            'NETTLE/BASE64.H'
+        ,use = [
+            'NETTLE'
         ]
     )
 
@@ -152,9 +148,7 @@ def build(bld):
         ]
         ,use = [
             'lj'
-        ]
-        ,uselib = [
-            'GNUTLS'
+            ,'GNUTLS'
         ]
     )
 
@@ -181,9 +175,6 @@ def build(bld):
         ,use = [
             'lj'
             ,'logjamclient'
-        ]
-        ,uselib = [
-            'GNUTLS'
         ]
     )
 
@@ -223,9 +214,7 @@ def build(bld):
         ,use = [
             'lj'
             ,'logjamclient'
-        ]
-        ,uselib = [
-            'PTHREAD.H'
+            ,'PTHREAD.H'
             ,'LUA.HPP'
         ]
     )

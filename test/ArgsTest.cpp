@@ -42,9 +42,9 @@ void testParseFlags()
     
     // Create the arguments data.
     lj::ArgParser parser(argc, argv);
-    lj::FlagArg flag1("--flag1", "-1", "The first flag", parser);
-    lj::FlagArg flag2("--flag2", "-2", "The second flag", parser);
-    lj::FlagArg flag3("--flag3", "-3", "The third flag", parser);
+    lj::FlagArg flag1(parser, "-1", "--flag1", "The first flag");
+    lj::FlagArg flag2(parser, "-2", "--flag2", "The second flag");
+    lj::FlagArg flag3(parser, "-3", "--flag3", "The third flag");
     parser.parse();
 
     // test that things are set properly.
@@ -63,10 +63,10 @@ void testParseSettings()
     const char* argv[] = { "app", "--setting1", "zot", "-2", "bar", "--setting3=baz", "--setting1", "foo" };
     //
     lj::ArgParser parser(argc, argv);
-    lj::SettingArg setting1("--setting1", "-1", "The first flag", "", parser);
-    lj::SettingArg setting2("--setting2", "-2", "The second flag", "zot", parser);
-    lj::SettingArg setting3("--setting3", "-3", "The third flag", "", parser);
-    lj::SettingArg setting4("--setting4", "-4", "The fourth flag", "biff", parser);
+    lj::SettingArg setting1(parser, "-1", "--setting1", "The first flag", "");
+    lj::SettingArg setting2(parser, "-2", "--setting2", "The second flag", "zot");
+    lj::SettingArg setting3(parser, "-3", "--setting3", "The third flag", "");
+    lj::SettingArg setting4(parser, "-4", "--setting4", "The fourth flag", "biff");
     parser.parse();
 
     TEST_ASSERT(setting1.present());
@@ -84,9 +84,9 @@ void testParseList()
     int argc = 11;
     const char* argv[] = { "app", "--setting1", "a", "--setting1", "b", "--setting2=1", "--setting2", "2", "--setting1=c", "--setting2", "3" };
     lj::ArgParser parser(argc, argv);
-    lj::ListArg list1("--setting1", "-1", "The first flag", std::list<std::string>{}, parser);
-    lj::ListArg list2("--setting2", "-2", "The second flag", std::list<std::string>{"4", "5"}, parser);
-    lj::ListArg list3("--setting3", "-3", "The third flag", std::list<std::string>{"y", "z"}, parser);
+    lj::ListArg list1(parser, "-1", "--setting1", "The first flag", std::list<std::string>{});
+    lj::ListArg list2(parser, "-2", "--setting2", "The second flag", std::list<std::string>{"4", "5"});
+    lj::ListArg list3(parser, "-3", "--setting3", "The third flag", std::list<std::string>{"y", "z"});
     parser.parse();
 
     TEST_ASSERT(list1.present());
@@ -140,7 +140,7 @@ void testRequired()
     try
     {
         lj::ArgParser parser(argc, argv);
-        lj::FlagArg flag1("--required-flag", "", "required flag", parser);
+        lj::FlagArg flag1(parser, "", "--required-flag", "required flag");
         flag1.required(true);
         parser.parse();
         TEST_FAILED("Should have thrown an exception.");
