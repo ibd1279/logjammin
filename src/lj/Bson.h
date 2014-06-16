@@ -138,6 +138,18 @@ namespace lj
                     t == Type::k_array);
         }
 
+        //! Test if a type is a nested type for pretty printing (Array, UUID, or document).
+
+        /*!
+         \param t The type to test.
+         \return True if the type is a nested object in pretty printed mode, false otherwise.
+         */
+        inline bool type_is_pretty_nested(const Type t)
+        {
+            return (type_is_nested(t) ||
+                    t == Type::k_binary);
+        }
+
         //! Test if a type is a value type (to_value() will succeed).
 
         /*!
@@ -835,13 +847,27 @@ namespace lj
          The input string is expected to be a well-formed json document
          that will be parsed into a bson document node.
          \par Memory
-         Object should be released with delete.
+         Returned object should be released with delete.
          \param val The string value to parse.
          \return A new Node object.
          \exception lj::Exception Upon encountering unparsable data in the
          string.
          */
-        Node* parse_string(const std::string val);
+        Node* parse_json(const std::string val);
+
+        //! Create a new node from a json std::istream.
+        /*!
+         \par
+         The input stream is expected to be a well-formed json document
+         that will be parsed into a bson document node.
+         \par Memory
+         Returned object should be released with delete.
+         \param in_stream The input stream.
+         \return A new Node object.
+         \exception lj::Exception Upon encountering unparsable data in the
+         input stream.
+         */
+        Node* parse_json(std::istream& in_stream);
 
         //! Get the value of a Bson object as a C++ string in debug format.
         /*!
@@ -868,12 +894,15 @@ namespace lj
          */
         std::string as_string(const Node& b);
 
-        //! Get the value of a Bson object as a c++ string with indenting.
+        //! Get the value of a Bson object as a json string with indenting.
         /*!
          \par
          The pretty string is a representation of the Node object in JSON
          format.  The nested structures are indented to make the structure
          easier to read.
+         \par
+         The result can be converted back into a BSON object using the
+         json string parsing method.
          \par
          Value types are output in their string representation.  Document and
          array types are output in a JSON looking format.
@@ -881,7 +910,7 @@ namespace lj
          \param lvl The current indention level.
          \return A string describing how this Node object should look in JSON with indentation.
          */
-        std::string as_pretty_json(const Node& b, int lvl = 1);
+        std::string as_json_string(const Node& b, int lvl = 1);
 
         //! Get the value of a Bson object as an 32-bit wide integer.
         /*!

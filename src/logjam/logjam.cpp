@@ -85,7 +85,7 @@ int main(int argc, char * const argv[])
         (*io).flush();
         (*io) >> response;
         
-        lj::log::out<lj::Info>(lj::bson::as_pretty_json(response));
+        lj::log::out<lj::Info>(lj::bson::as_json_string(response));
     }
     catch (const lj::Exception& ex)
     {

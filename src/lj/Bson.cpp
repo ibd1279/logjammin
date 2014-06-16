@@ -1083,19 +1083,19 @@ namespace lj
             return std::string();
         }
 
-        std::string as_pretty_json(const Node& b, int lvl)
+        std::string as_json_string(const Node& b, int lvl)
         {
             std::ostringstream buf;
 
+            // Calculate the indent level.
+            std::string indent;
+            for (int h = 0; h < lvl; ++h)
+            {
+                indent.append("  ");
+            }
+            
             if (type_is_nested(b.type()))
             {
-                // This node can have children, indentation level matters.
-                std::string indent;
-                for (int h = 0; h < lvl; ++h)
-                {
-                    indent.append("  ");
-                }
-
                 // Caching node size because it can be complicated to compute.
                 size_t node_size = b.size();
                 if (node_size == 5)
@@ -1116,15 +1116,15 @@ namespace lj
                     {
                         buf << "\"" << escape(key) << "\":";
                     }
-                    if (!type_is_native(n->type()) && !type_is_nested(n->type()))
+                    if (!type_is_native(n->type()) && !type_is_pretty_nested(n->type()))
                     {
                         buf << "\"";
-                        buf << escape(as_pretty_json(*n, lvl + 1));
+                        buf << escape(as_json_string(*n, lvl + 1));
                         buf << "\"";
                     }
                     else
                     {
-                        buf << as_pretty_json(*n, lvl + 1);
+                        buf << as_json_string(*n, lvl + 1);
                     }
                     buf << ",\n";
                 };
@@ -1159,10 +1159,31 @@ namespace lj
             else
             {
                 const uint8_t* v = b.to_value();
+                Binary_type bin_type;
+                uint32_t bin_size;
+                Node tmp;
+
                 switch (b.type())
                 {
                     case Type::k_binary_document:
-                        return as_pretty_json(Node(Type::k_document, v), lvl);
+                        return as_json_string(Node(Type::k_document, v), lvl);
+                    case Type::k_binary:
+                        v = as_binary(b, &bin_type, &bin_size);
+                        if (Binary_type::k_bin_uuid == bin_type)
+                        {
+                            tmp.set_child("__bson_type", new_string("UUID"));
+                            tmp.set_child("__bson_value", new_string(static_cast<std::string>(as_uuid(b))));
+                            tmp.set_child("__bson_note", new_int64(static_cast<int64_t>(static_cast<uint64_t>(as_uuid(b)))));
+                            return as_json_string(tmp, lvl);
+                        }
+                        else
+                        {
+                            tmp.set_child("__bson_type", new_string("BINARY"));
+                            tmp.set_child("__bson_value", new_string(as_string(b)));
+                            tmp.set_child("__bson_note", new_int32(static_cast<int32_t>(bin_type)));
+                            return as_json_string(tmp, lvl);
+                        }
+                        // intentionally fall through.
                     default:
                         return as_string(b);
                 }
@@ -1418,13 +1439,14 @@ std::istream& operator>>(std::istream& is, lj::bson::Node& val)
         // The streambuf is also a mutex. Allocate the lock.
         io_lock.reset(new std::unique_lock<std::mutex>(buffer->mutex()));
         
-        lj::log::format<lj::Debug>("Locked %p for reading BSON document.")
+        lj::log::format<lj::Debug>("Locked %p for reading BSON node.")
                 << buffer
                 << lj::log::end;
     }
     else
     {
-        lj::log::out<lj::Debug>("Unable to get mutex.");
+        lj::log::format<lj::Debug>("Reading BSON node from non-locking streambuf.")
+                << lj::log::end;
     }
     
     int read_bytes = 0;
@@ -1482,13 +1504,14 @@ std::ostream& operator<<(std::ostream& os, const lj::bson::Node& val)
         // Create a new lock on the mutex. 
         io_lock.reset(new std::unique_lock<std::mutex>(buffer->mutex()));
         
-        lj::log::format<lj::Debug>("Locking %p for writing BSON document.")
+        lj::log::format<lj::Debug>("Locking %p for writing BSON node.")
                 << buffer
                 << lj::log::end;
     }
     else
     {
-        lj::log::out<lj::Debug>("Unable to get mutex.");
+        lj::log::format<lj::Debug>("Writing BSON node to non-locking streambuf.")
+                << lj::log::end;
     }
     
     os.write(data.get(), sz);

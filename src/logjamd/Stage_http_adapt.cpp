@@ -50,7 +50,7 @@ namespace
     const std::string REQUIRE_AUTH_PREFIX("~/");
     const std::string HEADER_LINE_ENDING("\r\n");
     const std::string HEADER_CONTENT_LENGTH("Content-Length: ");
-    const std::string HEADERS_AUTH_REQUIRED("HTTP/1.1 401 Unauthorized\r\nServer: Logjamd\r\nContent-Type: application/json; charset=\"UTF-8\"\r\nWWW-Authenticate: Basic realm=\"Secure Command Execution\"\r\n");
+    const std::string HEADERS_AUTH_REQUIRED("HTTP/1.0 401 Unauthorized\r\nServer: Logjamd\r\nContent-Type: application/json; charset=\"UTF-8\"\r\nWWW-Authenticate: Basic realm=\"Secure Command Execution\"\r\n");
     const std::string HEADERS_FORBIDDEN("HTTP/1.0 403 Forbidden\r\nServer: Logjamd\r\nContent-Type: application/json; charset=\"UTF-8\"\r\n");
     const std::string HEADERS_SERVER_ERROR("HTTP/1.0 500 Internal Server Error\r\nServer: Logjamd\r\nContent-Type: application/json; charset=\"UTF-8\"\r\n");
     const std::string HEADERS_SUCCESS("HTTP/1.0 200 OK\r\nContent-Type: application/json; charset=\"UTF-8\"\r\n");
@@ -429,7 +429,7 @@ namespace
         }
         params.insert(std::multimap<std::string, std::string>::value_type(percent_decode(key), percent_decode(value)));
     }
-};
+}; // namespace (anonymous)
 
 namespace logjamd
 {
@@ -548,7 +548,7 @@ namespace logjamd
                     || real_stage_ == nullptr)
             {
                 log("Login unsuccessful.").end();
-                std::string body(lj::bson::as_pretty_json(auth_response));
+                std::string body(lj::bson::as_json_string(auth_response));
                 if (can_retry)
                 {
                     // If they provided credentials, they can try again.
@@ -626,7 +626,7 @@ namespace logjamd
             pipe().source() >> response;
 
             // This should be updated to deal with exceptions, etc.
-            std::string body(lj::bson::as_pretty_json(response));
+            std::string body(lj::bson::as_json_string(response));
             conn()->io() << HEADERS_SUCCESS;
             conn()->io() << HEADER_CONTENT_LENGTH << body.size();
             conn()->io() << HEADER_LINE_ENDING << HEADER_LINE_ENDING;

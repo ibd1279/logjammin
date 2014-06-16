@@ -15,7 +15,7 @@ obj1:set_int64("test/int64", 4294967300)
 obj1:set_uuid("test/uuid", Uuid:new("{100f0e0d-0c0b-0a09-0807-060504030201}"))
 
 -- test as_string
-ASSERT(obj1:as_string() == '{"test":{"array":[], "bool":{"false":0, "true":1}, "int32":2147483640, "int64":4294967300, "null":null, "string":"a test string", "uuid":{100f0e0d-0c0b-0a09-0807-060504030201}/1157159078456959122}}')
+ASSERT(obj1:as_string() == "{\"test\":{\"array\":[], \"bool\":{\"false\":0, \"true\":1}, \"int32\":2147483640, \"int64\":4294967300, \"null\":null, \"string\":\"a test string\", \"uuid\":{100f0e0d-0c0b-0a09-0807-060504030201}/1157159078456959122}}")
 
 -- test tostring
 expected = [=[{
@@ -29,7 +29,11 @@ expected = [=[{
     "int64":4294967300,
     "null":null,
     "string":"a test string",
-    "uuid":"{100f0e0d-0c0b-0a09-0807-060504030201}/1157159078456959122"
+    "uuid":{
+      "__bson_note":1157159078456959122,
+      "__bson_type":"UUID",
+      "__bson_value":"{100f0e0d-0c0b-0a09-0807-060504030201}"
+    }
   }
 }]=]
 print(obj1)
@@ -74,7 +78,11 @@ expected = [=[{
   "int64":4294967300,
   "null":null,
   "string":"a test string",
-  "uuid":"{100f0e0d-0c0b-0a09-0807-060504030201}/1157159078456959122"
+  "uuid":{
+    "__bson_note":1157159078456959122,
+    "__bson_type":"UUID",
+    "__bson_value":"{100f0e0d-0c0b-0a09-0807-060504030201}"
+  }
 }]=]
 ASSERT(tostring(obj1['test']) == expected)
 ASSERT(tostring(obj1.test) == expected);

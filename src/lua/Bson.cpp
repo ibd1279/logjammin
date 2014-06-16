@@ -87,7 +87,7 @@ namespace lua
                     std::string tmp(lua::as_string(L, -1));
                     lua_pop(L, 1);
                     std::unique_ptr<lj::bson::Node> n(
-                            lj::bson::parse_string(tmp));
+                            lj::bson::parse_json(tmp));
                     node_->copy_from(*n);
                 }
             }
@@ -420,7 +420,7 @@ namespace lua
 
     int Bson::__tostring(lua_State* L)
     {
-        std::string tmp(lj::bson::as_pretty_json(*node_));
+        std::string tmp(lj::bson::as_json_string(*node_));
         lua_pushstring(L, tmp.c_str());
         return 1;
     }

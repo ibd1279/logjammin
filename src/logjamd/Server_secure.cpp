@@ -178,7 +178,7 @@ namespace
                                         << lj::log::end;
                                 log<lj::Info>("Response from %s peer: %s")
                                         << peer_name
-                                        << lj::bson::as_pretty_json(response)
+                                        << lj::bson::as_json_string(response)
                                         << lj::log::end;
                                 
                                 (*iter).second = nullptr;

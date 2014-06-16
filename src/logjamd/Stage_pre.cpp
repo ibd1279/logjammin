@@ -94,7 +94,7 @@ namespace logjamd
         else if (k_json_mode.compare(buffer) == 0)
         {
             log("Using json mode.").end();
-            conn()->io() << lj::bson::as_pretty_json(empty_response());
+            conn()->io() << lj::bson::as_json_string(empty_response());
             Stage* next_stage = new Stage_json_adapt(conn());
             return next_stage->logic();
         }

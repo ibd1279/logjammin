@@ -378,8 +378,8 @@ void testParse()
 {
     lj::log::enable<lj::Debug > ();
     const std::string simple_array("[\n  \"1\",\n  \"hello\",\n  \"3\"\n]");
-    lj::bson::Node* result = lj::bson::parse_string(simple_array);
-    TEST_ASSERT(simple_array.compare(lj::bson::as_pretty_json(*result)) == 0);
+    lj::bson::Node* result = lj::bson::parse_json(simple_array);
+    TEST_ASSERT(simple_array.compare(lj::bson::as_json_string(*result)) == 0);
 
     const std::string complex_array("[\n\
   [\n\
@@ -394,8 +394,8 @@ void testParse()
     5\n\
   ]\n\
 ]");
-    result = lj::bson::parse_string(complex_array);
-    TEST_ASSERT(complex_array.compare(lj::bson::as_pretty_json(*result)) == 0);
+    result = lj::bson::parse_json(complex_array);
+    TEST_ASSERT(complex_array.compare(lj::bson::as_json_string(*result)) == 0);
 
     const std::string simple_document("{\n\
   \"foo\": 500,\n\
@@ -411,8 +411,8 @@ void testParse()
   \"nil\":null,\n\
   \"str\":\"Some string.\"\n\
 }");
-    result = lj::bson::parse_string(simple_document);
-    TEST_ASSERT(doc1_expected.compare(lj::bson::as_pretty_json(*result)) == 0);
+    result = lj::bson::parse_json(simple_document);
+    TEST_ASSERT(doc1_expected.compare(lj::bson::as_json_string(*result)) == 0);
 
     const std::string complex_document("{\n\
   \"foo\": 500,\n\
@@ -422,7 +422,8 @@ void testParse()
   \"str\": \'Some string.\',\n\
   \"nested\": [ { \"tmp\": {}, \"breakme\": [], \"comment\": null },\n\
                 { \"tmp\": { \"a\": \'b\' }, \'breakme\': [1,2,3,4,5], \"comment\": \"this is annoying to create\" }],\n\
-  \"escape\": \'We don\\\'t need no\\nstinking escapes.\'\n\
+  \"uuidtest\": { \'__bson_type\':\'UUID\', \'__bson_value\': \'{7af8ce1e-88e4-5392-a07a-977966f927e9}\' },\n\
+  \"escape\": \'We don\\\'t need no\\nstinking escapes.\',\n\
 }");
 
     const std::string doc2_expected("{\n\
@@ -452,10 +453,20 @@ stinking escapes.\",\n\
     }\n\
   ],\n\
   \"nil\":null,\n\
-  \"str\":\"Some string.\"\n\
+  \"str\":\"Some string.\",\n\
+  \"uuidtest\":{\n\
+    \"__bson_note\":8861058897392449832,\n\
+    \"__bson_type\":\"UUID\",\n\
+    \"__bson_value\":\"{7af8ce1e-88e4-5392-a07a-977966f927e9}\"\n\
+  }\n\
 }");
-    result = lj::bson::parse_string(complex_document);
-    TEST_ASSERT(doc2_expected.compare(lj::bson::as_pretty_json(*result)) == 0);
+
+    result = lj::bson::parse_json(complex_document);
+    TEST_ASSERT(doc2_expected.compare(lj::bson::as_json_string(*result)) == 0);
+
+    std::stringstream complex_document_is(complex_document);
+    result = lj::bson::parse_json(complex_document_is);
+    TEST_ASSERT(doc2_expected.compare(lj::bson::as_json_string(*result)) == 0);
 }
 
 void testAs_binary()
@@ -545,7 +556,7 @@ void testAs_string()
     TEST_ASSERT(expected.compare(lj::bson::as_string(doc.root)) == 0);
 }
 
-void testAs_pretty_json()
+void testAs_json_string()
 {
     sample_doc doc;
     doc.root.set_child("uuid", lj::bson::new_uuid(lj::Uuid("{2ae24c43-8cf9-4590-9d1a-fc5e8583a4bd}")));
@@ -559,7 +570,11 @@ void testAs_pretty_json()
     400,\n\
     500\n\
   ],\n\
-  \"bin\":\"CgoKCgoKCgo=\",\n\
+  \"bin\":{\n\
+    \"__bson_note\":128,\n\
+    \"__bson_type\":\"BINARY\",\n\
+    \"__bson_value\":\"CgoKCgoKCgo=\"\n\
+  },\n\
   \"bool\":{\n\
     \"false\":0,\n\
     \"true\":1\n\
@@ -568,10 +583,14 @@ void testAs_pretty_json()
   \"null\":null,\n\
   \"str\":\"original foo\",\n\
   \"uint\":1097220978551,\n\
-  \"uuid\":\"{2ae24c43-8cf9-4590-9d1a-fc5e8583a4bd}/3090116147341252871\"\n\
+  \"uuid\":{\n\
+    \"__bson_note\":3090116147341252871,\n\
+    \"__bson_type\":\"UUID\",\n\
+    \"__bson_value\":\"{2ae24c43-8cf9-4590-9d1a-fc5e8583a4bd}\"\n\
+  }\n\
 }";
 
-    TEST_ASSERT(expected.compare(lj::bson::as_pretty_json(doc.root)) == 0);
+    TEST_ASSERT(expected.compare(lj::bson::as_json_string(doc.root)) == 0);
 }
 
 void testAs_int32()

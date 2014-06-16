@@ -33,6 +33,7 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "lj/Args.h"
 #include "logjamd/Auth.h"
 #include "logjamd/Auth_local.h"
 #include "logjamd/Server.h"
@@ -42,6 +43,7 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <memory>
 #include <string>
 
@@ -65,15 +67,37 @@ static void setup_credentials(
 
 //! Server main entry point.
 int main(int argc, char* const argv[]) {
-    lj::bson::Node* config = new lj::bson::Node();
-    lj::Uuid sid;
-    config->set_child("server/listen", lj::bson::new_string("12345"));
-    config->set_child("server/identity/method", lj::bson::new_uuid(logjamd::k_auth_method_password));
-    config->set_child("server/identity/provider", lj::bson::new_uuid(logjamd::k_auth_provider_local));
-    config->set_child("server/identity/data/login", lj::bson::new_string(logjamd::k_user_login_json));
-    config->set_child("server/identity/data/password", lj::bson::new_string(logjamd::k_user_password_json));
-    config->set_child("server/cluster", lj::bson::new_array());
-    config->push_child("server/cluster", lj::bson::new_string("localhost@12346"));
+    lj::Arg_parser arg_parser(argc, argv);
+
+    // TODO Move settings configuration to a function.
+    lj::Setting_arg config_file_setting(arg_parser, "-c", "--config", "Location of the configuration file.", "");
+
+
+    // Load the configuration values.
+    lj::bson::Node* config = nullptr;
+    try
+    {
+        arg_parser.parse();
+
+        if (!config_file_setting.present())
+        {
+            throw lj::Exception("logjamd", "No configuration file specified.");
+        }
+
+        std::ifstream config_file_stream(config_file_setting.str());
+        if (!config_file_stream.good())
+        {
+            throw lj::Exception("logjamd", config_file_setting.str() + " could not be opened.");
+        }
+
+        config = lj::bson::parse_json(config_file_stream);
+    }
+    catch (lj::Exception& ex)
+    {
+        lj::log::format<lj::Critical>("Failure: %s").end(ex);
+        return 1;
+    }
+
 
     // TODO This is completely in the wrong place, but it has to be here
     // to make the telnet stuff work during development right now.

@@ -115,7 +115,7 @@ namespace logjamd
                 }
 
                 // Communicate the response.
-                conn()->io() << lj::bson::as_pretty_json(response)
+                conn()->io() << lj::bson::as_json_string(response)
                         << std::endl;;
                 conn()->io().flush();
             }
@@ -160,7 +160,7 @@ namespace logjamd
             pipe().source() >> auth_response;
 
             // communicate the response.
-            conn()->io() << lj::bson::as_pretty_json(auth_response) << std::endl;
+            conn()->io() << lj::bson::as_json_string(auth_response) << std::endl;
             conn()->io().flush();
         }
 

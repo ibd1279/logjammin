@@ -283,7 +283,7 @@ namespace lj
         //! Convert the document to a string.
         inline operator std::string() const
         {
-            return lj::bson::as_pretty_json(*doc_);
+            return lj::bson::as_json_string(*doc_);
         }
 
     private:

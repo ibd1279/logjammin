@@ -34,6 +34,7 @@
  */
 
 #include "lj/Bson.h"
+#include "lj/Base64.h"
 #include "lj/Exception.h"
 #include <cassert>
 #include <cstddef>
@@ -85,26 +86,19 @@ namespace
     class Parser_state
     {
     public:
-        Parser_state(const std::string& input) :
+        Parser_state(std::istream& input) :
                 state_(State::k_pre),
-                begin_(NULL),
-                current_(NULL),
-                end_(NULL),
+                stream_(input),
+                stream_buffer_(),
                 node_(NULL),
                 parents_(),
                 col_(1),
                 line_(1)
         {
-            size_t input_size = input.size();
-            begin_ = new char[input_size];
-            end_ = begin_ + input_size;
-            memcpy(begin_, input.data(), input_size);
-            current_ = begin_;
         }
 
         ~Parser_state()
         {
-            delete[] begin_;
         }
 
         lj::bson::Node* run()
@@ -136,9 +130,8 @@ namespace
         };
 
         State state_;
-        char* begin_;
-        const char* current_;
-        const char* end_;
+        std::istream& stream_;
+        std::deque<int> stream_buffer_;
         lj::bson::Node* node_;
         std::stack<lj::bson::Node*> parents_;
         unsigned int col_;
@@ -160,6 +153,7 @@ namespace
         {
             node_ = NULL;
         }
+
         inline lj::bson::Node& node()
         {
             if (!node_)
@@ -168,39 +162,53 @@ namespace
             }
             return *node_;
         }
+
         inline lj::bson::Node& parent()
         {
             return *(parents_.top());
         }
+
         inline void push_array()
         {
             node().set_value(lj::bson::Type::k_array, NULL);
             parents_.push(node_);
             node_reset();
         }
+
         inline void push_document()
         {
             node().set_value(lj::bson::Type::k_document, NULL);
             parents_.push(node_);
             node_reset();
         }
-        inline void pop()
+
+        void pop()
         {
             assert(0 < parents_.size());
             if (lj::bson::Type::k_array == parents_.top()->type() &&
-                NULL != node_)
+                    nullptr != node_)
             {
                 *(parents_.top()) << node_;
             }
             node_ = parents_.top();
             parents_.pop();
+            translate_binary();
             state_ = State::k_post;
         }
 
         inline bool is_valid(ptrdiff_t dist = 0)
         {
-            return (current_ + dist) < end_;
+            while(stream_buffer_.size() < (dist + 1) && stream_.good())
+            {
+                int c = stream_.get();
+                if (stream_.good())
+                {
+                    stream_buffer_.push_back(c);
+                }
+            }
+            return stream_buffer_.size() >= (dist + 1);
         }
+
         inline const char at(ptrdiff_t dist = 0)
         {
             if (!is_valid(dist))
@@ -209,7 +217,7 @@ namespace
                         col_,
                         line_);
             }
-            return *(current_ + dist);
+            return static_cast<char>(stream_buffer_.at(dist));
         }
         bool next(ptrdiff_t dist = 1)
         {
@@ -217,7 +225,7 @@ namespace
             {
                 for (int h = 0; h < dist; ++h)
                 {
-                    if (is(at(h), '\n'))
+                    if (is(at(), '\n'))
                     {
                         line_++;
                         col_ = 1;
@@ -226,8 +234,8 @@ namespace
                     {
                         col_++;
                     }
+                    stream_buffer_.pop_front();
                 }
-                current_ += dist;
                 return true;
             }
             return false;
@@ -581,11 +589,47 @@ namespace
                 }
             } // while (State::k_key == state_)
         }
+
+        void translate_binary()
+        {
+            assert(nullptr != node_);
+            if (lj::bson::Type::k_document == node().type() && node().exists("__bson_type"))
+            {
+                lj::bson::Node& type_node = node().nav("__bson_type");
+                std::string type_string(lj::bson::as_string(type_node));
+
+                if (type_string.compare("UUID") == 0)
+                {
+                    std::string value_string(lj::bson::as_string(node().nav("__bson_value")));
+                    lj::Uuid value_uuid(value_string);
+                    std::unique_ptr<lj::bson::Node> value(lj::bson::new_uuid(value_uuid));
+                    (*node_) = std::move(*value);
+                }
+                else if (type_string.compare("BINARY") == 0)
+                {
+                    std::string value_string(lj::bson::as_string(node().nav("__bson_value")));
+                    lj::bson::Binary_type binary_type = static_cast<lj::bson::Binary_type>(lj::bson::as_int32(node().nav("__bson_note")));
+                    size_t sz;
+                    uint8_t* data = lj::base64_decode(value_string, &sz);
+                    assert(nullptr != data);
+                    std::unique_ptr<lj::bson::Node> value(lj::bson::new_binary(data, sz, binary_type));
+                    delete[] data;
+                    (*node_) = std::move(*value);
+                }
+            }
+        }
     };
 };
 
-lj::bson::Node* lj::bson::parse_string(const std::string val)
+lj::bson::Node* lj::bson::parse_json(const std::string val)
 {
-    Parser_state state(val);
+    std::stringstream wrapper(val);
+    Parser_state state(wrapper);
+    return state.run();
+}
+
+lj::bson::Node* lj::bson::parse_json(std::istream& in_stream)
+{
+    Parser_state state(in_stream);
     return state.run();
 }

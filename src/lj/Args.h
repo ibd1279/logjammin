@@ -42,11 +42,10 @@
 
 namespace lj
 {
-    class ArgParser;
+    class Arg_parser;
 
     //! Argument base class.
     /*!
-     \author Jason Watson
      \version 1.0
      \date June 13, 2014
      */
@@ -59,7 +58,7 @@ namespace lj
             k_list
         }; // namespace lj::Arg::Type
 
-        Arg(ArgParser& parser,
+        Arg(Arg_parser& parser,
                 const std::string& a_short_name,
                 const std::string& a_long_name,
                 const std::string& a_description,
@@ -86,14 +85,13 @@ namespace lj
 
     //! Class for parsing arguments.
     /*!
-     \author Jason Watson
      \version 1.0
      \date June 13, 2014
      */
-    class ArgParser 
+    class Arg_parser 
     {
     public:
-        ArgParser(const int argc, const char** argv)
+        Arg_parser(const int argc, const char* const* argv)
         {
             for (int h = 0; h < argc; ++h)
             {
@@ -106,7 +104,7 @@ namespace lj
                 args_.pop_front();
             }
         }
-        virtual ~ArgParser() {}
+        virtual ~Arg_parser() {}
         virtual void attach(Arg* arg)
         {
             assert(arg);
@@ -218,9 +216,9 @@ namespace lj
         std::list<Arg*> help_list_;
         std::string cmd_;
         std::list<std::string> args_;
-    }; // namespace lj::ArgParser
+    }; // namespace lj::Arg_parser
     
-    Arg::Arg(ArgParser& parser,
+    Arg::Arg(Arg_parser& parser,
                 const std::string& a_short_name,
                 const std::string& a_long_name,
                 const std::string& a_description,
@@ -237,26 +235,25 @@ namespace lj
 
     //! Flag Argument Type.
     /*!
-     \author Jason Watson
      \version 1.0
      \date June 13, 2014
      */
-    class FlagArg : public Arg
+    class Flag_arg : public Arg
     {
     public:
-        FlagArg(ArgParser& parser,
+        Flag_arg(Arg_parser& parser,
                 const std::string& a_short_name,
                 const std::string& a_long_name,
                 const std::string& a_description) :
                 Arg(parser, a_short_name, a_long_name, a_description, lj::Arg::Type::k_flag),
                 value_(false) {}
-        virtual ~FlagArg() {}
+        virtual ~Flag_arg() {}
         inline void value(const bool a_value) { value_ = a_value; }
         inline bool boolean() const { return value_; }
         virtual void consume(const std::string& arg) override { value(true); }
     private:
         bool value_;
-    }; // namespace lj::FlagArg
+    }; // namespace lj::Flag_arg
 
     //! Setting Argument Type.
     /*!
@@ -264,23 +261,23 @@ namespace lj
      \version 1.0
      \date June 13, 2014
      */
-    class SettingArg : public Arg
+    class Setting_arg : public Arg
     {
     public:
-        SettingArg(ArgParser& parser, 
+        Setting_arg(Arg_parser& parser, 
                 const std::string& a_short_name,
                 const std::string& a_long_name,
                 const std::string& a_description,
                 const std::string& a_default) :
                 Arg(parser, a_short_name, a_long_name, a_description, lj::Arg::Type::k_setting),
                 value_(a_default) {}
-        virtual ~SettingArg() {}
+        virtual ~Setting_arg() {}
         inline void value(const std::string& a_value) { value_ = a_value; }
         inline const std::string& str() const { return value_; }
         virtual void consume(const std::string& arg) override { value(arg); }
     private:
         std::string value_;
-    }; // namespace lj::SettingArg
+    }; // namespace lj::Setting_arg
 
     //! List Argument Type.
     /*!
@@ -288,22 +285,22 @@ namespace lj
      \version 1.0
      \date June 13, 2014
      */
-    class ListArg : public Arg
+    class List_arg : public Arg
     {
     public:
-        ListArg(ArgParser& parser,
+        List_arg(Arg_parser& parser,
                 const std::string& a_long_name,
                 const std::string& a_short_name,
                 const std::string& a_description,
                 const std::list<std::string>& a_default) :
                 Arg(parser, a_short_name, a_long_name, a_description, lj::Arg::Type::k_list),
                 default_value_(a_default) {}
-        virtual ~ListArg() {}
+        virtual ~List_arg() {}
         inline void value(const std::list<std::string>& a_value) { value_ = a_value; }
         inline const std::list<std::string>& list() const { return present() ? value_ : default_value_; }
         virtual void consume(const std::string& arg) override { value_.push_back(arg); }
     private:
         std::list<std::string> default_value_;
         std::list<std::string> value_;
-    }; // namespace lj::ListArg
+    }; // namespace lj::List_arg
 }; // namespace lj
