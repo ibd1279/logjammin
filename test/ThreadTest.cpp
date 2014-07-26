@@ -33,7 +33,6 @@
 #include <vector>
 #include "testhelper.h"
 #include "lj/Uuid.h"
-#include "lj/Stopclock.h"
 #include "test/ThreadTest_driver.h"
 #include "lj/Thread.h"
 
@@ -102,10 +101,8 @@ void testRun2()
     auto func = [&x](){for (x = 0; x < 100; ++x);};
 
     lj::Thread::Lambda_work < std::function<void()>, std::function<void()> >* w =
-            new lj::Thread::Lambda_work < std::function<void()>, std::function<void()> >(func,
-            [&x]()
-    {
-        lj::log::format<lj::Alert > ("outputting %d").end(x);});
+            new lj::Thread::Lambda_work <std::function<void()>, std::function<void()> >(func,
+                [&x]() { lj::log::format<lj::Alert> ("outputting %d").end(x); });
     t.run(w);
     TEST_ASSERT(t.running() == true);
     t.join();
@@ -117,13 +114,8 @@ void testRun3()
     int x = 200;
     lj::Thread t;
 
-    t.run([&x]()
-    {
-
-        for (x = 0; x < 100; ++x); },
-    [&x]()
-    {
-        lj::log::format<lj::Alert > ("outputting %d").end(x); });
+    t.run([&x]() { for (x = 0; x < 100; ++x); },
+            [&x]() { lj::log::format<lj::Alert> ("outputting %d").end(x); });
     TEST_ASSERT(t.running() == true);
     t.join();
     TEST_ASSERT(t.running() == false);

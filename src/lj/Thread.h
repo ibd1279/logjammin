@@ -198,7 +198,7 @@ namespace lj
             {
             }
 
-            //! Deleted copy constructor.
+            //! Copy constructor.
             /*!
              \param orig The original object.
              */
@@ -209,7 +209,7 @@ namespace lj
             {
             }
 
-            //! Deleted move constructor.
+            //! Move constructor.
             /*!
              \param orig The original object.
              */
