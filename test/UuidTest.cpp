@@ -60,7 +60,7 @@ void testRandom()
 {
     const uint64_t id = 0x1121314151617181ULL;
     lj::Uuid first(id);
-    for (int h = 0; h < 1000; ++h)
+    for (int h = 0; h < 100; ++h)
     {
         lj::Uuid after(id);
         TEST_ASSERT(first != after);
