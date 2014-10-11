@@ -204,16 +204,11 @@ namespace lj
             delete this;
         }
 
-        Logger_cout::Logger_cout(const std::string lvl,
+        Logger_clog::Logger_clog(const std::string lvl,
                 const std::string& fmt) :
-                Logger_stream(lvl, fmt, &(std::cout))
+                Logger_stream(lvl, fmt, &(std::clog))
         {
         }
-
-        Logger_cout::~Logger_cout()
-        {
-        }
-
     }; // namespace log
 }; // namespace lj
 

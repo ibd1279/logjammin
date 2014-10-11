@@ -34,7 +34,7 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjamd/Stage.h"
+#include "logjam/Stage.h"
 
 #include <cstdint>
 
@@ -47,13 +47,17 @@ namespace logjamd
      method.
      \since 0.1
      */
-    class Stage_auth : public Stage {
+    class Stage_auth : public logjam::Stage {
     public:
-        Stage_auth(logjamd::Connection* connection);
-        virtual ~Stage_auth();
-        virtual Stage* logic() override;
-        virtual std::string name() override;
-    private:
-        uint8_t attempts_;
-    };
-};
+        Stage_auth() = default;
+        Stage_auth(const Stage_auth& o) = default;
+        Stage_auth(Stage_auth&& o) = default;
+        Stage_auth& operator=(const Stage_auth& rhs) = default;
+        Stage_auth& operator=(Stage_auth&& rhs) = default;
+        virtual ~Stage_auth() = default;
+        virtual std::unique_ptr<logjam::Stage> logic(
+                logjam::pool::Swimmer& swmr) const override;
+        virtual std::string name() const override;
+        virtual std::unique_ptr<logjam::Stage> clone() const override;
+    }; // class logjamd::Stage_auth
+}; // namespace logjamd

@@ -34,13 +34,12 @@
  */
 
 #include "lj/Args.h"
-#include "logjamd/Auth.h"
 #include "logjamd/Auth_local.h"
-#include "logjamd/Server.h"
-#include "logjamd/Server_secure.h"
+#include "logjamd/Pool_listen_threads.h"
 #include "logjamd/constants.h"
-#include "logjam/Tls_globals.h"
+#include "logjam/User.h"
 
+#include <csignal>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -48,21 +47,21 @@
 #include <string>
 
 static void setup_credentials(
-        logjamd::Auth_provider* auth,
+        logjam::Authentication_method& method,
+        logjam::User_repository& user_repo,
         const lj::Uuid& id,
         const std::string& login,
         const std::string& pword)
 {
-    logjamd::User u(id, login);
+    logjam::User u(id, login);
+    user_repo.store(u);
+
     lj::bson::Node n;
     n.set_child("login",
             lj::bson::new_string(login));
     n.set_child("password",
             lj::bson::new_string(pword));
-    const lj::Uuid k_auth_method_password_hash(logjamd::k_auth_method,
-            "password_hash",
-            13);
-    auth->method(k_auth_method_password_hash)->change_credentials(&u, &u, n);
+    method.change_credential(id, n);
 }
 
 //! Server main entry point.
@@ -72,9 +71,8 @@ int main(int argc, char* const argv[]) {
     // TODO Move settings configuration to a function.
     lj::Setting_arg config_file_setting(arg_parser, "-c", "--config", "Location of the configuration file.", "");
 
-
     // Load the configuration values.
-    lj::bson::Node* config = nullptr;
+    std::unique_ptr<lj::bson::Node> config;
     try
     {
         arg_parser.parse();
@@ -90,7 +88,7 @@ int main(int argc, char* const argv[]) {
             throw lj::Exception("logjamd", config_file_setting.str() + " could not be opened.");
         }
 
-        config = lj::bson::parse_json(config_file_stream);
+        config.reset(lj::bson::parse_json(config_file_stream));
     }
     catch (lj::Exception& ex)
     {
@@ -98,33 +96,45 @@ int main(int argc, char* const argv[]) {
         return 1;
     }
 
+    struct sigaction sa;
+    sa.sa_handler = SIG_IGN;
+    sa.sa_flags = 0;
+    if (sigaction(SIGPIPE, &sa, nullptr) == -1) {
+        perror("sigaction");
+        exit(1);
+    }
 
-    // TODO This is completely in the wrong place, but it has to be here
-    // to make the telnet stuff work during development right now.
-    lj::log::out<lj::Info>("Adding the Local auth provider.");
-    logjamd::Auth_provider_local* local_auth =
-            new logjamd::Auth_provider_local();
-    logjamd::Auth_registry::enable(local_auth);
+    lj::log::out<lj::Info>("Creating Environs.");
+    logjam::Authentication_repository auth_repo;
+    auth_repo.enable(
+            new logjam::Authentication_provider_simple<logjamd::Auth_method_password_hash>(
+                    logjamd::k_auth_provider_local));
+    logjam::User_repository user_repo;
 
     lj::log::out<lj::Info>("Creating read-only accounts.");
-    setup_credentials(local_auth,
+    logjam::Authentication_method& method =
+            auth_repo.provider(logjamd::k_auth_provider_local).method(
+                    logjamd::k_auth_method_password);
+
+    setup_credentials(method,
+            user_repo,
             logjamd::k_user_id_json,
             logjamd::k_user_login_json,
             logjamd::k_user_password_json);
-    setup_credentials(local_auth,
+    setup_credentials(method,
+            user_repo,
             logjamd::k_user_id_http,
             logjamd::k_user_login_http,
             logjamd::k_user_password_http);
 
     // Run the server.
-    logjam::Tls_globals tls_globals;
-    logjamd::Server* server = new logjamd::Server_secure(config);
+    logjam::Environs environs(std::move(*config), &user_repo, &auth_repo);
+    logjamd::pool::Area_listener inbound(std::move(environs));
 
     try
     {
-        server->startup();
-        server->listen();
-        server->shutdown();
+        inbound.prepare();
+        inbound.open();
     }
     catch (lj::Exception& ex)
     {

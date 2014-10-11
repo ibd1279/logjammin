@@ -6,10 +6,7 @@
 
 #include "testhelper.h"
 #include "lj/Bson.h"
-#include "logjamd/Stage_auth.h"
-#include "logjamd/Stage_json_adapt.h"
 #include "logjamd/Stage_pre.h"
-#include "logjamd/User.h"
 #include "logjamd/constants.h"
 #include "logjamd/mock_server.h"
 #include <memory>
@@ -19,75 +16,51 @@
 
 void testBSON()
 {
-    std::unique_ptr<lj::bson::Node> mode(lj::bson::new_string("BSON\n"));
     // Create the mock request.
-    Mock_environment env;
-    env.request() << "BSON\n";
+    Mock_env env;
+    env.swimmer->sink() << "BSON\n";
 
     // perform the stage.
-    logjamd::Stage_pre stage(env.connection());
-    logjamd::Stage* next_stage = stage.logic();
+    std::unique_ptr<logjam::Stage> next_stage(
+            new logjamd::Stage_pre());
+    next_stage = logjam::safe_execute_stage(next_stage, *(env.swimmer));
     
     // Test the next stage.
-    TEST_ASSERT(next_stage != NULL);
+    TEST_ASSERT(next_stage != nullptr);
     TEST_ASSERT(next_stage->name().compare("Authentication") == 0);
-    delete next_stage;
-
-    // Test the result
-    TEST_ASSERT(env.connection()->user() == NULL);
-}
-
-void testJSON()
-{
-    // Create the mock request.
-    Mock_environment env;
-    env.request() << "json\n";
-
-    // perform the stage.
-    logjamd::Stage_pre stage(env.connection());
-    logjamd::Stage* next_stage = stage.logic();
-
-    // Test the next stage.
-    TEST_ASSERT(next_stage != NULL);
-    TEST_ASSERT(next_stage != &stage);
-    TEST_ASSERT(next_stage->name().compare("JSON-Adapter-Execution") == 0);
-    logjamd::Stage_json_adapt* adapter =
-            dynamic_cast<logjamd::Stage_json_adapt*>(next_stage);
-    TEST_ASSERT(adapter != NULL);
-
-    // Clean up the adapter stage.
-    delete next_stage;
 }
 
 void testHTTP()
 {
     // Create the mock request.
-    Mock_environment env;
-    env.request() << "GET /print('Hello') HTTP/1.0";
+    Mock_env env;
+    env.swimmer->sink() << "GET /print('Hello') HTTP/1.0";
 
     // perform the stage.
-    logjamd::Stage_pre stage(env.connection());
-    stage.logic();
+    std::unique_ptr<logjam::Stage> next_stage(
+            new logjamd::Stage_pre());
+    next_stage = logjam::safe_execute_stage(next_stage, *(env.swimmer));
 
-    // Test the result
-    // XXX HTTP has a "single-request-per-connection" life cycle,
-    // XXX The tests will need to take that into account.
+    // Test the next stage.
+    TEST_ASSERT(next_stage != nullptr);
+    TEST_ASSERT(next_stage->name().compare("HTTP-Adapter") == 0);
 }
 
 void testUnknown()
 {
     // Create the mock request.
-    Mock_environment env;
-    env.request() << "rtmp ";
+    Mock_env env;
+    env.swimmer->sink() << "rtmp ";
 
     // perform the stage.
-    logjamd::Stage_pre stage(env.connection());
-    logjamd::Stage* next_stage = stage.logic();
+    std::unique_ptr<logjam::Stage> next_stage(
+            new logjamd::Stage_pre());
+    next_stage = logjam::safe_execute_stage(next_stage, *(env.swimmer));
 
     // Test the result.
     std::string expected("{\"message\":\"Unknown mode: rtmp\", \"stage\":\"Pre-connection\", \"success\":0}");
     std::ostringstream oss;
-    oss << env.response().rdbuf();
+    oss << env.swimmer->source().rdbuf();
     TEST_ASSERT(oss.str().compare(expected) == 0);
     TEST_ASSERT(next_stage == NULL);
 }

@@ -1,10 +1,10 @@
 #pragma once
 /*
  \file logjam/Network_connection.h
- \brief Logjam Network connection interface.
+ \brief Logjam Network connection header.
  \author Jason Watson
 
- Copyright (c) 2012, Jason Watson
+ Copyright (c) 2014, Jason Watson
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -34,14 +34,7 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-extern "C"
-{
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-}
+#include "logjam/Network_socket.h"
 
 namespace logjam
 {
@@ -49,80 +42,36 @@ namespace logjam
     class Network_connection
     {
     public:
-        //! Create a new network connection object.
-        Network_connection();
-        
-        //! Create a new network connection object around an existing socket.
-        /*!
-         The socket is expected to be open and ready for communication.
-         \param socket An existing socket descriptor.
-         */
-        explicit Network_connection(int socket);
-        
-        //! Deleted copy constructor
-        /*!
-         \param orig The original object.
-         */
+        explicit Network_connection(int socket) :
+                socket_(socket),
+                streambuf_(new logjam::Network_socket(socket_), 8194, 8194),
+                stream_(&streambuf_) {}
         Network_connection(const Network_connection& orig) = delete;
-        
-        //! Move constructor
-        /*!
-         \param orig The original object.
-         */
-        Network_connection(Network_connection&& orig);
-        
-        //! Destructor
-        /*!
-         If the socket is open, it is immediately closed.
-         */
-        virtual ~Network_connection();
-        
-        //! Deleted copy operator
-        /*!
-         \param orig The original object.
-         \return This object.
-         */
+        Network_connection(Network_connection&& orig) = delete;
         Network_connection& operator=(const Network_connection& orig) = delete;
-        
-        //! Move operator
-        /*!
-         \param orig The original object.
-         \return This object.
-         */
-        Network_connection& operator=(Network_connection&& orig);
-        
-        //! Connect to a target address.
-        /*!
-         \note Remote Information.
-         This object does not retain any information about who it is connected
-         to.
-         \param target to connect to.
-         \throws lj::Exception if the connection could not be established.
-         */
-        void connect(const struct addrinfo& target);
-        
-        //! Close an open socket.
-        /*!
-         No action is performed if the socket is not open.
-         */
-        void close();
-        
-        //! Get the socket file descriptor.
-        /*!
-         \return the socket descriptor.
-         */
-        int socket() const;
-        
-        //! Check if the socket is currently open.
-        /*!
-         \return True if the connection is expected to be open. false otherwise.
-         */
-        inline bool is_open() const
+        Network_connection& operator=(Network_connection&& orig) = delete;
+        virtual ~Network_connection()
         {
-            return is_open_;
-        }        
+            //socket_ is managed by streambuf_.
+        }
+
+        virtual const int socket() const
+        {
+            return socket_;
+        }
+
+        virtual lj::Streambuf_bsd<Network_socket>& rdbuf()
+        {
+            return streambuf_;
+        }
+
+        virtual std::iostream& stream()
+        {
+            return stream_;
+        }
     private:
-        bool is_open_;
         int socket_;
+        lj::Streambuf_bsd<Network_socket> streambuf_;
+        std::iostream stream_;
     }; // class logjam::Network_connection
 }; // namespace logjam

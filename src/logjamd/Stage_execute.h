@@ -34,7 +34,7 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjamd/Stage.h"
+#include "logjam/Stage.h"
 
 // Forward declare what we need from lua.
 struct lua_State;
@@ -47,12 +47,18 @@ namespace logjamd
      \version 1.0
      \date October 26, 2010
      */
-    class Stage_execute : public Stage 
+    class Stage_execute : public logjam::Stage 
     {
     public:
-        Stage_execute(logjamd::Connection* connection);
-        virtual ~Stage_execute();
-        virtual Stage* logic();
-        virtual std::string name();
+        Stage_execute() = default;
+        Stage_execute(const Stage_execute& o) = default;
+        Stage_execute(Stage_execute&& o) = default;
+        Stage_execute& operator=(const Stage_execute& rhs) = default;
+        Stage_execute& operator=(Stage_execute&& rhs) = default;
+        virtual ~Stage_execute() = default;
+        virtual std::unique_ptr<logjam::Stage> logic(
+                logjam::pool::Swimmer& swmr) const override;
+        virtual std::string name() const override;
+        virtual std::unique_ptr<logjam::Stage> clone() const override;
     };
 };

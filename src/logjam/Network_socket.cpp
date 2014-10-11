@@ -1,6 +1,6 @@
 /*
- \file logjam/Network_connection.cpp
- \brief Logjam Network connection implementation.
+ \file logjam/Network_socket.cpp
+ \brief Logjam Network socket implementation.
  \author Jason Watson
 
  Copyright (c) 2012, Jason Watson
@@ -33,10 +33,11 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjam/Network_connection.h"
+#include "logjam/Network_socket.h"
+#include "logjam/Network_address_info.h"
 #include "lj/Exception.h"
-#include "Network_address_info.h"
 #include <sstream>
+#include <utility>
 extern "C" {
 #include <stdio.h>
 #include <unistd.h>
@@ -44,57 +45,56 @@ extern "C" {
 
 namespace logjam
 {
-
-    Network_connection::Network_connection() :
-            is_open_(false),
-            socket_(-1)
+    Network_socket::Network_socket() :
+            lj::medium::Socket(-1),
+            is_open_(false)
     {
     }
     
-    Network_connection::Network_connection(int socket) :
-            is_open_(true),
-            socket_(socket)
+    Network_socket::Network_socket(int socket) :
+            lj::medium::Socket(socket),
+            is_open_(true)
     {
     }
 
-    Network_connection::Network_connection(Network_connection&& orig) :
-            is_open_(orig.is_open_),
-            socket_(orig.socket_)
+    Network_socket::Network_socket(Network_socket&& o) :
+            lj::medium::Socket(o.fd_),
+            is_open_(o.is_open_)
     {
-        orig.is_open_ = false;
-        orig.socket_ = -1;
+        o.is_open_ = false;
+        o.fd_ = -1;
     }
 
-    Network_connection::~Network_connection()
+    Network_socket& Network_socket::operator=(Network_socket&& rhs)
+    {
+        std::swap(rhs.is_open_, is_open_);
+        std::swap(rhs.fd_, fd_);
+        return *this;
+    }
+
+    Network_socket::~Network_socket()
     {
         close();
     }
     
-    Network_connection& Network_connection::operator=(Network_connection&& orig)
+    void Network_socket::close()
     {
-        // backup current values.
-        bool tmp_is_open = is_open_;
-        int tmp_socket = socket_;
-
-        // Copy over the new values
-        is_open_ = orig.is_open_;
-        socket_ = orig.socket_;
-
-        // restore old values into orig object.
-        orig.is_open_ = tmp_is_open;
-        orig.socket_ = tmp_socket;
-        
-        return *this;
-    }
-    
-    void Network_connection::connect(const struct addrinfo& target)
-    {
-        // If the connection is already open, than someone made a mistake somewhere.
         if (is_open())
         {
-            throw LJ__Exception("Connection already open. Cannot reconnect.");
+            lj::log::format<lj::Info>("Closing fh %d").end(socket());
+            ::close(socket());
+            is_open_ = false;
+            fd_ = -1;
         }
-        
+    }
+    
+    int Network_socket::socket() const
+    {
+        return fd_;
+    }
+
+    Network_socket socket_for_target(const struct addrinfo& target)
+    {
         // Get the socket object and deal with the C error states.
         int sockfd = ::socket(target.ai_family,
                 target.ai_socktype,
@@ -124,28 +124,7 @@ namespace logjam
             ::close(sockfd);
             throw LJ__Exception(oss.str());
         }
-        
-        is_open_ = true;
-        socket_ = sockfd;
-    }
-    
-    void Network_connection::close()
-    {
-        if (is_open())
-        {
-            ::close(socket_);
-            is_open_ = false;
-            socket_ = -1;
-        }
-    }
-    
-    int Network_connection::socket() const
-    {
-        if (!is_open())
-        {
-            throw LJ__Exception("Socket is not open.");
-        }
-        
-        return socket_;
+
+        return Network_socket(sockfd);
     }
 }; // namespace logjam

@@ -34,32 +34,28 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjamd/Auth.h"
+#include "logjam/User.h"
 
 namespace logjamd
 {
     //! Local Authentication password hash method implementation.
-    class Auth_method_password_hash : public Auth_method
+    class Auth_method_password_hash : public logjam::Authentication_method
     {
     public:
         Auth_method_password_hash();
+        Auth_method_password_hash(const Auth_method_password_hash& o) = delete;
+        Auth_method_password_hash(Auth_method_password_hash&& o) = default;
+        Auth_method_password_hash& operator=(
+                const Auth_method_password_hash& rhs) = delete;
+        Auth_method_password_hash& operator=(
+                Auth_method_password_hash&& rhs) = default;
         virtual ~Auth_method_password_hash();
-        virtual User* authenticate(const lj::bson::Node& data);
-        virtual void change_credentials(const User* requester,
-                const User* target,
+        virtual lj::Uuid authenticate(const lj::bson::Node& data) const override;
+        virtual void change_credential(const lj::Uuid& target,
                 const lj::bson::Node& data);
+        virtual std::string name() const;
     private:
-        std::map<std::string, lj::bson::Node*> users_by_credential_;
-        std::map<lj::Uuid, lj::bson::Node*> users_by_id_;
-    };
-
-    //! Local authentication provider implementation.
-    class Auth_provider_local : public Auth_provider
-    {
-    public:
-        Auth_provider_local();
-        virtual ~Auth_provider_local();
-        virtual const lj::Uuid& provider_id() const;
-        virtual Auth_method* method(const lj::Uuid& method_id);
+        std::map<std::string, lj::bson::Node*> credentials_by_login_;
+        std::map<lj::Uuid, lj::bson::Node*> credentials_by_id_;
     };
 };

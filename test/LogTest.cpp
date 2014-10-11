@@ -44,13 +44,13 @@ void testWrite_disable()
 {
     lj::log::enable<lj::Debug > ();
     lj::log::Logger& logger2 = lj::log::format<lj::Debug > ("foo");
-    lj::log::Logger_cout* ptr2 = dynamic_cast<lj::log::Logger_cout*>(&logger2);
+    lj::log::Logger_clog* ptr2 = dynamic_cast<lj::log::Logger_clog*>(&logger2);
     TEST_ASSERT(ptr2 != NULL);
     logger2.end();
 
     lj::log::disable<lj::Debug > ();
     lj::log::Logger& logger1 = lj::log::format<lj::Debug > ("foo");
-    lj::log::Logger_cout* ptr1 = dynamic_cast<lj::log::Logger_cout*>(&logger1);
+    lj::log::Logger_clog* ptr1 = dynamic_cast<lj::log::Logger_clog*>(&logger1);
     TEST_ASSERT(ptr1 == NULL);
     logger1.end();
 }

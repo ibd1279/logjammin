@@ -84,6 +84,7 @@ namespace test
             char out_[SZ];
             char* in_pos_;
             char* out_pos_;
+            int fd;
         }; // class test::medium::Memory
     }; // namespace test::medium
 }; //namespace test

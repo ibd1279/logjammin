@@ -36,9 +36,11 @@
 #include "logjamd/Stage_http_adapt.h"
 #include "logjamd/Stage_auth.h"
 #include "logjamd/constants.h"
-#include "lj/Log.h"
 #include "lj/Base64.h"
+#include "lj/Log.h"
+#include "lj/Streambuf_pipe.h"
 
+#include <cassert>
 #include <map>
 #include <iostream>
 
@@ -125,7 +127,7 @@ namespace
         }
     }
     
-    class Http_request
+    class Http_request : public logjam::Context::Additional_data
     {
     public:
         enum class Method {
@@ -220,6 +222,7 @@ namespace
         }
         std::string header_read_ahead;
         std::multimap<std::string, std::string> headers;
+        std::unique_ptr<logjam::Stage> real_stage;
     private:
         Method method_;
         std::string uri_;
@@ -433,36 +436,49 @@ namespace
 
 namespace logjamd
 {
-    Stage_http_adapt::Stage_http_adapt(Connection* connection, const std::string& method) :
-            Stage_adapt(connection),
-            method_(method),
-            real_stage_(new_auth_stage())
+    std::unique_ptr<logjam::Stage> Stage_http_adapt::logic(
+            logjam::pool::Swimmer& swmr) const
     {
-    }
+        logjam::Context& ctx = swmr.context();
+        std::iostream& http_ios = swmr.io();
 
-    Stage_http_adapt::~Stage_http_adapt()
-    {
-    }
-
-    Stage* Stage_http_adapt::logic()
-    {
-        // Read the requested path.
         try
         {
+            // Read everything out of the http request.
+            std::string method_str(
+                    lj::bson::as_string(
+                            swmr.context().node().nav("http_adapt/method")));
             std::multimap<std::string, std::string> headers;
-            Http_request req(method_);
-            process_first_line(req, conn()->io());
-            process_header_lines(req, conn()->io());
-            process_body_lines(req, conn()->io());
+            Http_request* req = new Http_request(method_str);
+            ctx.data(req);
+            process_first_line(*req, http_ios);
+            process_header_lines(*req, http_ios);
+            process_body_lines(*req, http_ios);
+            req->real_stage.reset(new Stage_auth());
+        }
+        catch (const lj::Exception& ex)
+        {
+            log("unexpected case: [%s]").end(ex);
+            std::string body(ex.str());
+            http_ios << HEADERS_SERVER_ERROR
+                    << HEADER_CONTENT_LENGTH << body.size()
+                    << HEADER_LINE_ENDING << HEADER_LINE_ENDING
+                    << body;
+            http_ios.flush();
+            return std::unique_ptr<Stage>(nullptr);
+        }
 
-            // deal with requested authorization.
-            lj::bson::Node auth_request;
-            bool can_retry = false;
+        assert(ctx.data() != nullptr);
+        Http_request& req = *(dynamic_cast<Http_request*>(ctx.data()));
+        bool can_retry = false;
+        lj::bson::Node auth_request;
+        try
+        {
             if (0 == req.uri().compare(0, REQUIRE_AUTH_PREFIX.size(),
                         REQUIRE_AUTH_PREFIX))
             {
                 // Authentication is required. 
-                log("Login required.").end();
+                log("Login required for %s.").end(req.uri());
 
                 // Look for authentication headers
                 auto auth_header = req.headers.find("Authorization");
@@ -471,32 +487,30 @@ namespace logjamd
                 if (auth_header == req.headers.end())
                 {
                     std::string body("Authentication information required.");
-                    conn()->io() << HEADERS_AUTH_REQUIRED;
-                    conn()->io() << HEADER_CONTENT_LENGTH << body.size();
-                    conn()->io() << HEADER_LINE_ENDING << HEADER_LINE_ENDING;
-                    conn()->io() << body;
-                    conn()->io().flush();
-                    return nullptr;
+                    http_ios << HEADERS_AUTH_REQUIRED
+                            << HEADER_CONTENT_LENGTH << body.size()
+                            << HEADER_LINE_ENDING << HEADER_LINE_ENDING
+                            << body;
+                    http_ios.flush();
+                    return std::unique_ptr<Stage>(nullptr);
                 }
 
                 // setup the auth_request object.
+                // TODO This is brittle, and needs to be fixed up.
                 std::string encoded_user_data(auth_header->second.substr(6));
                 size_t sz;
                 uint8_t* data = lj::base64_decode(encoded_user_data, &sz);
                 std::string login_data(reinterpret_cast<char*>(data), sz);
                 sz = login_data.find_first_of(':');
                 auth_request.set_child("method",
-                        lj::bson::new_uuid(lj::Uuid(k_auth_method,
-                                "password_hash",
-                                13)));
+                        lj::bson::new_string(k_auth_method_password));
                 auth_request.set_child("provider",
-                        lj::bson::new_uuid(lj::Uuid(k_auth_provider,
-                                "local",
-                                5)));
+                        lj::bson::new_string(k_auth_provider_local));
                 auth_request.set_child("data/login",
                         lj::bson::new_string(login_data.substr(0, sz)));
                 auth_request.set_child("data/password",
                         lj::bson::new_string(login_data.substr(sz + 1)));
+
                 can_retry = true;
                 
                 // remove the auth request part of the command
@@ -508,76 +522,76 @@ namespace logjamd
                 log("Using insecure adapter authentication.").end();
 
                 auth_request.set_child("method",
-                        lj::bson::new_uuid(lj::Uuid(k_auth_method,
-                                "password_hash",
-                                13)));
+                        lj::bson::new_string(k_auth_method_password));
                 auth_request.set_child("provider",
-                        lj::bson::new_uuid(lj::Uuid(k_auth_provider,
-                                "local",
-                                5)));
+                        lj::bson::new_string(k_auth_provider_local));
                 auth_request.set_child("data/login",
                         lj::bson::new_string(k_user_login_json));
                 auth_request.set_child("data/password",
                         lj::bson::new_string(k_user_password_json));
             }
 
+            // Create the xlator swimmer
+            lj::Streambuf_pipe pipe;
+            std::iostream xlator_ios(&pipe);
+            logjam::pool::utility::Swimmer_xlator swmr_xlator(swmr, xlator_ios);
+
             // Log into the system.
             log("Authenticating user [%s].").end(
                     lj::bson::as_string(auth_request["data/login"]));
-            pipe().sink() << auth_request;
-            std::unique_ptr<Stage> next_stage(real_stage_->logic());
-
-            // Deal with any stages that return themselves. unique_ptr does
-            // not guard against self resets.
-            if (real_stage_ == next_stage)
+            pipe.sink() << auth_request;
+            req.real_stage = safe_execute_stage(req.real_stage, swmr_xlator);
+            if (nullptr == req.real_stage)
             {
-                next_stage.release();
-            }
-            else
-            {
-                real_stage_.reset(next_stage.release());
+                throw LJ__Exception("Translated stage abruptly terminated.");
             }
 
             // extract the system response.
             lj::bson::Node auth_response;
-            pipe().source() >> auth_response;
+            pipe.source() >> auth_response;
 
             // Handle login failures.
             if (lj::bson::as_boolean(auth_response["success"]) == false
-                    || faux_connection().user() == nullptr
-                    || real_stage_ == nullptr)
+                    || ctx.user() == logjam::User::k_unknown
+                    || req.real_stage == nullptr)
             {
-                log("Login unsuccessful.").end();
+                log("Login unsuccessful. response=%s, user=%s, test=%s, stage=%p")
+                        << lj::bson::as_string(auth_response)
+                        << ctx.user().id().str()
+                        << swmr_xlator.context().user().id().str()
+                        << req.real_stage.get()
+                        << lj::log::end;
                 std::string body(lj::bson::as_json_string(auth_response));
                 if (can_retry)
                 {
                     // If they provided credentials, they can try again.
-                    conn()->io() << HEADERS_AUTH_REQUIRED;
+                    http_ios << HEADERS_AUTH_REQUIRED;
                 }
                 else
                 {
-                    // don't bother retrying, no credentials will get you in.
-                    conn()->io() << HEADERS_FORBIDDEN;
+                    // don't bother retrying,
+                    http_ios << HEADERS_FORBIDDEN;
                 }
-                conn()->io() << HEADER_CONTENT_LENGTH << body.size();
-                conn()->io() << HEADER_LINE_ENDING << HEADER_LINE_ENDING;
-                conn()->io() << body;
-                conn()->io().flush();
-                return nullptr;
+                http_ios << HEADER_CONTENT_LENGTH << body.size()
+                        << HEADER_LINE_ENDING << HEADER_LINE_ENDING
+                        << body;
+                http_ios.flush();
+                return std::unique_ptr<Stage>(nullptr);
             }
 
             // we got here on a successful login.
             log("Login successful.").end();
 
-            // Create the bson request.
             lj::bson::Node request;
             if (Http_request::Method::k_get == req.method())
             {
+                // Create the bson request from the uri.
                 request.set_child("command",
                         lj::bson::new_string(percent_decode(req.uri())));
             }
             else if (Http_request::Method::k_post == req.method())
             {
+                // Create the bson request from the post body.
                 std::multimap<std::string, std::string> params;
                 std::string raw_params(reinterpret_cast<const char*>(req.body()),
                         req.content_length());
@@ -596,63 +610,61 @@ namespace logjamd
             }
             else
             {
+                // Create the bson request from the request body (put).
                 std::string cmd(reinterpret_cast<const char*>(req.body()),
                         req.content_length());
                 request.set_child("command",
                         lj::bson::new_string(cmd));
             }
+
+            // TODO support other command languages.
             log("Using [%s] for the command.").end(
                     lj::bson::as_string(request["command"]));
             request.set_child("language",
-                    lj::bson::new_string(language()));
+                    lj::bson::new_string("lua"));
 
-            // Process the bson command.
-            pipe().sink() << request;
-            next_stage.reset(real_stage_->logic());
+            // Execute the command.
+            pipe.sink() << request;
+            safe_execute_stage(req.real_stage, swmr_xlator);
 
-            // Deal with any stages that return themselves. unique_ptr does
-            // not guard against self resets.
-            if (real_stage_ == next_stage)
-            {
-                next_stage.release();
-            }
-            else
-            {
-                real_stage_.reset(next_stage.release());
-            }
-
-            // Extract the response from the faux connection.
+            // extract the response.
             lj::bson::Node response;
-            pipe().source() >> response;
+            pipe.source() >> response;
 
             // This should be updated to deal with exceptions, etc.
             std::string body(lj::bson::as_json_string(response));
-            conn()->io() << HEADERS_SUCCESS;
-            conn()->io() << HEADER_CONTENT_LENGTH << body.size();
-            conn()->io() << HEADER_LINE_ENDING << HEADER_LINE_ENDING;
-            conn()->io() << body;
-            conn()->io().flush();
+            http_ios << HEADERS_SUCCESS
+                    << HEADER_CONTENT_LENGTH << body.size()
+                    << HEADER_LINE_ENDING << HEADER_LINE_ENDING
+                    << body;
+            http_ios.flush();
         }
         catch (lj::Exception& ex)
         {
             log("unexpected case: [%s]").end(ex);
             std::string body(ex.str());
-            conn()->io() << HEADERS_SERVER_ERROR;
-            conn()->io() << HEADER_CONTENT_LENGTH << body.size();
-            conn()->io() << HEADER_LINE_ENDING << HEADER_LINE_ENDING;
-            conn()->io() << body;
-            conn()->io().flush();
+            http_ios << HEADERS_SERVER_ERROR
+                    << HEADER_CONTENT_LENGTH << body.size()
+                    << HEADER_LINE_ENDING << HEADER_LINE_ENDING
+                    << body;
+            http_ios.flush();
         }
 
         // All http connections immediately disconnect.
+        // TODO some keep alive stuff.
         log("Disconnecting.").end();
-        return nullptr;
+        return std::unique_ptr<Stage>(nullptr);
     }
 
-    std::string Stage_http_adapt::name()
+    std::string Stage_http_adapt::name() const
     {
-        std::string my_name("HTTP-Adapter-");
-        return my_name + real_stage_->name();
+        std::string my_name("HTTP-Adapter");
+        return my_name;
+    }
+
+    std::unique_ptr<logjam::Stage> Stage_http_adapt::clone() const
+    {
+        return std::unique_ptr<logjam::Stage>(new Stage_http_adapt(*this));
     }
 };
 

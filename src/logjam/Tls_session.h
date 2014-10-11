@@ -338,7 +338,7 @@ namespace logjam
         {
             return std::string(gnutls_strerror(medium_ret_));
         }
-
+        int fd;
     private:
         gnutls_session_t session_;
         TCred credentials_;

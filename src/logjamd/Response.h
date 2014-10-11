@@ -1,7 +1,7 @@
 #pragma once
 /*!
- \file Stage_json_adapt.h
- \brief Logjam server stage for converting telnet json input into bson input.
+ \file Response.h
+ \brief Logjamd server response interface.
  \author Jason Watson
 
  Copyright (c) 2010, Jason Watson
@@ -34,21 +34,15 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjamd/Connection.h"
-#include "logjamd/Stage_adapt.h"
+#include "logjam/Stage.h"
+#include "lj/Bson.h"
 
 namespace logjamd
 {
-    //! Implementation of the text/json to bson adaptor stage.
-    class Stage_json_adapt : public Stage_adapt
+    namespace response
     {
-    public:
-        Stage_json_adapt(logjamd::Connection* connection);
-        virtual ~Stage_json_adapt();
-        virtual Stage* logic();
-        virtual std::string name();
-    private:
-        std::unique_ptr<Stage> real_stage_;
-    };
-};
-
+        lj::bson::Node new_empty(const logjam::Stage& generator);
+        lj::bson::Node new_error(const logjam::Stage& generator,
+                const std::string& msg);
+    }; // namespace response
+}; // namespace logjamd

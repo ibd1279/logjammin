@@ -35,8 +35,6 @@
  */
 
 #include "logjamd/Command_language.h"
-#include "lua/Bson.h"
-#include "lua.hpp"
 
 namespace lua
 {
@@ -44,19 +42,17 @@ namespace lua
     class Command_language_lua : public logjamd::Command_language
     {
     public:
-        //! Default constructor.
-        Command_language_lua(logjamd::Connection* conn, lj::bson::Node* req);
-
-        //! Default destructor.
-        virtual ~Command_language_lua();
-
-        virtual bool perform(lj::bson::Node& response);
-
-        virtual std::string name();
-    private:
-        logjamd::Connection* connection_;
-        lj::bson::Node* request_;
-        lua_State* L;
-        lua::Bson* state_;
+        Command_language_lua() = default;
+        Command_language_lua(const Command_language_lua& o) = default;
+        Command_language_lua(Command_language_lua&& o) = default;
+        Command_language_lua& operator=(
+                const Command_language_lua& rhs) = default;
+        Command_language_lua& operator=(
+                Command_language_lua&& rhs) = default;
+        virtual ~Command_language_lua() = default;
+        virtual bool perform(logjam::pool::Swimmer& swmr,
+                lj::bson::Node& request,
+                lj::bson::Node& response) const override;
+        virtual std::string name() const override;
     };
 };

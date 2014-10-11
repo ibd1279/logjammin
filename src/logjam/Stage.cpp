@@ -1,26 +1,25 @@
-#pragma once
 /*!
- \file logjamd/User.h
- \brief Logjam server User header.
+ \file Stage.cpp
+ \brief Logjam server stage abstract base source.
  \author Jason Watson
 
  Copyright (c) 2010, Jason Watson
  All rights reserved.
- 
+
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions are met:
- 
+
  * Redistributions of source code must retain the above copyright notice,
  this list of conditions and the following disclaimer.
- 
+
  * Redistributions in binary form must reproduce the above copyright notice,
  this list of conditions and the following disclaimer in the documentation
  and/or other materials provided with the distribution.
- 
+
  * Neither the name of the LogJammin nor the names of its contributors
  may be used to endorse or promote products derived from this software
  without specific prior written permission.
- 
+
  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -34,48 +33,52 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "lj/Uuid.h"
-#include <cstdint>
+#include "logjam/Stage.h"
 
-namespace logjamd
+namespace logjam
 {
-    //! User base class.
-    class User
+    lj::log::Logger& Stage::log(const std::string& fmt) const
     {
-    public:
-        User(const lj::Uuid& user_id,
-                const std::string& login) :
-                id_(user_id),
-                login_(login)
+        std::string real_fmt("%s: ");
+        real_fmt.append(fmt);
+        return lj::log::format<lj::Debug>(real_fmt) << name();
+    }
+
+    std::unique_ptr<Stage> safe_execute_stage(std::unique_ptr<Stage>& stg,
+            pool::Swimmer& swmr)
+    {
+        std::unique_ptr<Stage> result(nullptr);
+        if (nullptr != stg)
         {
+            result = stg->logic(swmr);
+            if (result.get() == stg.get())
+            {
+                // Release the result pointer, because we don't
+                // want the stack unwind to release the pointer twice.
+                result.release();
+                std::ostringstream oss;
+                oss << "Stage Logic Error. " << stg->name()
+                        << " logic() returned itself as the next stage."
+                        << " The next stage must be null or a new pointer."
+                        << " Never an existing Stage object.";
+                throw LJ__Exception(oss.str());
+            }
         }
 
-        User(const User& orig) = delete;
-        User& operator=(const User& orig) = delete;
+        return result;
+    }
 
-        //! Empty destructor
-        virtual ~User()
-        {
-        }
+    /*
+    // All this needs to find a new home in logjamd
+    std::unique_ptr<Stage> new_pre_stage(logjam::pool::Swimmer& swimmer)
+    {
+        return std::unique_ptr<Stage>(new Stage_pre(swimmer));
+    }
 
-        //! Clone this user object to create a new copy.
-        virtual User* clone() const
-        {
-            return new User(id_, login_);
-        }
-
-        //! Get the id for this user.
-        virtual const lj::Uuid& id() const
-        {
-            return id_;
-        }
-
-        virtual const std::string& login() const
-        {
-            return login_;
-        }
-    private:
-        lj::Uuid id_;
-        std::string login_;
-    };
+    std::unique_ptr<Stage> new_first_stage(logjam::pool::Swimmer& swimmer)
+    {
+        return std::unique_ptr<Stage>(new Stage_auth(swimmer, 0));
+    }
+    */
 };
+

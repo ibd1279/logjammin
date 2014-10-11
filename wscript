@@ -125,10 +125,14 @@ def build(bld):
     bld.stlib(
         source = [
             'src/logjam/Client_socket.cpp'
+            ,'src/logjam/Environs.cpp'
             ,'src/logjam/Network_address_info.cpp'
-            ,'src/logjam/Network_connection.cpp'
+            ,'src/logjam/Network_socket.cpp'
+            ,'src/logjam/Pool.cpp'
+            ,'src/logjam/Stage.cpp'
             ,'src/logjam/Tls_credentials.cpp'
             ,'src/logjam/Tls_globals.cpp'
+            ,'src/logjam/User.cpp'
         ]
         ,target='logjamclient'
         ,cxxflags = [
@@ -180,15 +184,12 @@ def build(bld):
 
     bld.stlib(
         source = [
-            'src/logjamd/Auth.cpp'
-            ,'src/logjamd/Auth_local.cpp'
-            ,'src/logjamd/Connection_secure.cpp'
-            ,'src/logjamd/Server_secure.cpp'
-            ,'src/logjamd/Stage_adapt.cpp'
+            'src/logjamd/Auth_local.cpp'
+            ,'src/logjamd/Pool_listen_threads.cpp'
+            ,'src/logjamd/Response.cpp'
             ,'src/logjamd/Stage_auth.cpp'
             ,'src/logjamd/Stage_execute.cpp'
             ,'src/logjamd/Stage_http_adapt.cpp'
-            ,'src/logjamd/Stage_json_adapt.cpp'
             ,'src/logjamd/Stage_pre.cpp'
             ,'src/lua/Bson.cpp'
             ,'src/lua/Command_language_lua.cpp'

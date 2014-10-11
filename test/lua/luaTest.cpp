@@ -19,7 +19,7 @@ public:
     Invoke_script_test() :
             request_(),
             env_(),
-            language_(env_.connection(), &request_)
+            language_()
     {
     }
 
@@ -32,7 +32,7 @@ public:
         return request_;
     }
 
-    inline Mock_environment& env()
+    inline Mock_env& env()
     {
         return env_;
     }
@@ -53,7 +53,9 @@ public:
         response.set_child("success", lj::bson::new_boolean(true));
         response.set_child("message", lj::bson::new_string("ok"));
         response.set_child("output", lj::bson::new_array());
-        language_.perform(response);
+        language_.perform(*(env().swimmer), request(), response);
+
+        std::cout << lj::bson::as_json_string(response) << std::endl;
 
         TEST_ASSERT_MSG(lj::bson::as_string(response.nav("message")),
                 lj::bson::as_boolean(response.nav("success")));
@@ -62,7 +64,7 @@ public:
     }
 private:
     lj::bson::Node request_;
-    Mock_environment env_;
+    Mock_env env_;
     T language_;
 
     std::string read_file(const std::string& filename)
@@ -88,13 +90,9 @@ private:
     }
 };
 
-uint8_t key[] = {0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,
-        0,1,2,3,4,5,6,7,8,9,0,1};
-
 void testBasicCommands()
 {
     Invoke_script_test<lua::Command_language_lua> harness;
-    harness.env().connection()->set_crypto_key("test", key, 32);
     lj::bson::Node response(
             harness.perform(path_for("Command_language_luaTest.lua")));
 }
@@ -102,7 +100,6 @@ void testBasicCommands()
 void testBson()
 {
     Invoke_script_test<lua::Command_language_lua> harness;
-    harness.env().connection()->set_crypto_key("test", key, 32);
     lj::bson::Node response(
             harness.perform(path_for("BsonTest.lua")));
 }
@@ -110,7 +107,6 @@ void testBson()
 void testUuid()
 {
     Invoke_script_test<lua::Command_language_lua> harness;
-    harness.env().connection()->set_crypto_key("test", key, 32);
     lj::bson::Node response(
             harness.perform(path_for("UuidTest.lua")));
 }
@@ -118,7 +114,6 @@ void testUuid()
 void testDocument()
 {
     Invoke_script_test<lua::Command_language_lua> harness;
-    harness.env().connection()->set_crypto_key("test", key, 32);
     lj::bson::Node response(
             harness.perform(path_for("DocumentTest.lua")));
 }

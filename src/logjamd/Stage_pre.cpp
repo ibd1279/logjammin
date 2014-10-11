@@ -34,12 +34,11 @@
  */
 
 #include "logjamd/Stage_pre.h"
-#include "logjamd/Connection.h"
+#include "logjamd/Response.h"
 #include "logjamd/Stage_auth.h"
 #include "logjamd/Stage_http_adapt.h"
-#include "logjamd/Stage_json_adapt.h"
-#include "logjamd/User.h"
 #include "logjamd/constants.h"
+#include "logjam/User.h"
 
 #include "lj/Bson.h"
 #include "lj/Log.h"
@@ -48,7 +47,6 @@
 namespace
 {
     const std::string k_bson_mode("bson\n");
-    const std::string k_json_mode("json\n");
     const std::string k_http_get_mode("get /");
     const std::string k_http_post_mode("post ");
     const std::string k_tls_mode("+tls\n");
@@ -58,16 +56,7 @@ namespace
 
 namespace logjamd
 {
-    Stage_pre::Stage_pre(logjamd::Connection* connection)
-            : logjamd::Stage(connection)
-    {
-    }
-
-    Stage_pre::~Stage_pre()
-    {
-    }
-
-    Stage* Stage_pre::logic()
+    std::unique_ptr<logjam::Stage> Stage_pre::logic(logjam::pool::Swimmer& swmr) const
     {
         log("Starting logic.").end();
         char buffer[6];
@@ -75,7 +64,7 @@ namespace logjamd
         for (int h = 0; h < 5; ++h)
         {
             char c;
-            conn()->io().get(c);
+            swmr.io().get(c);
             buffer[h] = std::tolower(c, loc);
         }
         buffer[5] = '\0';
@@ -88,68 +77,41 @@ namespace logjamd
         if (k_bson_mode.compare(buffer) == 0)
         {
             log("Using BSON mode.").end();
-            conn()->io() << empty_response();
-            return new Stage_auth(conn());
-        }
-        else if (k_json_mode.compare(buffer) == 0)
-        {
-            log("Using json mode.").end();
-            conn()->io() << lj::bson::as_json_string(empty_response());
-            Stage* next_stage = new Stage_json_adapt(conn());
-            return next_stage->logic();
+            swmr.io() << response::new_empty(*this);
+            return std::unique_ptr<logjam::Stage>(new Stage_auth());
         }
         else if (k_http_get_mode.compare(buffer) == 0)
         {
             log("Using HTTP get mode.").end();
-            Stage* next_stage = new Stage_http_adapt(conn(), "get");
-            return next_stage;
+            swmr.context().node().set_child("http_adapt/method",
+                    lj::bson::new_string("get"));
+            return std::unique_ptr<logjam::Stage>(new Stage_http_adapt());
         }
         else if (k_http_post_mode.compare(buffer) == 0)
         {
             log("Using HTTP post mode.").end();
-            conn()->io().get(); // Consume the prefix slash.
-            Stage* next_stage = new Stage_http_adapt(conn(), "post");
-            return next_stage;
-        }
-        else if (k_tls_mode.compare(buffer) == 0 &&
-                !conn()->secure() &&
-                conn()->securable())
-        {
-            log("Attempting to secure the connection.").end();
-            conn()->io() << empty_response();
-            conn()->io().flush();
-            conn()->make_secure();
-            if (conn()->secure())
-            {
-                log("Connection is secure.").end();
-                conn()->io() << empty_response();
-                return this;
-            }
-            else
-            {
-                log("Failed to secure connection.").end();
-                return nullptr;
-            }
-        }
-        else if (k_peer_mode.compare(buffer) == 0 &&
-                conn()->secure())
-        {
-            log("Converting connection to a peer connection.");
-            return nullptr;
+            swmr.io().get(); // Consume the prefix slash.
+            swmr.context().node().set_child("http_adapt/method",
+                    lj::bson::new_string("post"));
+            return std::unique_ptr<logjam::Stage>(new Stage_http_adapt());
         }
         else
         {
             std::string mode(buffer, 4);
             log("Unknown mode provided: %s").end(mode);
-            conn()->io() << lj::bson::as_string(error_response(k_error_unknown_mode + mode));
+            swmr.io() << lj::bson::as_string(response::new_error(*this,
+                    k_error_unknown_mode + mode));
             return nullptr;
         }
     }
 
-    std::string Stage_pre::name()
+    std::string Stage_pre::name() const
     {
         return std::string("Pre-connection");
     }
+
+    std::unique_ptr<logjam::Stage> Stage_pre::clone() const
+    {
+        return std::unique_ptr<Stage>(new Stage_pre(*this));
+    }
 };
-
-

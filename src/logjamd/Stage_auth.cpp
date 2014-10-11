@@ -35,10 +35,10 @@
 
 #include "logjamd/Stage_auth.h"
 
-#include "logjamd/Auth.h"
-#include "logjamd/Connection.h"
+#include "logjamd/Response.h"
 #include "logjamd/Stage_execute.h"
 #include "logjamd/constants.h"
+#include "logjam/User.h"
 #include "lj/Bson.h"
 #include "lj/Log.h"
 #include "lj/Uuid.h"
@@ -47,6 +47,8 @@
 
 namespace
 {
+    const int64_t k_max_auth_attempts(3);
+    const std::string k_exceeded_max_attempts("You have exceeded the maximum allowed number of auth attempts.");
     const std::string k_unknown_auth_provider("Unknown auth provider.");
     const std::string k_unknown_auth_method("Unknown auth method.");
     const std::string k_failed_auth_method("Authentication failed.");
@@ -57,123 +59,104 @@ namespace
 
 namespace logjamd
 {
-    Stage_auth::Stage_auth(logjamd::Connection* connection)
-            : logjamd::Stage(connection), attempts_(0)
+    std::unique_ptr<logjam::Stage> Stage_auth::logic(logjam::pool::Swimmer& swmr) const
     {
-    }
+        // abort if we have attempted to auth too many times.
+        lj::bson::Node& attempts =
+                swmr.context().node().nav("auth/attempts");
+        lj::bson::increment(attempts, 1);
+        if (k_max_auth_attempts <= lj::bson::as_int64(attempts))
+        {
+            swmr.io() << response::new_error(*this,
+                    k_exceeded_max_attempts);
+            return std::unique_ptr<Stage>(nullptr);
+        }
 
-    Stage_auth::~Stage_auth()
-    {
-    }
-
-    Stage* Stage_auth::logic()
-    {
-        attempts_++;
+        // Get the input data.
         lj::bson::Node n;
-        conn()->io() >> n;
-        lj::Uuid method_id(lj::bson::as_uuid(n.nav("method")));
-        lj::Uuid provider_id(lj::bson::as_uuid(n.nav("provider")));
+        swmr.io() >> n;
+        std::string method_name(lj::bson::as_string(n["method"]));
+        std::string provider_name(lj::bson::as_string(n["provider"]));
 
-        lj::bson::Node response;
-        response.set_child("stage", lj::bson::new_string(name()));
+        // prepare the response
+        lj::bson::Node response(response::new_empty(*this));
         response.set_child("success", lj::bson::new_boolean(false));
 
-        log("Attempting Authentication.").end();
-        Auth_provider* provider = Auth_registry::provider(provider_id);
-        if (provider)
+        log("Looking up method %s in provider %s.")
+                << method_name
+                << provider_name
+                << lj::log::end;
+        try
         {
-            Auth_method* method = provider->method(method_id);
-            if (method)
-            {
-                User* user = method->authenticate(n.nav("data"));
-                if (user)
-                {
-                    lj::log::out<lj::Info>(k_succeeded_auth_method);
-                    response.set_child("success", lj::bson::new_boolean(true));
-                    response.set_child("message", lj::bson::new_string(k_succeeded_auth_method));
-                    conn()->user(user);
-                }
-                else
-                {
-                    lj::log::out<lj::Info>(k_failed_auth_method);
-                    response.set_child("message", lj::bson::new_string(k_failed_auth_method));
-                }
-            }
-            else
-            {
-                lj::log::out<lj::Info>(k_unknown_auth_method);
-                response.set_child("message", lj::bson::new_string(k_unknown_auth_method));
-            }
+            logjam::Authentication_repository& auth_repo =
+                    swmr.context().environs().authentication_repository();
+            logjam::Authentication_provider& provider =
+                    auth_repo.provider(provider_name);
+            logjam::Authentication_method& method =
+                    provider.method(method_name);
+            lj::Uuid user_id(method.authenticate(n["data"]));
+
+            logjam::User_repository& user_repo =
+                    swmr.context().environs().user_repository();
+            logjam::User user(user_repo.find(user_id));
+            lj::log::format<lj::Info>("Authentication succeeded for %s.")
+                    << user.name()
+                    << lj::log::end;
+
+            response.set_child("success", lj::bson::new_boolean(true));
+            response.set_child("message", lj::bson::new_string(k_succeeded_auth_method));
+            
+            // update the ctx object for the right user.
+            swmr.context().user() = user;
         }
-        else
+        catch (logjam::Authentication_provider_not_found_exception& ex)
         {
-            lj::log::out<lj::Info>(k_unknown_auth_provider);
-            response.set_child("message",
-                    lj::bson::new_string(k_unknown_auth_provider));
+            log("Failed to find provider %s.")
+                    << provider_name
+                    << lj::log::end;
+            response.set_child("message", lj::bson::new_string(k_unknown_auth_provider));
+        }
+        catch (logjam::Authentication_method_not_found_exception& ex)
+        {
+            log("Failed to find method %s in provider %s.")
+                    << method_name
+                    << provider_name
+                    << lj::log::end;
+            response.set_child("message", lj::bson::new_string(k_unknown_auth_method));
+        }
+        catch (logjam::User_not_found_exception& ex)
+        {
+            response.set_child("message", lj::bson::new_string(k_failed_auth_method));
         }
 
-        Stage* next_stage = nullptr;
-        if (conn()->user())
+        // Send the response.
+        swmr.io() << response;
+
+        // selet the next stage.
+        std::unique_ptr<Stage> next_stage;
+        if (lj::bson::as_boolean(response["success"]))
         {
             // TODO impersonation
 
-            // key setup.
-            if (n.exists("keys"))
-            {
-                lj::bson::Node& keys = n["keys"];
-                bool force_keys = lj::bson::as_boolean(
-                        n["i_know_connection_is_insecure"]);
-                if (conn()->secure() || force_keys)
-                {
-                    // Notify the user if being forced to use keys.
-                    if (force_keys)
-                    {
-                        response.set_child("message",
-                                lj::bson::new_string(k_keys_warning));
-                    }
-
-                    for (auto iter = keys.to_vector().begin();
-                            keys.to_vector().end() != iter;
-                            ++iter)
-                    {
-                        std::string name(lj::bson::as_string(
-                                (*iter)->nav("name")));
-                        uint32_t sz;
-                        lj::bson::Binary_type bt;
-                        const uint8_t* data = lj::bson::as_binary(
-                                (*iter)->nav("data"),
-                                &bt,
-                                &sz);
-                        conn()->set_crypto_key(name, data, sz);
-                    }
-                }
-                else
-                {
-                    response.set_child("message",
-                            lj::bson::new_string(k_keys_ignored));
-                }
-            }
-
-            next_stage = new Stage_execute(conn());
+            // Move on to the execution stage.
+            next_stage.reset(new Stage_execute());
         }
         else
         {
-            if (attempts_ < 3)
-            {
-                next_stage = this;
-            }
-            else
-            {
-                next_stage = NULL;
-            }
+            next_stage = this->clone();
         }
 
-        conn()->io() << response;
         return next_stage;
     }
-    std::string Stage_auth::name()
+
+    std::string Stage_auth::name() const
     {
         return std::string("Authentication");
+    }
+
+    std::unique_ptr<logjam::Stage> Stage_auth::clone() const
+    {
+        return std::unique_ptr<Stage>(new Stage_auth());
     }
 };
 

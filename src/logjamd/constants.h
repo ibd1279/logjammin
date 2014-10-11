@@ -41,17 +41,11 @@ namespace logjamd
     //! Root Uuid for calculating other Uuids.
     const lj::Uuid k_logjamd_root(lj::Uuid::k_nil, "logjamd", 7);
 
-    //! Root Uuid for calculating the Uuids for authentication methods.
-    const lj::Uuid k_auth_method(k_logjamd_root, "auth_method", 11);
-
     //! Password Hash authentication method Uuid.
-    const lj::Uuid k_auth_method_password(logjamd::k_auth_method, "password_hash", 13);
-
-    //! Root Uuid for calculating the Uuids for authentication providers.
-    const lj::Uuid k_auth_provider(k_logjamd_root, "auth_provider", 13);
+    const std::string k_auth_method_password("bcrypt");
 
     //! Local authentication provider Uuid.
-    const lj::Uuid k_auth_provider_local(k_auth_provider, "local", 5);
+    const std::string k_auth_provider_local("LOCAL");
 
     // JSON insecure account.
     const lj::Uuid k_user_id_json("00000000-0000-4006-8fbc-ee299933509f"); //!< built-in json user id.

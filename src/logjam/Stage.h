@@ -1,7 +1,7 @@
 #pragma once
 /*!
  \file Stage.h
- \brief Logjam server stage abstract base definition.
+ \brief Logjam stage abstract base definition.
  \author Jason Watson
 
  Copyright (c) 2010, Jason Watson
@@ -34,15 +34,14 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "logjam/Pool.h"
 #include "lj/Bson.h"
 #include "lj/Log.h"
 #include <memory>
 #include <string>
 
-namespace logjamd
+namespace logjam
 {
-    class Connection;
-
     //! A stage is a specific server execution unit.
     /*!
      \par
@@ -52,51 +51,27 @@ namespace logjamd
      etc. After that comes authentication, and then things start to diverge
      based on the handshake result.
      \par
-     This class is the abstract base class for all of the stage objects. It
-     provides the interface and some helper methods to simplify the specific
-     stage implementations.
-     \sa logjamd::Stage_pre
-     \sa logjamd::Stage_auth
+     It is expected that Stage objects are stateless, and immutable. Any
+     state information should be attached to the swimmer context, and not
+     added as instance state.
+     \since 0.1
      */
     class Stage
     {
     public:
-        Stage(logjamd::Connection* connection) : connection_(connection)
-        {
-        }
-        virtual ~Stage()
-        {
-        }
-        virtual Stage* logic() = 0;
-        virtual std::string name() = 0;
-        virtual logjamd::Connection* conn()
-        {
-            return connection_;
-        }
+        Stage() = default;
+        Stage(const Stage& o) = default;
+        Stage(Stage&& o) = default;
+        Stage& operator=(const Stage& rhs) = default;
+        Stage& operator=(Stage&& rhs) = default;
+        virtual ~Stage() = default;
+        virtual std::unique_ptr<Stage> logic(pool::Swimmer& swmr) const = 0;
+        virtual std::string name() const = 0;
+        virtual std::unique_ptr<Stage> clone() const = 0;
     protected:
-        virtual lj::bson::Node empty_response()
-        {
-            lj::bson::Node n;
-            n.set_child("stage", lj::bson::new_string(name()));
-            n.set_child("success", lj::bson::new_boolean(true));
-            n.set_child("message", lj::bson::new_string("ok"));
-            return n;
-        }
-        virtual lj::bson::Node error_response(const std::string& msg)
-        {
-            lj::bson::Node n;
-            n.set_child("stage", lj::bson::new_string(name()));
-            n.set_child("success", lj::bson::new_boolean(false));
-            n.set_child("message", lj::bson::new_string(msg));
-            return n;
-        }
-        virtual lj::log::Logger& log(const std::string& fmt)
-        {
-            std::string real_fmt("%s: ");
-            real_fmt.append(fmt);
-            return lj::log::format<lj::Debug>(real_fmt) << name();
-        }
-    private:
-        logjamd::Connection* connection_;
-    };
+        virtual lj::log::Logger& log(const std::string& fmt) const;
+    }; // class logjam::Stage
+
+    std::unique_ptr<Stage> safe_execute_stage(std::unique_ptr<Stage>& stg,
+            pool::Swimmer& swmr);
 };

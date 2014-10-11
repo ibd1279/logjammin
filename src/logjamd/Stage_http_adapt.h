@@ -34,22 +34,24 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjamd/Connection.h"
-#include "logjamd/Stage_adapt.h"
+#include "logjam/Stage.h"
 
 namespace logjamd
 {
-    //! Implementation of the HTTP GET to bson adaptor stage.
-    class Stage_http_adapt : public Stage_adapt
+    //! HTTP to bson adaptor stage.
+    class Stage_http_adapt : public logjam::Stage
     {
     public:
-        Stage_http_adapt(logjamd::Connection* connection, const std::string& method);
-        virtual ~Stage_http_adapt();
-        virtual Stage* logic();
-        virtual std::string name();
-    private:
-        std::string method_;
-        std::unique_ptr<Stage> real_stage_;
+        Stage_http_adapt() = default;
+        Stage_http_adapt(const Stage_http_adapt& o) = default;
+        Stage_http_adapt(Stage_http_adapt&& o) = default;
+        Stage_http_adapt& operator=(const Stage_http_adapt& rhs) = default;
+        Stage_http_adapt& operator=(Stage_http_adapt&& rhs) = default;
+        virtual ~Stage_http_adapt() = default;
+        virtual std::unique_ptr<logjam::Stage> logic(
+                logjam::pool::Swimmer& swmr) const override;
+        virtual std::string name() const override;
+        virtual std::unique_ptr<logjam::Stage> clone() const override;
     };
 };
 

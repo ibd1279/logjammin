@@ -5,26 +5,18 @@
 #include "lj/Log.h"
 #include "lj/Streambuf_pipe.h"
 #include "lj/Wiper.h"
-#include "logjamd/Auth.h"
 #include "logjamd/Auth_local.h"
-#include "logjamd/Server.h"
-#include "logjamd/Connection.h"
+#include "logjam/Pool.h"
 #include "logjamd/constants.h"
 
 #include <cassert>
 #include <cstdio>
 #include <cstring>
 #include <istream>
-#include <map>
+#include <list>
 #include <sstream>
 #include <string>
 
-const lj::Uuid k_auth_method_password_hash(logjamd::k_auth_method,
-        "password_hash",
-        13);
-const lj::Uuid k_auth_provider_local(logjamd::k_auth_provider,
-        "local",
-        5);
 const lj::Uuid k_user_id_admin{0x00, 0x00, 0x00, 0x00,
                     0x00, 0x00, 0x40, 0x00,
                     0xb2, 0xb3, 0x67, 0x3f,
@@ -32,188 +24,159 @@ const lj::Uuid k_user_id_admin{0x00, 0x00, 0x00, 0x00,
 const std::string k_user_login_admin("admin");
 const std::string k_user_password_admin("1!aA2@Bb");
 
-struct Json_auth
+struct Mock_auth_data
 {
-    Json_auth() : n(), u(logjamd::k_user_id_json, logjamd::k_user_login_json)
+    Mock_auth_data(const lj::Uuid& id,
+            const std::string& login,
+            const std::string& password) :
+            n(),
+            u(id, login)
     {
         n.set_child("login",
                 lj::bson::new_string(logjamd::k_user_login_json));
         n.set_child("password",
                 lj::bson::new_string(logjamd::k_user_password_json));
-
-        // Setup the user in the auth registry.
-        lj::log::disable<lj::Debug>();
-        auto provider = logjamd::Auth_registry::provider(k_auth_provider_local);
-        assert(provider);
-        auto method = provider->method(k_auth_method_password_hash);
-        assert(method);
-        method->change_credentials(&u, &u, n);
-        lj::log::enable<lj::Debug>();
     }
 
     lj::bson::Node n;
-    logjamd::User u;
-};
-
-struct Http_auth
-{
-    Http_auth() : n(), u(logjamd::k_user_id_http, logjamd::k_user_login_http)
-    {
-        n.set_child("login",
-                lj::bson::new_string(logjamd::k_user_login_http));
-        n.set_child("password",
-                lj::bson::new_string(logjamd::k_user_password_http));
-
-        // Setup the user in the auth registry.
-        lj::log::disable<lj::Debug>();
-        logjamd::Auth_registry::provider(k_auth_provider_local)->
-                method(k_auth_method_password_hash)->
-                change_credentials(&u, &u, n);
-        lj::log::enable<lj::Debug>();
-    }
-
-    lj::bson::Node n;
-    logjamd::User u;
-};
-
-struct Admin_auth
-{
-    Admin_auth() : n(),
-            u(k_user_id_admin, k_user_login_admin)
-    {
-        n.set_child("login",
-                lj::bson::new_string(k_user_login_admin));
-        n.set_child("password",
-                lj::bson::new_string(k_user_password_admin));
-
-        // Setup the user in the auth registry.
-        lj::log::disable<lj::Debug>();
-        logjamd::Auth_registry::provider(k_auth_provider_local)->
-                method(k_auth_method_password_hash)->
-                change_credentials(&u, &u, n);
-        lj::log::enable<lj::Debug>();
-    }
-
-    lj::bson::Node n;
-    logjamd::User u;
-};
+    logjam::User u;
+}; // struct Mock_auth_data
 
 struct Mock_server_init
 {
-    Mock_server_init()
+    Mock_server_init() :
+            json(logjamd::k_user_id_json,
+                    logjamd::k_user_login_json,
+                    logjamd::k_user_password_json),
+            http(logjamd::k_user_id_http,
+                    logjamd::k_user_login_http,
+                    logjamd::k_user_password_http),
+            admin(k_user_id_admin,
+                    k_user_login_admin,
+                    k_user_password_admin),
+            user_repo(),
+            auth_repo()
     {
-        logjamd::Auth_provider_local* provider_local =
-                new logjamd::Auth_provider_local();
-        logjamd::Auth_registry::enable(provider_local);
-        json = new Json_auth();
-        http = new Http_auth();
-        admin = new Admin_auth();
+        // Setup users.
+        user_repo.store(json.u);
+        user_repo.store(http.u);
+        user_repo.store(admin.u);
+
+        // Setup auth repo.
+        logjam::Authentication_provider* provider = 
+                new logjam::Authentication_provider_simple<logjamd::Auth_method_password_hash>(
+                        logjamd::k_auth_provider_local);
+        auth_repo.enable(provider);
+        logjam::Authentication_method& mthd =
+                provider->method("bcrypt");
+
+        // setup credentials.
+        mthd.change_credential(json.u.id(), json.n);
+        mthd.change_credential(http.u.id(), http.n);
+        mthd.change_credential(admin.u.id(), admin.n);
     }
-    Json_auth* json;
-    Http_auth* http;
-    Admin_auth* admin;
+
+    Mock_auth_data json;
+    Mock_auth_data http;
+    Mock_auth_data admin;
+    logjam::User_repository user_repo;
+    logjam::Authentication_repository auth_repo;
 };
 
-class Server_mock : public logjamd::Server
+class Swimmer_mock : public logjam::pool::Swimmer
 {
 public:
-    Server_mock() : logjamd::Server(new lj::bson::Node())
+    Swimmer_mock(logjam::pool::Lifeguard& lg,
+            logjam::Context&& ctx) :
+            logjam::pool::Swimmer(lg, std::move(ctx)),
+            pipe_(),
+            stream_(&pipe_)
     {
     }
-    virtual void startup()
-    {
-    }
-    virtual void listen()
-    {
-    }
-    virtual void shutdown()
-    {
-    }
-    virtual void detach(logjamd::Connection*)
-    {
-    }
-};
+    Swimmer_mock(const Swimmer_mock& o) = delete;
+    Swimmer_mock(Swimmer_mock&& o) = delete;
+    Swimmer_mock& operator=(const Swimmer_mock&& rhs) = delete;
+    Swimmer_mock& operator=(Swimmer_mock&& rhs) = delete;
+    virtual ~Swimmer_mock() = default;
 
-class Connection_mock : public logjamd::Connection
-{
+    virtual void run() override { }
+    virtual void stop() override { }
+    virtual void cleanup() override { }
+    virtual std::iostream& io() override { return stream_; }
+    virtual std::ostream& sink() { return pipe_.sink(); }
+    virtual std::istream& source() { return pipe_.source(); }
 private:
-    logjamd::Server* server_;
-    std::map<std::string, std::unique_ptr<uint8_t[], lj::Wiper<uint8_t[]>>> keys_;
-public:
-    Connection_mock(std::iostream* stream) :
-            logjamd::Connection(new Server_mock(), new lj::bson::Node(), stream),
-            server_(&server()),
-            keys_()
-    {
-    }
-    ~Connection_mock()
-    {
-        delete server_;
-    }
-    virtual void start()
-    {
-    }
-    void set_crypto_key(const std::string& identifier,
-            const void* key,
-            int sz)
-    {
-        std::unique_ptr<uint8_t[], lj::Wiper<uint8_t[]> > key_ptr(new uint8_t[sz]);
-        key_ptr.get_deleter().set_count(sz);
-        memcpy(key_ptr.get(), key, sz);
-        keys_[identifier] = std::move(key_ptr);
-    }
-    const void* get_crypto_key(
-            const std::string& identifier,
-            int* sz)
-    {
-        auto iter = keys_.find(identifier);
-        if(keys_.end() != iter)
-        {
-            *sz = (*iter).second.get_deleter().count();
-            return (*iter).second.get();
-        }
-        else
-        {
-            *sz = 0;
-            return NULL;
-        }
-    }
+    lj::Streambuf_pipe pipe_;
+    std::iostream stream_;
+}; // class Swimmer_mock
 
-};
-
-class Mock_environment
+class Lifeguard_mock : public logjam::pool::Lifeguard
 {
 public:
-    Mock_environment() :
-            pipe(),
-            connection_(NULL)
+    Lifeguard_mock(logjam::pool::Area& a) :
+            logjam::pool::Lifeguard(a)
     {
     }
-    ~Mock_environment()
-    {
-        if (connection_)
-        {
-            delete connection_;
-        }
-    }
-    Connection_mock* connection()
-    {
-        if (!connection_)
-        {
-            connection_ = new Connection_mock(new std::iostream(&pipe));
-        }
-        return connection_;
-    }
-    std::ostream& request()
-    {
-        return pipe.sink();
-    }
-    std::istream& response()
-    {
-        return pipe.source();
-    }
-private:
-    lj::Streambuf_pipe pipe;
-    Connection_mock* connection_;
-};
+    Lifeguard_mock(const Lifeguard_mock& o) = delete;
+    Lifeguard_mock(Lifeguard_mock&& o) = delete;
+    Lifeguard_mock& operator=(const Lifeguard_mock& rhs) = delete;
+    Lifeguard_mock& operator=(Lifeguard_mock&& rhs) = delete;
+    virtual ~Lifeguard_mock() = default;
 
+    virtual void remove(logjam::pool::Swimmer* s) override { delete s; }
+    virtual void watch(logjam::pool::Swimmer* s) override { }
+    virtual void run() override { }
+    virtual void stop() { }
+    virtual void cleanup() override { }
+
+    virtual std::unique_ptr<Swimmer_mock> generate_swimmer()
+    {
+        return std::unique_ptr<Swimmer_mock>(
+                new Swimmer_mock(*this,
+                        area().spawn_context()));
+    }
+}; // class Lifeguard_mock
+
+class Area_mock : public logjam::pool::Area
+{
+public:
+    explicit Area_mock(logjam::Environs&& env) :
+            logjam::pool::Area(std::move(env))
+    {
+    }
+    Area_mock(const Area_mock& o) = delete;
+    Area_mock(Area_mock&& o) = default;
+    Area_mock& operator=(const Area_mock& rhs) = delete;
+    Area_mock& operator=(Area_mock&& rhs) = default;
+    virtual ~Area_mock() = default;
+
+    virtual void prepare() override { }
+    virtual void open() override { }
+    virtual void close() override { }
+    virtual void cleanup() override { }
+
+    virtual std::unique_ptr<Lifeguard_mock> generate_lifeguard()
+    {
+        return std::unique_ptr<Lifeguard_mock>(
+                new Lifeguard_mock(*this));
+    }
+}; // class Area_mock
+
+struct Mock_env
+{
+    Mock_env() :
+            server(),
+            area(logjam::Environs(lj::bson::Node(),
+                    &(server.user_repo),
+                    &(server.auth_repo))),
+            lifeguard(area.generate_lifeguard()),
+            swimmer(lifeguard->generate_swimmer())
+    {
+    }
+
+    Mock_server_init server;
+    Area_mock area;
+    std::unique_ptr<Lifeguard_mock> lifeguard;
+    std::unique_ptr<Swimmer_mock> swimmer;
+
+}; // struct Mock_env

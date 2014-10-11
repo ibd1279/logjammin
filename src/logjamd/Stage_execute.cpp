@@ -34,12 +34,13 @@
  */
 
 #include "logjamd/Stage_execute.h"
-#include "logjamd/Connection.h"
 #include "logjamd/Command_language.h"
+#include "logjamd/Response.h"
 #include "lua/Command_language_lua.h"
 #include "lj/Bson.h"
 #include "lj/Log.h"
 #include "lj/Stopclock.h"
+#include <iostream>
 
 namespace
 {
@@ -49,47 +50,48 @@ namespace
 
 namespace logjamd
 {
-    Stage_execute::Stage_execute(logjamd::Connection* connection) :
-            Stage::Stage(connection)
-    {
-    }
-
-    Stage_execute::~Stage_execute()
-    {
-    }
-
-    Stage* Stage_execute::logic()
+    std::unique_ptr<logjam::Stage> Stage_execute::logic(
+            logjam::pool::Swimmer& swmr) const
     {
         log("Executing command.").end();
         lj::Stopclock timer;
 
         lj::bson::Node request;
-        conn()->io() >> request;
+        swmr.io() >> request;
 
         // The command language should be swapped out for different langauges.
         // Lua is the only supported language right now.
-        Command_language* cmd_lang = NULL;
-        cmd_lang = new lua::Command_language_lua(
-                conn(),
-                &request);
+        std::unique_ptr<Command_language> cmd_lang(
+                new lua::Command_language_lua());
 
         log("Using %s for the command language.").end(cmd_lang->name());
 
-        lj::bson::Node response(empty_response());
+        lj::bson::Node response(response::new_empty(*this));
         response.set_child("output",
                 new lj::bson::Node(lj::bson::Type::k_array, NULL));
-        bool result = cmd_lang->perform(response);
+        bool result = cmd_lang->perform(swmr, request, response);
         response.set_child("elapsed", lj::bson::new_uint64(timer.elapsed()));
-        conn()->io() << response;
-        delete cmd_lang;
+        swmr.io() << response;
+
+        // Setup the return object.
+        std::unique_ptr<Stage> next_stage(nullptr);
+        if (result)
+        {
+            next_stage = this->clone();
+        }
 
         log("Elapsed %llu ns.").end(timer.elapsed());
-        return result ? new Stage_execute(conn()) : NULL;
+        return next_stage;
     }
 
-    std::string Stage_execute::name()
+    std::string Stage_execute::name() const
     {
         return std::string("Execution");
+    }
+
+    std::unique_ptr<logjam::Stage> Stage_execute::clone() const
+    {
+        return std::unique_ptr<logjam::Stage>(new Stage_execute(*this));
     }
 };
 

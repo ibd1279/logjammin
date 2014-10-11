@@ -34,7 +34,7 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjamd/Stage.h"
+#include "logjam/Stage.h"
 
 namespace logjamd
 {
@@ -47,13 +47,19 @@ namespace logjamd
      what the user is attempting to request from that.
      \since 0.1
      */
-    class Stage_pre : public Stage
+    class Stage_pre : public logjam::Stage
     {
     public:
-        Stage_pre(logjamd::Connection* connection);
-        virtual ~Stage_pre();
-        virtual Stage* logic();
-        virtual std::string name();
+        Stage_pre() = default;
+        Stage_pre(const Stage_pre& o) = default;
+        Stage_pre(Stage_pre&& o) = default;
+        Stage_pre& operator=(const Stage_pre& rhs) = default;
+        Stage_pre& operator=(Stage_pre&& rhs) = default;
+        virtual ~Stage_pre() = default;
+        virtual std::unique_ptr<logjam::Stage> logic(
+                logjam::pool::Swimmer& swmr) const override;
+        virtual std::string name() const override;
+        virtual std::unique_ptr<logjam::Stage> clone() const override;
     };
 };
 

@@ -69,7 +69,7 @@ namespace lj
             /*!
              \param data The socket descriptor.
              */
-            Socket(int data) : fd(data)
+            explicit Socket(int data) : fd_(data)
             {
             }
 
@@ -84,9 +84,9 @@ namespace lj
              \param len Maximum number of bytes to write.
              \return The number of bytes actually written.
              */
-            int write(const uint8_t* ptr, size_t len)
+            virtual int write(const uint8_t* ptr, size_t len)
             {
-                return ::send(fd, ptr, len, 0);
+                return ::send(fd_, ptr, len, 0);
             }
 
             //! Read data from the socket.
@@ -95,21 +95,21 @@ namespace lj
              \param len Maximum number of bytes to read.
              \return The number of bytes actually read.
              */
-            int read(uint8_t* ptr, size_t len)
+            virtual int read(uint8_t* ptr, size_t len)
             {
-                return ::recv(fd, ptr, len, 0);
+                return ::recv(fd_, ptr, len, 0);
             }
 
             //! Convert the last error into a string and return.
             /*!
              \return String representation of the error.
              */
-            std::string error()
+            virtual std::string error()
             {
                 return ::strerror(errno);
             }
-        private:
-            int fd;
+        protected:
+            int fd_;
         };
     }; // namespace lj::medium
 
@@ -158,20 +158,22 @@ namespace lj
 
         //! Create a new streambuf object around a BSD socket.
         /*!
-         \par
+         \par Buffer Size
          Buffer size is measured in terms of the character type associated with
          the stream buffer (e.g. char, wchar, etc.). It is not the number of
          bytes associated with the buffer.
-         \par
+         \par lj::medium Object
          The \c Streambuf_bsd object assumes responsibility for releasing the
-         \c medium object. It is stored in a std::unique_ptr.
+         \c medium object. It is stored in a \c std::unique_ptr.
          \param medium Pointer to the underlying medium.
          \param in_sz The size of the read buffer.
          \param out_sz The size of the writer buffer.
          */
-        Streambuf_bsd(mediumT* medium, const size_t in_sz, const size_t out_sz) :
+        Streambuf_bsd(std::unique_ptr<mediumT>&& medium,
+                const size_t in_sz,
+                const size_t out_sz) :
                 Streambuf_mutex<charT, traits>(),
-                medium_(medium),
+                medium_(std::move(medium)),
                 in_size_(in_sz),
                 out_size_(out_sz)
         {
@@ -189,6 +191,29 @@ namespace lj
             in_buffer_[0] = 0;
             out_buffer_[0] = 0;
         }
+
+        //! Create a new streambuf object around a BSD socket.
+        /*!
+         \par Buffer Size
+         Buffer size is measured in terms of the character type associated with
+         the stream buffer (e.g. char, wchar, etc.). It is not the number of
+         bytes associated with the buffer.
+         \par lj::medium Object
+         The \c Streambuf_bsd object assumes responsibility for releasing the
+         \c medium object. It is stored in a \c std::unique_ptr.
+         \param medium Pointer to the underlying medium.
+         \param in_sz The size of the read buffer.
+         \param out_sz The size of the writer buffer.
+         */
+        Streambuf_bsd(mediumT* medium,
+                const size_t in_sz,
+                const size_t out_sz) :
+                Streambuf_bsd(std::unique_ptr<mediumT>(medium),
+                        in_sz,
+                        out_sz)
+        {
+        }
+
         
         //! Clean up our resources.
         virtual ~Streambuf_bsd()

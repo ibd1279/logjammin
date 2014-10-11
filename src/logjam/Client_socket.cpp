@@ -35,6 +35,7 @@
 
 #include "logjam/Client_socket.h"
 #include "logjam/Network_address_info.h"
+#include "logjam/Network_socket.h"
 #include "logjam/Tls_credentials.h"
 #include "logjam/Tls_session.h"
 #include "lj/Bson.h"
@@ -48,7 +49,7 @@ namespace
     class iostream_secure : public std::iostream
     {
     public:
-        iostream_secure(logjam::Network_connection&& conn,
+        iostream_secure(logjam::Network_socket&& conn,
                 logjam::Tls_session<credT>* sess,
                 lj::Streambuf_bsd<logjam::Tls_session<credT>>* buf) :
                 std::iostream(buf),
@@ -64,7 +65,7 @@ namespace
             delete buffer_;
         }
     private:
-        logjam::Network_connection connection_;
+        logjam::Network_socket connection_;
         logjam::Tls_session<credT>* session_;
         lj::Streambuf_bsd<logjam::Tls_session<credT>>* buffer_;
     };
@@ -110,12 +111,12 @@ namespace logjam
                     SOCK_STREAM,
                     0);
 
-            logjam::Network_connection connection;
+            logjam::Network_socket connection;
             while (info.next() && !connection.is_open())
             {
                 try
                 {
-                    connection.connect(info.current());
+                    connection = logjam::socket_for_target(info.current());
                 }
                 catch (lj::Exception ex)
                 {

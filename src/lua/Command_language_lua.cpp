@@ -33,11 +33,11 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjamd/Connection.h"
-#include "lua/Bson.h"
 #include "lua/Command_language_lua.h"
+#include "lua/Bson.h"
 #include "lua/Document.h"
 #include "lua/Uuid.h"
+#include "lua.hpp"
 #include <sstream>
 
 namespace
@@ -69,18 +69,6 @@ namespace
         return 0;
     }
 
-    int change_adapt_language(lua_State* L)
-    {
-        lua::Bson* response = lua::Lunar<lua::Bson>::check(L,
-                lua_upvalueindex(1));
-
-        std::string language(lua::as_string(L, -1));
-        response->node().set_child("next_language",
-                lj::bson::new_string(language));
-        lua_pop(L, 1); // remove the language.
-        return 0;
-    }
-
     int disconnect(lua_State* L)
     {
         lua::Bson* response = lua::Lunar<lua::Bson>::check(L,
@@ -89,32 +77,6 @@ namespace
         response->node().set_child("disconnect", lj::bson::new_boolean(true));
 
         return 0;
-    }
-
-    int get_crypto_key(lua_State* L)
-    {
-        logjamd::Connection* connection = static_cast<logjamd::Connection*>(
-                lua_touserdata(L, lua_upvalueindex(1)));
-        std::string identifier(lua::as_string(L, -1));
-        int sz;
-        const void* data = connection->get_crypto_key(identifier, &sz);
-
-        if (data)
-        {
-            std::unique_ptr<lj::bson::Node> ptr(lj::bson::new_binary(
-                    static_cast<const uint8_t*>(data),
-                    sz,
-                    lj::bson::Binary_type::k_bin_user_defined));
-            lua::Bson_ro* key_data = new lua::Bson_ro(*ptr);
-            lua::Lunar<lua::Bson_ro>::push(L, key_data, true);
-        }
-        else
-        {
-            // if the key was unknown, push nil.
-            lua_pushnil(L);
-        }
-
-        return 1;
     }
 
     int simple_assert(lua_State* L)
@@ -156,69 +118,61 @@ namespace
 
         return 0;
     }
-};
 
-namespace lua
-{
-    Command_language_lua::Command_language_lua(logjamd::Connection* conn,
-            lj::bson::Node* req) :
-            connection_(conn),
-            request_(req),
-            L(luaL_newstate()),
-            state_(new Bson(connection_->state()))
+    lua_State* setup_lua(lj::bson::Node& request)
     {
+        lua_State* L = luaL_newstate();
+
         // Standard libraries.
         luaL_openlibs(L);
 
         // Register my extensions.
-        Lunar<Bson>::Register(L);
-        Lunar<Bson_ro>::Register(L);
-        Lunar<Document>::Register(L);
-        Lunar<Uuid>::Register(L);
+        lua::Lunar<lua::Bson>::Register(L);
+        lua::Lunar<lua::Bson_ro>::Register(L);
+        lua::Lunar<lua::Document>::Register(L);
+        lua::Lunar<lua::Uuid>::Register(L);
 
         // One-off functions.
-        lua_pushlightuserdata(L, conn);
-        lua_pushcclosure(L, &get_crypto_key, 1);
-        lua_setglobal(L, "get_crypto_key");
-
         lua_pushcfunction(L, &simple_assert);
         lua_setglobal(L, "ASSERT");
 
-        // Put the connection state in the scope.
-        Lunar<Bson>::push(L, state_, false);
-        lua_setglobal(L, "SESSION");
-
         // Put the request into the scope.
-        Lunar<Bson>::push(L, new Bson(*request_), true);
+        // note, this is a copy.
+        lua::Lunar<lua::Bson>::push(L, new lua::Bson(request), true);
         lua_setglobal(L, "REQUEST");
-    }
 
-    Command_language_lua::~Command_language_lua()
-    {
-        connection_->state().copy_from(state_->node());
-        delete state_;
-        lua_close(L);
+        return L;
     }
+};
 
-    bool Command_language_lua::perform(lj::bson::Node& response)
+namespace lua
+{
+    bool Command_language_lua::perform(logjam::pool::Swimmer& swmr,
+            lj::bson::Node& request,
+            lj::bson::Node& response) const
     {
-        // Setup replaced methods.
+        // Where I am pushing many things on the stack,
+        // I have tried to put comments at the end of the line
+        // that describe the expected state of the stack.
+        lua_State* L = setup_lua(request);
+
+        // Put the connection state in the scope.
+        // NOTE: This is a copy of the context data.
+        Lunar<Bson>::push(L, new Bson(swmr.context().node()), true); // context
+        lua_setglobal(L, "CTXDATA"); // empty
+
+        // Setup the repsonse wrapper where necessary.
         std::unique_ptr<Bson> response_wrapper(new Bson(response));
-        Lunar<Bson>::push(L, response_wrapper.get(), false);
-        lua_pushvalue(L, -1);
-        lua_pushvalue(L, -1);
-        lua_pushcclosure(L, &print_to_response, 1);
-        lua_setglobal(L, "print");
-        lua_pushcclosure(L, &change_adapt_language, 1);
-        lua_setglobal(L, "change_language");
-        lua_pushcclosure(L, &disconnect, 1);
-        lua_setglobal(L, "exit");
+        Lunar<Bson>::push(L, response_wrapper.get(), false); // rw
+        lua_pushvalue(L, -1); // rw rw
+        lua_pushvalue(L, -1); // rw rw rw
+        lua_pushcclosure(L, &print_to_response, 1); // rw rw rw func
+        lua_setglobal(L, "print"); // rw rw
+        lua_pushcclosure(L, &disconnect, 1); // rw rw func
+        lua_setglobal(L, "exit"); // rw
+        lua_setglobal(L, "RESPONSE"); // empty
 
-        // Put the response into the scope.
-        Lunar<Bson>::push(L, response_wrapper.get(), false);
-        lua_setglobal(L, "RESPONSE");
-
-        std::string cmd(lj::bson::as_string(request_->nav("command")));
+        std::string cmd(lj::bson::as_string(request.nav("command")));
         luaL_loadbuffer(L,
                 cmd.c_str(),
                 cmd.size(),
@@ -241,10 +195,13 @@ namespace lua
             response.set_child("disconnect", NULL);
             keep_alive = false;
         }
+
+        lua_close(L);
+
         return keep_alive;
     }
 
-    std::string Command_language_lua::name()
+    std::string Command_language_lua::name() const
     {
         return "Lua";
     }

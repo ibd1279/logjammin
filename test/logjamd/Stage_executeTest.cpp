@@ -14,34 +14,33 @@
 
 void testBasicCommands()
 {
+    // Set up testing environment.
+    Mock_env env;
+
     // Test command
     lj::bson::Node request;
     request.set_child("command", lj::bson::new_string( "print ('Hello LJ')\n\
 print ('testing', 'foobar', Uuid:new('{444df00e-95ce-4dd6-8f1c-6dc8b96f92d9}'))\n\
 print (Document:new())\n\
 print (Uuid:new())"));
-    // Create the mock request.
-    Mock_environment env;
-    env.request() << request;
+
+    // Put the data on the pipe.
+    env.swimmer->sink() << request;
 
     // perform the stage.
-    logjamd::Stage_execute stage(env.connection());
-    logjamd::Stage* next_stage = stage.logic();
+    std::unique_ptr<logjam::Stage> next_stage(
+            new logjamd::Stage_execute());
+    next_stage = logjam::safe_execute_stage(next_stage, *(env.swimmer));
+    lj::bson::Node response;
+    env.swimmer->source() >> response;
 
     // Test the next stage.
-    TEST_ASSERT(next_stage != NULL);
-    TEST_ASSERT(next_stage != &stage);
+    TEST_ASSERT(next_stage != nullptr);
 
     // Test the output.
-    lj::bson::Node response;
-    env.response() >> response;
     std::cout << lj::bson::as_string(response) << std::endl;
     TEST_ASSERT(lj::bson::as_string(response["output/0"]).compare("Hello LJ") == 0);
     TEST_ASSERT(lj::bson::as_string(response["output/1"]).compare("testing\tfoobar\t{444df00e-95ce-4dd6-8f1c-6dc8b96f92d9}") == 0);
-
-    // Clean up the adapter stage.
-    delete next_stage;
-    
 }
 
 int main(int argc, char** argv)

@@ -34,7 +34,6 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "logjam/Network_connection.h"
 #include "lj/Bson.h"
 #include <iostream>
 
@@ -50,7 +49,7 @@ namespace logjam
         
         //! Create a connection object.
         /*!
-         Creates a fully connected Network_connection (BSD socket) to the target.
+         Creates a fully connected Network_socket (BSD socket) to the target.
          If the target resolves as several network addresses, each name is
          tried.
          \todo This does not currently support any of the TLS authentication

@@ -34,13 +34,12 @@
  POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "logjam/Pool.h"
 #include "lj/Bson.h"
 #include <string>
 
 namespace logjamd
 {
-    class Connection;
-
     //! Abstract base class for implementing command languages
     /*!
      \par
@@ -50,20 +49,12 @@ namespace logjamd
     class Command_language
     {
     public:
-        //! Default constructor.
-        Command_language()
-        {
-        }
-
-        //! Tear down the environment.
-        /*!
-         \par
-         Clean up any resources un-necessary for this command object. Note
-         that the connection has a "state" object attached to it.
-         */
-        virtual ~Command_language()
-        {
-        }
+        Command_language() = default;
+        Command_language(const Command_language& o) = default;
+        Command_language(Command_language&& o) = default;
+        Command_language& operator=(const Command_language& rhs) = default;
+        Command_language& operator=(Command_language&& rhs) = default;
+        virtual ~Command_language() = default;
 
         //! Perform the requested command.
         /*!
@@ -73,12 +64,14 @@ namespace logjamd
          \param[out] response The response to the client.
          \return True if the connection should stay open. False to close.
          */
-        virtual bool perform(lj::bson::Node& response) = 0;
+        virtual bool perform(logjam::pool::Swimmer& swmr,
+                lj::bson::Node& request,
+                lj::bson::Node& response) const = 0;
 
         //! Name of the command language. Used for logging.
         /*!
          \return The friendly name of this command language.
          */
-        virtual std::string name() = 0;
+        virtual std::string name() const = 0;
     };
 };

@@ -50,13 +50,3 @@ ASSERT(doc2:key() == 200)
 ASSERT(doc2:parent() == doc:id())
 ASSERT(doc2:vclock():as_string() == '{}')
 ASSERT(doc2:suppress() == false)
-
--- encrypt the document
-ASSERT(doc2:exists('str') == true)
-ASSERT(doc2:exists('bool/false') == true)
-doc2:encrypt('test', 'str', 'bool/false')
-ASSERT(doc2:exists('str') == false)
-ASSERT(doc2:exists('bool/false') == false)
-doc2:decrypt('test')
-ASSERT(doc2:exists('str') == true)
-ASSERT(doc2:exists('bool/false') == true)

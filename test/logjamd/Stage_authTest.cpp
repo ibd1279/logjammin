@@ -7,9 +7,7 @@
 #include "testhelper.h"
 #include "lj/Bson.h"
 #include "logjamd/mock_server.h"
-#include "logjamd/Auth.h"
 #include "logjamd/Auth_local.h"
-#include "logjamd/User.h"
 #include "logjamd/Stage_auth.h"
 #include "logjamd/constants.h"
 
@@ -17,60 +15,55 @@
 
 void testSuccess()
 {
-    // Create a user for testing.
-    Admin_auth first;
+    // Set up testing environment.
+    Mock_env env;
 
     // Create the mock request.
-    Mock_environment env;
     lj::bson::Node n;
-    n.set_child("method", lj::bson::new_uuid(k_auth_method_password_hash));
-    n.set_child("provider", lj::bson::new_uuid(k_auth_provider_local));
-    n.set_child("data", new lj::bson::Node(first.n));
-    env.request() << n;
+    n.set_child("method", lj::bson::new_string(logjamd::k_auth_method_password));
+    n.set_child("provider", lj::bson::new_string(logjamd::k_auth_provider_local));
+    n.set_child("data", new lj::bson::Node(env.server.admin.n));
+    env.swimmer->sink() << n;
 
     // perform the stage.
-    logjamd::Stage_auth stage(env.connection());
-    logjamd::Stage* next_stage = stage.logic();
+    std::unique_ptr<logjam::Stage> next_stage(new logjamd::Stage_auth);
+    next_stage = logjam::safe_execute_stage(next_stage, *(env.swimmer));
     lj::bson::Node response;
-    env.response() >> response;
+    env.swimmer->source() >> response;
 
     // Test the next stage.
-    TEST_ASSERT(next_stage != NULL); // connection has next stage.
-    TEST_ASSERT(next_stage != &stage); // next stage is not auth.
+    TEST_ASSERT(next_stage != nullptr); // connection has next stage.
     TEST_ASSERT(next_stage->name().compare("Execution") == 0);
-    delete next_stage;
 
     // Test the response.
     std::string expected_stage("Authentication");
     TEST_ASSERT(expected_stage.compare(lj::bson::as_string(response["stage"])) == 0);
     TEST_ASSERT(lj::bson::as_boolean(response["success"]));
-    TEST_ASSERT(env.connection()->user() != NULL);
-    TEST_ASSERT(env.connection()->user()->id() == first.u.id());
+    TEST_ASSERT(env.swimmer->context().user().id() == env.server.admin.u.id());
 }
 
 void testBadData()
 {
-    // Create a user for testing.
-    Admin_auth first;
+    // Set up testing environment.
+    Mock_env env;
 
     // Create the mock request.
-    first.n.set_child("password", lj::bson::new_string("wrong-password."));
-    Mock_environment env;
+    env.server.admin.n.set_child("password", lj::bson::new_string("wrong-password."));
     lj::bson::Node n;
-    n.set_child("method", lj::bson::new_uuid(k_auth_method_password_hash));
-    n.set_child("provider", lj::bson::new_uuid(k_auth_provider_local));
-    n.set_child("data", new lj::bson::Node(first.n));
-    env.request() << n;
+    n.set_child("method", lj::bson::new_string(logjamd::k_auth_method_password));
+    n.set_child("provider", lj::bson::new_string(logjamd::k_auth_provider_local));
+    n.set_child("data", new lj::bson::Node(env.server.admin.n));
+    env.swimmer->sink() << n;
 
     // perform the stage.
-    logjamd::Stage_auth stage(env.connection());
-    logjamd::Stage* next_stage = stage.logic();
+    std::unique_ptr<logjam::Stage> next_stage(new logjamd::Stage_auth());
+    next_stage = logjam::safe_execute_stage(next_stage, *(env.swimmer));
     lj::bson::Node response;
-    env.response() >> response;
+    env.swimmer->source() >> response;
 
     // Test the next stage.
-    TEST_ASSERT(next_stage != NULL); // connection has next stage.
-    TEST_ASSERT(next_stage == &stage); // next stage should be same auth.
+    TEST_ASSERT(next_stage != nullptr); // connection has next stage.
+    TEST_ASSERT(next_stage->name().compare("Authentication") == 0);
 
     // Test the response.
     std::string expected_stage("Authentication");
@@ -78,61 +71,69 @@ void testBadData()
     TEST_ASSERT(expected_stage.compare(lj::bson::as_string(response["stage"])) == 0);
     TEST_ASSERT(!lj::bson::as_boolean(response["success"]));
     TEST_ASSERT(expected_msg.compare(lj::bson::as_string(response["message"])) == 0);
-    TEST_ASSERT(env.connection()->user() == NULL);
+    TEST_ASSERT(env.swimmer->context().user().id() == logjam::User::k_unknown.id());
 }
 
 void testUnknownMethod()
 {
-    // create the mock request.
-    Mock_environment env;
+    // Set up testing environment.
+    Mock_env env;
+
+    // Create the mock request.
     lj::bson::Node n;
-    n.set_child("method",
-            lj::bson::new_uuid(logjamd::k_logjamd_root));
-    n.set_child("provider",
-            lj::bson::new_uuid(k_auth_provider_local));
-    env.request() << n;
+    n.set_child("method", lj::bson::new_string("WUT?"));
+    n.set_child("provider", lj::bson::new_string(logjamd::k_auth_provider_local));
+    n.set_child("data", new lj::bson::Node(env.server.admin.n));
+    env.swimmer->sink() << n;
 
     // perform the stage.
-    logjamd::Stage_auth stage(env.connection());
-    logjamd::Stage* next_stage = stage.logic();
+    std::unique_ptr<logjam::Stage> next_stage(new logjamd::Stage_auth());
+    next_stage = logjam::safe_execute_stage(next_stage, *(env.swimmer));
     lj::bson::Node response;
-    env.response() >> response;
+    env.swimmer->source() >> response;
+
+    // Test the next stage.
+    TEST_ASSERT(next_stage != nullptr); // connection has next stage.
+    TEST_ASSERT(next_stage->name().compare("Authentication") == 0);
 
     // Test the response.
-    TEST_ASSERT(next_stage != NULL);
-    TEST_ASSERT(next_stage == &stage);
     std::string expected_stage("Authentication");
     std::string expected_msg("Unknown auth method.");
     TEST_ASSERT(expected_stage.compare(lj::bson::as_string(response["stage"])) == 0);
     TEST_ASSERT(!lj::bson::as_boolean(response["success"]));
     TEST_ASSERT(expected_msg.compare(lj::bson::as_string(response["message"])) == 0);
-    TEST_ASSERT(env.connection()->user() == NULL);
+    TEST_ASSERT(env.swimmer->context().user().id() == logjam::User::k_unknown.id());
 }
 
 void testUnknownProvider()
 {
-    // Create the mock request.
-    Mock_environment env;
-    lj::bson::Node n;
-    n.set_child("method", lj::bson::new_uuid(k_auth_method_password_hash));
-    n.set_child("provider", lj::bson::new_uuid(logjamd::k_logjamd_root));
-    env.request() << n;
+    // Set up testing environment.
+    Mock_env env;
 
-    // Perform the stage.
-    logjamd::Stage_auth stage(env.connection());
-    logjamd::Stage* next_stage = stage.logic();
+    // Create the mock request.
+    lj::bson::Node n;
+    n.set_child("method", lj::bson::new_string(logjamd::k_auth_method_password));
+    n.set_child("provider", lj::bson::new_string("WUT?"));
+    n.set_child("data", new lj::bson::Node(env.server.admin.n));
+    env.swimmer->sink() << n;
+
+    // perform the stage.
+    std::unique_ptr<logjam::Stage> next_stage(new logjamd::Stage_auth());
+    next_stage = logjam::safe_execute_stage(next_stage, *(env.swimmer));
     lj::bson::Node response;
-    env.response() >> response;
+    env.swimmer->source() >> response;
+
+    // Test the next stage.
+    TEST_ASSERT(next_stage != nullptr); // connection has next stage.
+    TEST_ASSERT(next_stage->name().compare("Authentication") == 0);
 
     // Test the response.
-    TEST_ASSERT(next_stage != NULL);
-    TEST_ASSERT(next_stage == &stage);
     std::string expected_stage("Authentication");
     std::string expected_msg("Unknown auth provider.");
     TEST_ASSERT(expected_stage.compare(lj::bson::as_string(response["stage"])) == 0);
     TEST_ASSERT(!lj::bson::as_boolean(response["success"]));
     TEST_ASSERT(expected_msg.compare(lj::bson::as_string(response["message"])) == 0);
-    TEST_ASSERT(env.connection()->user() == NULL);
+    TEST_ASSERT(env.swimmer->context().user().id() == logjam::User::k_unknown.id());
 }
 
 int main(int argc, char** argv)

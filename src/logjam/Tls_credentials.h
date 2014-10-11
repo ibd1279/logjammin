@@ -194,6 +194,7 @@ namespace logjam
         Tls_credentials_anonymous_client& operator=(Tls_credentials_anonymous_client&& o);
         virtual void* gnutls_ptr() override;
         virtual gnutls_credentials_type_t gnutls_type() const override;
+        int fd;
     private:
         gnutls_anon_client_credentials_t anonymous_credentials_;
     };
@@ -218,6 +219,7 @@ namespace logjam
         virtual void* gnutls_ptr() override;
         virtual gnutls_credentials_type_t gnutls_type() const override;
         void configure_key_exchange(Tls_key_exchange_diffie_hellman& kx);
+        int fd;
     private:
         gnutls_anon_server_credentials_t anonymous_credentials_;
     };

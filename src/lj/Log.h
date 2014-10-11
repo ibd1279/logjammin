@@ -39,6 +39,7 @@
 #include <cstdint>
 #include <exception>
 #include <list>
+#include <map>
 #include <sstream>
 #include <string>
 
@@ -389,6 +390,23 @@ namespace lj
              */
             inline Logger& operator<<(const std::exception& ex) { return write_string(ex.what()); };
 
+            //! Log a map
+            /*!
+             \param m The map.
+             \tparam K the key type
+             \tparam V the value type.
+             \return The current Log.
+             */
+            template <class K, class V>
+            inline Logger& operator<<(const std::map<K, V> m)
+            {
+                for (const typename std::map<K, V>::value_type& item : m)
+                {
+                    (*this) << "[" << item.first << "=" << item.second << "]";
+                }
+                return *this;
+            }
+
             //! Close the logger.
             /*!
              \param msg The message to write to the output.
@@ -454,7 +472,7 @@ namespace lj
         };
 
         //! Logger that outputs to cout.
-        class Logger_cout : public Logger_stream
+        class Logger_clog : public Logger_stream
         {
         public:
             //! Constructor.
@@ -462,10 +480,10 @@ namespace lj
              \param lvl The logging level string.
              \param fmt The logging format string.
              */
-            Logger_cout(const std::string lvl,
+            Logger_clog(const std::string lvl,
                     const std::string& fmt);
             //! Destructor.
-            virtual ~Logger_cout();
+            virtual ~Logger_clog() = default;
         };
 
         //! Check or set the enabled flags for a level.
@@ -521,7 +539,7 @@ namespace lj
          \par
          This functions tests the Logging level to see if it is enabled.
          and a new logger object is created based on that result. At the moment,
-         it is hard coded to always used the lj::log::Logger_cout.
+         it is hard coded to always used the lj::log::Logger_clog.
          \todo The logger type should be able to be driven by some form of
          configuration.
          \param fmt The format of the log message.
@@ -534,7 +552,7 @@ namespace lj
             if (enabled_flag<Level>())
             {
                 Level lvl;
-                return *(new Logger_cout(lvl.name(), fmt));
+                return *(new Logger_clog(lvl.name(), fmt));
             }
             else
             {

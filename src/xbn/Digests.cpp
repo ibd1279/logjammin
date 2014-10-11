@@ -112,7 +112,6 @@ namespace xbn
                 case 'e': case 'E': return 14;
                 case 'f': case 'F': return 15;
             }
-            std::cout << "char " << c << std::endl;
             throw LJ__Exception(std::string("Invalid hex character."));
         }
     }; // namespace {anonymous}

@@ -42,7 +42,6 @@
 #include "lj/Log.h"
 #include "lj/Streambuf_bsd.h"
 #include "logjamd/constants.h"
-#include "Network_connection.h"
 
 #include <iostream>
 #include <unistd.h>
@@ -59,8 +58,8 @@ int main(int argc, char * const argv[])
 
         // Perform the authentication.
         lj::bson::Node auth;
-        auth.set_child("/method", lj::bson::new_uuid(logjamd::k_auth_method_password));
-        auth.set_child("/provider", lj::bson::new_uuid(logjamd::k_auth_provider_local));
+        auth.set_child("/method", lj::bson::new_string(logjamd::k_auth_method_password));
+        auth.set_child("/provider", lj::bson::new_string(logjamd::k_auth_provider_local));
         auth.set_child("/data/login", lj::bson::new_string(logjamd::k_user_login_json));
         auth.set_child("/data/password", lj::bson::new_string(logjamd::k_user_password_json));
         
