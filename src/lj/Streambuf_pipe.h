@@ -4,7 +4,7 @@
  \brief LJ pipe stream buffer header.
  \author Jason Watson
  
- Copyright (c) 2010, Jason Watson
+ Copyright (c) 2014, Jason Watson
  All rights reserved.
  
  Redistribution and use in source and binary forms, with or without
@@ -39,11 +39,9 @@
 
 namespace lj
 {
-    //! Pipe streambuf for use with iostreams.
     /*!
-     \author Jason Watson
-     \version 1.0
-     \date August 1, 2011
+     \brief Pipe streambuf for use with iostreams.
+     \since 1.0
      */
     class Streambuf_pipe : public std::streambuf
     {
@@ -54,29 +52,29 @@ namespace lj
         //! Destructor.
         virtual ~Streambuf_pipe();
 
-        //! Data sink.
         /*!
-         /par
+         \brief Data sink.
+
          Allows writing values into the pipe.
          \return An output stream.
          */
         virtual std::ostream& sink();
-        //! Data source.
         /*!
-         \par
+         \brief Data source.
+
          Allows reading values from the pipe.
          \return An input stream.
          */
         virtual std::istream& source();
     protected:
-        //! std::streambuf override.
         /*!
+         \brief std::streambuf override.
          \return character read or EOF.
          */
         virtual int underflow();
 
-        //! std::streambuf override.
         /*!
+         \brief std::streambuf override.
          \return character written or EOF.
          */
         virtual int overflow(int c = EOF);
@@ -84,5 +82,5 @@ namespace lj
         std::stringstream i_;
         std::stringstream o_;
         char ibuf_[1];
-    };
+    }; // class lj::Streambuf_pipe
 }; // namespace lj

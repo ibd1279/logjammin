@@ -4,7 +4,7 @@
  \brief LJ BSD Socket streambuffer.
  \author Jason Watson
 
- Copyright (c) 2012, Jason Watson
+ Copyright (c) 2014, Jason Watson
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -54,19 +54,20 @@ namespace lj
 {    
     namespace medium
     {
-        //! Example medium for socket communication.
         /*!
-         \note Socket Descriptor Ownership.
+         \brief Example medium for socket communication.
+
          This object is not an invariant Socket. It is just a warpper to allow
          the Streambuf_bsd to communicate with the socket through an abstract
          interface. Creation, management, and destruction of the socket must
          be handled outside of this class.
+         \since 1.0
          */
         class Socket
         {
         public:
-            //! Create a medium Socket around a unix socket.
             /*!
+             \brief Create a medium Socket around a unix socket.
              \param data The socket descriptor.
              */
             explicit Socket(int data) : fd_(data)
@@ -74,12 +75,10 @@ namespace lj
             }
 
             //! Destructor.
-            ~Socket()
-            {
-            }
+            ~Socket() = default;
 
-            //! Write data to the socket.
             /*!
+             \brief Write data to the socket.
              \param ptr Pointer to the data to write.
              \param len Maximum number of bytes to write.
              \return The number of bytes actually written.
@@ -89,8 +88,8 @@ namespace lj
                 return ::send(fd_, ptr, len, 0);
             }
 
-            //! Read data from the socket.
             /*!
+             \brief Read data from the socket.
              \param ptr Where to store the data.
              \param len Maximum number of bytes to read.
              \return The number of bytes actually read.
@@ -100,8 +99,8 @@ namespace lj
                 return ::recv(fd_, ptr, len, 0);
             }
 
-            //! Convert the last error into a string and return.
             /*!
+             \brief Convert the last error into a string and return.
              \return String representation of the error.
              */
             virtual std::string error()
@@ -113,38 +112,43 @@ namespace lj
         };
     }; // namespace lj::medium
 
-    //! streambuf implementation for BSD sockets.
     /*!
-     \par
+     \brief streambuf implementation for BSD sockets.
+
      Allows for stl stream manipulation of BSD sockets. Converts characters to
      bytes.
-     \note Endian-ness
-     This stream buff does not do any manipulation or communication of big or
-     little endian.
-     \par
+
      This can technically be used for buffering any type of input or output.
      The provided \c mediumT class is used to perform the actual read and write
      operations. \c lj::medium::socket provides an example medium type for use
      with this streambuf.
-     \note Wide Characters.
+
+     \par Endian-ness
+     This stream buff does not do any manipulation or communication of big or
+     little endian.
+
+     \par Wide Characters.
      This streambuf implementation makes an attempt to understand and track wide
      characters. If a wide character is sliced by byte communication on the
      medium, it is buffered for sending on the next call to flush or overflow.
-     \note Threaded Access.
+
+     \par Threaded Access.
      This class does not provide any native thread safety. If you need thread
      safety or to synchronize access to the writing medium, see the mutex facilities
      provided by \c lj::Streambuf_mutex for locking and unlocking this streambuf.
+
      \todo Refactor this classname to be something more generic.
-     \tparam charT The type of character to use, wide or narrow
-     \tparam traits The namespace used for referencing the traits of the stream.
-     \tparam mediumT The medium to use for reading and writing.
-     \note Template vs. Inheritance for \c mediumT
+     \par Template vs. Inheritance for \c mediumT
      I keep going back and forth on this. I am using a template to specify the
      medium type for performance and dependency reasons, but in reality, this
      could be done with simple inheritance as well.
+
+     \tparam charT The type of character to use, wide or narrow
+     \tparam traits The namespace used for referencing the traits of the stream.
+     \tparam mediumT The medium to use for reading and writing.
+
      \sa lj::Streambuf_mutex for synchronization.
-     \since 0.2
-     \date September 27, 2012
+     \since 1.0
      */
     template <typename mediumT, typename charT=char, typename traits=std::char_traits<charT> >
     class Streambuf_bsd : public Streambuf_mutex<charT, traits>
@@ -156,15 +160,17 @@ namespace lj
         typedef typename traits_type::pos_type pos_type; //!< helper typedef for iostream compatibility.
         typedef typename traits_type::off_type off_type; //!< helper typedef for iostream compatibility.
 
-        //! Create a new streambuf object around a BSD socket.
         /*!
-         \par Buffer Size
+         \brief Create a new streambuf object around a BSD socket.
+
          Buffer size is measured in terms of the character type associated with
          the stream buffer (e.g. char, wchar, etc.). It is not the number of
          bytes associated with the buffer.
+
          \par lj::medium Object
          The \c Streambuf_bsd object assumes responsibility for releasing the
          \c medium object. It is stored in a \c std::unique_ptr.
+
          \param medium Pointer to the underlying medium.
          \param in_sz The size of the read buffer.
          \param out_sz The size of the writer buffer.
@@ -192,15 +198,17 @@ namespace lj
             out_buffer_[0] = 0;
         }
 
-        //! Create a new streambuf object around a BSD socket.
         /*!
-         \par Buffer Size
+         \brief Create a new streambuf object around a BSD socket.
+
          Buffer size is measured in terms of the character type associated with
          the stream buffer (e.g. char, wchar, etc.). It is not the number of
          bytes associated with the buffer.
+
          \par lj::medium Object
          The \c Streambuf_bsd object assumes responsibility for releasing the
          \c medium object. It is stored in a \c std::unique_ptr.
+
          \param medium Pointer to the underlying medium.
          \param in_sz The size of the read buffer.
          \param out_sz The size of the writer buffer.
@@ -214,8 +222,7 @@ namespace lj
         {
         }
 
-        
-        //! Clean up our resources.
+        //! Destructor.
         virtual ~Streambuf_bsd()
         {
             if (in_)
@@ -229,33 +236,33 @@ namespace lj
         }
 
     private:
-        //! Copy constructor explicitly deleted.
         /*!
+         \brief Copy constructor explicitly deleted.
          \param o The other object.
          */
         Streambuf_bsd(const Streambuf_bsd& o) = delete;
 
-        //! Move constructor explicitly deleted.
         /*!
+         \brief Move constructor explicitly deleted.
          \param o The other object.
          */
         Streambuf_bsd(Streambuf_bsd&& o) = delete;
 
-        //! Copy assignment operator explicitly deleted.
         /*!
+         \brief Copy assignment operator explicitly deleted.
          \param o The other object.
          */
         Streambuf_bsd& operator=(const Streambuf_bsd& o) = delete;
 
-        //! Move assignment operator explicitly deleted.
         /*!
+         \brief Move assignment operator explicitly deleted.
          \param o The other object.
          */
         Streambuf_bsd& operator=(Streambuf_bsd&& o) = delete;
 
     public:        
-        //! Get the underlying medium object.
         /*!
+         \brief Get the underlying medium object.
          \return The medium used for communication.
          */
         inline mediumT& medium()

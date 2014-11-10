@@ -4,7 +4,7 @@
  \brief LJ Mutex streambuffer header file.
  \author Jason Watson
 
- Copyright (c) 2012, Jason Watson
+ Copyright (c) 2014, Jason Watson
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -40,9 +40,9 @@
 
 namespace lj
 {
-    //! Streambuf base class that supports being treated like a mutex.
     /*!
-     \par
+     \brief Streambuf base class that supports being treated like a mutex.
+
      This class provides a streambuf implementation that encompasses a mutex.
      This is used to provided thread safe writing of larger objects to the
      streambuffer. Typical usage would look something like the following code.
@@ -57,18 +57,20 @@ namespace lj
      }
      stream << "some data";
      \endcode
-     \note About the example code.
+
+     \par About the example code.
      - a unique_ptr is used to ensure the lock is destroyed/unlocked when the stack unwinds.
      - The decltype is required because iostream may be of a wide or narrow type.
      - The remove references are only required because the iostream was declared as a reference.
      - See documentation on std::unique_lock for additional options on locking
        the mutex.
+
      \note Deadlocks
      Keep in mind that a thread trying to lock on a mutex it already has will
      cause a deadlock.
+
      \sa std::ostream& operator<<(std::ostream&, const lj::bson::Node&) for an example.
-     \since 0.2
-     \date January 4, 2013
+     \since 1.0
      */
     template <typename charT, typename traits=std::char_traits<charT> >
     class Streambuf_mutex : public std::basic_streambuf<charT, traits>
@@ -80,10 +82,15 @@ namespace lj
         typedef typename traits_type::pos_type pos_type; //!< helper typedef for iostream compatibility.
         typedef typename traits_type::off_type off_type; //!< helper typedef for iostream compatibility.
         
+        //! Default constructor.
         virtual ~Streambuf_mutex()
         {
         }
         
+        /*!
+         \brief Get a reference to the mutex.
+         \return The mutex.
+         */
         virtual std::mutex& mutex()
         {
             return mutex_;
@@ -102,5 +109,5 @@ namespace lj
         Streambuf_mutex& operator=(Streambuf_mutex&& orig) = delete;
         
         std::mutex mutex_;
-    }; // class Streambuf_mutex
+    }; // class lj::Streambuf_mutex
 }; // namespace lj

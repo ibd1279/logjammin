@@ -3,7 +3,7 @@
  \brief Logjam helper class for opening a new TLS connection.
  \author Jason Watson
 
- Copyright (c) 2012, Jason Watson
+ Copyright (c) 2014, Jason Watson
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without

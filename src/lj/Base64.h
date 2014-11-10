@@ -2,9 +2,8 @@
 /*!
  \file lj/Base64.h
  \brief LJ base 64 interface.
- \author Jason Watson
  
- Copyright (c) 2010, Jason Watson
+ Copyright (c) 2014, Jason Watson
  All rights reserved.
  
  Redistribution and use in source and binary forms, with or without
@@ -39,24 +38,25 @@
 
 namespace lj
 {
-    //! Decode a base 64 string.
     /*!
-     \par
-     Pointer is allocated with new[].
+     \brief Decode a base 64 string.
+     \since 1.0
+     \note Pointer is allocated with new[].
+     \note This uses the nettle library version of base64 decode.
      \param input String to decode.
      \param size Location to store the resulting string size.
      \return 0 if the decode fails.  Pointer to the decoded data otherwise.
      \throws lj::Exception If the string is not a valid base 64 string.
-     \note This uses the nettle library version of base64 decode.
      */
-    uint8_t *base64_decode(const std::string &input, size_t *size);
+    uint8_t* base64_decode(const std::string& input, size_t* size);
 
-    //! Encode a base 64 string.
     /*!
+     \brief Encode a base 64 string.
+     \since 1.0
+     \note This uses the nettle library version of base64 encode.
      \param input Byte array to encode.
      \param size Length of the byte array.
      \return the encoded string.
-     \note This uses the nettle library version of base64 encode.
      */
-    std::string base64_encode(const uint8_t *input, size_t size);
+    std::string base64_encode(const uint8_t* input, size_t size);
 }; // namespace lj

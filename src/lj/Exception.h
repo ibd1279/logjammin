@@ -4,7 +4,7 @@
  \brief LJ Exception header and implementation.
  \author Jason Watson
 
- Copyright (c) 2010, Jason Watson
+ Copyright (c) 2014, Jason Watson
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -41,19 +41,17 @@
 
 namespace lj
 {
-    //! Exception base class.
     /*!
-     \par
-     Bubble up Exception type for exceptions in logjam.
-     \author Jason Watson
-     \version 1.0
-     \date July 3, 2009
+     \brief Exception base class.
+
+     Bubble up Exception type.
+     \since 1.0
      */
     class Exception : public std::exception
     {
     public:
-        //! Create a new exception object.
         /*!
+         \brief Create a new exception object.
          \param lbl The type of exception.
          \param msg Exception message.
          */
@@ -67,16 +65,16 @@ namespace lj
         {
         }
 
-        //! Copy constructor.
         /*!
+         \brief Copy constructor.
          \param o Other.
          */
         Exception(const Exception& o) : what_cache_(), msg_(o.msg_), label_(o.label_)
         {
         }
 
-        //! Move constructor
         /*!
+         \brief Move constructor
          \param o Other object.
          */
         Exception(Exception&& o) : what_cache_(std::move(o.what_cache_)),
@@ -85,9 +83,10 @@ namespace lj
         {
         }
 
-        //! Copy Assignment Operator
         /*!
+         \brief Copy Assignment Operator
          \param o Other.
+         \return Reference to this.
          */
         Exception& operator=(const Exception& o)
         {
@@ -100,9 +99,10 @@ namespace lj
             return *this;
         }
 
-        //! Move Assignment Operator
         /*!
+         \brief Move Assignment Operator
          \param o The other object.
+         \return Reference to this.
          */
         Exception& operator=(Exception&& o)
         {
@@ -115,9 +115,9 @@ namespace lj
             return *this;
         }
 
-        //! Convert the exception to a string.
         /*!
-         \par
+         \brief Convert the exception to a string.
+
          This method should be overridden to provide a more detailed error
          message.
          \return String for the exception.
@@ -127,8 +127,8 @@ namespace lj
             return std::string(label_).append(" Exception: ").append(msg_);
         }
 
-        //! Convert the exception to a string.
         /*!
+         \brief Convert the exception to a string.
          \return String for the exception.
          \sa lj::Exception::str()
          */
@@ -137,9 +137,9 @@ namespace lj
             return str();
         }
 
-        //! replace the default "what" method to call str()
         /*!
-         \par Memory
+         \brief replace the default "what" method to call str()
+
          The pointer obtained from \c what() is only valid until the next call
          to \c what(), and while the \c Exception object is still valid.
          \return String for the exception.
@@ -152,8 +152,8 @@ namespace lj
         }
     protected:
 
-        //! What result cache.
         /*!
+         \brief What result cache.
          This field is to support the \c what() method. It is used to hang onto
          a string*, so that the char* returned by \c what() is not released
          immediately.
@@ -168,8 +168,8 @@ namespace lj
     };
 }; // namespace lj
 
-//! Create an Exception based on the current function in the current file.
 /*!
+ \brief Create an Exception based on the current function in the current file.
  \param msg The message of the exception.
  */
 #define LJ__Exception(msg) lj::Exception(__FILE__, std::string(__FUNCTION__).append(" - ").append(msg))

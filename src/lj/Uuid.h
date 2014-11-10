@@ -4,7 +4,7 @@
  \brief LJ Uuid header.
  \author Jason Watson
 
- Copyright (c) 2010, Jason Watson       
+ Copyright (c) 2014, Jason Watson       
  All rights reserved.
  
  Redistribution and use in source and binary forms, with or without
@@ -40,13 +40,11 @@
 
 namespace lj
 {
-    //! Uuid value.
     /*!
-     \par
+     \brief Uuid value.
+
      Unique ID value.
-     \author Jason Watson
-     \version 1.0
-     \date January 01, 2011
+     \since 1.0
      */
     class Uuid
     {
@@ -57,47 +55,47 @@ namespace lj
         static const Uuid k_ns_oid; //!< constant for ISO OID namespace.
         static const Uuid k_ns_x500; //!< constant for the X.500 DN namespace.
 
-        //! Default constructor.
         /*!
-         \par
+         \brief Default constructor.
+
          Create a random Uuid.
          */
         Uuid();
 
-        //! Initializer list constructor.
         /*!
-         \par
+         \brief Initializer list constructor.
+
          Construct a Uuid from 16 constant bytes.
          \param d 16 bytes.
          */
         Uuid(std::initializer_list<uint8_t> d);
 
-        //! Array constructor.
         /*!
-         \par
+         \brief Array constructor.
+
          Construct a Uuid from a 16 byte array.
          \param d 16 bytes.
          */
         explicit Uuid(const uint8_t d[16]);
 
-        //! Copy constructor.
         /*!
+         \brief Copy constructor.
          \param o The other object.
          */
         Uuid(const Uuid& o);
 
-        //! String constructor.
         /*!
-         \par
+         \brief String constructor.
+
          Expects the input string in the format of
          {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}
          \param o The string.
          */
         explicit Uuid(const std::string& o);
         
-        //! Version 5 constructor.
         /*!
-         \par
+         \brief Version 5 constructor.
+
          The namespace and name are hased to create a version 5 UUID.
          \param ns The namespace uuid
          \param name The name.
@@ -105,9 +103,9 @@ namespace lj
          */
         Uuid(const Uuid& ns, const void* name, const size_t name_sz);
 
-        //! Version 5 constructor.
         /*!
-         \par
+         \brief Version 5 constructor.
+
          The namespace and name are hased to create a version 5 UUID.
          Identical to Uuid::Uuid(const Uuid&, const void*, const size_t)
          except that it gets the size from the string.
@@ -116,10 +114,11 @@ namespace lj
          */
         Uuid(const Uuid& ns, const std::string& name);
 
-        //! Id constructor.
         /*!
-         \par
+         \brief Id constructor.
+
          ID is calculated into the Uuid.
+
          \note two Uuids created from the same ID are not
          guarenteed to be equal. They have a high probability of
          being not equal.
@@ -130,90 +129,93 @@ namespace lj
         //! Destructor.
         ~Uuid();
 
-        //! Assignment operator.
         /*!
-         \note Performs a deep copy.
+         \brief Assignment operator.
          \param o The right hand value.
          \return reference to this.
          */
         Uuid& operator=(const Uuid& o);
 
-        //! Equality operator.
         /*!
+         \brief Equality operator.
          \param o The right hand value.
          \return true if the two are equal, false otherwise.
          */
         bool operator==(const Uuid& o) const;
 
-        //! Inequality operator.
         /*!
+         \brief Inequality operator.
          \param o The right hand value.
          \return false if the two are equal, true otherwise.
          */
         inline bool operator!=(const Uuid& o) const { return !((*this) == o); };
 
-        //! Less than operator.
         /*!
+         \brief Less than operator.
          \param o The right hand value.
          \return true if this object is less than \c o, false otherwise.
          */
         bool operator<(const Uuid& o) const;
 
-        //! Less than or equal operator.
         /*!
+         \brief Less than or equal operator.
          \param o The right hand value.
          \return true if this object is less than or equal to \c o, false otherwise.
          */
         inline bool operator<=(const Uuid& o) const { return ((*this) == o) || ((*this) < o); };
 
-        //! Greater than operator.
         /*!
+         \brief Greater than operator.
          \param o The right hand value.
          \return true if this object is greater than \c o, false otherwise.
          */
         inline bool operator>(const Uuid& o) const { return (o < (*this)); };
 
-        //! Greater than or equal operator.
         /*!
+         \brief Greater than or equal operator.
          \param o The right hand value.
          \return true if this object is greater than or equal to \c o, false otherwise.
          */
         inline bool operator>=(const Uuid& o) const { return (o <= (*this)); };
 
-        //! String conversion
         /*!
-         \par
+         \brief String conversion
+
          Outputs in the format {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}.
+
          \return The string representation.
          */
         operator std::string() const;
 
-        //! Integer conversion
         /*!
-         \par
+         \brief Integer conversion
+
          Converts the Uuid to the embedded id value.
+
          \return The embedded id value.
          */
         operator uint64_t() const;
 
-        //! Debug string conversion.
         /*!
-         \par
+         \brief Debug string conversion.
+
          Outputs in the format {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}/yyyy,
          where yyyy is the embedded id value.
+
          \return The string representation.
          */
         std::string str() const;
 
-        //! Data accessor.
         /*!
-         \par
+         \brief Data accessor.
+
          size will always be set to 16.
+
          \param sz Pointer to a location to store the data size.
          \return Pointer to the data.
          */
         inline const uint8_t* const data(size_t* sz) const { *sz = 16; return data_; };
     private:
         uint8_t data_[16];
-    }; // clase Uuid
+    }; // clase lj::Uuid
 }; // namespace lj

@@ -2,9 +2,8 @@
 /*!
  \file lj/Bson.h
  \brief LJ Bson header.
- \author Jason Watson
 
- Copyright (c) 2010, Jason Watson
+ Copyright (c) 2014, Jason Watson
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -47,59 +46,52 @@ namespace lj
 {
     namespace bson
     {
-        //! Enumeration of Bson Types.
-
+        /*!
+         \brief Enumeration of Bson Types.
+         \since 1.0
+         \sa http://bsonspec.org/ for the actual spec.
+         */
         enum class Type : uint8_t
         {
             k_double = 0x01, //!< Node contains a double value.
-                    k_string = 0x02, //!< Node contains a string value.
-                    k_document = 0x03, //!< Node contains a nested document value.
-                    k_array = 0x04, //!< Node contains a nested array value.
-                    k_binary = 0x05, //!< Node contains a binary value.
-                    k_binary_document = 0x06, //!< Node contains a document that has not been parsed (Raw bytes).
-                    k_boolean = 0x08, //!< Node contains a boolean value.
-                    k_datetime = 0x09, //!< Node contains a date/time value.
-                    k_null = 0x0A, //!< Node contains a null value.
-                    k_javascript = 0x0D, //!< Node contains a javascript value.
-                    k_int32 = 0x10, //!< Node contains a int32 number value.
-                    k_timestamp = 0x11, //!< Node contains a timestamp value.
-                    k_int64 = 0x12, //!< Node contains a int64 number value.
-                    k_minkey = 0xFF, //!< Node contains a reserved BSON spec value.
-                    k_maxkey = 0x7F //!< Node contains a reserved BSON spec value.
+            k_string = 0x02, //!< Node contains a string value.
+            k_document = 0x03, //!< Node contains a nested document value.
+            k_array = 0x04, //!< Node contains a nested array value.
+            k_binary = 0x05, //!< Node contains a binary value.
+            k_binary_document = 0x06, //!< Node contains a document that has not been parsed (Raw bytes).
+            k_boolean = 0x08, //!< Node contains a boolean value.
+            k_datetime = 0x09, //!< Node contains a date/time value.
+            k_null = 0x0A, //!< Node contains a null value.
+            k_javascript = 0x0D, //!< Node contains a javascript value.
+            k_int32 = 0x10, //!< Node contains a int32 number value.
+            k_timestamp = 0x11, //!< Node contains a timestamp value.
+            k_int64 = 0x12, //!< Node contains a int64 number value.
+            k_minkey = 0xFF, //!< Node contains a reserved BSON spec value.
+            k_maxkey = 0x7F //!< Node contains a reserved BSON spec value.
         };
 
-        //! Enumeration of Bson binary subtypes.
-
+        /*!
+         \brief Enumeration of Bson binary subtypes.
+         \since 1.0
+         \sa http://bsonspec.org/ for the actual spec.
+         */
         enum class Binary_type : uint8_t
         {
             k_bin_generic = 0x00, //!< Generic Binary
-                    k_bin_function = 0x01, //!< Function.
-                    k_bin_binary = 0x02, //!< Binary String.
-                    k_bin_uuid = 0x03, //!< UUID.
-                    k_bin_md5 = 0x05, //!< MD5.
-                    k_bin_user_defined = 0x80 //!< User defined binary string.
+            k_bin_function = 0x01, //!< Function.
+            k_bin_binary = 0x02, //!< Old Binary String.
+            k_bin_uuid = 0x03, //!< Old UUID setting.
+            k_bin_md5 = 0x05, //!< MD5.
+            k_bin_user_defined = 0x80 //!< User defined binary string.
         };
 
         //! Get a string version of the type.
-        /*!
-         \param t The type to convert into a string.
-         \return String name for the type.
-         */
         const std::string& type_string(const Type t);
 
         //! Get a string version of the binary type.
-        /*!
-         \param subtype The type to convert into a string.
-         \return String name for the type.
-         */
         const std::string& binary_type_string(const Binary_type subtype);
 
         //! Get the minimum number of bytes required for a type.
-
-        /*!
-         \param t The type to get the required bytes for.
-         \return The minimum size of the type.
-         */
         inline size_t type_min_size(const Type t)
         {
             switch (t)
@@ -127,11 +119,6 @@ namespace lj
         }
 
         //! Test if a type is a nested type (Array, or document).
-
-        /*!
-         \param t The type to test.
-         \return True if the type is a nested object, false otherwise.
-         */
         inline bool type_is_nested(const Type t)
         {
             return (t == Type::k_document ||
@@ -139,11 +126,6 @@ namespace lj
         }
 
         //! Test if a type is a nested type for pretty printing (Array, UUID, or document).
-
-        /*!
-         \param t The type to test.
-         \return True if the type is a nested object in pretty printed mode, false otherwise.
-         */
         inline bool type_is_pretty_nested(const Type t)
         {
             return (type_is_nested(t) ||
@@ -151,33 +133,18 @@ namespace lj
         }
 
         //! Test if a type is a value type (to_value() will succeed).
-
-        /*!
-         \param t the type to test.
-         \return True if the type supports to_valeu(), false otherwise.
-         */
         inline bool type_is_value(const Type t)
         {
             return !type_is_nested(t);
         }
 
         //! Test if a type is quotablable (string types).
-
-        /*!
-         \param t The type to test.
-         \return True if the type is a quotable object, false otherwise.
-         */
         inline bool type_is_quotable(const Type t)
         {
             return (t == Type::k_string);
         }
 
         //! Test if a type is a numerical type (integers and floats).
-
-        /*!
-         \param t The type to test.
-         \return True if the type is a number type, false otherwise.
-         */
         inline bool type_is_number(const Type t)
         {
             return (t == Type::k_int32 ||
@@ -187,11 +154,6 @@ namespace lj
         }
 
         //! Test if a type is a native c++ type (integers, floats, booleans, null).
-
-        /*!
-         \param t The type to test.
-         \return True if the type is a native type, false otherwise.
-         */
         inline bool type_is_native(const Type t)
         {
             return (t == Type::k_int32 ||
@@ -202,22 +164,16 @@ namespace lj
                     t == Type::k_null);
         }
 
-        //! Bson path exception
         /*!
-         \par
+         \brief Bson path exception
+         \since 1.0
+
          Represents an invalid path in a bson document.
-         \author Jason Watson
-         \version 1.0
-         \date May 22, 2011
          */
         class Bson_path_exception : public lj::Exception
         {
         public:
             //! Constructor.
-            /*!
-             \param msg The exception message.
-             \param path The path that caused the exception.
-             */
             Bson_path_exception(const std::string& msg, const std::string path) :
                     lj::Exception("Bson", msg),
                     path_(path)
@@ -225,9 +181,6 @@ namespace lj
             }
 
             //! Copy constructor.
-            /*!
-             \param o The other object.
-             */
             Bson_path_exception(const Bson_path_exception& o) :
                     lj::Exception(o),
                     path_(o.path_)
@@ -235,9 +188,6 @@ namespace lj
             }
 
             //! Move constructor.
-            /*!
-             \param o The other object.
-             */
             Bson_path_exception(Bson_path_exception&& o) :
                     lj::Exception(o),
                     path_(std::move(o.path_))
@@ -250,10 +200,6 @@ namespace lj
             }
 
             //! Copy assignment operator
-            /*!
-             \param o The other object.
-             \return This object.
-             */
             Bson_path_exception& operator=(const Bson_path_exception& o)
             {
                 if (&o != this)
@@ -265,10 +211,6 @@ namespace lj
             }
 
             //! Move assignment operator
-            /*!
-             \param o The other object.
-             \return This object.
-             */
             Bson_path_exception& operator=(Bson_path_exception&& o)
             {
                 if (&o != this)
@@ -280,9 +222,6 @@ namespace lj
             }
 
             //! Get the path that caused this exception.
-            /*!
-             \return The path.
-             */
             virtual std::string path() const
             {
                 return path_;
@@ -293,24 +232,16 @@ namespace lj
             std::string path_;
         };
 
-        //! Bson type exception.
-
         /*!
-         \par
+         \brief Bson type exception.
+         \since 1.0
+
          Represents an invalid type operation in a bson document.
-         \author Jason Watson
-         \version 1.0
-         \date May 22, 2011
          */
         class Bson_type_exception : public lj::Exception
         {
         public:
             //! Constructor.
-            /*!
-             \param msg The exception msg.
-             \param type The bson type of the object.
-             \param binary_type The binary sub-type for binary objects.
-             */
             Bson_type_exception(const std::string& msg,
                     Type type,
                     Binary_type binary_type = Binary_type::k_bin_generic) :
@@ -321,9 +252,6 @@ namespace lj
             }
 
             //! Copy constructor.
-            /*!
-             \param o The other object.
-             */
             Bson_type_exception(const Bson_type_exception& o) :
                     lj::Exception(o),
                     type_(o.type_),
@@ -332,9 +260,6 @@ namespace lj
             }
 
             //! Move constructor
-            /*!
-             \param o The other object.
-             */
             Bson_type_exception(Bson_type_exception&& o) :
                     lj::Exception(o),
                     type_(std::move(o.type_)),
@@ -348,10 +273,6 @@ namespace lj
             }
 
             //! Copy assignment operator
-            /*!
-             \param o The other object.
-             \return This object.
-             */
             Bson_type_exception& operator=(const Bson_type_exception& o)
             {
                 if (&o != this)
@@ -364,10 +285,6 @@ namespace lj
             }
 
             //! Move assignment operator
-            /*!
-             \param o The other object.
-             \return This object.
-             */
             Bson_type_exception& operator=(Bson_type_exception&& o)
             {
                 if (&o != this)
@@ -380,20 +297,12 @@ namespace lj
             }
 
             //! The type of the object.
-            /*!
-             \return The type.
-             */
             virtual Type type() const
             {
                 return type_;
             }
 
             //! The binary type of the binary object.
-            /*!
-             \par
-             Only useful when the type is "binary".
-             \return The binary sub-type.
-             */
             virtual Binary_type binary_type() const
             {
                 return binary_type_;
@@ -405,35 +314,32 @@ namespace lj
             Binary_type binary_type_;
         };
 
-        //! Bson value.
         /*!
-         \par
-         Represets a Bson value, including documents and arrays. The following
-         examples show different ways to set a value at some path.
-         \author Jason Watson
-         \version 1.0
-         \date April 19, 2010
+         \brief Bson value.
+         \since 1.0
+
+         Represets a Bson value, including documents and arrays.
          */
         class Node
         {
         public:
-            //! Create a new document Node.
             /*!
-             \par
-             Creates a blank, empty document that considers itself non-existant.
-             Used to create document nodes.
+             \brief Create a new document Node.
+
+             Creates a blank, empty node of Type::k_document
              */
             Node();
 
-            //! Create a new document node based on some data.
             /*!
-             \par
+             \brief Create a new document node based on some data.
+
              Create a new Node value based on the provided values. Used to create
              value nodes.
-             \par
+
              The value of v is copied out of the pointer \c v. For document
              and array types, \c v may be NULL. For value types, \c v must be
              a valid pointer.
+
              \param t The type of node being created.
              \param v The value to associate with this node.
              \sa Node::set_value()
@@ -441,51 +347,38 @@ namespace lj
             Node(const Type t, const uint8_t* v);
 
             //! Create a new document node as a copy of an existing Node.
-            /*!
-             \param o The original Node object.
-             \sa Node::copy_from()
-             */
             Node(const Node& o);
 
             //! Create a new document node as a move of an existing Node.
-            /*!
-             \param o The original rvalue reference \c Node object.
-             */
             Node(Node&& o);
 
             //! Destructor.
             ~Node();
 
-            //! Set the value of the document node based on a bson string.
             /*!
-             \par
+             \brief Set the value of the document node based on a bson string.
+
              The value of v is copied out of the pointer \c v. For document
              and array types, \c v may be NULL. For value types, \c v must be
              a valid pointer.
+
              \param t The new type of the document.
              \param v Array of data to read the new value from.
              */
             void set_value(const Type t, const uint8_t* v);
 
-            //! Set the value of the document node to null.
             /*!
-             \par
+             \brief Set the value of the document node to null.
+
              Nullified nodes exist, and contain the value null.
              */
             void nullify();
 
             //! Destroy the current value and copy values from another Node.
-            /*!
-             \param o This node object.
-             */
             Node& copy_from(const Node& o);
 
-            //! Destroy the current value and copy values from another Node.
             /*!
-             \par
-             \c a \c = \c b is identical to calling \c a.copy_from(b).
-             \param o The original Node object.
-             \return Reference to this object.
+             \brief Destroy the current value and copy values from another Node.
              \sa Node::copy_from()
              */
             inline Node& operator=(const Node& o)
@@ -498,46 +391,54 @@ namespace lj
             }
 
             //! Destroy the current value and move values from another node.
-            /*!
-             \par
-             As part of the move semantics, the other value is left containing
-             the value of a null bson::Node.
-             \param o rvalue reference to the other Node object.
-             \return lvalue reference to this object.
-             \sa Node::move_from()
-             */
             Node& operator=(Node&& o);
 
-            //! Takes a list of strings, and creates child documents when they do not exist.
-            Node* find_or_create_child_documents(const std::list<std::string>&);
-
-            //! Get a pointer to a specific Node object in the document.
             /*!
-             \par
-             The intermediate objects in the path are created if they do not exist.
+             \brief Navigate to a specific path, creating nodes that do not exist.
+
+             A string consisting of the array index is allowed as part of the
+             string list, but it will not automatically create array nodes or
+             the items inside the array.
+
+             \param a_path A list of path elements to navigate through.
+             \return Pointer to the found or created object.
+             */
+            Node* find_or_create_child_documents(const std::list<std::string>& a_path);
+
+            /*!
+             \brief Get a pointer to a specific Node object in the document.
+
+             Similar to \c #find_or_create_child_documents(const std::list<std::string>&)
+             except that it takes a string with path elements separated with
+             forward slashes.
              \param p The path to follow.
-             \return Pointer to that object.
+             \return Pointer to the found or created object.
              \sa #find_or_create_child_documents(const std::list<std::string>&)
+             \sa #nav(const std::string&)
              */
             Node* path(const std::string& p);
 
-            //! Get a pointer to a specific Node object in the document.
             /*!
-             \par
-             Null is returned if the intermediate objects in the path do not exist.
+             \brief Get a pointer to a specific Node object in the document.
+
+             Similar to \c #find_or_create_child_documents(const std::list<std::string>&)
+             except that it takes a string with path elements separated with
+             forward slashes. It also skips the "create" part. If the path
+             cannot be found, this function returns nullptr.
              \param p The path to follow.
-             \return Pointer to that object, null if it cannot be navigated to.
+             \return Pointer to the found object or \c nullptr
+             \sa #find_or_create_child_documents(const std::list<std::string>&)
+             \sa #nav(const std::string&)const
              */
             const Node* path(const std::string& p) const;
 
-            //! Get a specific Node object at a path.
-
             /*!
-             \par
-             Reference version of \c path(p).
-             \sa path(const std::string)
+             \brief Get a specific Node object at a path.
+
+             Reference version of \c #path(const std::string&).
              \param p The path to follow.
              \return Reference to the object at that node.
+             \sa path(const std::string&)
              \sa #find_or_create_child_documents(const std::list<std::string>&)
              */
             inline Node& nav(const std::string& p)
@@ -545,12 +446,11 @@ namespace lj
                 return *path(p);
             }
 
-            //! Get a specific Node object at a path.
-
             /*!
-             \par
-             Reference version of \c path(p).
-             \sa path(const std::string)const
+             \brief Get a specific Node object at a path.
+
+             Reference version of \c #path(const std::string&)const.
+             \sa #path(const std::string&)const
              \param p The path to follow.
              \return Reference to the object at that node.
              \throw Exception if the node cannot be navigated to.
@@ -565,10 +465,9 @@ namespace lj
                 return *ptr;
             }
 
-            //! Get a specific Node object at a path.
-
             /*!
-             \par
+             \brief Get a specific Node object at a path.
+
              Syntatical sugar for \c nav(p).
              \sa nav(const std::string)
              \param p The path to follow.
@@ -580,10 +479,9 @@ namespace lj
                 return nav(p);
             }
 
-            //! Get a specific Node object at a path.
-
             /*!
-             \par
+             \brief Get a specific Node object at a path.
+             
              Syntatical sugar for \c nav(p).
              \sa nav(const std::string)const
              \param p The path to follow.
@@ -595,13 +493,14 @@ namespace lj
                 return nav(p);
             }
 
-            //! Set a child at a specific path.
             /*!
-             \par
-             The parent Node becomes responsibile for the destruction of the pointer \c child.
-             \par
+             \brief Set a child at a specific path.
+
+             The parent Node assumes responsibility for the destruction of
+             the pointer \c child.
+
              If \c path is an empty string, \c set_child becomes a no-op.
-             \par
+
              If \c child is null, the child specified by \c path is removed.
              \param path The path to set the child for.
              \param child The child to set.
@@ -609,14 +508,15 @@ namespace lj
              */
             void set_child(const std::string& path, Node* child);
 
-            //! Push a child at a specific path.
             /*!
-             \par
-             The parent Node becomes responsible for the destruction of the pointer \c child.
-             \par
+             \brief Push a child at a specific path.
+
+             The parent Node becomes responsible for the destruction of the
+             pointer \c child.
+
              If \c path is an empty string, the child is pushed onto the
              current Node object.
-             \par
+
              If \c child is null, \c push_child becomes a no-op.
              \param path The path where the child should be pushed.
              \param child The child to push.
@@ -624,9 +524,8 @@ namespace lj
              */
             void push_child(const std::string& path, Node* child);
 
-            //! Push a child onto this Node object.
-
             /*!
+             \brief Push a child onto this Node object.
              \param o other object to copy from.
              \return reference to this.
              */
@@ -636,11 +535,11 @@ namespace lj
                 return *this;
             }
 
-            //! Push a child onto this Node object.
-
             /*!
-             \note Memory
-             This object becomes responsible for the memory.
+             \brief Push a child onto this Node object.
+
+             The parent Node becomes responsible for the destruction of the
+             pointer \c child.
              \param o other object pointer to attach
              \return reference to this.
              */
@@ -650,10 +549,11 @@ namespace lj
                 return *this;
             }
 
-            //! Get the map backing document type.
-
             /*!
-             \return A map of children. An empty map for non-document types.
+             \brief Get the map backing document nodes.
+             \return A map of children.
+             \throws lj::bson::Bson_type_exception When called on
+             non-document nodes.
              */
             inline const std::map<std::string, Node*>& to_map() const
             {
@@ -664,8 +564,12 @@ namespace lj
                 return *(value_.map_);
             }
 
-            //! Get the vector backing array type.
-
+            /*!
+             \brief Get the vector backing array type.
+             \return A vector of children.
+             \throws lj::bson::Bson_type_exception When called on
+             non-array types.
+             */
             inline const std::vector<Node*>& to_vector() const
             {
                 if (Type::k_array != type())
@@ -675,10 +579,10 @@ namespace lj
                 return *(value_.vector_);
             }
 
-            //! Get the value of this object.
-
             /*!
-             \return The value of this node. NULL for document and array types.
+             \brief Get the value of this object.
+             \return The value of this node.
+             \throws lj::bson::Bson_type_exception for document and array types.
              */
             inline const uint8_t* to_value() const
             {
@@ -689,13 +593,12 @@ namespace lj
                 return value_.data_;
             }
 
-            //! get the value of the document node as a bson string.
-
             /*!
-             \par
-             Pointer is allocated with "new[]" and must be released with
-             "delete[]".
-             \par
+             \brief get the value of the document node as a bson string.
+
+             Pointer is allocated with \c new[] and must be released with
+             \c delete[].
+
              The array length can be obtained by calling \c size(), but it is
              recommended that you use the size pointer to get the size.
              \param sz_ptr [out] Location to store the size of the data.
@@ -716,20 +619,22 @@ namespace lj
             }
 
             //! Get the type of the document node.
-
             inline Type type() const
             {
                 return type_;
             }
 
             //! Get if the Node object contains anything.
-
             bool exists(const std::string& path) const
             {
                 return (this->path(path) != NULL);
             }
 
-            //! Get the size of the node.
+            /*! Get the size of the node.
+
+             This requires traversing the entire node tree and can
+             be expensive on larger documents.
+             */
             size_t size() const;
 
         private:
@@ -742,77 +647,75 @@ namespace lj
                 std::map<std::string, Node*>* map_;
             } value_;
 
-            //! copy the value of this object into a bson byte array.
             size_t copy_to_bson(uint8_t *) const;
 
-            //! Set the value of the document node to not exist.
             void destroy(bool);
-        }; // class Node
+        }; // class lj::bson::Node
 
-        //! Escape slashes for bson keys.
         /*!
+         \brief Escape slashes for bson keys.
          \param input The string to escape.
          \return The escaped string.
          */
         std::string escape_path(const std::string& input);
 
-        //! Create a new string object.
         /*!
-         \par
-         Object should be released with delete.
+         \brief Create a new string object.
+
+         Pointer should be released with delete.
          \param str The string value.
          \return a new Node object.
          */
         Node* new_string(const std::string& str);
 
-        //! Create a new boolean object.
         /*!
-         \par
-         Object should be released with delete.
+         \brief Create a new boolean object.
+
+         Pointer should be released with delete.
          \param val The boolean value.
          \return a new Node object.
          */
         Node* new_boolean(const bool val);
 
-        //! Create a new int32 object.
         /*!
-         \par
-         Object should be released with delete.
+         \brief Create a new int32 object.
+
+         Pointer should be released with delete.
          \param val The integer value.
          \return a new Node object.
          */
         Node* new_int32(const int32_t val);
 
-        //! Create a new int64 object.
         /*!
-         \par
-         Object should be released with delete.
+         \brief Create a new int64 object.
+
+         Pointer should be released with delete.
          \param val The integer value.
          \return a new Node object.
          */
         Node* new_int64(const int64_t val);
 
-        //! Create a new int64 object.
         /*!
-         \par
-         Object should be released with delete.
+         \brief Create a new int64 object.
+
+         Pointer should be released with delete.
          \param val The integer value.
          \return a new Node object.
          */
         Node* new_uint64(const uint64_t val);
 
-        //! Create a new null object.
         /*!
-         \par
-         Object should be released with delete.
+         \brief Create a new null object.
+
+         Pointer should be released with delete.
          \return a new Node object.
          */
         Node* new_null();
 
-        //! Create a new binary object.
         /*!
-         \par
-         Object should be released with delete.
+         \brief Create a new binary object.
+
+         Pointer should be released with delete.
          \param val The binary value
          \param sz The size of the binary value.
          \param subtype The binary subtype.
@@ -820,48 +723,48 @@ namespace lj
          */
         Node* new_binary(const uint8_t* val, uint32_t sz, Binary_type subtype);
 
-        //! Create a new Uuid Bson object.
         /*!
-         \par
+         \brief Create a new Uuid Bson object.
+
          A Uuid Node object is a binary type that contains 16 bytes.
-         \par
-         Result should be released with delete.
+
+         Pointer should be released with delete.
          \param uuid The unique ID.
          \return a new Node object.
          */
         Node* new_uuid(const lj::Uuid& uuid);
 
-        //! Create a new array Bson object.
         /*!
-         \par
+         \brief Create a new array Bson object.
+
          An array bson object. May contain child nodes.
-         \par
-         Result should be released with delete.
+
+         Pointer should be released with delete.
          \return a new Node object.
          */
         Node* new_array();
 
-        //! Create a new node from a json string.
         /*!
-         \par
+         \brief Create a new node from a json string.
+
          The input string is expected to be a well-formed json document
          that will be parsed into a bson document node.
-         \par Memory
-         Returned object should be released with delete.
+
+         Pointer should be released with delete.
          \param val The string value to parse.
          \return A new Node object.
          \exception lj::Exception Upon encountering unparsable data in the
          string.
          */
-        Node* parse_json(const std::string val);
+        Node* parse_json(const std::string& val);
 
-        //! Create a new node from a json std::istream.
         /*!
-         \par
+         \brief Create a new node from a json std::istream.
+
          The input stream is expected to be a well-formed json document
          that will be parsed into a bson document node.
-         \par Memory
-         Returned object should be released with delete.
+
+         Pointer should be released with delete.
          \param in_stream The input stream.
          \return A new Node object.
          \exception lj::Exception Upon encountering unparsable data in the
@@ -869,24 +772,24 @@ namespace lj
          */
         Node* parse_json(std::istream& in_stream);
 
-        //! Get the value of a Bson object as a C++ string in debug format.
         /*!
-         \par
+         \brief Get the value of a Bson object as a C++ string in debug format.
+
          The debug string is a representation of the Node object in BSON
          format.  Rather than being a byte array, the results are output in
          a pseudo-JSON looking format, with lengths and byte counts included
          in the display.
-         \par
-         This is really only useful for debugging output.
+
+         This is really only useful for debugging bson output.
          \param b The Node object
          \param lvl The indentation level.
          \return A string describing how this Node object should look in BSON.
          */
         std::string as_debug_string(const Node& b, int lvl = 1);
 
-        //! Get the value of a Bson object as a c++ string.
         /*!
-         \par
+         \brief Get the value of a Bson object as a c++ string.
+
          Value types are output in their string representation.  Document and
          array types are output in a JSON looking format.
          \param b The Node object.
@@ -894,16 +797,16 @@ namespace lj
          */
         std::string as_string(const Node& b);
 
-        //! Get the value of a Bson object as a json string with indenting.
         /*!
-         \par
+         \brief Get the value of a Bson object as a json string with indenting.
+
          The pretty string is a representation of the Node object in JSON
          format.  The nested structures are indented to make the structure
          easier to read.
-         \par
+
          The result can be converted back into a BSON object using the
          json string parsing method.
-         \par
+
          Value types are output in their string representation.  Document and
          array types are output in a JSON looking format.
          \param b The Node object.
@@ -912,9 +815,9 @@ namespace lj
          */
         std::string as_json_string(const Node& b, int lvl = 1);
 
-        //! Get the value of a Bson object as an 32-bit wide integer.
         /*!
-         \par
+         \brief Get the value of a Bson object as an 32-bit wide integer.
+
          Value types are converted into numbers. Document, Array, and strings that
          cannot be converted into a number return 0.
          \param b The Node object.
@@ -922,9 +825,9 @@ namespace lj
          */
         int32_t as_int32(const Node& b);
 
-        //! Get the value of a Bson object as an 64-bit wide integer.
         /*!
-         \par
+         \brief Get the value of a Bson object as an 64-bit wide integer.
+
          Value types are converted into numbers. Document, Array, and strings that
          cannot be converted into a number return 0.
          \param b The Node object.
@@ -932,9 +835,9 @@ namespace lj
          */
         int64_t as_int64(const Node& b);
 
-        //! Get the value of a Bson object as an unsigned 64-bit wide integer.
         /*!
-         \par
+         \brief Get the value of a Bson object as an unsigned 64-bit wide integer.
+
          Value types are converted into numbers. Document, Array and strings that
          cannot be converted into a number return 0.
          \param b The Node object.
@@ -942,22 +845,23 @@ namespace lj
          */
         uint64_t as_uint64(const Node& b);
 
-        //! Get the value of a Bson object as a boolean.
         /*!
-         \par
+         \brief Get the value of a Bson object as a boolean.
+
          If the value is a string, return true only if the string contains the
          word "true" or the character '1'.
-         \par
+
          Numeric types return true if the value is not equal to 0.
-         \par Document, Null, and Array types always return false.
+         
+         Document, Null, and Array types always return false.
          \param b The Node object.
          \return The boolean value.
          */
         bool as_boolean(const Node& b);
 
-        //! Get the value of a bson object as a double.
         /*!
-         \par
+         \brief Get the value of a bson object as a double.
+
          Value types are converted into numbers. Document, Array, and string that
          cannot be converted into a number return 0.0.
          \param b The Node object.
@@ -965,11 +869,11 @@ namespace lj
          */
         double as_double(const Node& b);
 
-        //! Get the value of a bson object as a pointer.
         /*!
-         \par
+         \brief Get the value of a bson object as a pointer.
+
          Only works if the Node is a binary type.
-         \par
+
          Returned value points to an internal data structure and should not be
          freed. Pointer will become invalid if the Node object associated with
          the value is deleted.
@@ -980,11 +884,11 @@ namespace lj
          */
         const uint8_t* as_binary(const Node& b, Binary_type* t, uint32_t* sz);
 
-        //! Get the value of a bson object as a lj::Uuid.
         /*!
-         \par
+         \brief Get the value of a bson object as a lj::Uuid.
+
          Only works if the Node is a binary type with the subtype of uuid.
-         \par
+
          Returned value is independent from the Node object and is still
          valid after the Node object is deleted.
          \param b The Node object.
@@ -992,18 +896,18 @@ namespace lj
          */
         Uuid as_uuid(const Node& b);
 
-        //! Increment the value of a bson object.
         /*!
-         \par
-         converts a value to an integer if it is not already.
+         \brief Increment the value of a bson object.
+
+         Converts a value to an integer if it is not already.
          \param b The Node object to modify.
          \param amount The amount to increment a value. May be negative.
          */
         void increment(Node& b, int amount);
 
-        //! Combine data in changes to the target node.
         /*!
-         \par
+         \brief Combine data in changes to the target node.
+
          Adds all of the paths that exist in \c changes to \c target. Arrays
          and other values in the document are added. If a value already exists
          at a path, it is replaced by the changes value.
@@ -1014,8 +918,9 @@ namespace lj
     }; // namespace lj::bson
 }; // namespace lj
 
-//! Extract data with format.
 /*!
+ \brief Extract data with format.
+
  Extract an lj::bson::Node object from the datastream. The object will be
  marshaled from the binary representation.
  \param is The input stream to read from.
@@ -1024,8 +929,9 @@ namespace lj
  */
 std::istream& operator>>(std::istream& is, lj::bson::Node& val);
 
-//! Insert data with format.
 /*!
+ \brief Insert data with format.
+
  Insert an lj::bson::Node object to the datastream. The node will be converted
  to binary form and written out.
  \param os The output stream to write to.

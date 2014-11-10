@@ -4,7 +4,7 @@
  \brief Logjam server constants definition.
  \author Jason Watson
 
- Copyright (c) 2010, Jason Watson
+ Copyright (c) 2014, Jason Watson
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without

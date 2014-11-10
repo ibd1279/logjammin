@@ -40,8 +40,8 @@
 
 namespace lj
 {
-    //! Thread safe queue.
     /*!
+     \brief Thread safe queue.
      \tparam T The type of the queue.
      */
     template <class T>

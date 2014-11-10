@@ -43,6 +43,7 @@ namespace logjamd
 {
     namespace pool
     {
+        //! Thread-per connection swimmer. Socket listener
         class Swimmer_listener : public logjam::pool::Swimmer
         {
         public:
@@ -64,6 +65,7 @@ namespace logjamd
             logjam::Network_connection client_connection_;
         }; // class logjamd::pool::Swimmer_listener
 
+        //! Thread-per connection lifeguard. Socket listener
         class Lifeguard_listener : public logjam::pool::Lifeguard
         {
         public:
@@ -87,6 +89,7 @@ namespace logjamd
             logjam::Network_connection listen_connection_;
         }; // class logjamd::pool::Lifeguard_listener
 
+        //! Thread-per connection area. Socket Listener.
         class Area_listener : public logjam::pool::Area
         {
         public:

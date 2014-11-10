@@ -4,7 +4,7 @@
  \brief Logjam stage abstract base definition.
  \author Jason Watson
 
- Copyright (c) 2010, Jason Watson
+ Copyright (c) 2014, Jason Watson
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -44,13 +44,12 @@ namespace logjam
 {
     //! A stage is a specific server execution unit.
     /*!
-     \par
      When establishing and executing different connections, the client and the
      server go through different stages. The first stage is the pre-stage. It
      involves things like the TLS handshake, selecting the communication method,
      etc. After that comes authentication, and then things start to diverge
      based on the handshake result.
-     \par
+
      It is expected that Stage objects are stateless, and immutable. Any
      state information should be attached to the swimmer context, and not
      added as instance state.
@@ -72,6 +71,14 @@ namespace logjam
         virtual lj::log::Logger& log(const std::string& fmt) const;
     }; // class logjam::Stage
 
+    //! Safely execute one stage and return another stage.
+    /*!
+     performs checks to make sure a stage does not return itself.
+     \param stg The stage to execute.
+     \param swmr The swimmer to use while executing the stage.
+     \return The new stage.
+     \throws lj::Exception if the stage attempts to return itself.
+     */
     std::unique_ptr<Stage> safe_execute_stage(std::unique_ptr<Stage>& stg,
             pool::Swimmer& swmr);
 };

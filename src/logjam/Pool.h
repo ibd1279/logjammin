@@ -44,6 +44,7 @@ namespace logjam
         class Lifeguard;
         class Swimmer;
 
+        //! Area of the pool.
         class Area
         {
         public:
@@ -66,6 +67,7 @@ namespace logjam
             std::shared_ptr<logjam::Environs> environs_;
         }; // class logjam::pool::Area
 
+        //! Lifeguard assigned to areas of the pool.
         class Lifeguard : public lj::Work
         {
         public:
@@ -85,6 +87,7 @@ namespace logjam
             Area& area_;
         }; // class logjam::pool::Lifeguard
 
+        //! Swimmers watched by the lifeguard of the pool.
         class Swimmer : public:: lj::Work
         {
         public:
@@ -108,6 +111,7 @@ namespace logjam
         }; // class logjam::pool::Swimmer
         namespace utility
         {
+            //! Translate one swimmer into another swimmer.
             class Swimmer_xlator : public Swimmer
             {
             public:

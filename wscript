@@ -98,8 +98,6 @@ def build(bld):
             ,'src/lj/Thread.cpp'
             ,'src/lj/Uuid.cpp'
             ,'src/scrypt/scrypt.cpp'
-            ,'src/xbn/Digests.cpp'
-            ,'src/xbn/Merkle.cpp'
         ]
         ,target='lj'
         ,cxxflags = [

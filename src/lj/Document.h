@@ -4,7 +4,7 @@
  \brief LJ Bson Document header.
  \author Jason Watson
 
- Copyright (c) 2011, Jason Watson
+ Copyright (c) 2014, Jason Watson
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -44,12 +44,11 @@ void testEncrypt_friendly();
 
 namespace lj
 {
-    //! Bson Document
     /*!
-     \par
+     \brief BSON Document
+
      A bson document represents a bson document structure and maintains
-     specific metadata about the bson document structure. At a high level the
-     v1 document looks like this.
+     specific metadata. At a high level the v1 document looks like this:
      \code
      {
        "_" : {},
@@ -57,22 +56,27 @@ namespace lj
        "." : {}
      }
      \endcode
+
      \par The "_" element.
      The underscore element is a collection of metadata associated with
      this document. Information stored in this element is used by the document
      object to maintain state, version history, etc.
+
      \par The "version" element.
      The version element is a fixed attribute for all lj::Documents. Only one
      version exists at this time, so this value should always be 100.
+
      \par The "." element.
      The dot element is the data for this document. This is the user generated
      component of the document.
+
      \par Encryption
      Encryption and decryption of specific fields is done through the
      \c lj::Document::encrypt() and \c lj::Document::decrypt() methods.
      Encrypted fields are removed from the document, and stored under a "#"
      element. Additional information necessary to decrypt the fields is stored
      under the "_" element.
+
      \note
      The document object provides a thin utility wrapper around
      a lj::bson::Node. In reality it tracks the root node and the path
@@ -81,8 +85,9 @@ namespace lj
      existing lj::bson methods. A document also keeps track of its
      modified state. Modifications to a document must be done through the
      document interface.
-     \author Jason Watson
-     \version 1.0
+
+     Copying documents is not allowed.
+     \since 1.0
      \sa lj::bson::Node
      */
 
@@ -97,8 +102,8 @@ namespace lj
         //! Default constructor.
         Document();
 
-        //! Wrap a lj::bson::Node pointer.
         /*!
+         \brief Wrap a lj::bson::Node pointer.
          \param doc The pointer for the document.
          \param is_document True if the pointer is a document object,
             and false if the document is just data.
@@ -109,22 +114,20 @@ namespace lj
         //! Destructor.
         ~Document();
 
-        //! Removed.
         /*!
-         Copying documents is not allowed.
+         \brief Removed copy constructor.
          \param orig The original.
          */
         Document(const lj::Document& orig) = delete;
 
-        //! Removed.
         /*!
-         Copying documents is not allowed.
+         \brief Removed copy assignment.
          \param orig The original.
          */
         lj::Document& operator=(const lj::Document& orig) = delete;
 
-        //! Get the parent document identifier.
         /*!
+         \brief Get the parent document identifier.
          \return The parent identifier.
          */
         inline lj::Uuid parent() const
@@ -132,8 +135,8 @@ namespace lj
             return lj::bson::as_uuid(doc_->nav("_/parent"));
         }
 
-        //! Get the document vector clock.
         /*!
+         \brief Get the document vector clock.
          \return The document vector clock.
          */
         inline const lj::bson::Node& vclock() const
@@ -141,8 +144,8 @@ namespace lj
             return doc_->nav("_/vclock");
         }
 
-        //! Get the document version.
         /*!
+         \brief Get the document version.
          \return The document version.
          */
         inline int32_t version() const
@@ -150,8 +153,8 @@ namespace lj
             return lj::bson::as_int32(doc_->nav("version"));
         }
 
-        //! Get the document key.
         /*!
+         \brief Get the document key.
          \return The document key.
          */
         inline uint64_t key() const
@@ -159,8 +162,8 @@ namespace lj
             return lj::bson::as_uint64(doc_->nav("_/key"));
         }
 
-        //! Get the document identifier.
         /*!
+         \brief Get the document identifier.
          \return The document identifier.
          */
         inline lj::Uuid id() const
@@ -168,8 +171,8 @@ namespace lj
             return lj::bson::as_uuid(doc_->nav("_/id"));
         }
 
-        //! Get the suppressed flag.
         /*!
+         \brief Get the suppressed flag.
          \return True if the document is suppressed, false otherwise.
          */
         inline bool suppress() const
@@ -177,8 +180,8 @@ namespace lj
             return lj::bson::as_boolean(doc_->nav("_/flag/suppressed"));
         }
 
-        //! Get the dirty flag.
         /*!
+         \brief Get the dirty flag.
          \return True if the document is dirty, false otherwise.
          */
         inline bool dirty() const
@@ -186,8 +189,8 @@ namespace lj
             return dirty_;
         }
 
-        //! Get the data document.
         /*!
+         \brief Get the data document.
          \return The data node.
          */
         inline const lj::bson::Node& get() const
@@ -195,8 +198,8 @@ namespace lj
             return doc_->nav(".");
         }
 
-        //! Get the data document.
         /*!
+         \brief Get the data document.
          \param path The path in the document to get.
          \return The data node.
          */
@@ -205,32 +208,37 @@ namespace lj
             return doc_->nav(".").nav(path);
         }
 
-        //! Wash the dirty flag off the object.
         /*!
+         \brief Wash the dirty flag off the object.
+
          A record is dirty/tainted if it has been modified after creation.
          This method is used to clear the dirty flag and treat the object
          as if it has not been modified.
          */
         void wash();
 
-        //! Update the keys for this document.
         /*!
+         \brief Update the keys for this document.
+
          This is useful for changing the ID of an existing lj::Document. This
          maintains the parent relationships.
-         \par
+
          The vclock for the object is cleared as part of rekeying. This is
          because the rekeyed object is considered in a pristine state.
+
          \param server The server for the vclock changes.
          \param k The new key to use for rekeying the IDs of the document.
          */
         void rekey(const lj::Uuid& server,
                 const uint64_t k);
 
-        //! Create a new branched child of this document.
         /*!
+         \brief Create a new branched child of this document.
+
          This is primarily useful for duplicating data. This maintains
          the parent relationships. This is the closest thing to copying
          allowed on a document.
+
          \param server The server for the vclock changes.
          \param k The new key for the branched object.
          \return The new child.
@@ -239,9 +247,9 @@ namespace lj
         lj::Document* branch(const lj::Uuid& server,
                 const uint64_t k);
 
-        //! Encrypt a document.
         /*!
-         \par
+         \brief Encrypt a document.
+
          Encrypted fields are removed from the general document and stored in
          hidden fields.
          \param server The id of the server modifying the document.
@@ -256,26 +264,53 @@ namespace lj
                 const std::string& key_name,
                 const std::vector<std::string>& paths = std::vector<std::string>());
 
-        //! decrypt a document.
+        /*!
+         \brief decrypt a document.
+
+         Modifies the document in place.
+         \param key The crypto key.
+         \param key_size The size of the key.
+         \param key_name The name of the key.
+         \sa #encrypt()
+         */
         void decrypt(const uint8_t* key,
                 int key_size,
                 const std::string& key_name);
 
-        //! Suppress a document.
+        /*!
+         \brief Set suppressed flag on a document.
+         \param server The server setting the flag.
+         \param s The new value of the flag.
+         */
         void suppress(const lj::Uuid& server,
                 const bool s);
 
-        //! Change a value in the document.
+        /*! 
+         \brief Change a value in the document.
+         \param server The server setting the value.
+         \param path The path to set the value on.
+         \param value The new value.
+         */
         void set(const lj::Uuid& server,
                 const std::string& path,
                 lj::bson::Node* value);
 
-        //! Change a value in the document.
+        /*!
+         \brief Change a value in the document.
+         \param server The server pushing the value.
+         \param path The path to push the value at.
+         \param value the new value.
+         */
         void push(const lj::Uuid& server,
                 const std::string& path,
                 lj::bson::Node* value);
 
-        //! Increment a integer value in the document.
+        /*!
+         \brief Increment a integer value in the document.
+         \param server The server incrementing the value.
+         \param path The path of the value to change.
+         \param amount The amount of the increment.
+         */
         void increment(const lj::Uuid& server,
                 const std::string path,
                 int amount);

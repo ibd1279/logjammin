@@ -4,7 +4,7 @@
  \brief LJ Log header.
  \author Jason Watson
 
- Copyright (c) 2010, Jason Watson
+ Copyright (c) 2014, Jason Watson
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -45,10 +45,9 @@
 
 namespace lj
 {
-    //! Base class for Logging Levels.
     /*!
-     \version 1.0
-     \date November 16, 2011
+     \brief Base class for Logging Levels.
+     \since 1.0
      */
     class LogLevel
     {
@@ -56,8 +55,8 @@ namespace lj
         const std::string name_;
         const int level_;
     public:
-        //! Create a new logging level.
         /*!
+         \brief Create a new logging level.
          \param n The logging level name.
          \param l The logging level number.
          */
@@ -69,12 +68,10 @@ namespace lj
         }
 
         //! standard destructor
-        virtual ~LogLevel()
-        {
-        }
+        virtual ~LogLevel() = default
 
-        //! Get the logging level name.
         /*!
+         \brief Get the logging level name.
          \return The logging level name.
          */
         const std::string& name() const
@@ -82,133 +79,130 @@ namespace lj
             return name_;
         }
 
-        //! Get the logging level number.
         /*!
+         \brief Get the logging level number.
          \return The logging level number.
          */
         const int level() const
         {
             return level_;
         }
-    };
+    }; // class lj::LogLevel
 
-    //! Emergency Logging Level
     /*!
-     \version 1.0
-     \date November 16, 2011
+     \brief Emergency Logging Level
+     \since 1.0
      */
     struct Emergency : public LogLevel
     {
         Emergency() : LogLevel("EMERGENCY", 0)
         {
         }
-    };
+    }; // struct lj::Emergency
 
-    //! Alert Logging Level
     /*!
-     \version 1.0
-     \date November 16, 2011
+     \brief Alert Logging Level
+     \since 1.0
      */
     struct Alert : public LogLevel
     {
         Alert() : LogLevel("ALERT", 1)
         {
         }
-    };
+    }; // struct lj::Alert
 
-    //! Critical Logging Level
     /*!
-     \version 1.0
-     \date November 16, 2011
+     \brief Critical Logging Level
+     \since 1.0
      */
     struct Critical : public LogLevel
     {
         Critical() : LogLevel("CRITICAL", 2)
         {
         }
-    };
+    }; // struct lj::Critical
 
-    //! Error Logging Level
     /*!
-     \version 1.0
-     \date November 16, 2011
+     \brief Error Logging Level
+     \since 1.0
      */
     struct Error : public LogLevel
     {
         Error() : LogLevel("ERROR", 3)
         {
         }
-    };
+    }; // struct lj::Error
 
-    //! Warning Logging Level
     /*!
-     \version 1.0
-     \date November 16, 2011
+     \brief Warning Logging Level
+     \since 1.0
      */
     struct Warning : public LogLevel
     {
         Warning() : LogLevel("WARNING", 4)
         {
         }
-    };
+    }; // struct lj::Warning
 
-    //! Notice Logging Level
     /*!
-     \version 1.0
-     \date November 16, 2011
+     \brief Notice Logging Level
+     \since 1.0
      */
     struct Notice : public LogLevel
     {
         Notice() : LogLevel("NOTICE", 5)
         {
         }
-    };
+    }; // struct lj::Notice
 
-    //! Info Logging Level
     /*!
-     \version 1.0
-     \date November 16, 2011
+     \brief Info Logging Level
+     \since 1.0
      */
     struct Info : public LogLevel
     {
         Info() : LogLevel("INFORMATION", 6)
         {
         }
-    };
+    }; // struct lj::Info
 
-    //! Debug Logging Level
     /*!
-     \version 1.0
-     \date November 16, 2011
+     \brief Debug Logging Level
+     \since 1.0
      */
     struct Debug : public LogLevel
     {
         Debug() : LogLevel("DEBUG", 7)
         {
         }
-    };
+    }; // struct lj::Debug
 
     namespace log
     {
-        //! type for closing a logger object.
+        /*!
+         \brief type for closing a logger object.
+         \since 1.0
+         */
         struct End
         {
-        };
+        }; // struct lj::log::End
 
         extern End end; //!< The end object, for closing a logger object.
 
-        //! Logger Base class.
         /*!
-         \par
+         \brief Logger Base class.
+
          Provides a default implementation for logging, which is a no-op.
          Specific implementations are expected to override the protected methods
          of this logger to write logging information somewhere useful.
+
+         \since 1.0
          */
         class Logger
         {
         public:
-            //! Constructor used by the Log template.
             /*!
+             \brief Constructor used by the Log template.
              \param lvl The logging level string.
              \param fmt The log formatting string.
              \sa lj::log::format()
@@ -218,13 +212,11 @@ namespace lj
             {
             }
 
-            //! Empty destructor.
-            virtual ~Logger()
-            {
-            }
+            //! destructor.
+            virtual ~Logger() = default
         protected:
-            //! Write a string to the output stream.
             /*!
+             \brief Write a string to the output stream.
              \param msg The message to write.
              \return The current Log.
              */
@@ -233,8 +225,8 @@ namespace lj
                 return *this;
             }
 
-            //! Write a signed integer to the output stream.
             /*!
+             \brief Write a signed integer to the output stream.
              \param msg The message to write to the output.
              \return The current Log.
              */
@@ -243,8 +235,8 @@ namespace lj
                 return *this;
             }
 
-            //! Write an unsigned integer to the output stream.
             /*!
+             \brief Write an unsigned integer to the output stream.
              \param msg The message to write to the output.
              \return The current Log.
              */
@@ -253,8 +245,8 @@ namespace lj
                 return *this;
             }
 
-            //! Write a bool to the output stream.
             /*!
+             \brief Write a bool to the output stream.
              \param msg The message to write to the output.
              \return The current Log.
              */
@@ -263,8 +255,8 @@ namespace lj
                 return *this;
             }
 
-            //! Write a pointer address to the output stream.
             /*!
+             \brief Write a pointer address to the output stream.
              \param msg The message to write to the output.
              \return The current Log.
              */
@@ -273,8 +265,8 @@ namespace lj
                 return *this;
             }
 
-            //! End the current log message.
             /*!
+             \brief End the current log message.
              \return The current Log.
              */
             virtual void write_end()
@@ -282,116 +274,119 @@ namespace lj
             }
 
         public:
-            //! Log a value.
             /*!
+             \brief Log a value.
              \param msg The message to write to the output.
              \return The current Log.
              */
             inline Logger& operator<<(const std::string& msg) { return write_string(msg); };
 
-            //! Log a value.
             /*!
+             \brief Log a value.
              \param msg The message to write to the output.
              \return The current Log.
              */
             inline Logger& operator<<(const char* msg) { return write_string(msg == 0 ? std::string("NULL") : std::string(msg)); };
             
-            //! Log a value.
             /*!
+             \brief Log a size_t value.
+
              For some reason, logging the size from the collection classes
              doesn't fall under one of eight other integer writing overloads
-             below. So this one is to take care of those.
+             below. So this one is to take care of those. Oh the joys of
+             overloading.
+
              \param msg The message to write to the output.
              \return The current Log.
              */
             inline Logger& operator<<(const size_t msg) {return write_unsigned_int(msg); };
 
-            //! Log a value.
             /*!
+             \brief Log a signed int 64 value.
              \param msg The message to write to the output.
              \return The current Log.
              */
             inline Logger& operator<<(const int64_t msg) { return write_signed_int(msg); };
 
-            //! Log a value.
             /*!
+             \brief Log an unsigned int 64 value.
              \param msg The message to write to the output.
              \return The current Log.
              */
             inline Logger& operator<<(const uint64_t msg) { return write_unsigned_int(msg); };
 
-            //! Log a value.
             /*!
+             \brief Log a signed int 32 value.
              \param msg The message to write to the output.
              \return The current Log.
              */
             inline Logger& operator<<(const int32_t msg) { return write_signed_int(msg); };
 
-            //! Log a value.
             /*!
+             \brief Log an unsigned int 32 value.
              \param msg The message to write to the output.
              \return The current Log.
              */
             inline Logger& operator<<(const uint32_t msg) { return write_unsigned_int(msg); };
 
-            //! Log a value.
             /*!
+             \brief Log a signed int 16 value.
              \param msg The message to write to the output.
              \return The current Log.
              */
             inline Logger& operator<<(const int16_t msg) { return write_signed_int(msg); };
 
-            //! Log a value.
             /*!
+             \brief Log an unsigned int 16 value.
              \param msg The message to write to the output.
              \return The current Log.
              */
             inline Logger& operator<<(const uint16_t msg) { return write_unsigned_int(msg); };
 
-            //! Log a value.
             /*!
+             \brief Log a signed int 8 value.
              \param msg The message to write to the output.
              \return The current Log.
              */
             inline Logger& operator<<(const int8_t msg) { return write_signed_int(msg); };
 
-            //! Log a value.
             /*!
+             \brief Log an unsigned int 8 value.
              \param msg The message to write to the output.
              \return The current Log.
              */
             inline Logger& operator<<(const uint8_t msg) { return write_unsigned_int(msg); };
 
-            //! Log a value.
             /*!
+             \brief Log a boolean value.
              \param msg The message to write to the output.
              \return The current Log.
              */
             inline Logger& operator<<(const bool msg) { return write_bool(msg); };
 
-            //! Log a value.
             /*!
+             \brief Log a pointer value.
              \param msg The message to write to the output.
              \return The current Log.
              */
             inline Logger& operator<<(const void* msg) { return write_pointer(msg); };
 
-            //! Log a unique id value.
             /*!
+             \brief Log a unique id value.
              \param msg The message to write to the output.
              \return The current Log.
              */
             inline Logger& operator<<(const Uuid& msg) { return write_string(msg.str()); };
 
-            //! Log an exception.
             /*!
+             \brief Log an exception.
              \param ex The exception to log
              \return The current Log.
              */
             inline Logger& operator<<(const std::exception& ex) { return write_string(ex.what()); };
 
-            //! Log a map
             /*!
+             \brief Log a map
              \param m The map.
              \tparam K the key type
              \tparam V the value type.
@@ -407,28 +402,32 @@ namespace lj
                 return *this;
             }
 
-            //! Close the logger.
             /*!
+             \brief Close the logger.
              \param msg The message to write to the output.
              \return The current Log.
              */
             inline void operator<<(const End &msg) { write_end(); };
 
-            //! Helper function to make logging a single function call.
+            /*!
+             \brief Helper function to make closing a logger easier.
+
+             This is the tailing call of the variadic template.
+             */
             void end()
             {
                 (*this) << lj::log::end;
             }
 
-            //! Helper function to make logging a single function call.
             /*!
-             \par
+             \brief Helper function to make logging a single function call.
+
              This is to allow logging to be as condense as possible. It is normally
              used as follows:
              \code
              lj::log::format<lj::Info>("Something Happened: %d - %s").end(errno, strerror(errno));
              \endcode
-             \par
+
              Depends on the C++11 variadic templates.
              \param a0 The first argument to write.
              \param ...args The rest of the args.
@@ -441,14 +440,17 @@ namespace lj
                 (*this) << a0;
                 end(args...);
             }
-        };
+        }; // class lj::log::Logger
 
-        //! Included logger for writing to an std::ostream.
+        /*!
+         \brief Included logger for writing to an std::ostream.
+         \since 1.0
+         */
         class Logger_stream : public Logger
         {
         public:
-            //! Constructor.
             /*!
+             \brief Constructor.
              \param lvl The logging level string.
              \param fmt The logging format string.
              \param stream The output stream to use.
@@ -469,14 +471,17 @@ namespace lj
             std::list<std::string> parts_;
             std::ostringstream buffer_;
             std::ostream* stream_;
-        };
+        }; // class lj::log::Logger_stream
 
-        //! Logger that outputs to cout.
+        /*!
+         \brief Logger that outputs to std::cout.
+         \since 1.0
+         */
         class Logger_clog : public Logger_stream
         {
         public:
-            //! Constructor.
             /*!
+             \brief Constructor.
              \param lvl The logging level string.
              \param fmt The logging format string.
              */
@@ -484,14 +489,15 @@ namespace lj
                     const std::string& fmt);
             //! Destructor.
             virtual ~Logger_clog() = default;
-        };
+        }; // class lj::log::Logger_clog
 
-        //! Check or set the enabled flags for a level.
         /*!
-         \par
+         \brief Check or set the enabled flags for a level.
+
          Must usages will be to check if a given logging level is enabled.
          however, if needed, this can be used to set the level of logging based
          on a parameter.
+
          \param new_state Optional parameter used to change the state of the
          logging level. This must be a pointer to a boolean object.
          \tparam Level The logging level to test.
@@ -508,9 +514,9 @@ namespace lj
             return state;
         }
 
-        //! Enable logging for a level.
         /*!
-         \par
+         \brief Enable logging for a level.
+
          Helper method for enabling a logging level.
          \tparam Level The logging level to enable.
          */
@@ -521,9 +527,9 @@ namespace lj
             enabled_flag<Level>(&state);
         }
 
-        //! Disable logging for a level.
         /*!
-         \par
+         \brief Disable logging for a level.
+
          Helper method for disabling a logging level.
          \tparam Level The logging level to disable.
          */
@@ -534,12 +540,13 @@ namespace lj
             enabled_flag<Level>(&state);
         }
 
-        //! Create a logger that is expecting parameters.
         /*!
-         \par
+         \brief Create a logger that is expecting parameters.
+
          This functions tests the Logging level to see if it is enabled.
          and a new logger object is created based on that result. At the moment,
          it is hard coded to always used the lj::log::Logger_clog.
+
          \todo The logger type should be able to be driven by some form of
          configuration.
          \param fmt The format of the log message.
@@ -561,9 +568,9 @@ namespace lj
             }
         }
 
-        //! Write out a single log line with no arguments.
         /*!
-         \par
+         \brief Write out a single log line with no arguments.
+
          Creates, outputs, and automatically destroys a logger object.
          \param fmt The log message.
          \tparam Level The logging level of the message.
@@ -574,8 +581,9 @@ namespace lj
             format<Level>(fmt).end();
         }
 
-        //! Wrap a function call with logging.
         /*!
+         \brief Wrap a function call with logging.
+
          Attempt invokes the provided function call inside a try block. On
          On failure, it makes a best effort to catch the exception and log the
          value.
@@ -614,11 +622,12 @@ namespace lj
             return true;
         }
 
-        //! Log any exceptions encountered while executing a function.
         /*!
-         \par
+         \brief Log any exceptions encountered while executing a function.
+
          This executes a function inside a try/catch block. The resulting
          exception, if understood, is output as a log message.
+
          \param func The function to execute. The return type is ignored
          and it cannot take any arguments.
          \tparam Level the logging level of the exception messages.

@@ -4,7 +4,7 @@
  \brief LJ time tracking definition.
  \author Jason Watson
  
- Copyright (c) 2010, Jason Watson
+ Copyright (c) 2014, Jason Watson
  All rights reserved.
  
  Redistribution and use in source and binary forms, with or without
@@ -49,20 +49,20 @@ namespace lj
         //! Start tracking time.
         void start();
         
-        //! Stop tracking time.
         /*!
+         \brief Stop tracking time.
          \return The amount of time elapsed.
          */
         uint64_t stop();
         
-        //! Get the elapsed time.
         /*!
+         \brief Get the elapsed time.
          \return The amount of time elapsed.
          */
         uint64_t elapsed() const;
         
-        //! Alias for elapsed.
         /*!
+         \brief Alias for elapsed.
          \return The elapsed time.
          \sa elapsed()
          */
@@ -71,5 +71,5 @@ namespace lj
         uint64_t start_usec;
         uint64_t start_sec;
         uint64_t elapsed_;
-    }; // class Stopclock
+    }; // class lj::Stopclock
 }; // namespace lj

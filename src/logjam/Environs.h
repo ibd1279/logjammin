@@ -39,60 +39,137 @@
 
 namespace logjam
 {
-    //! Object representing the global pool context.
+    /*!
+     \brief Object representing the global pool context.
+     \since 1.0
+     */
     class Environs {
     public:
-        //! Construct a new Pool Environment.
         /*!
-         \par
+         \brief Construct a new Pool Environment.
+
          All Pools are required to have some form of configuration
+
          \param config The configuration for the server.
          */
         Environs(lj::bson::Node&& cfg,
                 User_repository* ur,
                 Authentication_repository* ar);
+
+        //! Deleted copy constructor.
         Environs(const Environs& orig) = delete;
+
+        //! Default move constructor.
         Environs(Environs&& orig) = default;
+
+        //! Deleted copy assignment operator.
         Environs& operator=(const Environs& orig) = delete;
+
+        //! Default move assignment operator.
         Environs& operator=(Environs&& orig) = default;
+
+        //! Destructor.
         virtual ~Environs() = default;
 
+        //! Get the reference to the configuration.
         virtual const lj::bson::Node& config() const;
+
+        //! Get the reference to the user repository.
         virtual User_repository& user_repository();
+
+        //! Get the reference to the authentication repository.
         virtual Authentication_repository& authentication_repository();
 
     private:
         lj::bson::Node config_;
         User_repository* user_repository_;
         Authentication_repository* authentication_repository_;
-    }; // class Environs
+    }; // class lj::Environs
 
-    //! Object representing the swimmer context.
+    /*!
+     \brief Object representing the swimmer context.
+     \since 1.0
+     */
     class Context
     {
     public:
-        //! Base class for additioanl data stored in the Context.
+        /*!
+         \brief Base class for additioanl data stored in the Context.
+         \since 1.0
+         */
         struct Additional_data
         {
+            //! Default constructor.
             Additional_data() = default;
+
+            //! Default copy constructor.
+            Additional_data(const Additional_data& o) = default;
+
+            //! Default move constructor.
+            Additional_data(Additional_data&& o) = default;
+
+            //! Default copy assignment operator.
+            Additional_data& operator=(const Additional_data& rhs) = default;
+
+            //! Default move assignment operator.
+            Additional_data& operator=(Additional_data&& rhs) = default;
+
+            //! Destructor.
             virtual ~Additional_data() = default;
         }; // struct logjam::Context::Additional_data;
 
+        /*!
+         \brief Create a new context object.
+         \param environs The parent environment.
+         */
         Context(std::shared_ptr<Environs>& environs);
+        
+        //! Default copy constructor.
         Context(const Context& o) = default;
+
+        //! Default move constructor.
         Context(Context&& o) = default;
+
+        //! Default copy assignment operator.
         Context& operator=(const Context& rhs) = default;
+
+        //! Default move assignment operator.
         Context& operator=(Context&& rhs) = default;
+
+        //! Destructor.
         virtual ~Context() = default;
 
+        /*!
+         \brief Set additional data for the context.
+
+         The context assumes responsibility for releasing the pointer.
+
+         \param ptr Pointer to the additional data.
+         */
         virtual void data(Additional_data* ptr);
+
+        //! Get the additional data.
         virtual Additional_data* data();
+
+        //! Get the additional data.
         virtual const Additional_data* data() const;
+
+        //! Get the context bson node.
         virtual lj::bson::Node& node();
+
+        //! Get the context bson node.
         virtual const lj::bson::Node& node() const;
+
+        //! Get the context user.
         virtual logjam::User& user();
+
+        //! Get the context user.
         virtual const logjam::User& user() const;
+
+        //! Get the parent environs.
         virtual logjam::Environs& environs();
+
+        //! Get the parent environs.
         virtual const logjam::Environs& environs() const;
     private:
         std::shared_ptr<Additional_data> data_;

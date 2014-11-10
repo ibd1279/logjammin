@@ -4,7 +4,7 @@
  \brief LJ class for automatically freeing and wiping arrays.
  \author Jason Watson
 
- Copyright (c) 2012, Jason Watson
+ Copyright (c) 2014, Jason Watson
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -39,9 +39,11 @@
 namespace lj
 {
 
-    //! Memory wiping implementation.
     /*!
+     \brief Memory wiping implementation.
+
      writes zeros to the provided memory area before releasing the memory.
+
      \tparam T the type to be wiped.
      \tparam D the "delete" provider type.
      */
@@ -52,12 +54,13 @@ namespace lj
         //! Default constructor.
         Wiper() = default;
 
-        //! Functor operator.
         /*!
-         \par
+         \brief Functor operator.
+
          This primarily allows this class to act as a replacement for the default
          deleter on std::unique_ptr objects.
          This invokes the wipe and the delete.
+
          \param t The object to wipe and delete.
          */
         inline void operator()(T* t) const
@@ -67,9 +70,11 @@ namespace lj
             deleter(t);
         }
 
-        //! wipe method.
         /*!
+         \brief wipe method.
+
          write zeros to a range of memory.
+
          \param t Typed pointer to the memory to wipe.
          \*/
         static void wipe(T* t)
@@ -82,19 +87,22 @@ namespace lj
             }
         }
 
-        //! wipe method.
         /*!
+         \brief wipe method.
+
          write zeros to a range of memory.
+
          \param t The std::unique_ptr to an object to wipe.
          \*/
         static inline void wipe(std::unique_ptr<T>& t)
         {
             wipe(t.get());
         }
-    };
+    }; // class lj::Wiper<T, D>
 
-    //! Memory wiping implementation specialized for array objects.
     /*!
+     \brief Memory wiping implementation specialized for array objects.
+
      writes zeros to the provided memory area before releasing the memory. This
      implementation still needs some help as it doesn't understand how long the
      array is without being explicitly told. which requires some ugly code like
@@ -102,6 +110,7 @@ namespace lj
      std::unique_ptr<MyType[], Wiper<MyType[]>> array(new MyType[10]);
      array.get_deleter().set_count(10);
      \endcode
+
      \tparam T the type to be wiped.
      \tparam D the "delete" provider type.
      */
@@ -114,14 +123,15 @@ namespace lj
         {
         }
 
-        //! Functor operator.
         /*!
-         \par
+         \brief Functor operator.
+
          This primarily allows this class to act as a replacement for the default
          deleter on std::unique_ptr objects. This invokes the wipe and the
          delete.
-         \par
+
          This will wipe \c count number of \c T objects.
+
          \c set_count() must be called first.
          \param t The pointer to wipe and delete.
          */
@@ -132,9 +142,11 @@ namespace lj
             deleter(t);
         }
 
-        //! wipe method.
         /*!
+         \brief wipe method.
+
          write zeros to a range of memory.
+
          \param t The std::unique_ptr to an object to wipe.
          \param count The number of T objects to wipe.
          \*/
@@ -148,8 +160,8 @@ namespace lj
             }
         }
 
-        //! Helper method for dealing with std::unique_ptr objects.
         /*!
+         \brief Helper method for dealing with std::unique_ptr objects.
          \param t A unique_ptr to an new[] array.
          \param count The number of T objects to wipe.
          */
@@ -158,8 +170,8 @@ namespace lj
             wipe(t.get(), count);
         }
 
-        //! Set the number of T objects to be wiped when the deleter is invoked.
         /*!
+         \brief Set the number of T objects to be wiped when the deleter is invoked.
          \param count The number of T objects to wipe.
          */
         void set_count(const size_t count)
@@ -167,8 +179,8 @@ namespace lj
             count_ = count;
         }
 
-        //! Get the number of T objects set to be wiped.
         /*!
+         \brief Get the number of T objects set to be wiped.
          \return The number of T objects to wipe.
          */
         inline size_t count() const
@@ -177,5 +189,5 @@ namespace lj
         }
     private:
         size_t count_;
-    };
+    }; // class lj::Wiper<T[], D>
 }; // namespace lj
