@@ -621,7 +621,7 @@ namespace
     };
 };
 
-lj::bson::Node* lj::bson::parse_json(const std::string val)
+lj::bson::Node* lj::bson::parse_json(const std::string& val)
 {
     std::stringstream wrapper(val);
     Parser_state state(wrapper);

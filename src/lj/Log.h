@@ -68,7 +68,7 @@ namespace lj
         }
 
         //! standard destructor
-        virtual ~LogLevel() = default
+        virtual ~LogLevel() = default;
 
         /*!
          \brief Get the logging level name.
@@ -213,7 +213,7 @@ namespace lj
             }
 
             //! destructor.
-            virtual ~Logger() = default
+            virtual ~Logger() = default;
         protected:
             /*!
              \brief Write a string to the output stream.
