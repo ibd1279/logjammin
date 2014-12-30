@@ -125,7 +125,14 @@ namespace lj
                     t == Type::k_array);
         }
 
-        //! Test if a type is a nested type for pretty printing (Array, UUID, or document).
+        /*!
+         \brief Test if a type is a nested type for pretty printing.
+         
+         Array, document and binary types are considered nested types
+         for pretty printing.
+
+         \since 1.0
+         */
         inline bool type_is_pretty_nested(const Type t)
         {
             return (type_is_nested(t) ||
@@ -181,45 +188,19 @@ namespace lj
             }
 
             //! Copy constructor.
-            Bson_path_exception(const Bson_path_exception& o) :
-                    lj::Exception(o),
-                    path_(o.path_)
-            {
-            }
+            Bson_path_exception(const Bson_path_exception& o) = default;
 
             //! Move constructor.
-            Bson_path_exception(Bson_path_exception&& o) :
-                    lj::Exception(o),
-                    path_(std::move(o.path_))
-            {
-            }
+            Bson_path_exception(Bson_path_exception&& o) = default;
 
             //! Destructor.
-            virtual ~Bson_path_exception() throw ()
-            {
-            }
+            virtual ~Bson_path_exception() throw () = default;
 
             //! Copy assignment operator
-            Bson_path_exception& operator=(const Bson_path_exception& o)
-            {
-                if (&o != this)
-                {
-                    lj::Exception::operator=(o);
-                    path_ = o.path_;
-                }
-                return *this;
-            }
+            Bson_path_exception& operator=(const Bson_path_exception& o) = default;
 
             //! Move assignment operator
-            Bson_path_exception& operator=(Bson_path_exception&& o)
-            {
-                if (&o != this)
-                {
-                    lj::Exception::operator=(o);
-                    path_ = std::move(o.path_);
-                }
-                return *this;
-            }
+            Bson_path_exception& operator=(Bson_path_exception&& o) = default;
 
             //! Get the path that caused this exception.
             virtual std::string path() const
@@ -252,49 +233,19 @@ namespace lj
             }
 
             //! Copy constructor.
-            Bson_type_exception(const Bson_type_exception& o) :
-                    lj::Exception(o),
-                    type_(o.type_),
-                    binary_type_(o.binary_type_)
-            {
-            }
+            Bson_type_exception(const Bson_type_exception& o) = default;
 
             //! Move constructor
-            Bson_type_exception(Bson_type_exception&& o) :
-                    lj::Exception(o),
-                    type_(std::move(o.type_)),
-                    binary_type_(std::move(o.binary_type_))
-            {
-            }
+            Bson_type_exception(Bson_type_exception&& o) = default;
 
             //! Destructor
-            virtual ~Bson_type_exception() throw ()
-            {
-            }
+            virtual ~Bson_type_exception() throw () = default;
 
             //! Copy assignment operator
-            Bson_type_exception& operator=(const Bson_type_exception& o)
-            {
-                if (&o != this)
-                {
-                    lj::Exception::operator=(o);
-                    type_ = o.type_;
-                    binary_type_ = o.binary_type_;
-                }
-                return *this;
-            }
+            Bson_type_exception& operator=(const Bson_type_exception& o) = default;
 
             //! Move assignment operator
-            Bson_type_exception& operator=(Bson_type_exception&& o)
-            {
-                if (&o != this)
-                {
-                    lj::Exception::operator=(o);
-                    type_ = std::move(o.type_);
-                    binary_type_ = std::move(o.binary_type_);
-                }
-                return *this;
-            }
+            Bson_type_exception& operator=(Bson_type_exception&& o) = default;
 
             //! The type of the object.
             virtual Type type() const
