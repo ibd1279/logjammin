@@ -147,6 +147,9 @@ namespace lj
 
          write zeros to a range of memory.
 
+         \todo This needs to be checked to make sure compilers aren't
+         optimizing it into a no-op.
+
          \param t The std::unique_ptr to an object to wipe.
          \param count The number of T objects to wipe.
          \*/
